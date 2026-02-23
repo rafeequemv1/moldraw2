@@ -1016,6 +1016,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
     } catch (error) {
       console.error('Error updating 3D molecule:', error);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [renderStyle, applyRenderStyle, cacheMolecule]);
 
   // Re-apply style when it changes
@@ -1277,6 +1278,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isKetcherReady, updateMolecule3D, requestMoleculeUpdate, isProtein]);
 
   // Debounce timeout ref for 3D updates
@@ -2143,6 +2145,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
       console.error('Error recalculating molecular mass:', error);
       setMolecularMass(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHydrogens, currentMolecule]);
 
   return (
