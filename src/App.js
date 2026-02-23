@@ -46,6 +46,10 @@ function App() {
   const [nmrData, setNmrData] = useState(null);
   const [showNmrModal, setShowNmrModal] = useState(false);
   const [isNmrLoading, setIsNmrLoading] = useState(false);
+  const AI_CHAT_ENDPOINT =
+    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:3001/api/gemini-chat'
+      : '/api/gemini-chat';
 
   // Close AI chat when Crisp opens; mutual exclusivity
   useEffect(() => {
@@ -508,7 +512,7 @@ function App() {
 
   const fetchMpBpFromGemini = async (smiles, existingBp, existingMp) => {
     try {
-      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+      const resp = await fetch(AI_CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -549,7 +553,7 @@ Each peak: shift (ppm number), intensity (relative 0-1), label (assignment like 
 Include ALL expected peaks with correct splitting patterns and realistic J-coupling constants.`;
 
     try {
-      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+      const resp = await fetch(AI_CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, smiles, apiKey: geminiApiKey }),
@@ -753,7 +757,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
   const fetchIupacFromGemini = async (smiles) => {
     if (!geminiApiKey || !smiles) return;
     try {
-      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+      const resp = await fetch(AI_CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -780,7 +784,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
       return;
     }
     try {
-      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+      const resp = await fetch(AI_CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1367,7 +1371,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
         text: m.text,
       }));
 
-      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+      const resp = await fetch(AI_CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1406,7 +1410,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
       console.error('AI chat error:', error);
       setChatMessages((msgs) => [
         ...msgs,
-        { role: 'assistant', text: 'Could not reach the AI server. Make sure "npm run ai-server" is running.' },
+        { role: 'assistant', text: 'Could not reach the AI service. For local use, run "npm run ai-server". On deployed app, check Vercel function logs.' },
       ]);
     } finally {
       setIsChatLoading(false);
