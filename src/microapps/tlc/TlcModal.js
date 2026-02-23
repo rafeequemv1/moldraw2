@@ -21,11 +21,11 @@ function TlcModal({ onClose }) {
   const solventFrontY = 24 + ((baselineY - 24) * (solventFrontPercent / 100));
 
   const svgMarkup = useMemo(() => {
-    const canvasPad = 40;
+    const canvasPad = 72;
     const W = plateWidth + canvasPad * 2;
-    const H = plateHeight + 120;
+    const H = plateHeight + 190;
     const plateX = canvasPad;
-    const plateY = 36;
+    const plateY = 64;
     const n = Math.max(lanes.length, 1);
     const laneGap = plateWidth / (n + 1);
 

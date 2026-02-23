@@ -43,45 +43,75 @@
 
 .lp-marker {
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 54px;
+  height: 30px;
   pointer-events: auto;
   cursor: move;
   user-select: none;
 }
 
+.lp-bounds {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed rgba(51, 65, 85, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
 .lp-dot {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #111827;
-  top: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .lp-dot-left {
-  left: 5px;
+  left: 16px;
 }
 
 .lp-dot-right {
-  right: 5px;
+  right: 16px;
 }
 
 .lp-rotate-handle {
   position: absolute;
-  top: -13px;
+  top: -16px;
   left: 50%;
   transform: translateX(-50%);
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   border: 1px solid #cbd5e1;
   background: #ffffff;
   color: #334155;
   font-size: 9px;
-  line-height: 10px;
+  line-height: 14px;
   cursor: alias;
   padding: 0;
+}
+
+.lp-delete-btn {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 10px;
+  line-height: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lp-delete-btn:hover,
+.lp-rotate-handle:hover {
+  background: #f1f5f9;
 }
 
 .canvas-lp-tool {
@@ -473,6 +503,7 @@
   display: flex;
   gap: 4px;
   margin-top: 6px;
+  flex-wrap: wrap;
 }
 
 .mol-props-nmr-btn {
@@ -501,6 +532,20 @@
 }
 .mol-props-nmr-btn-c13:hover {
   background: #2d3748;
+}
+.mol-props-nmr-btn-ir {
+  background: #374151;
+  border-color: #374151;
+}
+.mol-props-nmr-btn-ir:hover {
+  background: #1f2937;
+}
+.mol-props-nmr-btn-uv {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+.mol-props-nmr-btn-uv:hover {
+  background: #1e40af;
 }
 
 /* NMR Modal */
@@ -879,6 +924,32 @@
   text-align: center;
   color: #888;
   font-size: 14px;
+}
+
+.spectrum-loading-wrap {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.spectrum-loading-svg {
+  width: 100%;
+  height: auto;
+}
+
+.spectrum-loading-path {
+  stroke-dasharray: 1300;
+  stroke-dashoffset: 1300;
+  animation: drawSpectrumPath 2.1s ease-in-out infinite;
+}
+
+@keyframes drawSpectrumPath {
+  0% { stroke-dashoffset: 1300; opacity: 0.35; }
+  35% { stroke-dashoffset: 0; opacity: 1; }
+  70% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: -1300; opacity: 0.2; }
 }
 
 .nmr-peak-table {

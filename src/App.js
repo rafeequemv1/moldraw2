@@ -3,7 +3,7 @@ import './App.css';
 import TlcModal from './microapps/tlc/TlcModal';
 
 function App() {
-  const ketcherPanelRef = useRef(null);
+  const ketcherCanvasWrapRef = useRef(null);
   const viewer3DRef = useRef(null);
   const viewerInstanceRef = useRef(null);
   const viewerBgRef = useRef({ color: '#f8f9fa', alpha: 1 });
@@ -51,6 +51,7 @@ function App() {
   const [nmrData, setNmrData] = useState(null);
   const [showNmrModal, setShowNmrModal] = useState(false);
   const [isNmrLoading, setIsNmrLoading] = useState(false);
+  const [activeSpectrumType, setActiveSpectrumType] = useState('1H');
   const [showAiSetupModal, setShowAiSetupModal] = useState(false);
   const [showTlcModal, setShowTlcModal] = useState(false);
   const [lonePairs, setLonePairs] = useState([]);
@@ -566,17 +567,38 @@ function App() {
     } catch { /* silent */ }
   };
 
-  // Predict NMR spectrum using Gemini (1H + 13C)
+  // Predict spectrum using Gemini (1H, 13C, IR, UV-Vis)
   const predictNMR = async (type = 'proton') => {
     const smiles = currentSmiles || lastSmilesForAIRef.current;
-    if (!smiles) { alert('No molecule on canvas to predict NMR for.'); return; }
+    if (!smiles) { alert('No molecule on canvas to predict a spectrum for.'); return; }
     if (!geminiApiKey) { promptAiSetupModal(); return; }
 
+    const typeMap = {
+      proton: '1H',
+      carbon: '13C',
+      ir: 'IR',
+      uv: 'UV-Vis',
+    };
+    setActiveSpectrumType(typeMap[type] || '1H');
     setIsNmrLoading(true);
     setShowNmrModal(true);
 
     const isCarbon = type === 'carbon';
-    const prompt = isCarbon
+    const isIR = type === 'ir';
+    const isUV = type === 'uv';
+    const prompt = isIR
+      ? `Predict the IR spectrum of this molecule (SMILES: ${smiles}).
+Return ONLY a JSON object:
+{"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"type":"IR","title":"IR Spectrum of <molecule name>","xLabel":"Wavenumber (cm-1)","yLabel":"Transmittance (%)","peaks":[{"shift":1715,"intensity":0.9,"label":"C=O stretch"},{"shift":3400,"intensity":0.7,"label":"O-H stretch"}]}}
+Each peak: shift as wavenumber in cm-1 (500-4000), intensity 0-1 where 1 means strong band depth, label with assignment.
+Include major functional-group bands only (realistic values).`
+      : isUV
+      ? `Predict the UV-Visible absorption spectrum of this molecule (SMILES: ${smiles}).
+Return ONLY a JSON object:
+{"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"type":"UV-Vis","title":"UV-Vis Spectrum of <molecule name>","xLabel":"Wavelength (nm)","yLabel":"Absorbance (a.u.)","peaks":[{"shift":210,"intensity":0.8,"label":"pi-pi*"},{"shift":280,"intensity":0.55,"label":"n-pi*"}]}}
+Each peak: shift as wavelength in nm (190-800), intensity 0-1, label transition type.
+Include realistic UV-vis bands and approximate intensities.`
+      : isCarbon
       ? `Predict the 13C NMR spectrum of this molecule (SMILES: ${smiles}).
 Return ONLY a JSON object:
 {"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"type":"13C","title":"13C NMR of <molecule name>","peaks":[{"shift":128.5,"intensity":0.8,"label":"C-2,C-6 (ArC)","multiplicity":"s","protons":0}],"solvent":"CDCl3","frequency":"100 MHz"}}
@@ -599,15 +621,17 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
       if (fenceMatch) raw = fenceMatch[1].trim();
       const obj = JSON.parse(raw);
       if (obj?.nmr?.peaks?.length) {
-        setNmrData({ ...obj.nmr, type: isCarbon ? '13C' : '1H' });
+        const inferredType = obj?.nmr?.type || (isIR ? 'IR' : isUV ? 'UV-Vis' : isCarbon ? '13C' : '1H');
+        setNmrData({ ...obj.nmr, type: inferredType });
+        setActiveSpectrumType(inferredType);
       } else {
         setNmrData(null);
-        alert('Could not predict NMR peaks for this molecule.');
+        alert('Could not predict spectrum for this molecule.');
       }
     } catch (err) {
-      console.error('NMR prediction error:', err);
+      console.error('Spectrum prediction error:', err);
       setNmrData(null);
-      alert('Failed to predict NMR. Check your API key and try again.');
+      alert('Failed to predict spectrum. Check your API key and try again.');
     } finally {
       setIsNmrLoading(false);
     }
@@ -641,8 +665,93 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
     }));
   };
 
+  const generateIrOrUvSvg = (spec) => {
+    if (!spec?.peaks?.length) return '';
+    const isIR = spec.type === 'IR';
+    const W = 900;
+    const H = 380;
+    const PAD_L = 55;
+    const PAD_R = 25;
+    const PAD_T = 30;
+    const PAD_B = 55;
+    const plotW = W - PAD_L - PAD_R;
+    const plotH = H - PAD_T - PAD_B;
+    const baseY = PAD_T + plotH;
+
+    const minX = isIR ? 500 : 190;
+    const maxX = isIR ? 4000 : 800;
+    const range = maxX - minX;
+
+    const xToPx = (x) => {
+      if (isIR) {
+        // IR convention: high wavenumber on left
+        return PAD_L + plotW * (1 - (x - minX) / range);
+      }
+      return PAD_L + plotW * ((x - minX) / range);
+    };
+
+    // Generate smooth curve from peaks
+    const nSamples = 1600;
+    const yValues = new Array(nSamples).fill(isIR ? 0.94 : 0.02);
+    const sigma = isIR ? 32 : 18;
+    for (let i = 0; i < nSamples; i += 1) {
+      const xVal = isIR
+        ? maxX - (i / (nSamples - 1)) * range
+        : minX + (i / (nSamples - 1)) * range;
+      for (const p of spec.peaks) {
+        const center = Number(p.shift) || 0;
+        const amp = Math.max(0, Math.min(1, Number(p.intensity) || 0));
+        const g = Math.exp(-((xVal - center) ** 2) / (2 * sigma * sigma));
+        if (isIR) {
+          yValues[i] -= amp * 0.45 * g;
+        } else {
+          yValues[i] += amp * 0.92 * g;
+        }
+      }
+      yValues[i] = Math.max(0.02, Math.min(0.98, yValues[i]));
+    }
+
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="background:#fff;font-family:'Inter','Helvetica',sans-serif">`;
+    svg += `<text x="${W / 2}" y="18" text-anchor="middle" font-size="13" font-weight="600" fill="#111">${spec.title || (isIR ? 'IR Spectrum' : 'UV-Vis Spectrum')}</text>`;
+    svg += `<line x1="${PAD_L}" y1="${baseY}" x2="${PAD_L + plotW}" y2="${baseY}" stroke="#000" stroke-width="1.2"/>`;
+
+    const tickStep = isIR ? 500 : 100;
+    for (let t = minX; t <= maxX; t += tickStep) {
+      const tx = xToPx(t);
+      svg += `<line x1="${tx}" y1="${baseY}" x2="${tx}" y2="${baseY + 5}" stroke="#000" stroke-width="1"/>`;
+      svg += `<text x="${tx}" y="${baseY + 17}" text-anchor="middle" font-size="10" fill="#333">${t}</text>`;
+      svg += `<line x1="${tx}" y1="${PAD_T}" x2="${tx}" y2="${baseY}" stroke="#f0f0f0" stroke-width="0.5"/>`;
+    }
+
+    svg += `<text x="${W / 2}" y="${H - 4}" text-anchor="middle" font-size="11" fill="#444">${spec.xLabel || (isIR ? 'Wavenumber (cm-1)' : 'Wavelength (nm)')}</text>`;
+
+    let pathD = '';
+    for (let i = 0; i < nSamples; i += 1) {
+      const x = PAD_L + (i / (nSamples - 1)) * plotW;
+      const y = PAD_T + (1 - yValues[i]) * plotH;
+      pathD += (i === 0 ? 'M' : 'L') + `${x.toFixed(1)},${y.toFixed(1)}`;
+    }
+    svg += `<path d="${pathD}" fill="none" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/>`;
+
+    // Peak labels
+    for (const p of spec.peaks) {
+      const center = Number(p.shift) || 0;
+      const px = xToPx(center);
+      svg += `<text x="${px}" y="${PAD_T + 12}" text-anchor="middle" font-size="8" fill="#444">${center.toFixed(0)}</text>`;
+      if (p.label) {
+        svg += `<text x="${px}" y="${PAD_T + 22}" text-anchor="middle" font-size="7.5" fill="#666">${String(p.label)}</text>`;
+      }
+    }
+
+    svg += '</svg>';
+    return svg;
+  };
+
   const generateNmrSvg = (nmr) => {
     if (!nmr?.peaks?.length) return '';
+    if (nmr.type === 'IR' || nmr.type === 'UV-Vis') {
+      return generateIrOrUvSvg(nmr);
+    }
     const isCarbon = nmr.type === '13C';
     const W = 900, H = 380, PAD_L = 55, PAD_R = 25, PAD_T = 30, PAD_B = 55;
     const plotW = W - PAD_L - PAD_R;
@@ -769,12 +878,20 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
   const downloadNmrCsv = () => {
     if (!nmrData?.peaks?.length) return;
     const isC = nmrData.type === '13C';
+    const isIR = nmrData.type === 'IR';
+    const isUV = nmrData.type === 'UV-Vis';
     const header = isC
       ? 'Shift (ppm),Intensity,Assignment'
+      : isIR
+      ? 'Wavenumber (cm-1),Band depth (relative),Assignment'
+      : isUV
+      ? 'Wavelength (nm),Absorbance (relative),Assignment'
       : 'Shift (ppm),Intensity,Multiplicity,J (Hz),Protons,Assignment';
     const rows = nmrData.peaks
       .sort((a, b) => b.shift - a.shift)
       .map(p => isC
+        ? `${p.shift.toFixed(2)},${(p.intensity || 0).toFixed(2)},"${p.label || ''}"`
+        : isIR || isUV
         ? `${p.shift.toFixed(2)},${(p.intensity || 0).toFixed(2)},"${p.label || ''}"`
         : `${p.shift.toFixed(2)},${(p.intensity || 0).toFixed(2)},${p.multiplicity || 's'},${p.coupling || ''},${p.protons || ''},"${p.label || ''}"`
       );
@@ -1247,7 +1364,8 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
         const svg = event.data.svg;
         // Download SVG
         try {
-          const blob = new Blob([svg], { type: 'image/svg+xml' });
+          const finalSvg = composeSvgWithLonePairs(svg);
+          const blob = new Blob([finalSvg], { type: 'image/svg+xml' });
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
@@ -1267,11 +1385,33 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
           const pngData = event.data.pngData;
           const blob = new Blob([pngData], { type: 'image/png' });
           const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'molecule.png';
-          link.click();
-          URL.revokeObjectURL(url);
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              drawLonePairsOnCanvas(ctx, canvas.width, canvas.height);
+              canvas.toBlob((outBlob) => {
+                if (!outBlob) return;
+                const outUrl = URL.createObjectURL(outBlob);
+                const link = document.createElement('a');
+                link.href = outUrl;
+                link.download = 'molecule.png';
+                link.click();
+                URL.revokeObjectURL(outUrl);
+              }, 'image/png');
+            } finally {
+              URL.revokeObjectURL(url);
+            }
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            alert('Failed to process PNG download.');
+          };
+          img.src = url;
         } catch (error) {
           console.error('Error downloading PNG:', error);
           alert('Failed to download PNG. Please try again.');
@@ -1291,6 +1431,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
               canvas.height = img.height;
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0);
+              drawLonePairsOnCanvas(ctx, canvas.width, canvas.height);
               canvas.toBlob((jpegBlob) => {
                 if (!jpegBlob) {
                   throw new Error('Failed to create JPEG blob');
@@ -1398,12 +1539,12 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
   };
 
   const addLonePairMarker = () => {
-    const panel = ketcherPanelRef.current;
-    if (!panel) return;
-    const rect = panel.getBoundingClientRect();
+    const wrap = ketcherCanvasWrapRef.current;
+    if (!wrap) return;
+    const rect = wrap.getBoundingClientRect();
     const x = Math.max(16, Math.min(rect.width - 16, rect.width * 0.5));
     const y = Math.max(16, Math.min(rect.height - 16, rect.height * 0.62));
-    setLonePairs((prev) => [...prev, { id: Date.now() + Math.random(), x, y, angle: 0 }]);
+    setLonePairs((prev) => [...prev, { id: Date.now() + Math.random(), x, y, angle: 0, width: 54, height: 30 }]);
   };
 
   const startMoveLonePair = (id, e) => {
@@ -1424,9 +1565,9 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
     e.preventDefault();
     e.stopPropagation();
     const marker = lonePairs.find((lp) => lp.id === id);
-    const panel = ketcherPanelRef.current;
-    if (!marker || !panel) return;
-    const rect = panel.getBoundingClientRect();
+    const wrap = ketcherCanvasWrapRef.current;
+    if (!marker || !wrap) return;
+    const rect = wrap.getBoundingClientRect();
     const centerX = rect.left + marker.x;
     const centerY = rect.top + marker.y;
     lonePairDragRef.current = {
@@ -1443,9 +1584,9 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
     const onMove = (e) => {
       const drag = lonePairDragRef.current;
       if (!drag) return;
-      const panel = ketcherPanelRef.current;
-      if (!panel) return;
-      const rect = panel.getBoundingClientRect();
+      const wrap = ketcherCanvasWrapRef.current;
+      if (!wrap) return;
+      const rect = wrap.getBoundingClientRect();
 
       if (drag.type === 'move') {
         const dx = e.clientX - drag.startClientX;
@@ -1473,6 +1614,97 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
       window.removeEventListener('mouseup', onUp);
     };
   }, [lonePairs]);
+
+  const getLonePairExportShapes = (targetW, targetH) => {
+    const wrap = ketcherCanvasWrapRef.current;
+    if (!wrap || !targetW || !targetH || !lonePairs.length) return [];
+    const srcW = wrap.clientWidth || 1;
+    const srcH = wrap.clientHeight || 1;
+    const sx = targetW / srcW;
+    const sy = targetH / srcH;
+    return lonePairs.map((lp) => ({
+      x: lp.x * sx,
+      y: lp.y * sy,
+      angle: lp.angle || 0,
+      width: (lp.width || 54) * sx,
+      height: (lp.height || 30) * sy,
+    }));
+  };
+
+  const drawLonePairsOnCanvas = (ctx, targetW, targetH) => {
+    const shapes = getLonePairExportShapes(targetW, targetH);
+    if (!shapes.length) return;
+    shapes.forEach((s) => {
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate((s.angle * Math.PI) / 180);
+      const dotR = Math.max(1.8, Math.min(s.width, s.height) * 0.1);
+      const gap = s.width * 0.2;
+      const leftX = -gap;
+      const rightX = gap;
+      const y = 0;
+      ctx.fillStyle = '#111827';
+      ctx.beginPath();
+      ctx.arc(leftX, y, dotR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(rightX, y, dotR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+  };
+
+  const composeSvgWithLonePairs = (svgText) => {
+    if (!lonePairs.length) return svgText;
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svgEl = doc.documentElement;
+
+      const vb = (svgEl.getAttribute('viewBox') || '').trim().split(/\s+/).map(Number);
+      let targetW = parseFloat(svgEl.getAttribute('width'));
+      let targetH = parseFloat(svgEl.getAttribute('height'));
+      if ((!targetW || !targetH) && vb.length === 4) {
+        targetW = vb[2];
+        targetH = vb[3];
+      }
+      if (!targetW || !targetH) return svgText;
+
+      const shapes = getLonePairExportShapes(targetW, targetH);
+      if (!shapes.length) return svgText;
+
+      const ns = 'http://www.w3.org/2000/svg';
+      const g = doc.createElementNS(ns, 'g');
+      g.setAttribute('id', 'lone-pair-overlay');
+      shapes.forEach((s) => {
+        const pairG = doc.createElementNS(ns, 'g');
+        pairG.setAttribute('transform', `translate(${s.x} ${s.y}) rotate(${s.angle})`);
+        const dotR = Math.max(1.8, Math.min(s.width, s.height) * 0.1);
+        const gap = s.width * 0.2;
+
+        const c1 = doc.createElementNS(ns, 'circle');
+        c1.setAttribute('cx', String(-gap));
+        c1.setAttribute('cy', '0');
+        c1.setAttribute('r', String(dotR));
+        c1.setAttribute('fill', '#111827');
+
+        const c2 = doc.createElementNS(ns, 'circle');
+        c2.setAttribute('cx', String(gap));
+        c2.setAttribute('cy', '0');
+        c2.setAttribute('r', String(dotR));
+        c2.setAttribute('fill', '#111827');
+
+        pairG.appendChild(c1);
+        pairG.appendChild(c2);
+        g.appendChild(pairG);
+      });
+
+      svgEl.appendChild(g);
+      return new XMLSerializer().serializeToString(doc);
+    } catch {
+      return svgText;
+    }
+  };
 
   const runCanvasActionFromAI = (actionObj) => {
     if (!actionObj || !iframeRef.current || !isKetcherReady) return;
@@ -2294,7 +2526,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
     <div className="App">
       <div className="split-container">
         {/* Left: Ketcher 2D Editor */}
-        <div className="panel ketcher-panel" data-testid="ketcher-panel" ref={ketcherPanelRef}>
+        <div className="panel ketcher-panel" data-testid="ketcher-panel">
           {/* Brand Header */}
           <div className="brand-header">
             <div className="brand-name">
@@ -2416,7 +2648,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
             </div>
           </div>
 
-          <div className="ketcher-canvas-wrap">
+          <div className="ketcher-canvas-wrap" ref={ketcherCanvasWrapRef}>
             <iframe
               ref={iframeRef}
               src="/ketcher-bridge.html"
@@ -2433,20 +2665,35 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
                   style={{
                     left: lp.x,
                     top: lp.y,
+                    width: lp.width || 54,
+                    height: lp.height || 30,
                     transform: `translate(-50%, -50%) rotate(${lp.angle}deg)`,
                   }}
                   onMouseDown={(e) => startMoveLonePair(lp.id, e)}
                   onDoubleClick={() => setLonePairs((prev) => prev.filter((x) => x.id !== lp.id))}
                   title="Drag to move, rotate with handle, double-click to delete"
                 >
-                  <span className="lp-dot lp-dot-left" />
-                  <span className="lp-dot lp-dot-right" />
+                  <div className="lp-bounds">
+                    <span className="lp-dot lp-dot-left" />
+                    <span className="lp-dot lp-dot-right" />
+                  </div>
                   <button
                     className="lp-rotate-handle"
                     onMouseDown={(e) => startRotateLonePair(lp.id, e)}
                     title="Rotate lone pair"
                   >
-                    o
+                    R
+                  </button>
+                  <button
+                    className="lp-delete-btn"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setLonePairs((prev) => prev.filter((x) => x.id !== lp.id));
+                    }}
+                    title="Delete lone pair"
+                  >
+                    x
                   </button>
                 </div>
               ))}
@@ -2589,6 +2836,22 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
                     title="Predict 13C NMR spectrum (AI)"
                   >
                     {isNmrLoading ? '...' : '¹³C NMR'}
+                  </button>
+                  <button
+                    className="mol-props-nmr-btn mol-props-nmr-btn-ir"
+                    onClick={() => predictNMR('ir')}
+                    disabled={isNmrLoading}
+                    title="Predict IR spectrum (AI)"
+                  >
+                    {isNmrLoading ? '...' : 'IR'}
+                  </button>
+                  <button
+                    className="mol-props-nmr-btn mol-props-nmr-btn-uv"
+                    onClick={() => predictNMR('uv')}
+                    disabled={isNmrLoading}
+                    title="Predict UV-Vis spectrum (AI)"
+                  >
+                    {isNmrLoading ? '...' : 'UV-Vis'}
                   </button>
                 </div>
               )}
@@ -2936,10 +3199,26 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
               </div>
             </div>
             <div className="nmr-disclaimer">
-              AI-predicted spectrum — chemical shifts and splitting patterns are approximate. Accuracy may vary. Not a substitute for experimental data.
+              AI-predicted spectrum — peak positions/intensities are approximate and depend on model assumptions. Accuracy may vary; verify experimentally.
             </div>
             <div className="nmr-modal-body">
-              {isNmrLoading && <div className="nmr-loading">Predicting NMR with Gemini...</div>}
+              {isNmrLoading && (
+                <div className="spectrum-loading-wrap">
+                  <svg className="spectrum-loading-svg" viewBox="0 0 620 220" aria-hidden="true">
+                    <line x1="30" y1="180" x2="590" y2="180" stroke="#111827" strokeWidth="1.2" />
+                    <path
+                      className="spectrum-loading-path"
+                      d="M35 180 L70 176 L90 178 L130 172 L165 176 L190 145 L210 176 L240 172 L270 176 L300 110 L330 176 L360 160 L390 176 L420 126 L455 176 L485 170 L520 176 L560 168 L585 176"
+                      fill="none"
+                      stroke="#111827"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                  <div className="nmr-loading">
+                    Predicting {activeSpectrumType} spectrum with Gemini...
+                  </div>
+                </div>
+              )}
               {!isNmrLoading && nmrData && (
                 <div dangerouslySetInnerHTML={{ __html: generateNmrSvg(nmrData) }} />
               )}
@@ -2952,10 +3231,10 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
                 <table>
                   <thead>
                     <tr>
-                      <th>δ (ppm)</th>
-                      {nmrData.type !== '13C' && <th>Mult.</th>}
-                      {nmrData.type !== '13C' && <th>J (Hz)</th>}
-                      {nmrData.type !== '13C' && <th>H</th>}
+                      <th>{nmrData.type === 'IR' ? 'Wavenumber (cm-1)' : nmrData.type === 'UV-Vis' ? 'Wavelength (nm)' : 'δ (ppm)'}</th>
+                      {nmrData.type !== '13C' && nmrData.type !== 'IR' && nmrData.type !== 'UV-Vis' && <th>Mult.</th>}
+                      {nmrData.type !== '13C' && nmrData.type !== 'IR' && nmrData.type !== 'UV-Vis' && <th>J (Hz)</th>}
+                      {nmrData.type !== '13C' && nmrData.type !== 'IR' && nmrData.type !== 'UV-Vis' && <th>H</th>}
                       <th>Intensity</th>
                       <th>Assignment</th>
                     </tr>
@@ -2964,9 +3243,9 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
                     {nmrData.peaks.sort((a, b) => b.shift - a.shift).map((p, i) => (
                       <tr key={i}>
                         <td>{p.shift.toFixed(2)}</td>
-                        {nmrData.type !== '13C' && <td>{p.multiplicity || 's'}</td>}
-                        {nmrData.type !== '13C' && <td>{p.coupling || '—'}</td>}
-                        {nmrData.type !== '13C' && <td>{p.protons || '—'}</td>}
+                        {nmrData.type !== '13C' && nmrData.type !== 'IR' && nmrData.type !== 'UV-Vis' && <td>{p.multiplicity || 's'}</td>}
+                        {nmrData.type !== '13C' && nmrData.type !== 'IR' && nmrData.type !== 'UV-Vis' && <td>{p.coupling || '—'}</td>}
+                        {nmrData.type !== '13C' && nmrData.type !== 'IR' && nmrData.type !== 'UV-Vis' && <td>{p.protons || '—'}</td>}
                         <td>{(p.intensity || 0).toFixed(2)}</td>
                         <td>{p.label || '—'}</td>
                       </tr>
