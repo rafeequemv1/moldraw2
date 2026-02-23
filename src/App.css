@@ -389,9 +389,14 @@
   border-color: #bbb;
 }
 
-.mol-props-nmr-btn {
+.mol-props-nmr-row {
+  display: flex;
+  gap: 4px;
   margin-top: 6px;
-  width: 100%;
+}
+
+.mol-props-nmr-btn {
+  flex: 1;
   padding: 5px 0;
   border: 1px solid #2C7A7B;
   border-radius: 6px;
@@ -409,6 +414,13 @@
 .mol-props-nmr-btn:disabled {
   opacity: 0.6;
   cursor: default;
+}
+.mol-props-nmr-btn-c13 {
+  background: #4a5568;
+  border-color: #4a5568;
+}
+.mol-props-nmr-btn-c13:hover {
+  background: #2d3748;
 }
 
 /* NMR Modal */
@@ -475,6 +487,16 @@
   font-family: 'Libre Franklin', sans-serif;
 }
 .nmr-modal-dl:hover { background: #f3f4f6; }
+
+.nmr-disclaimer {
+  padding: 8px 18px;
+  background: #fef3c7;
+  border-bottom: 1px solid #fbbf24;
+  font-size: 11px;
+  color: #92400e;
+  text-align: center;
+  font-weight: 500;
+}
 
 .nmr-modal-body {
   padding: 16px;

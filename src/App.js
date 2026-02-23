@@ -527,27 +527,32 @@ function App() {
     } catch { /* silent */ }
   };
 
-  // Predict NMR spectrum using Gemini
-  const predictNMR = async () => {
+  // Predict NMR spectrum using Gemini (1H + 13C)
+  const predictNMR = async (type = 'proton') => {
     const smiles = currentSmiles || lastSmilesForAIRef.current;
     if (!smiles) { alert('No molecule on canvas to predict NMR for.'); return; }
     if (!geminiApiKey) { alert('Gemini API key required. Set it in the AI assistant (⚙).'); return; }
 
     setIsNmrLoading(true);
     setShowNmrModal(true);
+
+    const isCarbon = type === 'carbon';
+    const prompt = isCarbon
+      ? `Predict the 13C NMR spectrum of this molecule (SMILES: ${smiles}).
+Return ONLY a JSON object:
+{"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"type":"13C","title":"13C NMR of <molecule name>","peaks":[{"shift":128.5,"intensity":0.8,"label":"C-2,C-6 (ArC)","multiplicity":"s","protons":0}],"solvent":"CDCl3","frequency":"100 MHz"}}
+Each peak: shift (ppm number, 0-220 range), intensity (relative 0-1), label (assignment), multiplicity ("s" for singlet always in DEPT-less 13C). Include ALL non-equivalent carbons.`
+      : `Predict the 1H NMR spectrum of this molecule (SMILES: ${smiles}).
+Return ONLY a JSON object:
+{"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"type":"1H","title":"1H NMR of <molecule name>","peaks":[{"shift":7.26,"intensity":1.0,"label":"ArH","multiplicity":"d","coupling":8.0,"protons":2}],"solvent":"CDCl3","frequency":"400 MHz"}}
+Each peak: shift (ppm number), intensity (relative 0-1), label (assignment like CH3, ArH, OH), multiplicity (s=singlet, d=doublet, t=triplet, q=quartet, m=multiplet, dd=doublet of doublets), coupling (J in Hz, number or null), protons (number of H).
+Include ALL expected peaks with correct splitting patterns and realistic J-coupling constants.`;
+
     try {
       const resp = await fetch('http://localhost:3001/api/gemini-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Predict the 1H NMR spectrum of this molecule (SMILES: ${smiles}).
-Return ONLY a JSON object with this format:
-{"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"title":"1H NMR of <molecule name>","peaks":[{"shift":7.26,"intensity":1.0,"label":"CHCl3"},{"shift":2.1,"intensity":3.0,"label":"CH3"}],"solvent":"CDCl3","frequency":"400 MHz"}}
-Each peak needs: shift (ppm as number), intensity (relative, 0-1 float where tallest=1.0), and label (assignment like CH3, ArH, OH etc).
-Include ALL expected peaks. Use realistic chemical shift values.`,
-          smiles,
-          apiKey: geminiApiKey,
-        }),
+        body: JSON.stringify({ prompt, smiles, apiKey: geminiApiKey }),
       });
       const data = await resp.json();
       let raw = data?.reply || '';
@@ -555,7 +560,7 @@ Include ALL expected peaks. Use realistic chemical shift values.`,
       if (fenceMatch) raw = fenceMatch[1].trim();
       const obj = JSON.parse(raw);
       if (obj?.nmr?.peaks?.length) {
-        setNmrData(obj.nmr);
+        setNmrData({ ...obj.nmr, type: isCarbon ? '13C' : '1H' });
       } else {
         setNmrData(null);
         alert('Could not predict NMR peaks for this molecule.');
@@ -569,64 +574,142 @@ Include ALL expected peaks. Use realistic chemical shift values.`,
     }
   };
 
+  // Lorentzian line shape: L(x) = (0.5 * w) / ((x - x0)^2 + (0.5 * w)^2)
+  const lorentzian = (x, x0, w) => (0.5 * w) / ((x - x0) * (x - x0) + 0.25 * w * w);
+
+  // Generate sub-peaks from splitting pattern
+  const splitPeak = (centerPpm, multiplicity, couplingHz, freqMHz) => {
+    const J = couplingHz || 7.0;
+    const jPpm = J / (freqMHz || 400);
+    const mult = (multiplicity || 's').toLowerCase();
+
+    // Pascal's triangle intensities
+    const patterns = {
+      's': [[0, 1]],
+      'd': [[-0.5, 1], [0.5, 1]],
+      't': [[-1, 1], [0, 2], [1, 1]],
+      'q': [[-1.5, 1], [-0.5, 3], [0.5, 3], [1.5, 1]],
+      'quint': [[-2, 1], [-1, 4], [0, 6], [1, 4], [2, 1]],
+      'sext': [[-2.5, 1], [-1.5, 5], [-0.5, 10], [0.5, 10], [1.5, 5], [2.5, 1]],
+      'dd': [[-0.75, 1], [-0.25, 1], [0.25, 1], [0.75, 1]],
+      'm': [[-1.2, 0.6], [-0.7, 0.9], [-0.3, 1], [0, 1], [0.3, 1], [0.7, 0.9], [1.2, 0.6]],
+    };
+
+    const pat = patterns[mult] || patterns['s'];
+    return pat.map(([offset, relInt]) => ({
+      ppm: centerPpm + offset * jPpm,
+      relInt,
+    }));
+  };
+
   const generateNmrSvg = (nmr) => {
     if (!nmr?.peaks?.length) return '';
-    const W = 800, H = 350, PAD_L = 60, PAD_R = 30, PAD_T = 40, PAD_B = 60;
+    const isCarbon = nmr.type === '13C';
+    const W = 900, H = 380, PAD_L = 55, PAD_R = 25, PAD_T = 30, PAD_B = 55;
     const plotW = W - PAD_L - PAD_R;
     const plotH = H - PAD_T - PAD_B;
 
-    // ppm range (NMR convention: high ppm on left)
     const shifts = nmr.peaks.map(p => p.shift);
-    const minPpm = Math.max(0, Math.floor(Math.min(...shifts)) - 1);
-    const maxPpm = Math.ceil(Math.max(...shifts)) + 1;
+    const minPpm = isCarbon
+      ? Math.max(0, Math.floor(Math.min(...shifts) / 10) * 10 - 10)
+      : Math.max(-0.5, Math.floor(Math.min(...shifts)) - 1);
+    const maxPpm = isCarbon
+      ? Math.ceil(Math.max(...shifts) / 10) * 10 + 10
+      : Math.ceil(Math.max(...shifts)) + 1;
     const ppmRange = maxPpm - minPpm || 1;
+    const freqMHz = parseInt(nmr.frequency) || (isCarbon ? 100 : 400);
+    const lineW = isCarbon ? 0.02 : 0.012;
 
     const ppmToX = (ppm) => PAD_L + plotW * (1 - (ppm - minPpm) / ppmRange);
 
-    // Build SVG
+    // Build all sub-peaks with Lorentzian profiles
+    const allSubPeaks = [];
+    const maxIntensity = Math.max(...nmr.peaks.map(p => p.intensity || 1));
+    nmr.peaks.forEach(peak => {
+      const normI = (peak.intensity || 1) / maxIntensity;
+      const subs = isCarbon
+        ? [{ ppm: peak.shift, relInt: 1 }]
+        : splitPeak(peak.shift, peak.multiplicity, peak.coupling, freqMHz);
+      const maxSubInt = Math.max(...subs.map(s => s.relInt));
+      subs.forEach(sub => {
+        allSubPeaks.push({
+          ppm: sub.ppm,
+          amplitude: normI * (sub.relInt / maxSubInt),
+          label: peak.label,
+          parentShift: peak.shift,
+        });
+      });
+    });
+
+    // Sample the composite spectrum as a continuous path
+    const nSamples = 2000;
+    const yValues = new Array(nSamples).fill(0);
+    for (let i = 0; i < nSamples; i++) {
+      const ppm = maxPpm - (i / (nSamples - 1)) * ppmRange;
+      allSubPeaks.forEach(sp => {
+        yValues[i] += sp.amplitude * lorentzian(ppm, sp.ppm, lineW);
+      });
+    }
+    const yMax = Math.max(...yValues) || 1;
+
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="background:#fff;font-family:'Inter','Helvetica',sans-serif">`;
 
-    // Title
-    svg += `<text x="${W / 2}" y="22" text-anchor="middle" font-size="14" font-weight="600" fill="#111">${nmr.title || '1H NMR Spectrum'}${nmr.frequency ? ' (' + nmr.frequency + ')' : ''}</text>`;
-    if (nmr.solvent) {
-      svg += `<text x="${W / 2}" y="36" text-anchor="middle" font-size="10" fill="#888">Solvent: ${nmr.solvent} | AI-predicted</text>`;
-    }
+    // Title + disclaimer
+    svg += `<text x="${W / 2}" y="18" text-anchor="middle" font-size="13" font-weight="600" fill="#111">${nmr.title || (isCarbon ? '13C' : '1H') + ' NMR Spectrum'}${nmr.frequency ? ' (' + nmr.frequency + ')' : ''}</text>`;
 
     // Axes
-    svg += `<line x1="${PAD_L}" y1="${PAD_T + plotH}" x2="${PAD_L + plotW}" y2="${PAD_T + plotH}" stroke="#333" stroke-width="1.5"/>`;
-    svg += `<line x1="${PAD_L}" y1="${PAD_T}" x2="${PAD_L}" y2="${PAD_T + plotH}" stroke="#333" stroke-width="1"/>`;
+    const baseY = PAD_T + plotH;
+    svg += `<line x1="${PAD_L}" y1="${baseY}" x2="${PAD_L + plotW}" y2="${baseY}" stroke="#000" stroke-width="1.2"/>`;
 
-    // X-axis labels (ppm, reversed)
-    for (let p = Math.ceil(minPpm); p <= Math.floor(maxPpm); p++) {
+    // X-axis ticks
+    const tickStep = isCarbon ? 20 : 1;
+    for (let p = Math.ceil(minPpm / tickStep) * tickStep; p <= Math.floor(maxPpm / tickStep) * tickStep; p += tickStep) {
       const x = ppmToX(p);
-      svg += `<line x1="${x}" y1="${PAD_T + plotH}" x2="${x}" y2="${PAD_T + plotH + 5}" stroke="#333" stroke-width="1"/>`;
-      svg += `<text x="${x}" y="${PAD_T + plotH + 18}" text-anchor="middle" font-size="11" fill="#333">${p}</text>`;
-      // Grid lines
-      svg += `<line x1="${x}" y1="${PAD_T}" x2="${x}" y2="${PAD_T + plotH}" stroke="#eee" stroke-width="0.5"/>`;
+      svg += `<line x1="${x}" y1="${baseY}" x2="${x}" y2="${baseY + 5}" stroke="#000" stroke-width="1"/>`;
+      svg += `<text x="${x}" y="${baseY + 17}" text-anchor="middle" font-size="10" fill="#333">${p}</text>`;
+      if (p !== minPpm) {
+        svg += `<line x1="${x}" y1="${PAD_T}" x2="${x}" y2="${baseY}" stroke="#f0f0f0" stroke-width="0.5"/>`;
+      }
     }
-    svg += `<text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="12" fill="#555">Chemical Shift (ppm)</text>`;
-    svg += `<text x="14" y="${PAD_T + plotH / 2}" text-anchor="middle" font-size="11" fill="#555" transform="rotate(-90,14,${PAD_T + plotH / 2})">Intensity</text>`;
+    // Minor ticks for 13C
+    if (isCarbon) {
+      for (let p = Math.ceil(minPpm / 10) * 10; p <= maxPpm; p += 10) {
+        const x = ppmToX(p);
+        svg += `<line x1="${x}" y1="${baseY}" x2="${x}" y2="${baseY + 3}" stroke="#000" stroke-width="0.5"/>`;
+      }
+    }
 
-    // Peaks as Lorentzian-like curves
-    const peakWidth = 0.04 * (ppmRange / 12);
-    const maxIntensity = Math.max(...nmr.peaks.map(p => p.intensity || 1));
+    svg += `<text x="${W / 2}" y="${H - 4}" text-anchor="middle" font-size="11" fill="#444">δ (ppm)</text>`;
 
-    nmr.peaks.forEach((peak, i) => {
+    // Draw continuous spectrum path (black line)
+    let pathD = '';
+    for (let i = 0; i < nSamples; i++) {
+      const x = PAD_L + (i / (nSamples - 1)) * plotW;
+      const y = baseY - (yValues[i] / yMax) * (plotH - 18);
+      pathD += (i === 0 ? 'M' : 'L') + `${x.toFixed(1)},${y.toFixed(1)}`;
+    }
+    svg += `<path d="${pathD}" fill="none" stroke="#000" stroke-width="1.1" stroke-linejoin="round"/>`;
+
+    // Peak labels above each group
+    const labeled = new Set();
+    nmr.peaks.forEach(peak => {
+      const key = peak.shift.toFixed(1);
+      if (labeled.has(key)) return;
+      labeled.add(key);
       const cx = ppmToX(peak.shift);
-      const normI = (peak.intensity || 1) / maxIntensity;
-      const peakH = normI * (plotH - 20);
-      const hw = Math.max(8, peakWidth * plotW / ppmRange);
-
-      // Draw peak as a thin triangle/spike
-      const baseY = PAD_T + plotH;
-      const topY = baseY - peakH;
-
-      svg += `<polygon points="${cx - hw},${baseY} ${cx},${topY} ${cx + hw},${baseY}" fill="rgba(44,122,123,0.6)" stroke="#2C7A7B" stroke-width="1"/>`;
-
-      // Label
-      svg += `<text x="${cx}" y="${topY - 6}" text-anchor="middle" font-size="9" fill="#2C7A7B" font-weight="500">${peak.label || ''}</text>`;
-      svg += `<text x="${cx}" y="${topY - 16}" text-anchor="middle" font-size="8" fill="#666">${peak.shift.toFixed(2)}</text>`;
+      // Find max y at this peak
+      const idx = Math.round((1 - (peak.shift - minPpm) / ppmRange) * (nSamples - 1));
+      const clampIdx = Math.max(0, Math.min(nSamples - 1, idx));
+      const peakY = baseY - (yValues[clampIdx] / yMax) * (plotH - 18);
+      const multLabel = peak.multiplicity ? ` (${peak.multiplicity}${peak.coupling ? ', J=' + peak.coupling + ' Hz' : ''})` : '';
+      svg += `<text x="${cx}" y="${Math.max(PAD_T + 10, peakY - 14)}" text-anchor="middle" font-size="8" fill="#333">${(peak.shift).toFixed(2)}</text>`;
+      svg += `<text x="${cx}" y="${Math.max(PAD_T + 20, peakY - 4)}" text-anchor="middle" font-size="7.5" fill="#555">${peak.label || ''}${multLabel}</text>`;
     });
+
+    // Solvent label
+    if (nmr.solvent) {
+      svg += `<text x="${PAD_L + 4}" y="${PAD_T + 12}" font-size="9" fill="#888">${nmr.solvent}</text>`;
+    }
 
     svg += '</svg>';
     return svg;
@@ -640,6 +723,28 @@ Include ALL expected peaks. Use realistic chemical shift values.`,
     const a = document.createElement('a');
     a.href = url;
     a.download = `nmr_${(nmrData?.title || 'spectrum').replace(/[^a-zA-Z0-9]/g, '_')}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadNmrCsv = () => {
+    if (!nmrData?.peaks?.length) return;
+    const isC = nmrData.type === '13C';
+    const header = isC
+      ? 'Shift (ppm),Intensity,Assignment'
+      : 'Shift (ppm),Intensity,Multiplicity,J (Hz),Protons,Assignment';
+    const rows = nmrData.peaks
+      .sort((a, b) => b.shift - a.shift)
+      .map(p => isC
+        ? `${p.shift.toFixed(2)},${(p.intensity || 0).toFixed(2)},"${p.label || ''}"`
+        : `${p.shift.toFixed(2)},${(p.intensity || 0).toFixed(2)},${p.multiplicity || 's'},${p.coupling || ''},${p.protons || ''},"${p.label || ''}"`
+      );
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nmr_${(nmrData?.title || 'data').replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -2279,14 +2384,24 @@ Include ALL expected peaks. Use realistic chemical shift values.`,
                 </>
               )}
               {!isProtein && currentSmiles && geminiApiKey && (
-                <button
-                  className="mol-props-nmr-btn"
-                  onClick={predictNMR}
-                  disabled={isNmrLoading}
-                  title="Predict 1H NMR spectrum (AI)"
-                >
-                  {isNmrLoading ? 'Predicting...' : '¹H NMR'}
-                </button>
+                <div className="mol-props-nmr-row">
+                  <button
+                    className="mol-props-nmr-btn"
+                    onClick={() => predictNMR('proton')}
+                    disabled={isNmrLoading}
+                    title="Predict 1H NMR spectrum (AI)"
+                  >
+                    {isNmrLoading ? '...' : '¹H NMR'}
+                  </button>
+                  <button
+                    className="mol-props-nmr-btn mol-props-nmr-btn-c13"
+                    onClick={() => predictNMR('carbon')}
+                    disabled={isNmrLoading}
+                    title="Predict 13C NMR spectrum (AI)"
+                  >
+                    {isNmrLoading ? '...' : '¹³C NMR'}
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -2582,16 +2697,22 @@ Include ALL expected peaks. Use realistic chemical shift values.`,
         <div className="nmr-modal-backdrop" onClick={() => setShowNmrModal(false)}>
           <div className="nmr-modal" onClick={(e) => e.stopPropagation()}>
             <div className="nmr-modal-header">
-              <span className="nmr-modal-title">{nmrData?.title || '1H NMR Spectrum'}</span>
+              <span className="nmr-modal-title">{nmrData?.title || 'NMR Spectrum'}</span>
               <div style={{ display: 'flex', gap: 6 }}>
                 {nmrData && (
-                  <button className="nmr-modal-dl" onClick={downloadNmrSvg} title="Download SVG">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    SVG
-                  </button>
+                  <>
+                    <button className="nmr-modal-dl" onClick={downloadNmrCsv} title="Download peak data as CSV">CSV</button>
+                    <button className="nmr-modal-dl" onClick={downloadNmrSvg} title="Download spectrum as SVG">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      SVG
+                    </button>
+                  </>
                 )}
                 <button className="nmr-modal-close" onClick={() => setShowNmrModal(false)}>×</button>
               </div>
+            </div>
+            <div className="nmr-disclaimer">
+              AI-predicted spectrum — chemical shifts and splitting patterns are approximate. Accuracy may vary. Not a substitute for experimental data.
             </div>
             <div className="nmr-modal-body">
               {isNmrLoading && <div className="nmr-loading">Predicting NMR with Gemini...</div>}
@@ -2605,11 +2726,23 @@ Include ALL expected peaks. Use realistic chemical shift values.`,
             {nmrData?.peaks && (
               <div className="nmr-peak-table">
                 <table>
-                  <thead><tr><th>Shift (ppm)</th><th>Intensity</th><th>Assignment</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>δ (ppm)</th>
+                      {nmrData.type !== '13C' && <th>Mult.</th>}
+                      {nmrData.type !== '13C' && <th>J (Hz)</th>}
+                      {nmrData.type !== '13C' && <th>H</th>}
+                      <th>Intensity</th>
+                      <th>Assignment</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {nmrData.peaks.sort((a, b) => b.shift - a.shift).map((p, i) => (
                       <tr key={i}>
                         <td>{p.shift.toFixed(2)}</td>
+                        {nmrData.type !== '13C' && <td>{p.multiplicity || 's'}</td>}
+                        {nmrData.type !== '13C' && <td>{p.coupling || '—'}</td>}
+                        {nmrData.type !== '13C' && <td>{p.protons || '—'}</td>}
                         <td>{(p.intensity || 0).toFixed(2)}</td>
                         <td>{p.label || '—'}</td>
                       </tr>
