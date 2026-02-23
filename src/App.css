@@ -436,6 +436,93 @@
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+/* AI setup modal */
+.ai-setup-modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-setup-modal {
+  width: 460px;
+  max-width: 92vw;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 38px rgba(0,0,0,0.24);
+  padding: 18px 18px 14px;
+}
+
+.ai-setup-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.ai-setup-modal-text {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.ai-setup-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-setup-modal-link {
+  font-size: 12px;
+  color: #2C7A7B;
+  text-decoration: none;
+  font-weight: 600;
+  border: 1px solid #b6d7d8;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #f7fcfc;
+}
+
+.ai-setup-modal-link:hover {
+  background: #edf8f8;
+}
+
+.ai-setup-modal-btn,
+.ai-setup-modal-close {
+  font-size: 12px;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-family: 'Libre Franklin', sans-serif;
+}
+
+.ai-setup-modal-btn {
+  border: 1px solid #2C7A7B;
+  background: #2C7A7B;
+  color: #fff;
+  font-weight: 600;
+}
+
+.ai-setup-modal-btn:hover {
+  background: #1f6667;
+}
+
+.ai-setup-modal-close {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #4b5563;
+}
+
+.ai-setup-modal-close:hover {
+  background: #f9fafb;
+}
+
 .nmr-modal {
   background: white;
   border-radius: 14px;
@@ -961,27 +1048,29 @@
 /* Prominent protein close overlay */
 .close-protein-overlay {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  bottom: 14px;
+  left: 14px;
   z-index: 55;
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 14px;
-  border: none;
+  padding: 5px 10px;
+  border: 1px solid #c9d1d8;
   border-radius: 8px;
-  background: rgba(220, 38, 38, 0.92);
-  color: white;
-  font-size: 12px;
-  font-weight: 600;
+  background: rgba(244, 247, 250, 0.9);
+  color: #506173;
+  font-size: 11px;
+  font-weight: 500;
   font-family: 'Libre Franklin', sans-serif;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: background 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: all 0.15s;
 }
 
 .close-protein-overlay:hover {
-  background: rgba(185, 28, 28, 1);
+  background: rgba(235, 240, 245, 0.95);
+  border-color: #b7c2cc;
+  color: #3f5162;
 }
 
 /* Refresh 3D button */

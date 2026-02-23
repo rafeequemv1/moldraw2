@@ -46,10 +46,17 @@ function App() {
   const [nmrData, setNmrData] = useState(null);
   const [showNmrModal, setShowNmrModal] = useState(false);
   const [isNmrLoading, setIsNmrLoading] = useState(false);
+  const [showAiSetupModal, setShowAiSetupModal] = useState(false);
   const AI_CHAT_ENDPOINT =
     window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:3001/api/gemini-chat'
       : '/api/gemini-chat';
+
+  const promptAiSetupModal = () => {
+    setShowAiSetupModal(true);
+    setIsChatOpen(true);
+    setShowApiKeyInput(true);
+  };
 
   // Close AI chat when Crisp opens; mutual exclusivity
   useEffect(() => {
@@ -414,6 +421,26 @@ function App() {
     setNmrData(null);
   };
 
+  const getMolfileAtomCount = (molfile) => {
+    if (!molfile || !String(molfile).trim()) return 0;
+    const text = String(molfile);
+
+    // V3000 format: M  V30 COUNTS <atoms> <bonds> ...
+    const v3000Match = text.match(/M\s+V30\s+COUNTS\s+(\d+)/);
+    if (v3000Match) return parseInt(v3000Match[1], 10) || 0;
+
+    // V2000 format: counts line is typically line 4
+    const lines = text.split('\n');
+    if (lines.length >= 4) {
+      const countsLine = lines[3] || '';
+      const parts = countsLine.trim().split(/\s+/);
+      const atomCount = parseInt(parts[0], 10);
+      if (!Number.isNaN(atomCount)) return atomCount;
+    }
+
+    return 0;
+  };
+
   // Get molecule name + physical properties from PubChem
   const getMoleculeName = async (smiles) => {
     if (!smiles || smiles.trim() === '') {
@@ -535,7 +562,7 @@ function App() {
   const predictNMR = async (type = 'proton') => {
     const smiles = currentSmiles || lastSmilesForAIRef.current;
     if (!smiles) { alert('No molecule on canvas to predict NMR for.'); return; }
-    if (!geminiApiKey) { alert('Gemini API key required. Set it in the AI assistant (⚙).'); return; }
+    if (!geminiApiKey) { promptAiSetupModal(); return; }
 
     setIsNmrLoading(true);
     setShowNmrModal(true);
@@ -1083,11 +1110,9 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
       } else if (event.data.type === 'molfile-response') {
         const newMolfile = event.data.molfile;
 
-        // Auto-save canvas to localStorage (skip empty canvases)
+        // Auto-save canvas to localStorage (remove when empty)
         try {
-          const lines = (newMolfile || '').split('\n');
-          const countsLine = lines.find(l => l.trim().match(/^\s*\d+\s+\d+/));
-          const atomCount = countsLine ? parseInt(countsLine.trim().split(/\s+/)[0]) || 0 : 0;
+          const atomCount = getMolfileAtomCount(newMolfile);
           if (atomCount > 0) {
             localStorage.setItem('moldraw_canvas', JSON.stringify({ molfile: newMolfile, ts: Date.now() }));
           } else {
@@ -1133,9 +1158,20 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
       } else if (event.data.type === 'smiles-response') {
         const molfile = window.tempMolfile;
         const smiles = event.data.smiles;
+        const normalizedSmiles = (smiles || '').trim();
+
+        // If canvas is empty, clear related UI state and persisted canvas
+        if (!normalizedSmiles) {
+          setCurrentSmiles('');
+          setMultiStructure(false);
+          try { localStorage.removeItem('moldraw_canvas'); } catch {}
+          if (molfile && getMolfileAtomCount(molfile) === 0) {
+            clearMoleculeProps();
+          }
+        }
 
         // Track latest structure for AI assistant and display
-        if (smiles && smiles.trim() !== '') {
+        if (normalizedSmiles !== '') {
           lastSmilesForAIRef.current = smiles;
           setCurrentSmiles(smiles);
           // Detect multiple disconnected structures (dot-separated SMILES)
@@ -1354,7 +1390,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
     if (!text || isChatLoading) return;
 
     if (!geminiApiKey) {
-      setShowApiKeyInput(true);
+      promptAiSetupModal();
       setChatMessages((msgs) => [...msgs, { role: 'assistant', text: 'Please enter your Gemini API key above to get started.' }]);
       return;
     }
@@ -2698,6 +2734,39 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
           )}
         </div>
       </div>
+
+      {/* AI Setup Prompt Modal */}
+      {showAiSetupModal && (
+        <div className="ai-setup-modal-backdrop" onClick={() => setShowAiSetupModal(false)}>
+          <div className="ai-setup-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ai-setup-modal-title">Connect AI to use this feature</div>
+            <div className="ai-setup-modal-text">
+              Paste your Gemini API key in the AI assistant settings (gear icon) to enable chat, naming, and NMR prediction.
+            </div>
+            <div className="ai-setup-modal-actions">
+              <a
+                className="ai-setup-modal-link"
+                href="/pages/ai-help.html"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                How to connect AI
+              </a>
+              <button
+                className="ai-setup-modal-btn"
+                onClick={() => {
+                  setShowAiSetupModal(false);
+                  setIsChatOpen(true);
+                  setShowApiKeyInput(true);
+                }}
+              >
+                Open AI settings
+              </button>
+              <button className="ai-setup-modal-close" onClick={() => setShowAiSetupModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* NMR Spectrum Modal */}
       {showNmrModal && (
