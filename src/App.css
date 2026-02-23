@@ -25,6 +25,86 @@
   border-right: 1px solid #e8e8e8;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.ketcher-canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.lp-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 110;
+  pointer-events: none;
+}
+
+.lp-marker {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  pointer-events: auto;
+  cursor: move;
+  user-select: none;
+}
+
+.lp-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #111827;
+  top: 8px;
+}
+
+.lp-dot-left {
+  left: 5px;
+}
+
+.lp-dot-right {
+  right: 5px;
+}
+
+.lp-rotate-handle {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 9px;
+  line-height: 10px;
+  cursor: alias;
+  padding: 0;
+}
+
+.canvas-lp-tool {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  z-index: 130;
+  border: 1px solid #d6dde3;
+  background: rgba(255, 255, 255, 0.94);
+  color: #334155;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Libre Franklin', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: all 0.15s ease;
+}
+
+.canvas-lp-tool:hover {
+  background: #f8fafc;
+  border-color: #c3ccd5;
 }
 
 /* Brand Header */
@@ -521,6 +601,204 @@
 
 .ai-setup-modal-close:hover {
   background: #f9fafb;
+}
+
+/* TLC microapp modal */
+.tlc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 9997;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tlc-modal {
+  width: min(1200px, 96vw);
+  height: min(860px, 92vh);
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.26);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tlc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 14px;
+}
+
+.tlc-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tlc-close {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #475569;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tlc-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 390px 1fr;
+  min-height: 0;
+}
+
+.tlc-controls {
+  border-right: 1px solid #e5e7eb;
+  padding: 12px;
+  overflow: auto;
+  background: #fcfcfd;
+}
+
+.tlc-controls label {
+  display: block;
+  font-size: 12px;
+  color: #334155;
+  margin-bottom: 9px;
+  font-weight: 600;
+}
+
+.tlc-controls input[type='text'],
+.tlc-controls input[type='number'],
+.tlc-controls input[type='color'],
+.tlc-controls input:not([type]) {
+  width: 100%;
+  margin-top: 4px;
+  height: 30px;
+  border: 1px solid #d7dce2;
+  border-radius: 8px;
+  padding: 0 8px;
+  font-size: 12px;
+  background: #fff;
+  color: #111827;
+}
+
+.tlc-controls input[type='color'] {
+  padding: 2px;
+}
+
+.tlc-controls input[type='range'] {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.tlc-muted {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.tlc-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tlc-checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500 !important;
+}
+
+.tlc-lane-actions button,
+.tlc-lane-card button,
+.tlc-downloads button {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #334155;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  height: 30px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.tlc-lane-actions button:hover,
+.tlc-lane-card button:hover,
+.tlc-downloads button:hover {
+  background: #f8fafc;
+}
+
+.tlc-lane-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tlc-lane-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fff;
+}
+
+.tlc-lane-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.tlc-spot-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 6px;
+  align-items: end;
+  margin-bottom: 6px;
+}
+
+.tlc-spot-row button {
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+}
+
+.tlc-preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tlc-preview-svg {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.tlc-preview-svg svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.tlc-downloads {
+  border-top: 1px solid #e5e7eb;
+  padding: 10px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  background: #fff;
 }
 
 .nmr-modal {

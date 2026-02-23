@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './App.css';
+import TlcModal from './microapps/tlc/TlcModal';
 
 function App() {
+  const ketcherPanelRef = useRef(null);
   const viewer3DRef = useRef(null);
   const viewerInstanceRef = useRef(null);
   const viewerBgRef = useRef({ color: '#f8f9fa', alpha: 1 });
@@ -39,6 +41,9 @@ function App() {
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const lastSmilesForAIRef = useRef(null);
   const lastMolfileForAIRef = useRef(null);
+  const manual3DRefreshRequestedRef = useRef(false);
+  const force3DRefreshOnDeleteRef = useRef(false);
+  const previousAtomCountRef = useRef(0);
   const iupacRequestedRef = useRef(false);
   const copySmilesRequestedRef = useRef(false);
   const [smilesCopied, setSmilesCopied] = useState(false);
@@ -47,6 +52,9 @@ function App() {
   const [showNmrModal, setShowNmrModal] = useState(false);
   const [isNmrLoading, setIsNmrLoading] = useState(false);
   const [showAiSetupModal, setShowAiSetupModal] = useState(false);
+  const [showTlcModal, setShowTlcModal] = useState(false);
+  const [lonePairs, setLonePairs] = useState([]);
+  const lonePairDragRef = useRef(null);
   const AI_CHAT_ENDPOINT =
     window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:3001/api/gemini-chat'
@@ -1109,6 +1117,13 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
         } catch {}
       } else if (event.data.type === 'molfile-response') {
         const newMolfile = event.data.molfile;
+        const newAtomCount = getMolfileAtomCount(newMolfile);
+
+        // If atom count dropped, this is likely a deletion and should force 3D sync.
+        if (newAtomCount < previousAtomCountRef.current) {
+          force3DRefreshOnDeleteRef.current = true;
+        }
+        previousAtomCountRef.current = newAtomCount;
 
         // Auto-save canvas to localStorage (remove when empty)
         try {
@@ -1213,7 +1228,16 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
         // Normal flow: molfile came from a prior get-molfile request
         if (molfile) {
           if (!isProtein) {
-            updateMolecule3D(molfile, smiles);
+            const shouldRefresh3D =
+              !multiStructure ||
+              manual3DRefreshRequestedRef.current ||
+              force3DRefreshOnDeleteRef.current ||
+              normalizedSmiles === '';
+            if (shouldRefresh3D) {
+              updateMolecule3D(molfile, smiles);
+            }
+            manual3DRefreshRequestedRef.current = false;
+            force3DRefreshOnDeleteRef.current = false;
           }
           delete window.tempMolfile;
         } else if (smiles && smiles.trim() !== '') {
@@ -1324,11 +1348,11 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
   // Debounce timeout ref for 3D updates
   const debounceTimeoutRef = useRef(null);
 
-  // Poll for changes - skip when protein loaded or multiple structures on canvas
+  // Poll for changes continuously (3D updates are gated separately)
   useEffect(() => {
-    if (isKetcherReady && is3DReady && !isProtein && !multiStructure) {
+    if (isKetcherReady && is3DReady && !isProtein) {
       const interval = setInterval(() => {
-        if (iframeRef.current && isKetcherReady && !isProtein && !multiStructure) {
+        if (iframeRef.current && isKetcherReady && !isProtein) {
           iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
         }
       }, 2000);
@@ -1339,7 +1363,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
         }
       };
     }
-  }, [isKetcherReady, is3DReady, isProtein, multiStructure]);
+  }, [isKetcherReady, is3DReady, isProtein]);
 
   // Toggle hydrogens
   const toggleHydrogens = () => {
@@ -1349,6 +1373,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
   // Manual refresh: trigger 3D update from current canvas
   const refreshManual3D = () => {
     if (iframeRef.current && isKetcherReady) {
+      manual3DRefreshRequestedRef.current = true;
       iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
     }
   };
@@ -1371,6 +1396,83 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
     clearMoleculeProps();
     setMolecularMass(null);
   };
+
+  const addLonePairMarker = () => {
+    const panel = ketcherPanelRef.current;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+    const x = Math.max(16, Math.min(rect.width - 16, rect.width * 0.5));
+    const y = Math.max(16, Math.min(rect.height - 16, rect.height * 0.62));
+    setLonePairs((prev) => [...prev, { id: Date.now() + Math.random(), x, y, angle: 0 }]);
+  };
+
+  const startMoveLonePair = (id, e) => {
+    e.preventDefault();
+    const marker = lonePairs.find((lp) => lp.id === id);
+    if (!marker) return;
+    lonePairDragRef.current = {
+      type: 'move',
+      id,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startX: marker.x,
+      startY: marker.y,
+    };
+  };
+
+  const startRotateLonePair = (id, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const marker = lonePairs.find((lp) => lp.id === id);
+    const panel = ketcherPanelRef.current;
+    if (!marker || !panel) return;
+    const rect = panel.getBoundingClientRect();
+    const centerX = rect.left + marker.x;
+    const centerY = rect.top + marker.y;
+    lonePairDragRef.current = {
+      type: 'rotate',
+      id,
+      centerX,
+      centerY,
+      startRad: Math.atan2(e.clientY - centerY, e.clientX - centerX),
+      startAngle: marker.angle,
+    };
+  };
+
+  useEffect(() => {
+    const onMove = (e) => {
+      const drag = lonePairDragRef.current;
+      if (!drag) return;
+      const panel = ketcherPanelRef.current;
+      if (!panel) return;
+      const rect = panel.getBoundingClientRect();
+
+      if (drag.type === 'move') {
+        const dx = e.clientX - drag.startClientX;
+        const dy = e.clientY - drag.startClientY;
+        const x = Math.max(10, Math.min(rect.width - 10, drag.startX + dx));
+        const y = Math.max(10, Math.min(rect.height - 10, drag.startY + dy));
+        setLonePairs((prev) => prev.map((lp) => (lp.id === drag.id ? { ...lp, x, y } : lp)));
+      } else if (drag.type === 'rotate') {
+        const curRad = Math.atan2(e.clientY - drag.centerY, e.clientX - drag.centerX);
+        const deltaDeg = ((curRad - drag.startRad) * 180) / Math.PI;
+        setLonePairs((prev) =>
+          prev.map((lp) => (lp.id === drag.id ? { ...lp, angle: drag.startAngle + deltaDeg } : lp))
+        );
+      }
+    };
+
+    const onUp = () => {
+      lonePairDragRef.current = null;
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [lonePairs]);
 
   const runCanvasActionFromAI = (actionObj) => {
     if (!actionObj || !iframeRef.current || !isKetcherReady) return;
@@ -2192,7 +2294,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
     <div className="App">
       <div className="split-container">
         {/* Left: Ketcher 2D Editor */}
-        <div className="panel ketcher-panel" data-testid="ketcher-panel">
+        <div className="panel ketcher-panel" data-testid="ketcher-panel" ref={ketcherPanelRef}>
           {/* Brand Header */}
           <div className="brand-header">
             <div className="brand-name">
@@ -2280,8 +2382,14 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
                 Paste
               </button>
-
               <div className="tb-sep" />
+              <button
+                className="tb-btn"
+                onClick={() => setShowTlcModal(true)}
+                title="Open TLC diagram builder"
+              >
+                TLC
+              </button>
 
               <button className="tb-btn" onClick={() => { if (iframeRef.current && isKetcherReady) iframeRef.current.contentWindow.postMessage({ type: 'get-svg' }, '*'); }} title="Download SVG">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2308,13 +2416,51 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
             </div>
           </div>
 
-          <iframe
-            ref={iframeRef}
-            src="/ketcher-bridge.html"
-            title="Ketcher Molecule Editor"
-            className="ketcher-iframe"
-            data-testid="ketcher-iframe"
-          />
+          <div className="ketcher-canvas-wrap">
+            <iframe
+              ref={iframeRef}
+              src="/ketcher-bridge.html"
+              title="Ketcher Molecule Editor"
+              className="ketcher-iframe"
+              data-testid="ketcher-iframe"
+            />
+
+            <div className="lp-overlay">
+              {lonePairs.map((lp) => (
+                <div
+                  key={lp.id}
+                  className="lp-marker"
+                  style={{
+                    left: lp.x,
+                    top: lp.y,
+                    transform: `translate(-50%, -50%) rotate(${lp.angle}deg)`,
+                  }}
+                  onMouseDown={(e) => startMoveLonePair(lp.id, e)}
+                  onDoubleClick={() => setLonePairs((prev) => prev.filter((x) => x.id !== lp.id))}
+                  title="Drag to move, rotate with handle, double-click to delete"
+                >
+                  <span className="lp-dot lp-dot-left" />
+                  <span className="lp-dot lp-dot-right" />
+                  <button
+                    className="lp-rotate-handle"
+                    onMouseDown={(e) => startRotateLonePair(lp.id, e)}
+                    title="Rotate lone pair"
+                  >
+                    o
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* In-canvas tool: Lone pair */}
+            <button
+              className="canvas-lp-tool"
+              onClick={addLonePairMarker}
+              title="Add visual lone pair (two dots)"
+            >
+              Lone Pair
+            </button>
+          </div>
         </div>
 
         {/* Right: 3D Viewer */}
@@ -2767,6 +2913,8 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
           </div>
         </div>
       )}
+
+      {showTlcModal && <TlcModal onClose={() => setShowTlcModal(false)} />}
 
       {/* NMR Spectrum Modal */}
       {showNmrModal && (

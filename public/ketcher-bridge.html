@@ -186,6 +186,72 @@
                   error: error.message
                 }, '*');
               }
+            } else if (event.data.type === 'activate-lone-pair') {
+              try {
+                const frameDoc = ketcherFrame.contentWindow.document;
+                const editor = ketcher && ketcher.editor ? ketcher.editor : null;
+                let applied = false;
+
+                // Try to apply lone pair directly to currently selected atom(s)
+                const selection = editor && (
+                  (typeof editor.selection === 'function' && editor.selection()) ||
+                  (typeof editor.getSelection === 'function' && editor.getSelection()) ||
+                  null
+                );
+                const atoms =
+                  (selection && (selection.atoms || selection.selectedAtoms || selection.atomIds)) ||
+                  [];
+
+                const atomIds = Array.isArray(atoms) ? atoms : [];
+                if (editor && atomIds.length) {
+                  const addFns = [
+                    'addLonePair',
+                    'addLonePairs',
+                    'addLonePairToAtom',
+                    'addElectronPair',
+                    'addElectronPairs',
+                  ];
+                  for (const fn of addFns) {
+                    if (typeof editor[fn] === 'function') {
+                      atomIds.forEach((id) => {
+                        try { editor[fn](id); } catch (_) {}
+                      });
+                      applied = true;
+                      break;
+                    }
+                  }
+                }
+
+                // Fallback: activate lone pair tool in UI for manual placement
+                if (!applied) {
+                  const lonePairBtn =
+                    frameDoc.querySelector('[title*="Lone pair" i]') ||
+                    frameDoc.querySelector('[title*="lone pair" i]') ||
+                    frameDoc.querySelector('[aria-label*="Lone pair" i]') ||
+                    frameDoc.querySelector('[aria-label*="lone pair" i]');
+
+                  if (lonePairBtn && typeof lonePairBtn.click === 'function') {
+                    lonePairBtn.click();
+                    applied = true;
+                  } else {
+                    frameDoc.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true }));
+                    frameDoc.dispatchEvent(new KeyboardEvent('keydown', { key: 'L', bubbles: true }));
+                  }
+                }
+
+                window.parent.postMessage({
+                  type: 'lone-pair-activated',
+                  success: true,
+                  appliedDirectly: applied
+                }, '*');
+              } catch (error) {
+                console.error('Error activating lone pair tool:', error);
+                window.parent.postMessage({
+                  type: 'lone-pair-activated',
+                  success: false,
+                  error: error.message
+                }, '*');
+              }
             }
           });
         }
