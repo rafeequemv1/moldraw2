@@ -46,7 +46,7 @@ function TlcModal({ onClose }) {
       svg += `<line x1="${x}" y1="${plateY + baselineY}" x2="${x}" y2="${plateY + baselineY - 6}" stroke="#111827" stroke-width="1"/>`;
       svg += `<text x="${x}" y="${plateY + baselineY + 18}" text-anchor="middle" font-size="11" font-weight="700" fill="#111827">${lane.label || `L${i + 1}`}</text>`;
 
-      lane.spots.forEach((spot) => {
+      for (const spot of lane.spots) {
         const rf = clamp(Number(spot.rf) || 0, 0, 1);
         const y = plateY + baselineY - rf * (baselineY - solventFrontY);
         const r = clamp(Number(spot.size) || 7, 3, 18);
@@ -55,7 +55,7 @@ function TlcModal({ onClose }) {
         if (showRfLabels) {
           svg += `<text x="${x + r + 5}" y="${y + 3}" font-size="9" fill="#1f2937">Rf ${rf.toFixed(2)}</text>`;
         }
-      });
+      }
     }
 
     svg += `</svg>`;
