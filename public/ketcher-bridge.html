@@ -108,6 +108,28 @@
                   error: error.message
                 }, '*');
               }
+            } else if (event.data.type === 'get-png-jpeg') {
+              try {
+                // Get structure using getKet()
+                const struct = await ketcher.getKet();
+
+                // Generate PNG using generateImage API (will be converted to JPEG in parent)
+                const options = { outputFormat: 'png' };
+                const pngBlob = await ketcher.generateImage(struct, options);
+
+                const arrayBuffer = await pngBlob.arrayBuffer();
+
+                window.parent.postMessage({
+                  type: 'png-response-jpeg',
+                  pngData: arrayBuffer
+                }, '*');
+              } catch (error) {
+                console.error('Error getting PNG for JPEG:', error);
+                window.parent.postMessage({
+                  type: 'png-error-jpeg',
+                  error: error.message
+                }, '*');
+              }
             } else if (event.data.type === 'set-molecule') {
               try {
                 const structure = event.data.smiles;
@@ -123,6 +145,41 @@
                 }, '*');
               } catch (error) {
                 console.error('Error setting molecule:', error);
+                window.parent.postMessage({
+                  type: 'molecule-set',
+                  success: false,
+                  error: error.message
+                }, '*');
+              }
+            } else if (event.data.type === 'append-molecule') {
+              try {
+                const structure = event.data.smiles;
+                console.log('Appending molecule with structure:', structure);
+
+                await ketcher.addFragment(structure);
+
+                console.log('Fragment appended successfully');
+                window.parent.postMessage({
+                  type: 'molecule-set',
+                  success: true
+                }, '*');
+              } catch (error) {
+                console.error('Error appending fragment:', error);
+                window.parent.postMessage({
+                  type: 'molecule-set',
+                  success: false,
+                  error: error.message
+                }, '*');
+              }
+            } else if (event.data.type === 'clear-editor') {
+              try {
+                await ketcher.clear();
+                window.parent.postMessage({
+                  type: 'molecule-set',
+                  success: true
+                }, '*');
+              } catch (error) {
+                console.error('Error clearing editor:', error);
                 window.parent.postMessage({
                   type: 'molecule-set',
                   success: false,

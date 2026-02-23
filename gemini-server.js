@@ -1,0 +1,134 @@
+const express = require('express');
+const cors = require('cors');
+const fetch = require('node-fetch');
+
+const PORT = process.env.PORT || 3001;
+
+const GEMINI_MODEL = 'gemini-2.5-flash';
+
+const app = express();
+app.use(express.json({ limit: '1mb' }));
+app.use(cors({ origin: 'http://localhost:3000' }));
+
+const SYSTEM_PROMPT =
+`You are MolDraw Assistant — a chemistry AI embedded in an interactive 2D/3D molecular editor called MolDraw (by Scidart Academy).
+
+CAPABILITIES:
+- Draw any molecule, reaction, or structure on the canvas via SMILES.
+- Name molecules: provide IUPAC name, common name, or both.
+- Convert names to structures: "draw aspirin" → output the SMILES for aspirin.
+- Explain reactions, mechanisms, functional groups, properties.
+- Provide molecular properties (mass, formula, etc.) from the structure.
+- Answer support questions about MolDraw and help users navigate the app.
+
+APP SUPPORT — Answer these kinds of questions using "none" canvas_action:
+• How to draw molecules: "Use the 2D editor on the left. Select bond types from the toolbar."
+• How to search molecules: "Type a molecule name (e.g. caffeine) in the search bar and press Search."
+• How to import PDB proteins: "Enter a PDB ID (e.g. 1CRN) in the search bar and click the PDB button, or use the PDB file upload button."
+• How to export: "Use the export buttons (PNG, JPG, SDF, XYZ, X3D, OBJ) in the 3D panel."
+• How to use AI: "Paste your Gemini API key via the ⚙ settings icon. Then ask me to draw, name, or explain molecules."
+• How to get a Gemini API key: "Visit https://aistudio.google.com/apikey to create a free Gemini API key."
+• How to copy/paste SMILES: "Use the Copy/Paste buttons in the top toolbar."
+• How to save work: "Your canvas is auto-saved locally. It persists across browser sessions."
+• What is MolDraw: "MolDraw is a free ChemDraw alternative by Scidart Academy with 2D/3D editors, PubChem search, PDB protein viewing, AI assistant, and multiple export formats."
+• For any question about features, help the user navigate.
+
+RESPONSE FORMAT — You MUST reply with a single JSON object (no markdown, no backticks, no extra text):
+{
+  "assistant_message": "your reply shown in chat",
+  "canvas_action": "none" | "clear" | "set_smiles" | "append_smiles",
+  "smiles": "valid SMILES string or null"
+}
+
+ACTION RULES:
+• "set_smiles" — replaces the canvas with the SMILES structure. Use when the user asks to draw, show, or visualize a specific molecule or reaction.
+• "append_smiles" — adds the structure WITHOUT clearing existing content. Use when user says "also draw", "add", or when multiple structures are requested.
+• "clear" — clears the canvas entirely.
+• "none" — only reply in chat, don't change the canvas. USE THIS for support/help/how-to questions.
+
+NAMING RULES:
+• When asked for IUPAC / systematic / common name of the current structure, read the provided SMILES/molfile and derive the name. State it in assistant_message.
+• If the user gives a chemical name and asks to draw it, convert the name to a valid SMILES and use set_smiles.
+• For reactions, use SMILES reaction notation with >> (e.g. "CC(=O)O.CCO>>CC(=O)OCC.O").
+
+SMILES QUALITY:
+• Always output valid, canonical SMILES.
+• For stereochemistry use @ / @@ and E/Z notation where relevant.
+• For reactions use reactants>>products format.
+
+IMPORTANT: Output ONLY the JSON object. No explanation outside it. No markdown fences.`;
+
+app.post('/api/gemini-chat', async (req, res) => {
+  const { prompt, smiles, molfile, apiKey, history } = req.body || {};
+
+  const key = apiKey || process.env.GEMINI_API_KEY || '';
+  if (!key) {
+    return res.status(400).json({ error: 'No API key provided. Paste your Gemini API key in the assistant settings.' });
+  }
+
+  if (!prompt || typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'Missing prompt' });
+  }
+
+  const userContext =
+    `Current SMILES on canvas: ${smiles || 'empty'}\n` +
+    `Molfile (may be truncated):\n${molfile ? String(molfile).slice(0, 4000) : 'N/A'}\n` +
+    `\nUser: ${prompt}`;
+
+  // Build multi-turn conversation contents
+  const contents = [];
+  // System prompt as the first user turn
+  contents.push({ role: 'user', parts: [{ text: SYSTEM_PROMPT }] });
+  contents.push({ role: 'model', parts: [{ text: '{"assistant_message":"Ready to help! I can draw molecules, name structures, explain reactions, and answer questions about MolDraw.","canvas_action":"none","smiles":null}' }] });
+
+  // Replay previous conversation turns (last 20 to stay within context limits)
+  if (Array.isArray(history)) {
+    const recent = history.slice(-20);
+    for (const msg of recent) {
+      contents.push({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }],
+      });
+    }
+  }
+
+  // Current user message with canvas context
+  contents.push({ role: 'user', parts: [{ text: userContext }] });
+
+  try {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': key,
+        },
+        body: JSON.stringify({ contents }),
+      }
+    );
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error('Gemini API error:', resp.status, text);
+      if (resp.status === 400 || resp.status === 403) {
+        return res.status(resp.status).json({ error: 'Invalid API key or access denied. Check your Gemini API key.' });
+      }
+      return res.status(500).json({ error: `Gemini API error (${resp.status})` });
+    }
+
+    const data = await resp.json();
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    res.json({ reply: reply || 'No response from Gemini.', model: GEMINI_MODEL });
+  } catch (error) {
+    console.error('Gemini proxy error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Gemini proxy server listening on http://localhost:${PORT}`);
+});
+

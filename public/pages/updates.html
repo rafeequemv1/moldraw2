@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Updates | MolDraw</title>
+  <meta name="description" content="See the latest updates and changes to MolDraw, the free ChemDraw alternative.">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #f7f8fb;
+      color: #1f2933;
+      line-height: 1.7;
+    }
+    .page {
+      max-width: 740px;
+      margin: 56px auto;
+      padding: 0 24px 80px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+      font-weight: 600;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 30px;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      color: #6b7280;
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+    .nav {
+      margin-bottom: 24px;
+    }
+    .nav a {
+      color: #5a67d8;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .nav a:hover { text-decoration: underline; }
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: #e5e7eb;
+      border-radius: 2px;
+    }
+    .entry {
+      position: relative;
+      margin-bottom: 32px;
+    }
+    .entry::before {
+      content: '';
+      position: absolute;
+      left: -24px;
+      top: 7px;
+      width: 10px;
+      height: 10px;
+      background: #4338ca;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px #e0e2ff;
+    }
+    .entry-date {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .entry h3 {
+      font-size: 17px;
+      margin-bottom: 6px;
+    }
+    .entry p, .entry li {
+      font-size: 14px;
+      color: #4b5563;
+    }
+    .entry ul {
+      padding-left: 18px;
+      margin-top: 4px;
+    }
+    .entry li {
+      margin-bottom: 3px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .tag-feature { background: #d1fae5; color: #065f46; }
+    .tag-fix     { background: #fef3c7; color: #92400e; }
+    .tag-ui      { background: #ede9fe; color: #5b21b6; }
+    .tag-ai      { background: #dbeafe; color: #1e40af; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <span class="pill">MolDraw</span>
+    <h1>Updates</h1>
+    <p class="subtitle">What's new and improved in MolDraw.</p>
+    <p class="nav"><a href="/">Back to MolDraw</a> &middot; <a href="/pages/about.html">About</a></p>
+
+    <div class="timeline">
+
+      <div class="entry">
+        <div class="entry-date">February 2026</div>
+        <h3><span class="tag tag-feature">Feature</span> Molecule Properties Panel</h3>
+        <ul>
+          <li>New properties card in the 3D viewer showing compound name, IUPAC name, molecular mass, boiling point, and melting point.</li>
+          <li>Properties are fetched automatically from PubChem when a structure is loaded or drawn.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-date">February 2026</div>
+        <h3><span class="tag tag-ai">AI</span> Gemini Chat Assistant</h3>
+        <ul>
+          <li>AI chat assistant in the 3D viewer panel powered by Google Gemini.</li>
+          <li>Ask about IUPAC names, molecular properties, or instruct the AI to draw/edit structures on the canvas.</li>
+          <li>Removed legacy Crisp chat widget.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-date">February 2026</div>
+        <h3><span class="tag tag-feature">Feature</span> Accumulative PubChem Imports</h3>
+        <ul>
+          <li>Importing a molecule from PubChem now adds it alongside existing structures on the 2D canvas instead of replacing them.</li>
+          <li>3D viewer also accumulates imported molecules.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-date">February 2026</div>
+        <h3><span class="tag tag-feature">Feature</span> IUPAC Name Lookup</h3>
+        <ul>
+          <li>Added an IUPAC button in the toolbar to look up the IUPAC name of the drawn structure via PubChem.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-date">February 2026</div>
+        <h3><span class="tag tag-feature">Feature</span> JPEG Export</h3>
+        <ul>
+          <li>Download 2D structures as JPEG from the toolbar.</li>
+          <li>Export 3D viewer snapshots as JPEG.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-date">February 2026</div>
+        <h3><span class="tag tag-feature">Feature</span> Molecular Mass Display</h3>
+        <ul>
+          <li>Shows the molecular mass of the selected molecule in the 3D viewer.</li>
+          <li>Mass updates automatically when drawing or importing a new structure.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-date">February 2026</div>
+        <h3><span class="tag tag-feature">Feature</span> Protein Controls</h3>
+        <ul>
+          <li>PDB imports add to the 3D scene without clearing previous models.</li>
+          <li>Toggle button to close/remove a loaded protein from the 3D view.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

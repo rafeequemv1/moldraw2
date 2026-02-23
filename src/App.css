@@ -77,53 +77,63 @@
 .header-links {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 2px;
 }
 
-.header-nav-link,
-.feedback-link {
-  padding: 8px 12px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-.header-svg-download-btn {
-  display: flex;
+.tb-btn {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 6px 10px;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
   border-radius: 6px;
-  text-decoration: none;
-  font-weight: 600;
+  background: transparent;
+  color: #555;
   font-size: 11px;
-  transition: all 0.2s ease;
-  color: #4b5563;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  cursor: pointer;
+  font-weight: 500;
   font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
-.header-svg-download-btn:hover {
-  color: #111827;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-  background: #e5e7eb;
+.tb-btn:hover {
+  background: #f0f0f0;
+  color: #111;
 }
 
-.header-nav-link {
-  color: #4b5563;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+.tb-btn svg {
+  flex-shrink: 0;
 }
 
-.header-nav-link:hover {
-  color: #111827;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+.tb-sep {
+  width: 1px;
+  height: 16px;
+  background: #e0e0e0;
+  margin: 0 4px;
+}
+
+.tb-btn.tb-copied {
+  color: #16a34a;
+}
+
+.tb-ai-help {
+  color: #2C7A7B;
+  font-weight: 600;
+  animation: aiHelpGlow 3s ease-in-out infinite;
+}
+
+.tb-ai-help:hover {
+  background: #e6fffa;
+  color: #1a5a5b;
+}
+
+@keyframes aiHelpGlow {
+  0%, 100% { color: #2C7A7B; }
+  50% { color: #0e9aa7; }
 }
 
 .feedback-link {
@@ -288,54 +298,229 @@
   box-shadow: 0 4px 12px rgba(44, 122, 123, 0.3);
 }
 
-/* Molecule Name Banner */
-.molecule-name-banner {
+/* Molecule Properties Card */
+.mol-props-card {
   position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 12px;
+  right: 12px;
   z-index: 50;
-  animation: slideDown 0.3s ease;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 200px;
+  max-width: 300px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  animation: propsFadeIn 0.25s ease;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+@keyframes propsFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.molecule-name-content {
-  background: #2C7A7B;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 20px;
-  box-shadow: 0 4px 16px rgba(44, 122, 123, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: 400px;
-}
-
-.name-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: 0.9;
-}
-
-.name-text {
+.mol-props-name {
   font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  font-weight: 700;
+  color: #111;
+  text-transform: capitalize;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #e5e5e5;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.mol-props-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.mol-props-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  min-width: 36px;
+  flex-shrink: 0;
+}
+
+.mol-props-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: #222;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mol-props-iupac {
+  font-style: italic;
+  max-width: 190px;
+}
+
+.mol-props-smiles {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mol-props-copy-btn {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 4px;
+  line-height: 1.4;
+  color: #555;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.mol-props-copy-btn:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+
+.mol-props-nmr-btn {
+  margin-top: 6px;
+  width: 100%;
+  padding: 5px 0;
+  border: 1px solid #2C7A7B;
+  border-radius: 6px;
+  background: #2C7A7B;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Libre Franklin', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mol-props-nmr-btn:hover {
+  background: #1a5a5b;
+}
+.mol-props-nmr-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* NMR Modal */
+.nmr-modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.nmr-modal {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.25);
+  width: 880px;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nmr-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.nmr-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+.nmr-modal-close {
+  width: 28px; height: 28px;
+  border: none; border-radius: 6px;
+  background: #f3f4f6;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+}
+.nmr-modal-close:hover { background: #e5e7eb; }
+.nmr-modal-dl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #333;
+  font-family: 'Libre Franklin', sans-serif;
+}
+.nmr-modal-dl:hover { background: #f3f4f6; }
+
+.nmr-modal-body {
+  padding: 16px;
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+.nmr-modal-body svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.nmr-loading {
+  padding: 40px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+
+.nmr-peak-table {
+  padding: 0 16px 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.nmr-peak-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.nmr-peak-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-weight: 600;
+  color: #555;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.nmr-peak-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+}
+.nmr-peak-table tr:hover td {
+  background: #f9fafb;
 }
 
 .ketcher-iframe {
@@ -751,6 +936,58 @@
   font-family: 'Libre Franklin', sans-serif;
 }
 
+/* Prominent protein close overlay */
+.close-protein-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.92);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Libre Franklin', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: background 0.15s;
+}
+
+.close-protein-overlay:hover {
+  background: rgba(185, 28, 28, 1);
+}
+
+/* Refresh 3D button */
+.refresh3d-btn {
+  background: #2C7A7B !important;
+  color: white !important;
+  border-color: #2C7A7B !important;
+}
+.refresh3d-btn:hover {
+  background: #1a5a5b !important;
+}
+
+/* Multi-structure notice overlay */
+.multi-struct-notice {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 15;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(44, 122, 123, 0.88);
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: 'Libre Franklin', sans-serif;
+  pointer-events: none;
+}
+
 .pdb-import-btn:hover {
   border-color: #2C7A7B;
   background: #f8f9fa;
@@ -760,5 +997,208 @@
   flex-shrink: 0;
 }
 
-/* Crisp Chat Widget - Position on left side of 3D editor */
-/* The chat widget will be positioned by the inline styles in index.html */
+/* AI Chat Assistant (3D panel, well left of Crisp bubble ~54px+24px gap) */
+.ai-chat-widget {
+  position: absolute;
+  bottom: 18px;
+  right: 96px;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.ai-chat-toggle {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: none;
+  background: #2C7A7B;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.ai-chat-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  background: #1a5a5b;
+}
+
+.ai-chat-box {
+  width: 420px;
+  max-width: calc(100vw - 40px);
+  max-height: 520px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+
+.ai-chat-header {
+  padding: 10px 12px;
+  background: #2C7A7B;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-chat-header-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ai-chat-header-sub {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.ai-chat-header-close {
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.ai-chat-header-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ai-chat-messages {
+  padding: 8px 10px;
+  flex: 1;
+  overflow-y: auto;
+  background: #f9fafb;
+}
+
+.ai-chat-message {
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ai-chat-message.user {
+  text-align: right;
+}
+
+.ai-chat-message.user span {
+  display: inline-block;
+  background: #2C7A7B;
+  color: white;
+  padding: 6px 9px;
+  border-radius: 10px;
+}
+
+.ai-chat-message.assistant span {
+  display: inline-block;
+  background: white;
+  color: #111827;
+  padding: 6px 9px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.ai-chat-input-row {
+  border-top: 1px solid #e5e7eb;
+  padding: 6px 8px;
+  display: flex;
+  gap: 6px;
+  background: white;
+}
+
+.ai-chat-input {
+  flex: 1;
+  resize: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 6px 8px;
+  min-height: 32px;
+  max-height: 72px;
+}
+
+.ai-chat-input:focus {
+  outline: none;
+  border-color: #2C7A7B;
+  box-shadow: 0 0 0 2px rgba(44, 122, 123, 0.15);
+}
+
+.ai-chat-send-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #2C7A7B;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-chat-send-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ai-chat-send-btn:not(:disabled):hover {
+  background: #1a5a5b;
+}
+
+.ai-key-row {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ai-key-input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: inherit;
+  background: white;
+}
+
+.ai-key-input:focus {
+  outline: none;
+  border-color: #2C7A7B;
+}
+
+.ai-key-save {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: #2C7A7B;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ai-key-save:hover {
+  background: #1a5a5b;
+}

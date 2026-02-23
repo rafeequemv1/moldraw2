@@ -157,74 +157,19 @@
       gtag('config', 'G-0GXXMTT1RP');
     </script>
     
+    
     <!-- Crisp Chat -->
+    <style>
+      .crisp-client .cc-1brb6[data-full-view=true] .cc-1brb6[data-visible=true] {
+        bottom: 18px !important;
+        right: 18px !important;
+      }
+    </style>
     <script type="text/javascript">
       window.$crisp=[];
       window.CRISP_WEBSITE_ID="0ba021f9-3b4c-45b5-a780-c53b592ae9f1";
-      (function(){
-        d=document;
-        s=d.createElement("script");
-        s.src="https://client.crisp.chat/l.js";
-        s.async=1;
-        d.getElementsByTagName("head")[0].appendChild(s);
-      })();
-      
-      // Position Crisp chat on left side of 3D editor after it loads
-      window.addEventListener('load', function() {
-        function positionCrispChat() {
-          var crispChat = document.getElementById('crisp-chatbox');
-          if (crispChat) {
-            // Find the 3D viewer panel
-            var viewerPanel = document.querySelector('[data-testid="viewer-panel"]') || 
-                             document.querySelector('.viewer-panel');
-            
-            if (viewerPanel) {
-              var rect = viewerPanel.getBoundingClientRect();
-              // Position 20px from the left edge of the 3D viewer panel
-              crispChat.style.left = (rect.left + 20) + 'px';
-              crispChat.style.right = 'auto';
-              crispChat.style.bottom = '20px';
-              crispChat.style.position = 'fixed';
-            } else {
-              // Fallback: assume 50% split layout
-              crispChat.style.left = 'calc(50% + 20px)';
-              crispChat.style.right = 'auto';
-              crispChat.style.bottom = '20px';
-            }
-          }
-        }
-        
-        // Try multiple times as Crisp loads asynchronously
-        setTimeout(positionCrispChat, 500);
-        setTimeout(positionCrispChat, 1000);
-        setTimeout(positionCrispChat, 2000);
-        setTimeout(positionCrispChat, 3000);
-        
-        // Also watch for Crisp to be added to DOM
-        var observer = new MutationObserver(function(mutations) {
-          positionCrispChat();
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-        
-        // Reposition on window resize
-        window.addEventListener('resize', positionCrispChat);
-      });
+      (function(){var d=document;var s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
     </script>
-    <style>
-      /* Position Crisp chat widget on left side of 3D editor */
-      #crisp-chatbox {
-        right: auto !important;
-        bottom: 20px !important;
-        position: fixed !important;
-      }
-      
-      @media (max-width: 768px) {
-        #crisp-chatbox {
-          left: 20px !important;
-          bottom: 16px !important;
-        }
-      }
-    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

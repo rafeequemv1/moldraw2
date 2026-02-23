@@ -6,6 +6,8 @@ function App() {
   const viewerInstanceRef = useRef(null);
   const viewerBgRef = useRef({ color: '#f8f9fa', alpha: 1 });
   const iframeRef = useRef(null);
+  const proteinModelRef = useRef(null);
+  const lastModelRef = useRef(null);
   const [is3DReady, setIs3DReady] = useState(false);
   const [isKetcherReady, setIsKetcherReady] = useState(false);
   const [showHydrogens, setShowHydrogens] = useState(false);
@@ -14,13 +16,47 @@ function App() {
   const [currentMolecule, setCurrentMolecule] = useState(null);
   const lastMoleculeRef = useRef(null);
   const [moleculeName, setMoleculeName] = useState('');
+  const [iupacName, setIupacName] = useState('');
+  const [boilingPoint, setBoilingPoint] = useState(null);
+  const [meltingPoint, setMeltingPoint] = useState(null);
   const [isNaming, setIsNaming] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [is3DPanelOpen, setIs3DPanelOpen] = useState(true);
   const [isProtein, setIsProtein] = useState(false);
+  const [proteinMeta, setProteinMeta] = useState(null);
+  const [molecularMass, setMolecularMass] = useState(null);
+  const [multiStructure, setMultiStructure] = useState(false);
   const fileInputRef = useRef(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [geminiApiKey, setGeminiApiKey] = useState(() => {
+    try { return localStorage.getItem('moldraw_gemini_key') || ''; } catch { return ''; }
+  });
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const lastSmilesForAIRef = useRef(null);
+  const lastMolfileForAIRef = useRef(null);
+  const iupacRequestedRef = useRef(false);
+  const copySmilesRequestedRef = useRef(false);
+  const [smilesCopied, setSmilesCopied] = useState(false);
+  const [currentSmiles, setCurrentSmiles] = useState('');
+  const [nmrData, setNmrData] = useState(null);
+  const [showNmrModal, setShowNmrModal] = useState(false);
+  const [isNmrLoading, setIsNmrLoading] = useState(false);
+
+  // Close AI chat when Crisp opens; mutual exclusivity
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (window.$crisp && typeof window.$crisp.is === 'function') {
+        clearInterval(interval);
+        window.$crisp.push(['on', 'chat:opened', () => setIsChatOpen(false)]);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Initialize IndexedDB for caching
   useEffect(() => {
@@ -155,6 +191,25 @@ function App() {
     return /^[A-Z0-9]{4}$/.test(trimmed);
   };
 
+  const fetchPDBMetadata = async (pdbId) => {
+    try {
+      const res = await fetch(`https://data.rcsb.org/rest/v1/core/entry/${pdbId}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const meta = {};
+      if (data.struct?.title) meta.title = data.struct.title;
+      if (data.rcsb_entry_info?.molecular_weight) meta.mw = data.rcsb_entry_info.molecular_weight;
+      if (data.rcsb_entry_info?.deposited_atom_count) meta.atomCount = data.rcsb_entry_info.deposited_atom_count;
+      if (data.rcsb_entry_info?.deposited_polymer_entity_instance_count) meta.chains = data.rcsb_entry_info.deposited_polymer_entity_instance_count;
+      if (data.rcsb_entry_info?.resolution_combined?.[0]) meta.resolution = data.rcsb_entry_info.resolution_combined[0];
+      if (data.rcsb_entry_info?.experimental_method) meta.method = data.rcsb_entry_info.experimental_method;
+      if (data.rcsb_accession_info?.deposit_date) meta.depositDate = data.rcsb_accession_info.deposit_date?.split('T')[0];
+      if (data.pdbx_vrpt_summary?.pdbresolution) meta.resolution = meta.resolution || data.pdbx_vrpt_summary.pdbresolution;
+      meta.pdbId = pdbId;
+      return meta;
+    } catch { return null; }
+  };
+
   // Fetch PDB structure by ID from RCSB PDB database
   const fetchPDBByID = async (pdbId) => {
     try {
@@ -178,20 +233,19 @@ function App() {
         }
 
         const viewer = viewerInstanceRef.current;
-        
-        // Clear any existing molecule data
-        setCurrentMolecule(null);
-        setMoleculeName('');
-        lastMoleculeRef.current = null;
-        
-        // Clear viewer and load PDB
+
+        // Clear previous content (labels, models) before loading protein
+        viewer.removeAllLabels();
         viewer.clear();
-        viewer.addModel(pdbText, 'pdb');
 
-        // Set style for protein (cartoon representation)
-        viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
+        const model = viewer.addModel(pdbText, 'pdb');
+        proteinModelRef.current = model;
+        lastModelRef.current = model;
 
-        // Store PDB data
+        if (model) {
+          model.setStyle({}, { cartoon: { color: 'spectrum' } });
+        }
+
         setCurrentMolecule({
           data: pdbText,
           format: 'pdb',
@@ -204,10 +258,26 @@ function App() {
         setMoleculeName(upperPDBId);
         setSearchQuery('');
 
+        // Fetch and set protein metadata from RCSB API
+        fetchPDBMetadata(upperPDBId).then(meta => {
+          if (meta) {
+            setProteinMeta(meta);
+            if (meta.title) setMoleculeName(upperPDBId + ' — ' + meta.title);
+          }
+        });
+
         // Center and zoom
         viewer.zoomTo();
         viewer.rotate(25, { x: 1, y: 1, z: 0 });
         viewer.render();
+
+        // Update molecular mass for the newly imported protein
+        if (model) {
+          const atoms = model.selectedAtoms({});
+          setMolecularMass(calculateMolecularMass(atoms, showHydrogens));
+        } else {
+          setMolecularMass(null);
+        }
 
         setIsSearching(false);
       } else {
@@ -220,6 +290,9 @@ function App() {
       setIsSearching(false);
     }
   };
+
+  // Flag to suppress the next 3D update coming from Ketcher polling
+  const suppressNext3DUpdateRef = useRef(false);
 
   const searchMoleculeByName = async (moleculeName) => {
     if (!moleculeName || moleculeName.trim() === '') {
@@ -253,16 +326,63 @@ function App() {
           console.log('Got SMILES:', smiles);
           console.log('Ketcher ready:', isKetcherReady);
 
-          // Load SMILES into Ketcher
+          // Load SMILES into Ketcher (2D) and add to 3D without clearing
           if (iframeRef.current && isKetcherReady) {
             console.log('Sending set-molecule message to Ketcher');
+
+            // Tell the Ketcher polling pipeline to ignore the very next molfile update
+            suppressNext3DUpdateRef.current = true;
+
             iframeRef.current.contentWindow.postMessage({
-              type: 'set-molecule',
+              type: 'append-molecule',
               smiles: smiles
             }, '*');
 
             setSearchQuery('');
             setSearchError('');
+
+            // Also add this structure directly to the 3D scene without clearing
+            try {
+              if (viewerInstanceRef.current) {
+                const viewer = viewerInstanceRef.current;
+                const structure3D = await convertSmilesTo3D(smiles);
+                const structureData = structure3D;
+                const format = 'sdf';
+
+                if (structureData) {
+                  const lines = structureData.split('\n');
+                  const countsLine = lines.find(line => line.trim().match(/^\s*\d+\s+\d+/));
+                  if (countsLine) {
+                    const parts = countsLine.trim().split(/\s+/);
+                    const atomCount = parseInt(parts[0]) || 0;
+                    if (atomCount > 0) {
+                      const model = viewer.addModel(structureData, format);
+                      lastModelRef.current = model;
+                      applyRenderStyle(viewer, renderStyle, false);
+                      viewer.zoomTo();
+                      viewer.rotate(25, { x: 1, y: 1, z: 0 });
+                      viewer.render();
+
+                      // Update name and mass for the newly added molecule
+                      getMoleculeName(smiles);
+                      try {
+                        if (model) {
+                          const atoms = model.selectedAtoms({});
+                          setMolecularMass(calculateMolecularMass(atoms, showHydrogens));
+                        } else {
+                          setMolecularMass(null);
+                        }
+                      } catch (err) {
+                        console.error('Error updating molecular mass after PubChem add:', err);
+                        setMolecularMass(null);
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('Error adding PubChem structure to 3D viewer:', err);
+            }
           } else {
             setSearchError('Editor not ready. Please try again.');
           }
@@ -281,35 +401,54 @@ function App() {
     }
   };
 
-  // Get molecule name from PubChem
+  const clearMoleculeProps = () => {
+    setMoleculeName('');
+    setIupacName('');
+    setBoilingPoint(null);
+    setMeltingPoint(null);
+    setCurrentSmiles('');
+    setNmrData(null);
+  };
+
+  // Get molecule name + physical properties from PubChem
   const getMoleculeName = async (smiles) => {
     if (!smiles || smiles.trim() === '') {
-      setMoleculeName('');
+      clearMoleculeProps();
       return;
     }
 
     try {
       setIsNaming(true);
-
-      // URL encode SMILES
       const encodedSmiles = encodeURIComponent(smiles);
 
-      // PubChem REST API - get compound by SMILES
-      const apiUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodedSmiles}/property/IUPACName,Title/JSON`;
+      // Fetch compound name + IUPAC name
+      const propsUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodedSmiles}/property/IUPACName,Title/JSON`;
+      const propsRes = await fetch(propsUrl);
 
-      const response = await fetch(apiUrl);
+      if (propsRes.ok) {
+        const data = await propsRes.json();
+        const props = data?.PropertyTable?.Properties?.[0];
+        if (props) {
+          setMoleculeName(props.Title || props.IUPACName || 'Unknown compound');
+          setIupacName(props.IUPACName || '');
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.PropertyTable && data.PropertyTable.Properties && data.PropertyTable.Properties[0]) {
-          const compound = data.PropertyTable.Properties[0];
-          const name = compound.Title || compound.IUPACName || 'Unknown compound';
-          setMoleculeName(name);
+          const cid = props.CID;
+          if (cid) {
+            fetchPhysicalProperties(cid, smiles);
+          } else {
+            setBoilingPoint(null);
+            setMeltingPoint(null);
+          }
+
+          // If PubChem didn't return an IUPAC name, try Gemini
+          if (!props.IUPACName && geminiApiKey) {
+            fetchIupacFromGemini(smiles);
+          }
         } else {
-          setMoleculeName('Not found in PubChem');
+          fallbackNameFromGemini(smiles);
         }
       } else {
-        setMoleculeName('Not found in PubChem');
+        fallbackNameFromGemini(smiles);
       }
 
       setIsNaming(false);
@@ -317,6 +456,250 @@ function App() {
       console.error('Error getting molecule name:', error);
       setMoleculeName('Name lookup failed');
       setIsNaming(false);
+    }
+  };
+
+  const fetchPhysicalProperties = async (cid, smiles) => {
+    let bp = null;
+    let mp = null;
+    try {
+      const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/${cid}/JSON?heading=Experimental+Properties`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        const sections = json?.Record?.Section || [];
+        const findByHeading = (arr, heading) => {
+          for (const s of arr) {
+            if (s.TOCHeading === heading) return s;
+            if (s.Section) {
+              const found = findByHeading(s.Section, heading);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+
+        const bpSection = findByHeading(sections, 'Boiling Point');
+        if (bpSection?.Information?.[0]?.Value?.StringWithMarkup?.[0]?.String) {
+          bp = bpSection.Information[0].Value.StringWithMarkup[0].String;
+        } else if (bpSection?.Information?.[0]?.Value?.Number) {
+          bp = `${bpSection.Information[0].Value.Number[0]} ${bpSection.Information[0].Value.Unit || ''}`.trim();
+        }
+
+        const mpSection = findByHeading(sections, 'Melting Point');
+        if (mpSection?.Information?.[0]?.Value?.StringWithMarkup?.[0]?.String) {
+          mp = mpSection.Information[0].Value.StringWithMarkup[0].String;
+        } else if (mpSection?.Information?.[0]?.Value?.Number) {
+          mp = `${mpSection.Information[0].Value.Number[0]} ${mpSection.Information[0].Value.Unit || ''}`.trim();
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching physical properties:', err);
+    }
+
+    setBoilingPoint(bp);
+    setMeltingPoint(mp);
+
+    // If PubChem didn't have MP/BP, try Gemini prediction
+    if ((!bp || !mp) && geminiApiKey && smiles) {
+      fetchMpBpFromGemini(smiles, bp, mp);
+    }
+  };
+
+  const fetchMpBpFromGemini = async (smiles, existingBp, existingMp) => {
+    try {
+      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Predict the melting point and boiling point of this molecule (SMILES: ${smiles}). Reply as JSON only: {"assistant_message":"...","canvas_action":"none","smiles":null,"mp":"melting point °C or null","bp":"boiling point °C or null"}. Use approximate values with ~ if needed. Include °C unit.`,
+          smiles,
+          apiKey: geminiApiKey,
+        }),
+      });
+      const data = await resp.json();
+      let raw = data?.reply || '';
+      const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) raw = fenceMatch[1].trim();
+      const obj = JSON.parse(raw);
+      if (!existingMp && obj?.mp && obj.mp !== 'null') setMeltingPoint(obj.mp + ' (predicted)');
+      if (!existingBp && obj?.bp && obj.bp !== 'null') setBoilingPoint(obj.bp + ' (predicted)');
+    } catch { /* silent */ }
+  };
+
+  // Predict NMR spectrum using Gemini
+  const predictNMR = async () => {
+    const smiles = currentSmiles || lastSmilesForAIRef.current;
+    if (!smiles) { alert('No molecule on canvas to predict NMR for.'); return; }
+    if (!geminiApiKey) { alert('Gemini API key required. Set it in the AI assistant (⚙).'); return; }
+
+    setIsNmrLoading(true);
+    setShowNmrModal(true);
+    try {
+      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Predict the 1H NMR spectrum of this molecule (SMILES: ${smiles}).
+Return ONLY a JSON object with this format:
+{"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"title":"1H NMR of <molecule name>","peaks":[{"shift":7.26,"intensity":1.0,"label":"CHCl3"},{"shift":2.1,"intensity":3.0,"label":"CH3"}],"solvent":"CDCl3","frequency":"400 MHz"}}
+Each peak needs: shift (ppm as number), intensity (relative, 0-1 float where tallest=1.0), and label (assignment like CH3, ArH, OH etc).
+Include ALL expected peaks. Use realistic chemical shift values.`,
+          smiles,
+          apiKey: geminiApiKey,
+        }),
+      });
+      const data = await resp.json();
+      let raw = data?.reply || '';
+      const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) raw = fenceMatch[1].trim();
+      const obj = JSON.parse(raw);
+      if (obj?.nmr?.peaks?.length) {
+        setNmrData(obj.nmr);
+      } else {
+        setNmrData(null);
+        alert('Could not predict NMR peaks for this molecule.');
+      }
+    } catch (err) {
+      console.error('NMR prediction error:', err);
+      setNmrData(null);
+      alert('Failed to predict NMR. Check your API key and try again.');
+    } finally {
+      setIsNmrLoading(false);
+    }
+  };
+
+  const generateNmrSvg = (nmr) => {
+    if (!nmr?.peaks?.length) return '';
+    const W = 800, H = 350, PAD_L = 60, PAD_R = 30, PAD_T = 40, PAD_B = 60;
+    const plotW = W - PAD_L - PAD_R;
+    const plotH = H - PAD_T - PAD_B;
+
+    // ppm range (NMR convention: high ppm on left)
+    const shifts = nmr.peaks.map(p => p.shift);
+    const minPpm = Math.max(0, Math.floor(Math.min(...shifts)) - 1);
+    const maxPpm = Math.ceil(Math.max(...shifts)) + 1;
+    const ppmRange = maxPpm - minPpm || 1;
+
+    const ppmToX = (ppm) => PAD_L + plotW * (1 - (ppm - minPpm) / ppmRange);
+
+    // Build SVG
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="background:#fff;font-family:'Inter','Helvetica',sans-serif">`;
+
+    // Title
+    svg += `<text x="${W / 2}" y="22" text-anchor="middle" font-size="14" font-weight="600" fill="#111">${nmr.title || '1H NMR Spectrum'}${nmr.frequency ? ' (' + nmr.frequency + ')' : ''}</text>`;
+    if (nmr.solvent) {
+      svg += `<text x="${W / 2}" y="36" text-anchor="middle" font-size="10" fill="#888">Solvent: ${nmr.solvent} | AI-predicted</text>`;
+    }
+
+    // Axes
+    svg += `<line x1="${PAD_L}" y1="${PAD_T + plotH}" x2="${PAD_L + plotW}" y2="${PAD_T + plotH}" stroke="#333" stroke-width="1.5"/>`;
+    svg += `<line x1="${PAD_L}" y1="${PAD_T}" x2="${PAD_L}" y2="${PAD_T + plotH}" stroke="#333" stroke-width="1"/>`;
+
+    // X-axis labels (ppm, reversed)
+    for (let p = Math.ceil(minPpm); p <= Math.floor(maxPpm); p++) {
+      const x = ppmToX(p);
+      svg += `<line x1="${x}" y1="${PAD_T + plotH}" x2="${x}" y2="${PAD_T + plotH + 5}" stroke="#333" stroke-width="1"/>`;
+      svg += `<text x="${x}" y="${PAD_T + plotH + 18}" text-anchor="middle" font-size="11" fill="#333">${p}</text>`;
+      // Grid lines
+      svg += `<line x1="${x}" y1="${PAD_T}" x2="${x}" y2="${PAD_T + plotH}" stroke="#eee" stroke-width="0.5"/>`;
+    }
+    svg += `<text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="12" fill="#555">Chemical Shift (ppm)</text>`;
+    svg += `<text x="14" y="${PAD_T + plotH / 2}" text-anchor="middle" font-size="11" fill="#555" transform="rotate(-90,14,${PAD_T + plotH / 2})">Intensity</text>`;
+
+    // Peaks as Lorentzian-like curves
+    const peakWidth = 0.04 * (ppmRange / 12);
+    const maxIntensity = Math.max(...nmr.peaks.map(p => p.intensity || 1));
+
+    nmr.peaks.forEach((peak, i) => {
+      const cx = ppmToX(peak.shift);
+      const normI = (peak.intensity || 1) / maxIntensity;
+      const peakH = normI * (plotH - 20);
+      const hw = Math.max(8, peakWidth * plotW / ppmRange);
+
+      // Draw peak as a thin triangle/spike
+      const baseY = PAD_T + plotH;
+      const topY = baseY - peakH;
+
+      svg += `<polygon points="${cx - hw},${baseY} ${cx},${topY} ${cx + hw},${baseY}" fill="rgba(44,122,123,0.6)" stroke="#2C7A7B" stroke-width="1"/>`;
+
+      // Label
+      svg += `<text x="${cx}" y="${topY - 6}" text-anchor="middle" font-size="9" fill="#2C7A7B" font-weight="500">${peak.label || ''}</text>`;
+      svg += `<text x="${cx}" y="${topY - 16}" text-anchor="middle" font-size="8" fill="#666">${peak.shift.toFixed(2)}</text>`;
+    });
+
+    svg += '</svg>';
+    return svg;
+  };
+
+  const downloadNmrSvg = () => {
+    const svg = generateNmrSvg(nmrData);
+    if (!svg) return;
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nmr_${(nmrData?.title || 'spectrum').replace(/[^a-zA-Z0-9]/g, '_')}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Fetch only IUPAC name from Gemini (supplements PubChem data)
+  const fetchIupacFromGemini = async (smiles) => {
+    if (!geminiApiKey || !smiles) return;
+    try {
+      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Give me ONLY the IUPAC name of this SMILES: ${smiles}. Reply as JSON: {"assistant_message":"...","canvas_action":"none","smiles":null,"iupac":"IUPAC name here"}`,
+          smiles,
+          apiKey: geminiApiKey,
+        }),
+      });
+      const data = await resp.json();
+      let raw = data?.reply || '';
+      const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) raw = fenceMatch[1].trim();
+      const obj = JSON.parse(raw);
+      if (obj?.iupac) setIupacName(obj.iupac);
+    } catch { /* silent */ }
+  };
+
+  const fallbackNameFromGemini = async (smiles) => {
+    if (!geminiApiKey || !smiles) {
+      setMoleculeName('');
+      setIupacName('');
+      setBoilingPoint(null);
+      setMeltingPoint(null);
+      return;
+    }
+    try {
+      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Give me the IUPAC name, common name, melting point, and boiling point of this SMILES: ${smiles}. Reply as JSON only: {"assistant_message":"...","canvas_action":"none","smiles":null,"iupac":"IUPAC name","common":"common name or null","mp":"melting point °C or null","bp":"boiling point °C or null"}`,
+          smiles,
+          apiKey: geminiApiKey,
+        }),
+      });
+      const data = await resp.json();
+      let raw = data?.reply || '';
+      const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) raw = fenceMatch[1].trim();
+      const obj = JSON.parse(raw);
+      const iupac = obj?.iupac || '';
+      const common = obj?.common || '';
+      setMoleculeName(common || iupac || 'AI-derived name');
+      setIupacName(iupac);
+      setMeltingPoint(obj?.mp && obj.mp !== 'null' ? obj.mp + ' (predicted)' : null);
+      setBoilingPoint(obj?.bp && obj.bp !== 'null' ? obj.bp + ' (predicted)' : null);
+    } catch {
+      setMoleculeName('');
+      setIupacName('');
+      setBoilingPoint(null);
+      setMeltingPoint(null);
     }
   };
 
@@ -449,6 +832,7 @@ function App() {
 
     try {
       const viewer = viewerInstanceRef.current;
+      viewer.removeAllLabels();
       viewer.clear();
 
       // Get molecule name from PubChem
@@ -474,7 +858,8 @@ function App() {
         const atomCount = parseInt(parts[0]) || 0;
 
         if (atomCount > 0) {
-          viewer.addModel(structureData, format);
+          const model = viewer.addModel(structureData, format);
+          lastModelRef.current = model;
 
           // Store current molecule for export - prefer 3D structure for accurate bond lengths
           // If we have 3D structure, use it; otherwise use molfile
@@ -496,6 +881,20 @@ function App() {
           viewer.zoomTo();
           viewer.rotate(25, { x: 1, y: 1, z: 0 });
           viewer.render();
+
+          // Update molecular mass: prefer 3D model atoms, fall back to molfile parsing
+          try {
+            let mass = null;
+            if (model) {
+              const atoms = model.selectedAtoms({});
+              mass = calculateMolecularMass(atoms, showHydrogens);
+            }
+            if (!mass) mass = calculateMassFromMolfile(molfile);
+            setMolecularMass(mass);
+          } catch (err) {
+            console.error('Error updating molecular mass after 3D update:', err);
+            setMolecularMass(calculateMassFromMolfile(molfile));
+          }
         } else {
           viewer.addLabel('Draw a structure → see in 3D', {
             position: { x: 0, y: 0, z: 0 },
@@ -505,7 +904,8 @@ function App() {
           });
           viewer.render();
           setCurrentMolecule(null);
-          setMoleculeName('');
+          clearMoleculeProps();
+          setMolecularMass(null);
         }
       }
     } catch (error) {
@@ -517,16 +917,25 @@ function App() {
   useEffect(() => {
     if (viewerInstanceRef.current && currentMolecule) {
       if (isProtein) {
-        // Handle protein styles
         const viewer = viewerInstanceRef.current;
-        if (renderStyle === 'cartoon') {
-          viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
-        } else if (renderStyle === 'stick') {
-          viewer.setStyle({}, { stick: { radius: 0.15 } });
-        } else if (renderStyle === 'sphere') {
-          viewer.setStyle({}, { sphere: { scale: 0.6 } });
-        } else {
-          viewer.setStyle({}, { line: {} });
+        const proteinModel = proteinModelRef.current;
+        viewer.removeAllSurfaces();
+        if (proteinModel) {
+          if (renderStyle === 'cartoon') {
+            proteinModel.setStyle({}, { cartoon: { color: 'spectrum' } });
+          } else if (renderStyle === 'stick') {
+            proteinModel.setStyle({}, { stick: { radius: 0.15 } });
+          } else if (renderStyle === 'sphere') {
+            proteinModel.setStyle({}, { sphere: { scale: 0.6 } });
+          } else if (renderStyle === 'surface') {
+            proteinModel.setStyle({}, { cartoon: { hidden: true } });
+            viewer.addSurface(window.$3Dmol.SurfaceType.VDW, {
+              opacity: 0.9,
+              colorscheme: { prop: 'b', gradient: 'rwb' },
+            });
+          } else {
+            proteinModel.setStyle({}, { line: {} });
+          }
         }
       } else {
         applyRenderStyle(viewerInstanceRef.current, renderStyle, false);
@@ -548,10 +957,40 @@ function App() {
       if (event.data.type === 'ketcher-ready') {
         setIsKetcherReady(true);
         console.log('Ketcher 3.7.0 is ready');
+
+        // Restore saved canvas from localStorage
+        try {
+          const saved = localStorage.getItem('moldraw_canvas');
+          if (saved && iframeRef.current) {
+            const parsed = JSON.parse(saved);
+            if (parsed.molfile && parsed.molfile.trim()) {
+              setTimeout(() => {
+                iframeRef.current.contentWindow.postMessage({ type: 'set-molecule', smiles: parsed.molfile }, '*');
+              }, 500);
+            }
+          }
+        } catch {}
       } else if (event.data.type === 'molfile-response') {
         const newMolfile = event.data.molfile;
 
-        // Only update if molecule changed
+        // Auto-save canvas to localStorage (skip empty canvases)
+        try {
+          const lines = (newMolfile || '').split('\n');
+          const countsLine = lines.find(l => l.trim().match(/^\s*\d+\s+\d+/));
+          const atomCount = countsLine ? parseInt(countsLine.trim().split(/\s+/)[0]) || 0 : 0;
+          if (atomCount > 0) {
+            localStorage.setItem('moldraw_canvas', JSON.stringify({ molfile: newMolfile, ts: Date.now() }));
+          } else {
+            localStorage.removeItem('moldraw_canvas');
+          }
+        } catch {}
+
+        if (suppressNext3DUpdateRef.current) {
+          suppressNext3DUpdateRef.current = false;
+          lastMoleculeRef.current = newMolfile;
+          return;
+        }
+
         if (newMolfile !== lastMoleculeRef.current) {
           lastMoleculeRef.current = newMolfile;
 
@@ -560,7 +999,7 @@ function App() {
           if (isProtein) {
             setIsProtein(false);
             setCurrentMolecule(null);
-            setMoleculeName('');
+            clearMoleculeProps();
             if (viewerInstanceRef.current) {
               viewerInstanceRef.current.clear();
             }
@@ -585,12 +1024,55 @@ function App() {
         const molfile = window.tempMolfile;
         const smiles = event.data.smiles;
 
-        // Only update 3D if we have a molfile (normal flow) and not in protein mode
-        if (molfile && !isProtein) {
-          updateMolecule3D(molfile, smiles);
+        // Track latest structure for AI assistant and display
+        if (smiles && smiles.trim() !== '') {
+          lastSmilesForAIRef.current = smiles;
+          setCurrentSmiles(smiles);
+          // Detect multiple disconnected structures (dot-separated SMILES)
+          const hasDot = smiles.includes('.');
+          setMultiStructure(hasDot);
+        }
+        if (molfile) {
+          lastMolfileForAIRef.current = molfile;
         }
 
-        delete window.tempMolfile;
+        // Copy SMILES to clipboard if requested
+        if (copySmilesRequestedRef.current) {
+          copySmilesRequestedRef.current = false;
+          if (smiles && smiles.trim() !== '') {
+            navigator.clipboard.writeText(smiles).then(() => {
+              setSmilesCopied(true);
+              setTimeout(() => setSmilesCopied(false), 1500);
+            }).catch(() => {
+              alert('Failed to copy SMILES to clipboard.');
+            });
+          }
+        }
+
+        // If the user clicked the IUPAC button, always look up properties
+        if (iupacRequestedRef.current) {
+          iupacRequestedRef.current = false;
+          if (smiles && smiles.trim() !== '') {
+            getMoleculeName(smiles);
+          }
+          if (molfile) {
+            if (!isProtein) {
+              updateMolecule3D(molfile, smiles);
+            }
+            delete window.tempMolfile;
+          }
+          return;
+        }
+
+        // Normal flow: molfile came from a prior get-molfile request
+        if (molfile) {
+          if (!isProtein) {
+            updateMolecule3D(molfile, smiles);
+          }
+          delete window.tempMolfile;
+        } else if (smiles && smiles.trim() !== '') {
+          getMoleculeName(smiles);
+        }
       } else if (event.data.type === 'svg-response') {
         const svg = event.data.svg;
         // Download SVG
@@ -624,9 +1106,57 @@ function App() {
           console.error('Error downloading PNG:', error);
           alert('Failed to download PNG. Please try again.');
         }
+      } else if (event.data.type === 'png-response-jpeg') {
+        // Convert PNG to JPEG and download
+        try {
+          const pngData = event.data.pngData;
+          const blob = new Blob([pngData], { type: 'image/png' });
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              canvas.toBlob((jpegBlob) => {
+                if (!jpegBlob) {
+                  throw new Error('Failed to create JPEG blob');
+                }
+                const jpegUrl = URL.createObjectURL(jpegBlob);
+                const link = document.createElement('a');
+                link.href = jpegUrl;
+                link.download = 'molecule.jpg';
+                link.click();
+                URL.revokeObjectURL(jpegUrl);
+              }, 'image/jpeg', 0.95);
+            } catch (err) {
+              console.error('Error converting PNG to JPEG:', err);
+              alert('Failed to convert PNG to JPEG. Please try again.');
+            } finally {
+              URL.revokeObjectURL(url);
+            }
+          };
+
+          img.onerror = (err) => {
+            console.error('Image load error for JPEG conversion:', err);
+            URL.revokeObjectURL(url);
+            alert('Failed to process image for JPEG download.');
+          };
+
+          img.src = url;
+        } catch (error) {
+          console.error('Error downloading JPEG:', error);
+          alert('Failed to download JPEG. Please try again.');
+        }
       } else if (event.data.type === 'png-error') {
         console.error('PNG export error:', event.data.error);
         alert('Failed to export PNG: ' + (event.data.error || 'Unknown error'));
+      } else if (event.data.type === 'png-error-jpeg') {
+        console.error('PNG (for JPEG) export error:', event.data.error);
+        alert('Failed to export JPEG: ' + (event.data.error || 'Unknown error'));
       } else if (event.data.type === 'molecule-set') {
         console.log('Molecule set in Ketcher:', event.data);
         if (event.data.success) {
@@ -647,13 +1177,11 @@ function App() {
   // Debounce timeout ref for 3D updates
   const debounceTimeoutRef = useRef(null);
 
-  // Poll for changes - debounced updates handled in message handler
-  // Only poll when not in protein mode (proteins are static, no need to poll)
+  // Poll for changes - skip when protein loaded or multiple structures on canvas
   useEffect(() => {
-    if (isKetcherReady && is3DReady && !isProtein) {
-      // Poll every 2 seconds to check for changes
+    if (isKetcherReady && is3DReady && !isProtein && !multiStructure) {
       const interval = setInterval(() => {
-        if (iframeRef.current && isKetcherReady && !isProtein) {
+        if (iframeRef.current && isKetcherReady && !isProtein && !multiStructure) {
           iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
         }
       }, 2000);
@@ -664,11 +1192,118 @@ function App() {
         }
       };
     }
-  }, [isKetcherReady, is3DReady, isProtein]);
+  }, [isKetcherReady, is3DReady, isProtein, multiStructure]);
 
   // Toggle hydrogens
   const toggleHydrogens = () => {
     setShowHydrogens(!showHydrogens);
+  };
+
+  // Manual refresh: trigger 3D update from current canvas
+  const refreshManual3D = () => {
+    if (iframeRef.current && isKetcherReady) {
+      iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
+    }
+  };
+
+  // Close/hide currently loaded protein from 3D viewer
+  const closeProtein = () => {
+    if (viewerInstanceRef.current && proteinModelRef.current) {
+      try {
+        const viewer = viewerInstanceRef.current;
+        viewer.removeModel(proteinModelRef.current);
+        viewer.render();
+      } catch (error) {
+        console.error('Error removing protein model:', error);
+      }
+    }
+    proteinModelRef.current = null;
+    setIsProtein(false);
+    setProteinMeta(null);
+    setCurrentMolecule(null);
+    clearMoleculeProps();
+    setMolecularMass(null);
+  };
+
+  const runCanvasActionFromAI = (actionObj) => {
+    if (!actionObj || !iframeRef.current || !isKetcherReady) return;
+    const { canvas_action, smiles } = actionObj;
+
+    if (canvas_action === 'clear') {
+      iframeRef.current.contentWindow.postMessage({ type: 'clear-editor' }, '*');
+    } else if (canvas_action === 'set_smiles' && smiles && smiles.trim() !== '') {
+      iframeRef.current.contentWindow.postMessage({ type: 'set-molecule', smiles: smiles.trim() }, '*');
+    } else if (canvas_action === 'append_smiles' && smiles && smiles.trim() !== '') {
+      iframeRef.current.contentWindow.postMessage({ type: 'append-molecule', smiles: smiles.trim() }, '*');
+    }
+  };
+
+  const sendChatMessage = async () => {
+    const text = chatInput.trim();
+    if (!text || isChatLoading) return;
+
+    if (!geminiApiKey) {
+      setShowApiKeyInput(true);
+      setChatMessages((msgs) => [...msgs, { role: 'assistant', text: 'Please enter your Gemini API key above to get started.' }]);
+      return;
+    }
+
+    const userMsg = { role: 'user', text };
+    setChatMessages((msgs) => [...msgs, userMsg]);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      // Build conversation history for context
+      const history = chatMessages.map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        text: m.text,
+      }));
+
+      const resp = await fetch('http://localhost:3001/api/gemini-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: text,
+          smiles: lastSmilesForAIRef.current || null,
+          molfile: lastMolfileForAIRef.current || null,
+          apiKey: geminiApiKey,
+          history,
+        }),
+      });
+
+      const data = await resp.json();
+      let replyText = data?.reply
+        ? data.reply
+        : data?.error
+          ? `Error: ${data.error}`
+          : 'No response.';
+
+      // Try to parse structured JSON response from Gemini
+      let actionObj = null;
+      try {
+        let raw = replyText;
+        const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (fenceMatch) raw = fenceMatch[1].trim();
+        actionObj = JSON.parse(raw);
+        if (!actionObj || typeof actionObj !== 'object') actionObj = null;
+      } catch { actionObj = null; }
+
+      if (actionObj && actionObj.assistant_message) {
+        runCanvasActionFromAI(actionObj);
+        replyText = actionObj.assistant_message;
+      }
+
+      setChatMessages((msgs) => [...msgs, { role: 'assistant', text: replyText }]);
+    } catch (error) {
+      console.error('AI chat error:', error);
+      setChatMessages((msgs) => [
+        ...msgs,
+        { role: 'assistant', text: 'Could not reach the AI server. Make sure "npm run ai-server" is running.' },
+      ]);
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   // Handle PDB file import
@@ -691,19 +1326,19 @@ function App() {
       }
 
       const viewer = viewerInstanceRef.current;
-      
-      // Clear any existing molecule data
-      setCurrentMolecule(null);
-      setMoleculeName('');
-      lastMoleculeRef.current = null;
-      
-      // Clear viewer and load PDB
+
+      // Clear previous content (labels, models) before loading protein
+      viewer.removeAllLabels();
       viewer.clear();
-      viewer.addModel(pdbText, 'pdb');
-      
-      // Set style for protein (cartoon representation)
-      viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
-      
+
+      const model = viewer.addModel(pdbText, 'pdb');
+      proteinModelRef.current = model;
+      lastModelRef.current = model;
+
+      if (model) {
+        model.setStyle({}, { cartoon: { color: 'spectrum' } });
+      }
+
       // Store PDB data
       setCurrentMolecule({
         data: pdbText,
@@ -713,13 +1348,31 @@ function App() {
       });
       
       setIsProtein(true);
-      setRenderStyle('cartoon'); // Set default style for proteins
-      setMoleculeName(file.name.replace('.pdb', ''));
-      
+      setRenderStyle('cartoon');
+      const baseName = file.name.replace('.pdb', '').toUpperCase();
+      setMoleculeName(baseName);
+
+      // Try to parse PDB header for metadata
+      const headerMeta = { pdbId: baseName };
+      const titleMatch = pdbText.match(/^TITLE\s{5}(.+)/m);
+      if (titleMatch) headerMeta.title = titleMatch[1].trim();
+      const compndMatch = pdbText.match(/^COMPND\s{4}(.+)/m);
+      if (compndMatch) headerMeta.compound = compndMatch[1].trim();
+      setProteinMeta(headerMeta);
+      if (headerMeta.title) setMoleculeName(baseName + ' — ' + headerMeta.title);
+
       // Center and zoom
       viewer.zoomTo();
       viewer.rotate(25, { x: 1, y: 1, z: 0 });
       viewer.render();
+
+      // Update molecular mass for the newly imported protein
+      if (model) {
+        const atoms = model.selectedAtoms({});
+        setMolecularMass(calculateMolecularMass(atoms, showHydrogens));
+      } else {
+        setMolecularMass(null);
+      }
       
       // Reset file input
       if (fileInputRef.current) {
@@ -744,13 +1397,14 @@ function App() {
     let mimeType = 'text/plain';
 
     switch (format) {
-      case 'png':
+      case 'png': {
         // Export as PNG with transparent background
         const { color: bgColor, alpha: bgAlpha } = viewerBgRef.current;
         viewer.setBackgroundColor(0xffffff, 0); // Set transparent
         viewer.render();
         const canvas = viewer.getCanvas();
         canvas.toBlob((blob) => {
+          if (!blob) return;
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
@@ -762,6 +1416,28 @@ function App() {
           viewer.render();
         }, 'image/png');
         return;
+      }
+
+      case 'jpeg': {
+        // Export as JPEG with white background
+        const { color: bgColor, alpha: bgAlpha } = viewerBgRef.current;
+        viewer.setBackgroundColor(0xffffff, 1);
+        viewer.render();
+        const canvas = viewer.getCanvas();
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'molecule.jpg';
+          link.click();
+          URL.revokeObjectURL(url);
+          // Restore original background
+          viewer.setBackgroundColor(bgColor, bgAlpha);
+          viewer.render();
+        }, 'image/jpeg', 0.95);
+        return;
+      }
 
       case 'pdb':
         exportData = currentMolecule.data;
@@ -1290,6 +1966,80 @@ function App() {
     return radii[elem] || 0.25;
   };
 
+  const ATOMIC_WEIGHTS = {
+    H:1.008, He:4.003, Li:6.941, Be:9.012, B:10.81, C:12.011, N:14.007,
+    O:15.999, F:18.998, Ne:20.180, Na:22.990, Mg:24.305, Al:26.982,
+    Si:28.086, P:30.974, S:32.06, Cl:35.45, Ar:39.948, K:39.098,
+    Ca:40.078, Sc:44.956, Ti:47.867, V:50.942, Cr:51.996, Mn:54.938,
+    Fe:55.845, Co:58.933, Ni:58.693, Cu:63.546, Zn:65.38, Ga:69.723,
+    Ge:72.63, As:74.922, Se:78.971, Br:79.904, Kr:83.798, Rb:85.468,
+    Sr:87.62, Y:88.906, Zr:91.224, Nb:92.906, Mo:95.95, Ru:101.07,
+    Rh:102.91, Pd:106.42, Ag:107.87, Cd:112.41, In:114.82, Sn:118.71,
+    Sb:121.76, Te:127.60, I:126.90, Xe:131.29, Cs:132.91, Ba:137.33,
+    La:138.91, Ce:140.12, Pr:140.91, Nd:144.24, Sm:150.36, Eu:151.96,
+    Gd:157.25, Tb:158.93, Dy:162.50, Ho:164.93, Er:167.26, Tm:168.93,
+    Yb:173.05, Lu:174.97, Hf:178.49, Ta:180.95, W:183.84, Re:186.21,
+    Os:190.23, Ir:192.22, Pt:195.08, Au:196.97, Hg:200.59, Tl:204.38,
+    Pb:207.2, Bi:208.98, U:238.03
+  };
+
+  const getAtomicWeight = (elem) => ATOMIC_WEIGHTS[elem] || 0;
+
+  const calculateMolecularMass = (atoms, includeHydrogens) => {
+    if (!atoms || !atoms.length) return null;
+    let total = 0;
+    atoms.forEach((atom) => {
+      if (!atom || !atom.elem) return;
+      if (!includeHydrogens && atom.elem === 'H') return;
+      total += getAtomicWeight(atom.elem);
+    });
+    return total > 0 ? total : null;
+  };
+
+  const calculateMassFromMolfile = (molfile) => {
+    if (!molfile) return null;
+    try {
+      const lines = molfile.split('\n');
+      let countsIdx = -1;
+      for (let i = 0; i < Math.min(lines.length, 10); i++) {
+        if (lines[i].trim().match(/^\s*\d+\s+\d+/)) { countsIdx = i; break; }
+      }
+      if (countsIdx < 0) return null;
+      const parts = lines[countsIdx].trim().split(/\s+/);
+      const atomCount = parseInt(parts[0]) || 0;
+      if (atomCount <= 0) return null;
+
+      let total = 0;
+      for (let i = countsIdx + 1; i < countsIdx + 1 + atomCount && i < lines.length; i++) {
+        const cols = lines[i].trim().split(/\s+/);
+        if (cols.length >= 4) {
+          const elem = cols[3];
+          const w = ATOMIC_WEIGHTS[elem];
+          if (w) total += w;
+        }
+      }
+      return total > 0 ? total : null;
+    } catch { return null; }
+  };
+
+  // Recalculate molecular mass when hydrogens visibility or molecule changes
+  useEffect(() => {
+    try {
+      let mass = null;
+      if (lastModelRef.current) {
+        const atoms = lastModelRef.current.selectedAtoms({});
+        mass = calculateMolecularMass(atoms, showHydrogens);
+      }
+      if (!mass && currentMolecule && currentMolecule.data) {
+        mass = calculateMassFromMolfile(currentMolecule.data);
+      }
+      setMolecularMass(mass);
+    } catch (error) {
+      console.error('Error recalculating molecular mass:', error);
+      setMolecularMass(null);
+    }
+  }, [showHydrogens, currentMolecule]);
+
   return (
     <div className="App">
       <div className="split-container">
@@ -1340,74 +2090,73 @@ function App() {
             </div>
 
             <div className="header-links">
-              {/* SVG Download Button */}
               <button
-                className="header-svg-download-btn"
-                onClick={async () => {
+                className={`tb-btn${smilesCopied ? ' tb-copied' : ''}`}
+                onClick={() => {
                   if (iframeRef.current && isKetcherReady) {
-                    try {
-                      iframeRef.current.contentWindow.postMessage({ type: 'get-svg' }, '*');
-                    } catch (error) {
-                      console.error('Error requesting SVG:', error);
-                      alert('Failed to export SVG. Please try again.');
-                    }
-                  } else {
-                    alert('Editor not ready. Please wait a moment.');
+                    copySmilesRequestedRef.current = true;
+                    iframeRef.current.contentWindow.postMessage({ type: 'get-smiles' }, '*');
                   }
                 }}
-                title="Download structure as SVG"
+                title="Copy SMILES to clipboard"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>SVG</span>
+                {smilesCopied ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                )}
+                {smilesCopied ? 'Copied' : 'Copy'}
               </button>
 
-              {/* PNG Download Button */}
               <button
-                className="header-svg-download-btn"
+                className="tb-btn"
                 onClick={async () => {
-                  if (iframeRef.current && isKetcherReady) {
-                    try {
-                      iframeRef.current.contentWindow.postMessage({ type: 'get-png' }, '*');
-                    } catch (error) {
-                      console.error('Error requesting PNG:', error);
-                      alert('Failed to export PNG. Please try again.');
+                  if (!iframeRef.current || !isKetcherReady) return;
+                  try {
+                    const text = await navigator.clipboard.readText();
+                    const smiles = (text || '').trim();
+                    if (smiles) {
+                      iframeRef.current.contentWindow.postMessage({ type: 'set-molecule', smiles }, '*');
+                    } else {
+                      alert('Clipboard is empty. Copy a SMILES string first.');
                     }
-                  } else {
-                    alert('Editor not ready. Please wait a moment.');
+                  } catch {
+                    const smiles = prompt('Paste or type a SMILES string:');
+                    if (smiles && smiles.trim()) {
+                      iframeRef.current.contentWindow.postMessage({ type: 'set-molecule', smiles: smiles.trim() }, '*');
+                    }
                   }
                 }}
-                title="Download structure as PNG"
+                title="Paste SMILES from clipboard into editor"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>PNG</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+                Paste
               </button>
-              
-              <a
-                href="/course/index.html"
-                className="header-nav-link"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Learn how to use MolDraw"
-              >
-                Course
+
+              <div className="tb-sep" />
+
+              <button className="tb-btn" onClick={() => { if (iframeRef.current && isKetcherReady) iframeRef.current.contentWindow.postMessage({ type: 'get-svg' }, '*'); }} title="Download SVG">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                SVG
+              </button>
+              <button className="tb-btn" onClick={() => { if (iframeRef.current && isKetcherReady) iframeRef.current.contentWindow.postMessage({ type: 'get-png' }, '*'); }} title="Download PNG">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                PNG
+              </button>
+              <button className="tb-btn" onClick={() => { if (iframeRef.current && isKetcherReady) iframeRef.current.contentWindow.postMessage({ type: 'get-png-jpeg' }, '*'); }} title="Download JPEG">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                JPG
+              </button>
+
+              <div className="tb-sep" />
+
+              <a className="tb-btn tb-ai-help" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.57-3.25 3.92L12 14"/><circle cx="12" cy="18" r="1"/></svg>
+                AI Setup
               </a>
-              <a
-                href="/pages/about.html"
-                className="header-nav-link"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="About MolDraw"
-              >
-                About
-              </a>
+              <a className="tb-btn" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Course">Course</a>
+              <a className="tb-btn" href="/pages/about.html" target="_blank" rel="noopener noreferrer" title="About">About</a>
+              <a className="tb-btn" href="/pages/updates.html" target="_blank" rel="noopener noreferrer" title="Updates">Updates</a>
             </div>
           </div>
 
@@ -1441,21 +2190,256 @@ function App() {
 
           {is3DPanelOpen && (
             <>
-              {/* Molecule Name Display */}
-              {moleculeName && (
-                <div className="molecule-name-banner">
-                  <div className="molecule-name-content">
-                    <span className="name-label">Identified:</span>
-                    <span className="name-text">{moleculeName}</span>
-                  </div>
+          {/* Molecule / Protein Properties Card */}
+          {(moleculeName || molecularMass || proteinMeta || currentSmiles) && (
+            <div className="mol-props-card">
+              {moleculeName && moleculeName !== 'Not found in PubChem' && (
+                <div className="mol-props-row mol-props-name">{moleculeName}</div>
+              )}
+              {isProtein && proteinMeta && (
+                <>
+                  {proteinMeta.method && (
+                    <div className="mol-props-row">
+                      <span className="mol-props-label">Method</span>
+                      <span className="mol-props-value">{proteinMeta.method}</span>
+                    </div>
+                  )}
+                  {proteinMeta.chains && (
+                    <div className="mol-props-row">
+                      <span className="mol-props-label">Chains</span>
+                      <span className="mol-props-value">{proteinMeta.chains}</span>
+                    </div>
+                  )}
+                  {proteinMeta.resolution && (
+                    <div className="mol-props-row">
+                      <span className="mol-props-label">Resolution</span>
+                      <span className="mol-props-value">{proteinMeta.resolution} &#197;</span>
+                    </div>
+                  )}
+                  {proteinMeta.atomCount && (
+                    <div className="mol-props-row">
+                      <span className="mol-props-label">Atoms</span>
+                      <span className="mol-props-value">{proteinMeta.atomCount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {proteinMeta.mw && (
+                    <div className="mol-props-row">
+                      <span className="mol-props-label">MW</span>
+                      <span className="mol-props-value">{(proteinMeta.mw / 1000).toFixed(1)} kDa</span>
+                    </div>
+                  )}
+                  {proteinMeta.depositDate && (
+                    <div className="mol-props-row">
+                      <span className="mol-props-label">Deposited</span>
+                      <span className="mol-props-value">{proteinMeta.depositDate}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              {!isProtein && iupacName && (
+                <div className="mol-props-row">
+                  <span className="mol-props-label">IUPAC</span>
+                  <span className="mol-props-value mol-props-iupac">{iupacName}</span>
                 </div>
               )}
+              {!isProtein && currentSmiles && (
+                <div className="mol-props-row">
+                  <span className="mol-props-label">SMILES</span>
+                  <span className="mol-props-value mol-props-smiles" title={currentSmiles}>{currentSmiles}</span>
+                  <button
+                    className="mol-props-copy-btn"
+                    onClick={() => {
+                      navigator.clipboard.writeText(currentSmiles).then(() => {
+                        setSmilesCopied(true);
+                        setTimeout(() => setSmilesCopied(false), 1200);
+                      }).catch(() => {});
+                    }}
+                    title="Copy SMILES"
+                  >
+                    {smilesCopied ? '✓' : '⧉'}
+                  </button>
+                </div>
+              )}
+              {!isProtein && molecularMass && (
+                <div className="mol-props-row">
+                  <span className="mol-props-label">Mass</span>
+                  <span className="mol-props-value">{molecularMass.toFixed(2)} g/mol</span>
+                </div>
+              )}
+              {!isProtein && (meltingPoint || boilingPoint) && (
+                <>
+                  <div className="mol-props-row">
+                    <span className="mol-props-label">MP</span>
+                    <span className="mol-props-value">{meltingPoint || '—'}</span>
+                  </div>
+                  <div className="mol-props-row">
+                    <span className="mol-props-label">BP</span>
+                    <span className="mol-props-value">{boilingPoint || '—'}</span>
+                  </div>
+                </>
+              )}
+              {!isProtein && currentSmiles && geminiApiKey && (
+                <button
+                  className="mol-props-nmr-btn"
+                  onClick={predictNMR}
+                  disabled={isNmrLoading}
+                  title="Predict 1H NMR spectrum (AI)"
+                >
+                  {isNmrLoading ? 'Predicting...' : '¹H NMR'}
+                </button>
+              )}
+            </div>
+          )}
 
-              <div
-                ref={viewer3DRef}
-                className="viewer-3d"
-                data-testid="viewer-3d"
-              />
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <div
+                  ref={viewer3DRef}
+                  className="viewer-3d"
+                  data-testid="viewer-3d"
+                />
+
+                {/* Prominent close protein overlay button */}
+                {isProtein && (
+                  <button
+                    className="close-protein-overlay"
+                    onClick={closeProtein}
+                    title="Remove protein from 3D viewer"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Close Protein
+                  </button>
+                )}
+
+                {/* Multi-structure notice overlay */}
+                {multiStructure && !isProtein && (
+                  <div className="multi-struct-notice">
+                    Multi-structure canvas — auto-sync paused
+                  </div>
+                )}
+              </div>
+
+              {/* AI Chat Assistant */}
+              <div className="ai-chat-widget">
+                {isChatOpen && (
+                  <div className="ai-chat-box">
+                    <div className="ai-chat-header">
+                      <div>
+                        <div className="ai-chat-header-title">MolDraw AI</div>
+                        <div className="ai-chat-header-sub">
+                          Gemini 2.5 Flash · Draw, name &amp; explore
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <a
+                          className="ai-chat-header-close"
+                          href="/pages/ai-help.html"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="How to use AI assistant"
+                          style={{ fontSize: 12, textDecoration: 'none' }}
+                        >
+                          ?
+                        </a>
+                        <button
+                          className="ai-chat-header-close"
+                          onClick={() => setShowApiKeyInput(v => !v)}
+                          title="API key settings"
+                          style={{ fontSize: 14 }}
+                        >
+                          ⚙
+                        </button>
+                        <button
+                          className="ai-chat-header-close"
+                          onClick={() => setIsChatOpen(false)}
+                          title="Close chat"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+
+                    {showApiKeyInput && (
+                      <div className="ai-key-row">
+                        <input
+                          type="password"
+                          className="ai-key-input"
+                          value={geminiApiKey}
+                          onChange={(e) => setGeminiApiKey(e.target.value)}
+                          placeholder="Paste Gemini API key..."
+                          onBlur={() => {
+                            try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
+                          }}
+                        />
+                        <button
+                          className="ai-key-save"
+                          onClick={() => {
+                            try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
+                            setShowApiKeyInput(false);
+                            if (geminiApiKey) {
+                              setChatMessages((msgs) => [...msgs, { role: 'assistant', text: 'API key saved. You can now ask me anything!' }]);
+                            }
+                          }}
+                        >
+                          {geminiApiKey ? '✓ Save' : 'Save'}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="ai-chat-messages">
+                      {chatMessages.length === 0 && (
+                        <div className="ai-chat-message assistant">
+                          <span>
+                            {geminiApiKey
+                              ? 'Try: "draw aspirin", "name this molecule", "show a Fischer esterification", or ask about properties.'
+                              : <>Paste your Gemini API key via ⚙ above. <a href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" style={{ color: '#2C7A7B' }}>How to get a key →</a></>}
+                          </span>
+                        </div>
+                      )}
+                      {chatMessages.map((m, idx) => (
+                        <div
+                          key={idx}
+                          className={`ai-chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}
+                        >
+                          <span>{m.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="ai-chat-input-row">
+                      <textarea
+                        className="ai-chat-input"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                        placeholder="draw caffeine, name this, add ethanol..."
+                        rows={1}
+                      />
+                      <button
+                        className="ai-chat-send-btn"
+                        onClick={sendChatMessage}
+                        disabled={isChatLoading || !chatInput.trim()}
+                      >
+                        {isChatLoading ? '...' : '→'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <button
+                  className="ai-chat-toggle"
+                  onClick={() => {
+                    setIsChatOpen((open) => {
+                      const willOpen = !open;
+                      // Close Crisp when opening AI chat
+                      if (willOpen && window.$crisp) {
+                        try { window.$crisp.push(['do', 'chat:close']); } catch {}
+                      }
+                      return willOpen;
+                    });
+                  }}
+                  title="AI assistant"
+                >
+                  AI
+                </button>
+              </div>
 
               {/* PDB Import Button */}
               <div className="pdb-import-container">
@@ -1493,12 +2477,19 @@ function App() {
                       // For proteins, apply appropriate style
                       if (isProtein && viewerInstanceRef.current) {
                         const viewer = viewerInstanceRef.current;
+                        viewer.removeAllSurfaces();
                         if (newStyle === 'cartoon') {
                           viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
                         } else if (newStyle === 'stick') {
                           viewer.setStyle({}, { stick: { radius: 0.15 } });
                         } else if (newStyle === 'sphere') {
                           viewer.setStyle({}, { sphere: { scale: 0.6 } });
+                        } else if (newStyle === 'surface') {
+                          viewer.setStyle({}, { cartoon: { hidden: true } });
+                          viewer.addSurface(window.$3Dmol.SurfaceType.VDW, {
+                            opacity: 0.9,
+                            colorscheme: { prop: 'b', gradient: 'rwb' },
+                          });
                         } else {
                           viewer.setStyle({}, { line: {} });
                         }
@@ -1513,6 +2504,7 @@ function App() {
                         <option value="cartoon">Cartoon</option>
                         <option value="stick">Stick</option>
                         <option value="sphere">Space-Fill</option>
+                        <option value="surface">Surface</option>
                         <option value="line">Line</option>
                       </>
                     ) : (
@@ -1537,14 +2529,28 @@ function App() {
                   {showHydrogens ? 'Hide' : 'Show'}
                 </button>
 
+                {/* Refresh 3D when multiple structures */}
+                {multiStructure && !isProtein && (
+                  <button
+                    className="compact-btn refresh3d-btn"
+                    onClick={refreshManual3D}
+                    title="Refresh 3D view (auto-sync paused for multi-structure canvas)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    Refresh 3D
+                  </button>
+                )}
+
                 {/* Export Row */}
                 {currentMolecule && (
                   <div className="export-row">
                     <button onClick={() => exportModel('png')} className="compact-export-btn" title="PNG (transparent)">PNG</button>
+                    <button onClick={() => exportModel('jpeg')} className="compact-export-btn" title="JPEG with white background">JPG</button>
                     <button onClick={() => exportModel('sdf')} className="compact-export-btn" title="SDF format">SDF</button>
                     <button onClick={() => exportModel('xyz')} className="compact-export-btn" title="XYZ format">XYZ</button>
                     <button onClick={() => exportModel('x3d')} className="compact-export-btn" title="X3D with bonds">X3D</button>
                     <button onClick={() => exportModel('obj')} className="compact-export-btn" title="OBJ for Blender">OBJ</button>
+                    <button onClick={() => exportModel('pdb')} className="compact-export-btn" title="PDB format">PDB</button>
                   </div>
                 )}
 
@@ -1570,6 +2576,51 @@ function App() {
           )}
         </div>
       </div>
+
+      {/* NMR Spectrum Modal */}
+      {showNmrModal && (
+        <div className="nmr-modal-backdrop" onClick={() => setShowNmrModal(false)}>
+          <div className="nmr-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="nmr-modal-header">
+              <span className="nmr-modal-title">{nmrData?.title || '1H NMR Spectrum'}</span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {nmrData && (
+                  <button className="nmr-modal-dl" onClick={downloadNmrSvg} title="Download SVG">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    SVG
+                  </button>
+                )}
+                <button className="nmr-modal-close" onClick={() => setShowNmrModal(false)}>×</button>
+              </div>
+            </div>
+            <div className="nmr-modal-body">
+              {isNmrLoading && <div className="nmr-loading">Predicting NMR with Gemini...</div>}
+              {!isNmrLoading && nmrData && (
+                <div dangerouslySetInnerHTML={{ __html: generateNmrSvg(nmrData) }} />
+              )}
+              {!isNmrLoading && !nmrData && (
+                <div className="nmr-loading">No NMR data available.</div>
+              )}
+            </div>
+            {nmrData?.peaks && (
+              <div className="nmr-peak-table">
+                <table>
+                  <thead><tr><th>Shift (ppm)</th><th>Intensity</th><th>Assignment</th></tr></thead>
+                  <tbody>
+                    {nmrData.peaks.sort((a, b) => b.shift - a.shift).map((p, i) => (
+                      <tr key={i}>
+                        <td>{p.shift.toFixed(2)}</td>
+                        <td>{(p.intensity || 0).toFixed(2)}</td>
+                        <td>{p.label || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

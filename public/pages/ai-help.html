@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Use AI Assistant | MolDraw</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #f7f8fb; color: #1f2933; line-height: 1.7; }
+    .page { max-width: 680px; margin: 48px auto; padding: 0 24px 80px; }
+    .pill { display: inline-block; padding: 5px 14px; border-radius: 999px; background: #eef2ff; color: #4338ca; font-weight: 600; font-size: 12px; margin-bottom: 12px; }
+    h1 { font-size: 28px; letter-spacing: -0.4px; margin-bottom: 8px; }
+    .subtitle { color: #6b7280; font-size: 14px; margin-bottom: 28px; }
+    .nav { margin-bottom: 28px; font-size: 13px; }
+    .nav a { color: #5a67d8; text-decoration: none; font-weight: 600; }
+    .nav a:hover { text-decoration: underline; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+    h2 { font-size: 18px; margin-bottom: 10px; }
+    h3 { font-size: 15px; margin: 14px 0 6px; color: #374151; }
+    p, li { font-size: 14px; color: #4b5563; }
+    ol, ul { padding-left: 20px; margin-top: 4px; }
+    li { margin-bottom: 6px; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #111827; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; background: #2C7A7B; color: white; font-size: 12px; font-weight: 700; margin-right: 8px; flex-shrink: 0; }
+    .step { display: flex; align-items: flex-start; margin-bottom: 14px; }
+    .step-text { flex: 1; }
+    .example { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; margin: 8px 0; font-size: 13px; }
+    .example strong { color: #2C7A7B; }
+    a { color: #5a67d8; }
+    img.screenshot { width: 100%; border-radius: 8px; border: 1px solid #e5e7eb; margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <span class="pill">MolDraw AI</span>
+    <h1>How to Use the AI Assistant</h1>
+    <p class="subtitle">Draw, name, and explore molecules using Google Gemini — right inside MolDraw.</p>
+    <p class="nav"><a href="/">← Back to MolDraw</a></p>
+
+    <div class="card">
+      <h2>Step 1: Get a Free Gemini API Key</h2>
+      <div class="step">
+        <span class="step-num">1</span>
+        <div class="step-text">
+          <p>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio → API Keys</a></p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <div class="step-text">
+          <p>Sign in with your Google account.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <div class="step-text">
+          <p>Click <strong>"Create API key"</strong> and copy the key (starts with <code>AIza...</code>).</p>
+        </div>
+      </div>
+      <p style="margin-top: 8px; font-size: 13px; color: #6b7280;">The Gemini API has a generous free tier — plenty for everyday use in MolDraw.</p>
+    </div>
+
+    <div class="card">
+      <h2>Step 2: Paste the Key in MolDraw</h2>
+      <div class="step">
+        <span class="step-num">1</span>
+        <div class="step-text">
+          <p>Open MolDraw and click the <strong>AI</strong> button (bottom-right of the 3D viewer).</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <div class="step-text">
+          <p>Click the <strong>⚙ gear icon</strong> in the chat header.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <div class="step-text">
+          <p>Paste your API key and click <strong>Save</strong>. It's stored locally in your browser — never sent anywhere except Google's API.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Step 3: Start Using It!</h2>
+      <p>Type commands in the chat box. The AI can control the canvas and answer chemistry questions.</p>
+
+      <h3>Draw molecules by name</h3>
+      <div class="example">
+        <strong>You:</strong> draw aspirin<br>
+        <strong>AI:</strong> Draws the aspirin structure on the canvas.
+      </div>
+
+      <h3>Name the current structure</h3>
+      <div class="example">
+        <strong>You:</strong> what is this molecule?<br>
+        <strong>AI:</strong> Tells you the IUPAC name and common name.
+      </div>
+
+      <h3>Show reactions</h3>
+      <div class="example">
+        <strong>You:</strong> show Fischer esterification of acetic acid and ethanol<br>
+        <strong>AI:</strong> Draws the reaction on the canvas.
+      </div>
+
+      <h3>Add structures without clearing</h3>
+      <div class="example">
+        <strong>You:</strong> also add caffeine<br>
+        <strong>AI:</strong> Adds caffeine alongside existing structures.
+      </div>
+
+      <h3>Ask about properties</h3>
+      <div class="example">
+        <strong>You:</strong> what is the molecular weight of this?<br>
+        <strong>AI:</strong> Calculates and tells you.
+      </div>
+
+      <h3>Clear the canvas</h3>
+      <div class="example">
+        <strong>You:</strong> clear the canvas<br>
+        <strong>AI:</strong> Clears everything.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Tips</h2>
+      <ul>
+        <li>The AI reads the current structure on the canvas (SMILES), so it always knows what you're working on.</li>
+        <li>Press <strong>Enter</strong> to send, <strong>Shift+Enter</strong> for a new line.</li>
+        <li>Your API key is saved in your browser's local storage. Clear it anytime via the ⚙ menu.</li>
+        <li>Powered by <strong>Gemini 2.5 Flash</strong> for fast responses.</li>
+      </ul>
+    </div>
+
+  </div>
+</body>
+</html>

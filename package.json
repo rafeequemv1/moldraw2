@@ -15,7 +15,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "ai-server": "node gemini-server.js"
   },
   "eslintConfig": {
     "extends": [
@@ -36,5 +37,10 @@
   },
   "devDependencies": {
     "gh-pages": "^6.3.0"
+  },
+  "optionalDependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.1",
+    "node-fetch": "^2.7.0"
   }
 }
