@@ -1,4 +1,6 @@
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+const ALLOWED_GEMINI_MODELS = new Set(['gemini-2.5-flash', 'gemini-3.0-flash']);
+const selectModel = (requested) => (ALLOWED_GEMINI_MODELS.has(requested) ? requested : DEFAULT_GEMINI_MODEL);
 
 const SYSTEM_PROMPT = `You are MolDraw Assistant — a chemistry AI embedded in an interactive 2D/3D molecular editor called MolDraw (by Scidart Academy).
 
@@ -30,7 +32,8 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt, smiles, molfile, apiKey, history } = req.body || {};
+  const { prompt, smiles, molfile, apiKey, history, model } = req.body || {};
+  const selectedModel = selectModel(model);
   const key = apiKey || process.env.GEMINI_API_KEY || '';
 
   if (!key) {
@@ -63,8 +66,8 @@ module.exports = async function handler(req, res) {
   contents.push({ role: 'user', parts: [{ text: userContext }] });
 
   try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+    const callGemini = async (modelName) => fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
       {
         method: 'POST',
         headers: {
@@ -74,6 +77,13 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify({ contents }),
       }
     );
+
+    let usedModel = selectedModel;
+    let resp = await callGemini(usedModel);
+    if (!resp.ok && usedModel !== DEFAULT_GEMINI_MODEL && (resp.status === 400 || resp.status === 404)) {
+      resp = await callGemini(DEFAULT_GEMINI_MODEL);
+      if (resp.ok) usedModel = DEFAULT_GEMINI_MODEL;
+    }
 
     if (!resp.ok) {
       const text = await resp.text();
@@ -86,7 +96,7 @@ module.exports = async function handler(req, res) {
 
     const data = await resp.json();
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    return res.status(200).json({ reply: reply || 'No response from Gemini.', model: GEMINI_MODEL });
+    return res.status(200).json({ reply: reply || 'No response from Gemini.', model: usedModel });
   } catch (error) {
     console.error('Gemini proxy error:', error);
     return res.status(500).json({ error: 'Internal server error' });

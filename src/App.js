@@ -38,6 +38,9 @@ function App() {
   const [geminiApiKey, setGeminiApiKey] = useState(() => {
     try { return localStorage.getItem('moldraw_gemini_key') || ''; } catch { return ''; }
   });
+  const [aiModel, setAiModel] = useState(() => {
+    try { return localStorage.getItem('moldraw_ai_model') || 'gemini-2.5-flash'; } catch { return 'gemini-2.5-flash'; }
+  });
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const lastSmilesForAIRef = useRef(null);
   const lastMolfileForAIRef = useRef(null);
@@ -56,10 +59,20 @@ function App() {
   const [showTlcModal, setShowTlcModal] = useState(false);
   const [lonePairs, setLonePairs] = useState([]);
   const lonePairDragRef = useRef(null);
-  const AI_CHAT_ENDPOINT =
-    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? 'http://localhost:3001/api/gemini-chat'
-      : '/api/gemini-chat';
+  const host = window.location.hostname;
+  const isLocalDevHost =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    /^192\.168\./.test(host) ||
+    /^10\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+  const AI_CHAT_ENDPOINT = isLocalDevHost
+    ? `http://${host === 'localhost' || host === '127.0.0.1' ? 'localhost' : host}:3001/api/gemini-chat`
+    : '/api/gemini-chat';
+  const AI_MODEL_OPTIONS = [
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (balanced)' },
+    { value: 'gemini-3.0-flash', label: 'Gemini 3 Flash (fast)' },
+  ];
 
   const promptAiSetupModal = () => {
     setShowAiSetupModal(true);
@@ -135,6 +148,10 @@ function App() {
       console.warn('Failed to save state to localStorage:', error);
     }
   }, [renderStyle, showHydrogens, is3DPanelOpen]);
+
+  useEffect(() => {
+    try { localStorage.setItem('moldraw_ai_model', aiModel); } catch {}
+  }, [aiModel]);
 
   // Cache molecule data in IndexedDB
   const cacheMolecule = useCallback(async (molfile, smiles) => {
@@ -555,6 +572,7 @@ function App() {
           prompt: `Predict the melting point and boiling point of this molecule (SMILES: ${smiles}). Reply as JSON only: {"assistant_message":"...","canvas_action":"none","smiles":null,"mp":"melting point °C or null","bp":"boiling point °C or null"}. Use approximate values with ~ if needed. Include °C unit.`,
           smiles,
           apiKey: geminiApiKey,
+          model: aiModel,
         }),
       });
       const data = await resp.json();
@@ -613,7 +631,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
       const resp = await fetch(AI_CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, smiles, apiKey: geminiApiKey }),
+        body: JSON.stringify({ prompt, smiles, apiKey: geminiApiKey, model: aiModel }),
       });
       const data = await resp.json();
       let raw = data?.reply || '';
@@ -916,6 +934,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
           prompt: `Give me ONLY the IUPAC name of this SMILES: ${smiles}. Reply as JSON: {"assistant_message":"...","canvas_action":"none","smiles":null,"iupac":"IUPAC name here"}`,
           smiles,
           apiKey: geminiApiKey,
+          model: aiModel,
         }),
       });
       const data = await resp.json();
@@ -943,6 +962,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
           prompt: `Give me the IUPAC name, common name, melting point, and boiling point of this SMILES: ${smiles}. Reply as JSON only: {"assistant_message":"...","canvas_action":"none","smiles":null,"iupac":"IUPAC name","common":"common name or null","mp":"melting point °C or null","bp":"boiling point °C or null"}`,
           smiles,
           apiKey: geminiApiKey,
+          model: aiModel,
         }),
       });
       const data = await resp.json();
@@ -1749,6 +1769,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
           smiles: lastSmilesForAIRef.current || null,
           molfile: lastMolfileForAIRef.current || null,
           apiKey: geminiApiKey,
+          model: aiModel,
           history,
         }),
       });
@@ -2893,7 +2914,7 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
                       <div>
                         <div className="ai-chat-header-title">MolDraw AI</div>
                         <div className="ai-chat-header-sub">
-                          Gemini 2.5 Flash · Draw, name &amp; explore
+                          {(AI_MODEL_OPTIONS.find((m) => m.value === aiModel)?.label || 'Gemini Flash')} · Draw, name &amp; explore
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 4 }}>
@@ -2927,6 +2948,16 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
 
                     {showApiKeyInput && (
                       <div className="ai-key-row">
+                        <select
+                          className="ai-model-select"
+                          value={aiModel}
+                          onChange={(e) => setAiModel(e.target.value)}
+                          title="Choose chat model"
+                        >
+                          {AI_MODEL_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
                         <input
                           type="password"
                           className="ai-key-input"

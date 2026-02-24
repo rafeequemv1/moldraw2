@@ -1647,6 +1647,21 @@
   border-color: #2C7A7B;
 }
 
+.ai-model-select {
+  max-width: 156px;
+  padding: 5px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 11px;
+  background: white;
+  color: #111827;
+}
+
+.ai-model-select:focus {
+  outline: none;
+  border-color: #2C7A7B;
+}
+
 .ai-key-save {
   padding: 4px 10px;
   border: none;

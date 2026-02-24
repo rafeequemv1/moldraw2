@@ -4,11 +4,25 @@ const fetch = require('node-fetch');
 
 const PORT = process.env.PORT || 3001;
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+const ALLOWED_GEMINI_MODELS = new Set(['gemini-2.5-flash', 'gemini-3.0-flash']);
+const selectModel = (requested) => (ALLOWED_GEMINI_MODELS.has(requested) ? requested : DEFAULT_GEMINI_MODEL);
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow browser requests from local app hosts and non-browser tools.
+    if (!origin) return cb(null, true);
+    try {
+      const { hostname } = new URL(origin);
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || /^192\.168\./.test(hostname)) {
+        return cb(null, true);
+      }
+    } catch { /* ignore */ }
+    return cb(new Error('Not allowed by CORS'));
+  },
+}));
 
 const SYSTEM_PROMPT =
 `You are MolDraw Assistant — a chemistry AI embedded in an interactive 2D/3D molecular editor called MolDraw (by Scidart Academy).
@@ -59,7 +73,8 @@ SMILES QUALITY:
 IMPORTANT: Output ONLY the JSON object. No explanation outside it. No markdown fences.`;
 
 app.post('/api/gemini-chat', async (req, res) => {
-  const { prompt, smiles, molfile, apiKey, history } = req.body || {};
+  const { prompt, smiles, molfile, apiKey, history, model } = req.body || {};
+  const selectedModel = selectModel(model);
 
   const key = apiKey || process.env.GEMINI_API_KEY || '';
   if (!key) {
@@ -96,8 +111,8 @@ app.post('/api/gemini-chat', async (req, res) => {
   contents.push({ role: 'user', parts: [{ text: userContext }] });
 
   try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+    const callGemini = async (modelName) => fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
       {
         method: 'POST',
         headers: {
@@ -107,6 +122,15 @@ app.post('/api/gemini-chat', async (req, res) => {
         body: JSON.stringify({ contents }),
       }
     );
+
+    let usedModel = selectedModel;
+    let resp = await callGemini(usedModel);
+
+    // Graceful fallback when the selected preview model is unavailable for the key/account.
+    if (!resp.ok && usedModel !== DEFAULT_GEMINI_MODEL && (resp.status === 400 || resp.status === 404)) {
+      resp = await callGemini(DEFAULT_GEMINI_MODEL);
+      if (resp.ok) usedModel = DEFAULT_GEMINI_MODEL;
+    }
 
     if (!resp.ok) {
       const text = await resp.text();
@@ -121,7 +145,7 @@ app.post('/api/gemini-chat', async (req, res) => {
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    res.json({ reply: reply || 'No response from Gemini.', model: GEMINI_MODEL });
+    res.json({ reply: reply || 'No response from Gemini.', model: usedModel });
   } catch (error) {
     console.error('Gemini proxy error:', error);
     res.status(500).json({ error: 'Internal server error' });
