@@ -72,6 +72,7 @@ function App() {
   const AI_MODEL_OPTIONS = [
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (balanced)' },
     { value: 'gemini-3.0-flash', label: 'Gemini 3 Flash (fast)' },
+    { value: 'gemini-3-pro', label: 'Gemini 3 Pro (high accuracy)' },
   ];
 
   const promptAiSetupModal = () => {
@@ -586,6 +587,89 @@ function App() {
   };
 
   // Predict spectrum using Gemini (1H, 13C, IR, UV-Vis)
+  const sanitizeSpectrumPrediction = (spec, fallbackType) => {
+    const resolvedType = spec?.type || fallbackType || '1H';
+    const type = resolvedType === 'carbon' ? '13C' : resolvedType;
+    const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+    const toNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const multMap = { singlet: 's', doublet: 'd', triplet: 't', quartet: 'q', multiplet: 'm' };
+    const allowedMultiplicities = new Set(['s', 'd', 't', 'q', 'm', 'dd', 'quint', 'sext']);
+
+    const normalizePeak = (peak) => {
+      const shiftRaw = toNum(peak?.shift);
+      const intensityRaw = toNum(peak?.intensity);
+      if (shiftRaw == null) return null;
+
+      let shift = shiftRaw;
+      let intensity = intensityRaw == null ? 0.6 : intensityRaw;
+      if (type === '1H') {
+        shift = clamp(shift, -1, 14);
+        intensity = clamp(intensity, 0, 1);
+        const multKey = String(peak?.multiplicity || 's').toLowerCase();
+        const mappedMult = multMap[multKey] || multKey;
+        return {
+          shift: Number(shift.toFixed(3)),
+          intensity: Number(intensity.toFixed(3)),
+          label: String(peak?.label || ''),
+          multiplicity: allowedMultiplicities.has(mappedMult) ? mappedMult : 's',
+          coupling: toNum(peak?.coupling) == null ? null : Number(clamp(toNum(peak?.coupling), 0, 25).toFixed(2)),
+          protons: toNum(peak?.protons) == null ? null : Number(clamp(toNum(peak?.protons), 0, 12).toFixed(1)),
+        };
+      }
+
+      if (type === '13C') {
+        shift = clamp(shift, 0, 230);
+        intensity = clamp(intensity, 0, 1);
+        return {
+          shift: Number(shift.toFixed(3)),
+          intensity: Number(intensity.toFixed(3)),
+          label: String(peak?.label || ''),
+          multiplicity: 's',
+          protons: 0,
+        };
+      }
+
+      if (type === 'IR') {
+        shift = clamp(shift, 500, 4000);
+        intensity = clamp(intensity, 0, 1);
+        return {
+          shift: Number(shift.toFixed(1)),
+          intensity: Number(intensity.toFixed(3)),
+          label: String(peak?.label || ''),
+        };
+      }
+
+      // UV-Vis
+      shift = clamp(shift, 190, 800);
+      intensity = clamp(intensity, 0, 1);
+      return {
+        shift: Number(shift.toFixed(1)),
+        intensity: Number(intensity.toFixed(3)),
+        label: String(peak?.label || ''),
+      };
+    };
+
+    const peaks = (Array.isArray(spec?.peaks) ? spec.peaks : [])
+      .map(normalizePeak)
+      .filter(Boolean);
+
+    if (type === 'UV-Vis') peaks.sort((a, b) => a.shift - b.shift);
+    else peaks.sort((a, b) => b.shift - a.shift);
+
+    return {
+      ...spec,
+      type,
+      peaks,
+      title: spec?.title || `${type} Spectrum`,
+      solvent: type === '1H' || type === '13C' ? (spec?.solvent || 'CDCl3') : spec?.solvent,
+      frequency: type === '1H' ? (spec?.frequency || '400 MHz') : type === '13C' ? (spec?.frequency || '100 MHz') : spec?.frequency,
+    };
+  };
+
   const predictNMR = async (type = 'proton') => {
     const smiles = currentSmiles || lastSmilesForAIRef.current;
     if (!smiles) { alert('No molecule on canvas to predict a spectrum for.'); return; }
@@ -604,28 +688,36 @@ function App() {
     const isCarbon = type === 'carbon';
     const isIR = type === 'ir';
     const isUV = type === 'uv';
+    const scientificGuardrails = `Use strict scientific spectroscopy rules and return only physically plausible signals.
+- Do not invent impossible peaks.
+- Keep shifts/intensities in realistic ranges.
+- Prefer conservative assignments when uncertain.`;
     const prompt = isIR
       ? `Predict the IR spectrum of this molecule (SMILES: ${smiles}).
 Return ONLY a JSON object:
 {"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"type":"IR","title":"IR Spectrum of <molecule name>","xLabel":"Wavenumber (cm-1)","yLabel":"Transmittance (%)","peaks":[{"shift":1715,"intensity":0.9,"label":"C=O stretch"},{"shift":3400,"intensity":0.7,"label":"O-H stretch"}]}}
 Each peak: shift as wavenumber in cm-1 (500-4000), intensity 0-1 where 1 means strong band depth, label with assignment.
-Include major functional-group bands only (realistic values).`
+Include major functional-group bands only (realistic values), and avoid over-crowding with weak speculative bands.
+${scientificGuardrails}`
       : isUV
       ? `Predict the UV-Visible absorption spectrum of this molecule (SMILES: ${smiles}).
 Return ONLY a JSON object:
 {"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"type":"UV-Vis","title":"UV-Vis Spectrum of <molecule name>","xLabel":"Wavelength (nm)","yLabel":"Absorbance (a.u.)","peaks":[{"shift":210,"intensity":0.8,"label":"pi-pi*"},{"shift":280,"intensity":0.55,"label":"n-pi*"}]}}
 Each peak: shift as wavelength in nm (190-800), intensity 0-1, label transition type.
-Include realistic UV-vis bands and approximate intensities.`
+Include realistic UV-vis bands and approximate intensities, with only chemically justified transitions.
+${scientificGuardrails}`
       : isCarbon
       ? `Predict the 13C NMR spectrum of this molecule (SMILES: ${smiles}).
 Return ONLY a JSON object:
 {"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"type":"13C","title":"13C NMR of <molecule name>","peaks":[{"shift":128.5,"intensity":0.8,"label":"C-2,C-6 (ArC)","multiplicity":"s","protons":0}],"solvent":"CDCl3","frequency":"100 MHz"}}
-Each peak: shift (ppm number, 0-220 range), intensity (relative 0-1), label (assignment), multiplicity ("s" for singlet always in DEPT-less 13C). Include ALL non-equivalent carbons.`
+Each peak: shift (ppm number, 0-220 range), intensity (relative 0-1), label (assignment), multiplicity ("s" for singlet always in DEPT-less 13C). Include ALL non-equivalent carbons and avoid duplicate-equivalent assignments.
+${scientificGuardrails}`
       : `Predict the 1H NMR spectrum of this molecule (SMILES: ${smiles}).
 Return ONLY a JSON object:
 {"assistant_message":"brief description","canvas_action":"none","smiles":null,"nmr":{"type":"1H","title":"1H NMR of <molecule name>","peaks":[{"shift":7.26,"intensity":1.0,"label":"ArH","multiplicity":"d","coupling":8.0,"protons":2}],"solvent":"CDCl3","frequency":"400 MHz"}}
 Each peak: shift (ppm number), intensity (relative 0-1), label (assignment like CH3, ArH, OH), multiplicity (s=singlet, d=doublet, t=triplet, q=quartet, m=multiplet, dd=doublet of doublets), coupling (J in Hz, number or null), protons (number of H).
-Include ALL expected peaks with correct splitting patterns and realistic J-coupling constants.`;
+Include ALL expected peaks with correct splitting patterns and realistic J-coupling constants. Proton counts and multiplicities must be self-consistent.
+${scientificGuardrails}`;
 
     try {
       const resp = await fetch(AI_CHAT_ENDPOINT, {
@@ -640,8 +732,10 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
       const obj = JSON.parse(raw);
       if (obj?.nmr?.peaks?.length) {
         const inferredType = obj?.nmr?.type || (isIR ? 'IR' : isUV ? 'UV-Vis' : isCarbon ? '13C' : '1H');
-        setNmrData({ ...obj.nmr, type: inferredType });
-        setActiveSpectrumType(inferredType);
+        const sanitized = sanitizeSpectrumPrediction(obj.nmr, inferredType);
+        if (!sanitized.peaks.length) throw new Error('No valid peaks after sanitization');
+        setNmrData(sanitized);
+        setActiveSpectrumType(sanitized.type);
       } else {
         setNmrData(null);
         alert('Could not predict spectrum for this molecule.');

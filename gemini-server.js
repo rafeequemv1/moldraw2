@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 const PORT = process.env.PORT || 3001;
 
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
-const ALLOWED_GEMINI_MODELS = new Set(['gemini-2.5-flash', 'gemini-3.0-flash']);
+const ALLOWED_GEMINI_MODELS = new Set(['gemini-2.5-flash', 'gemini-3.0-flash', 'gemini-3-pro']);
 const selectModel = (requested) => (ALLOWED_GEMINI_MODELS.has(requested) ? requested : DEFAULT_GEMINI_MODEL);
 
 const app = express();

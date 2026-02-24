@@ -1,5 +1,5 @@
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
-const ALLOWED_GEMINI_MODELS = new Set(['gemini-2.5-flash', 'gemini-3.0-flash']);
+const ALLOWED_GEMINI_MODELS = new Set(['gemini-2.5-flash', 'gemini-3.0-flash', 'gemini-3-pro']);
 const selectModel = (requested) => (ALLOWED_GEMINI_MODELS.has(requested) ? requested : DEFAULT_GEMINI_MODEL);
 
 const SYSTEM_PROMPT = `You are MolDraw Assistant — a chemistry AI embedded in an interactive 2D/3D molecular editor called MolDraw (by Scidart Academy).
