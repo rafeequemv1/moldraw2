@@ -7,6 +7,21 @@ const PORT = process.env.PORT || 3001;
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
 const ALLOWED_GEMINI_MODELS = new Set(['gemini-2.5-flash', 'gemini-3.0-flash', 'gemini-3-pro']);
 const selectModel = (requested) => (ALLOWED_GEMINI_MODELS.has(requested) ? requested : DEFAULT_GEMINI_MODEL);
+const MAX_RATE_LIMIT_RETRIES = 2;
+const BASE_RETRY_MS = 700;
+const MAX_RETRY_MS = 6000;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const parseRetryAfterSeconds = (headerValue) => {
+  if (!headerValue) return null;
+  const asNum = Number(headerValue);
+  if (Number.isFinite(asNum) && asNum >= 0) return Math.ceil(asNum);
+  const asDate = Date.parse(headerValue);
+  if (!Number.isNaN(asDate)) {
+    const deltaSec = Math.ceil((asDate - Date.now()) / 1000);
+    return deltaSec > 0 ? deltaSec : 0;
+  }
+  return null;
+};
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -73,16 +88,17 @@ SMILES QUALITY:
 IMPORTANT: Output ONLY the JSON object. No explanation outside it. No markdown fences.`;
 
 app.post('/api/gemini-chat', async (req, res) => {
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const { prompt, smiles, molfile, apiKey, history, model } = req.body || {};
   const selectedModel = selectModel(model);
 
   const key = apiKey || process.env.GEMINI_API_KEY || '';
   if (!key) {
-    return res.status(400).json({ error: 'No API key provided. Paste your Gemini API key in the assistant settings.' });
+    return res.status(400).json({ error: 'No API key provided. Paste your Gemini API key in the assistant settings.', code: 'MISSING_API_KEY' });
   }
 
   if (!prompt || typeof prompt !== 'string') {
-    return res.status(400).json({ error: 'Missing prompt' });
+    return res.status(400).json({ error: 'Missing prompt', code: 'MISSING_PROMPT' });
   }
 
   const userContext =
@@ -123,22 +139,79 @@ app.post('/api/gemini-chat', async (req, res) => {
       }
     );
 
+    const callGeminiWith429Retry = async (modelName) => {
+      let resp = null;
+      let retryAfterSeconds = null;
+      for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt += 1) {
+        resp = await callGemini(modelName);
+        if (resp.status !== 429) {
+          return { resp, retryAfterSeconds, attempts: attempt + 1 };
+        }
+        retryAfterSeconds = parseRetryAfterSeconds(resp.headers.get('retry-after'));
+        if (attempt < MAX_RATE_LIMIT_RETRIES) {
+          const jitter = Math.floor(Math.random() * 250);
+          const backoffMs = retryAfterSeconds != null
+            ? Math.min(MAX_RETRY_MS, Math.max(400, retryAfterSeconds * 1000))
+            : Math.min(MAX_RETRY_MS, BASE_RETRY_MS * (2 ** attempt) + jitter);
+          await sleep(backoffMs);
+        }
+      }
+      return { resp, retryAfterSeconds, attempts: MAX_RATE_LIMIT_RETRIES + 1 };
+    };
+
     let usedModel = selectedModel;
-    let resp = await callGemini(usedModel);
+    const triedModels = [usedModel];
+    let primary = await callGeminiWith429Retry(usedModel);
+    let resp = primary.resp;
+    let retryAfterSeconds = primary.retryAfterSeconds;
+    let totalAttempts = primary.attempts;
 
     // Graceful fallback when the selected preview model is unavailable for the key/account.
-    if (!resp.ok && usedModel !== DEFAULT_GEMINI_MODEL && (resp.status === 400 || resp.status === 404)) {
-      resp = await callGemini(DEFAULT_GEMINI_MODEL);
-      if (resp.ok) usedModel = DEFAULT_GEMINI_MODEL;
+    if (!resp.ok && usedModel !== DEFAULT_GEMINI_MODEL && (resp.status === 400 || resp.status === 404 || resp.status === 429)) {
+      triedModels.push(DEFAULT_GEMINI_MODEL);
+      const fallback = await callGeminiWith429Retry(DEFAULT_GEMINI_MODEL);
+      totalAttempts += fallback.attempts;
+      if (fallback.resp.ok) {
+        resp = fallback.resp;
+        usedModel = DEFAULT_GEMINI_MODEL;
+      } else if (resp.status === 429 || fallback.resp.status !== 429) {
+        resp = fallback.resp;
+        retryAfterSeconds = fallback.retryAfterSeconds;
+        usedModel = DEFAULT_GEMINI_MODEL;
+      }
     }
 
     if (!resp.ok) {
-      const text = await resp.text();
-      console.error('Gemini API error:', resp.status, text);
+      await resp.text();
+      console.warn('[gemini-proxy] upstream_error', {
+        requestId,
+        status: resp.status,
+        model: usedModel,
+        attempts: totalAttempts,
+      });
       if (resp.status === 400 || resp.status === 403) {
-        return res.status(resp.status).json({ error: 'Invalid API key or access denied. Check your Gemini API key.' });
+        return res.status(resp.status).json({
+          error: 'Invalid API key or access denied. Check your Gemini API key.',
+          code: 'INVALID_KEY_OR_ACCESS',
+          modelTried: usedModel,
+          triedModels,
+        });
       }
-      return res.status(500).json({ error: `Gemini API error (${resp.status})` });
+      if (resp.status === 429) {
+        return res.status(429).json({
+          error: 'Gemini rate limit reached. Please retry shortly or switch to Gemini 2.5 Flash.',
+          code: 'RATE_LIMITED',
+          retryAfterSeconds: retryAfterSeconds ?? null,
+          modelTried: usedModel,
+          triedModels,
+        });
+      }
+      return res.status(502).json({
+        error: `Gemini API error (${resp.status})`,
+        code: 'UPSTREAM_ERROR',
+        modelTried: usedModel,
+        triedModels,
+      });
     }
 
     const data = await resp.json();
@@ -147,8 +220,8 @@ app.post('/api/gemini-chat', async (req, res) => {
 
     res.json({ reply: reply || 'No response from Gemini.', model: usedModel });
   } catch (error) {
-    console.error('Gemini proxy error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('[gemini-proxy] internal_error', { requestId, message: error?.message || 'unknown' });
+    res.status(500).json({ error: 'Internal server error', code: 'INTERNAL_ERROR' });
   }
 });
 

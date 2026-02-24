@@ -50,6 +50,8 @@ function App() {
   const iupacRequestedRef = useRef(false);
   const copySmilesRequestedRef = useRef(false);
   const [smilesCopied, setSmilesCopied] = useState(false);
+  const [metaSmilesCopied, setMetaSmilesCopied] = useState(false);
+  const [metaIupacCopied, setMetaIupacCopied] = useState(false);
   const [currentSmiles, setCurrentSmiles] = useState('');
   const [nmrData, setNmrData] = useState(null);
   const [showNmrModal, setShowNmrModal] = useState(false);
@@ -586,6 +588,35 @@ function App() {
     } catch { /* silent */ }
   };
 
+  const parseApiJsonSafe = async (resp) => {
+    try {
+      return await resp.json();
+    } catch {
+      return {};
+    }
+  };
+
+  const formatAiErrorMessage = (status, payload, context = 'chat') => {
+    const code = payload?.code || '';
+    const retryAfter = payload?.retryAfterSeconds;
+    if (code === 'RATE_LIMITED' || status === 429) {
+      const waitHint = Number.isFinite(Number(retryAfter)) ? ` Please wait about ${Math.max(1, Number(retryAfter))} seconds and try again.` : '';
+      const modelHint = ' You can switch to Gemini 2.5 Flash in the model selector for better availability.';
+      const keyHint = ' If this is the hosted app, your own API key often avoids shared quota throttling.';
+      return `Gemini rate limit reached.${waitHint}${modelHint}${keyHint}`;
+    }
+    if (code === 'INVALID_KEY_OR_ACCESS' || status === 400 || status === 403) {
+      return 'API key invalid or access denied. Re-check your Gemini API key and selected model permissions.';
+    }
+    if (code === 'MISSING_API_KEY') {
+      return 'No Gemini API key found. Open AI settings and save your API key.';
+    }
+    const fallback = payload?.error || `Gemini API error (${status || 'unknown'})`;
+    return context === 'spectrum'
+      ? `Prediction failed: ${fallback}`
+      : `Error: ${fallback}`;
+  };
+
   // Predict spectrum using Gemini (1H, 13C, IR, UV-Vis)
   const sanitizeSpectrumPrediction = (spec, fallbackType) => {
     const resolvedType = spec?.type || fallbackType || '1H';
@@ -725,7 +756,10 @@ ${scientificGuardrails}`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, smiles, apiKey: geminiApiKey, model: aiModel }),
       });
-      const data = await resp.json();
+      const data = await parseApiJsonSafe(resp);
+      if (!resp.ok) {
+        throw new Error(formatAiErrorMessage(resp.status, data, 'spectrum'));
+      }
       let raw = data?.reply || '';
       const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (fenceMatch) raw = fenceMatch[1].trim();
@@ -743,7 +777,7 @@ ${scientificGuardrails}`;
     } catch (err) {
       console.error('Spectrum prediction error:', err);
       setNmrData(null);
-      alert('Failed to predict spectrum. Check your API key and try again.');
+      alert(err?.message || 'Failed to predict spectrum. Check your API key and try again.');
     } finally {
       setIsNmrLoading(false);
     }
@@ -1868,7 +1902,12 @@ ${scientificGuardrails}`;
         }),
       });
 
-      const data = await resp.json();
+      const data = await parseApiJsonSafe(resp);
+      if (!resp.ok) {
+        const friendly = formatAiErrorMessage(resp.status, data, 'chat');
+        setChatMessages((msgs) => [...msgs, { role: 'assistant', text: friendly }]);
+        return;
+      }
       let replyText = data?.reply
         ? data.reply
         : data?.error
@@ -2892,27 +2931,51 @@ ${scientificGuardrails}`;
                   )}
                 </>
               )}
-              {!isProtein && iupacName && (
-                <div className="mol-props-row">
+              {!isProtein && currentSmiles && (
+                <div className="mol-props-row mol-props-multiline-row">
                   <span className="mol-props-label">IUPAC</span>
-                  <span className="mol-props-value mol-props-iupac">{iupacName}</span>
+                  <span className="mol-props-value mol-props-iupac" title={iupacName || 'IUPAC name unavailable'}>
+                    {iupacName || 'IUPAC name unavailable'}
+                  </span>
+                  <button
+                    className={`mol-props-copy-btn${metaIupacCopied ? ' mol-props-copy-btn-copied' : ''}`}
+                    onClick={() => {
+                      if (!iupacName) return;
+                      navigator.clipboard.writeText(iupacName).then(() => {
+                        setMetaIupacCopied(true);
+                        setTimeout(() => setMetaIupacCopied(false), 1200);
+                      }).catch(() => {});
+                    }}
+                    title="Copy IUPAC name"
+                    disabled={!iupacName}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    {metaIupacCopied ? 'Copied' : 'Copy'}
+                  </button>
                 </div>
               )}
               {!isProtein && currentSmiles && (
-                <div className="mol-props-row">
+                <div className="mol-props-row mol-props-multiline-row">
                   <span className="mol-props-label">SMILES</span>
                   <span className="mol-props-value mol-props-smiles" title={currentSmiles}>{currentSmiles}</span>
                   <button
-                    className="mol-props-copy-btn"
+                    className={`mol-props-copy-btn${metaSmilesCopied ? ' mol-props-copy-btn-copied' : ''}`}
                     onClick={() => {
                       navigator.clipboard.writeText(currentSmiles).then(() => {
-                        setSmilesCopied(true);
-                        setTimeout(() => setSmilesCopied(false), 1200);
+                        setMetaSmilesCopied(true);
+                        setTimeout(() => setMetaSmilesCopied(false), 1200);
                       }).catch(() => {});
                     }}
                     title="Copy SMILES"
                   >
-                    {smilesCopied ? '✓' : '⧉'}
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    {metaSmilesCopied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
               )}
