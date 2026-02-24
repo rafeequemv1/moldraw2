@@ -3,392 +3,192 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Learn about MolDraw - a free ChemDraw alternative for drawing, editing, and visualizing molecules in 3D. Features, capabilities, and how to use MolDraw.">
-  <meta name="keywords" content="MolDraw, ChemDraw alternative, molecule editor, 3D visualization, free chemistry software, molecular structure editor">
-  <meta property="og:title" content="What is MolDraw? Free ChemDraw Alternative Features" />
-  <meta property="og:description" content="Discover MolDraw - a powerful free alternative to ChemDraw for drawing molecules, 3D visualization, and exporting in multiple formats." />
-  <meta property="og:type" content="article" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="author" content="Scidart Academy" />
-  <meta property="og:image" content="https://moldraw.scidart.com/og-image.png" />
-  <meta property="og:url" content="https://moldraw.scidart.com/blog" />
-  <meta property="article:published_time" content="2024-01-01T00:00:00+00:00" />
-  <meta property="article:author" content="Scidart Academy" />
-  <link rel="canonical" href="https://moldraw.scidart.com/blog" />
-  <title>What is MolDraw? Free ChemDraw Alternative Features | MolDraw Blog</title>
-  
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0GXXMTT1RP"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-0GXXMTT1RP');
-  </script>
-  
+  <meta name="description" content="MolDraw Blog: practical guides on chemical structure drawing, reaction sketching, spectroscopy, and chemistry workflow optimization.">
+  <meta name="keywords" content="chemical structure drawing app, chemistry blog, MolDraw blog, ChemDraw alternative guides, molecule drawing tutorial">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="MolDraw Blog | Chemical Drawing Guides">
+  <meta property="og:description" content="Read practical chemistry guides on structure drawing, workflows, and visualization with MolDraw.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://moldraw.scidart.com/blog/">
+  <meta property="og:image" content="https://moldraw.scidart.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MolDraw Blog | Chemical Drawing Guides">
+  <meta name="twitter:description" content="Read practical chemistry guides on structure drawing, workflows, and visualization with MolDraw.">
+  <link rel="canonical" href="https://moldraw.scidart.com/blog/">
+  <title>MolDraw Blog | Chemical Structure Drawing Resources</title>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": "What is MolDraw? Free ChemDraw Alternative Features",
-    "description": "Learn about MolDraw - a free ChemDraw alternative for drawing, editing, and visualizing molecules in 3D. Features, capabilities, and how to use MolDraw.",
-    "image": "https://moldraw.scidart.com/og-image.png",
-    "author": {
-      "@type": "Organization",
-      "name": "Scidart Academy",
-      "url": "https://scidart.com"
-    },
+    "@type": "Blog",
+    "name": "MolDraw Blog",
+    "url": "https://moldraw.scidart.com/blog/",
     "publisher": {
       "@type": "Organization",
-      "name": "Scidart Academy",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://scidart.com/logo.png"
-      }
+      "name": "Scidart Academy"
     },
-    "datePublished": "2024-01-01T00:00:00+00:00",
-    "dateModified": "2024-01-01T00:00:00+00:00",
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": "https://moldraw.scidart.com/blog"
-    }
+    "blogPost": [
+      {
+        "@type": "BlogPosting",
+        "headline": "Chemical Structure Drawing App (SEO Optimized Guide)",
+        "url": "https://moldraw.scidart.com/blog/chemical-structure-drawing-app-seo-optimized.html"
+      }
+    ]
   }
   </script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-      line-height: 1.7;
-      color: #1a1a1a;
-      background: #ffffff;
+      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f7fafc;
+      color: #111827;
+      line-height: 1.6;
     }
-
     .container {
-      max-width: 800px;
+      width: min(1120px, 94vw);
       margin: 0 auto;
-      padding: 40px 20px;
+      padding: 26px 0 46px;
     }
-
-    .header {
-      text-align: center;
-      margin-bottom: 50px;
-      padding-bottom: 30px;
-      border-bottom: 2px solid #e8e8e8;
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
     }
-
-    .header h1 {
-      font-size: 42px;
-      font-weight: 800;
-      color: #1a1a1a;
-      margin-bottom: 15px;
-      line-height: 1.2;
-    }
-
-    .header .subtitle {
-      font-size: 18px;
-      color: #666;
-      font-weight: 400;
-    }
-
-    .back-link {
+    .nav-link {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      color: #667eea;
-      text-decoration: none;
-      font-weight: 600;
-      margin-bottom: 30px;
-      transition: color 0.2s;
-    }
-
-    .back-link:hover {
-      color: #764ba2;
-    }
-
-    .content {
-      font-size: 17px;
-      color: #333;
-    }
-
-    .content h2 {
-      font-size: 32px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin-top: 50px;
-      margin-bottom: 20px;
-      line-height: 1.3;
-    }
-
-    .content h3 {
-      font-size: 24px;
-      font-weight: 600;
-      color: #2d2d2d;
-      margin-top: 35px;
-      margin-bottom: 15px;
-    }
-
-    .content p {
-      margin-bottom: 20px;
-      color: #444;
-    }
-
-    .content ul, .content ol {
-      margin-left: 25px;
-      margin-bottom: 20px;
-    }
-
-    .content li {
-      margin-bottom: 12px;
-      color: #444;
-    }
-
-    .content strong {
-      color: #1a1a1a;
-      font-weight: 600;
-    }
-
-    .content a {
-      color: #667eea;
-      text-decoration: none;
-      border-bottom: 1px solid rgba(102, 126, 234, 0.3);
-      transition: all 0.2s;
-    }
-
-    .content a:hover {
-      color: #764ba2;
-      border-bottom-color: #764ba2;
-    }
-
-    .feature-box {
-      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-      border-left: 4px solid #667eea;
-      padding: 25px;
-      margin: 30px 0;
+      height: 32px;
+      border: 1px solid #e5e7eb;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      padding: 0 10px;
+      text-decoration: none;
+      color: #334155;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
     }
-
-    .feature-box h3 {
-      margin-top: 0;
-      color: #667eea;
+    .hero {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 18px;
     }
-
-    .cta-box {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 35px;
-      margin: 40px 0;
+    .hero h1 {
+      font-size: 30px;
+      margin-bottom: 8px;
+      color: #0f172a;
+    }
+    .hero p {
+      color: #475569;
+      max-width: 860px;
+      font-size: 15px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
       border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+      padding: 16px;
+      min-height: 230px;
     }
-
-    .cta-box h3 {
-      color: white;
-      margin-top: 0;
-      margin-bottom: 15px;
+    .tag {
+      display: inline-flex;
+      width: fit-content;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
     }
-
-    .cta-box p {
-      color: rgba(255, 255, 255, 0.95);
-      margin-bottom: 20px;
+    .card h2 {
+      font-size: 20px;
+      color: #0f172a;
+      line-height: 1.35;
     }
-
-    .cta-button {
-      display: inline-block;
-      background: white;
-      color: #667eea;
-      padding: 12px 28px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .cta-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    }
-
-    .footer {
-      margin-top: 60px;
-      padding-top: 30px;
-      border-top: 1px solid #e8e8e8;
-      text-align: center;
-      color: #666;
+    .card p {
       font-size: 14px;
+      color: #475569;
+      flex: 1;
     }
-
-    .footer a {
-      color: #667eea;
+    .read-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
       text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      width: fit-content;
+      padding: 0 12px;
     }
-
-    @media (max-width: 600px) {
-      .header h1 {
-        font-size: 32px;
-      }
-
-      .content {
-        font-size: 16px;
-      }
-
-      .content h2 {
-        font-size: 26px;
-      }
-
-      .content h3 {
-        font-size: 20px;
-      }
+    .muted-card {
+      border-style: dashed;
+      color: #64748b;
+    }
+    .muted-card h2 { color: #334155; font-size: 17px; }
+    footer {
+      margin-top: 18px;
+      color: #64748b;
+      font-size: 12px;
+      text-align: center;
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 24px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <a href="/" class="back-link">
-      ← Back to MolDraw
-    </a>
+  <main class="container">
+    <nav class="top-nav" aria-label="Blog navigation">
+      <a class="nav-link" href="/">← MolDraw App</a>
+      <a class="nav-link" href="/course/index.html">Course</a>
+    </nav>
 
-    <div class="header">
-      <h1>What is MolDraw?</h1>
-      <p class="subtitle">A Free ChemDraw Alternative for Molecular Structure Editing and 3D Visualization</p>
-    </div>
+    <section class="hero">
+      <h1>MolDraw Blog</h1>
+      <p>Actionable chemistry content for students, researchers, and teams. Learn molecule drawing best practices, cleaner reaction schemes, and practical workflows for 2D and 3D chemistry visualization.</p>
+    </section>
 
-    <div class="content">
-      <p>
-        <strong>MolDraw</strong> is a powerful, web-based molecular structure editor that serves as a completely free alternative to ChemDraw. Built by <a href="https://scidart.com" target="_blank" rel="noopener noreferrer">Scidart Academy</a>, MolDraw empowers chemists, researchers, students, and educators to draw, edit, visualize, and export molecular structures without any cost or subscription fees.
-      </p>
+    <section class="grid" aria-label="Blog cards">
+      <article class="card">
+        <span class="tag">Featured</span>
+        <h2>Chemical Structure Drawing App: SEO-Optimized Practical Guide</h2>
+        <p>How to choose and use a modern chemical structure drawing app with better readability, naming support, and export-ready outputs. Includes workflow tips for students and lab teams.</p>
+        <a class="read-btn" href="/blog/chemical-structure-drawing-app-seo-optimized.html">Read article</a>
+      </article>
 
-      <h2>Why Choose MolDraw?</h2>
+      <article class="card muted-card">
+        <span class="tag">Soon</span>
+        <h2>TLC Interpretation and Reporting Workflow</h2>
+        <p>End-to-end TLC documentation with Rf tracking and publication-ready plate diagrams.</p>
+      </article>
 
-      <p>
-        Traditional molecular drawing software like ChemDraw often comes with expensive licenses that can be prohibitive for students, independent researchers, or small labs. MolDraw breaks down these barriers by offering professional-grade molecular editing capabilities entirely free of charge, accessible directly through your web browser.
-      </p>
+      <article class="card muted-card">
+        <span class="tag">Soon</span>
+        <h2>NMR + IR Sanity Checks for Faster Assignments</h2>
+        <p>A practical checklist to validate spectral assignments before writing reports.</p>
+      </article>
+    </section>
 
-      <div class="feature-box">
-        <h3>🎨 Intuitive 2D Structure Editor</h3>
-        <p>
-          MolDraw features a sophisticated 2D molecular structure editor powered by <a href="https://github.com/epam/ketcher" target="_blank" rel="noopener noreferrer">Ketcher</a>, an open-source chemical structure editor. Draw complex organic molecules, add functional groups, create rings, and modify bonds with ease. The interface is clean, responsive, and designed for both beginners and experienced chemists.
-        </p>
-      </div>
-
-      <div class="feature-box">
-        <h3>🔬 Real-Time 3D Visualization</h3>
-        <p>
-          One of MolDraw's standout features is its integrated 3D molecular viewer. As you draw or modify a structure in 2D, you can instantly see it rendered in three dimensions. Switch between different visualization styles including:
-        </p>
-        <ul>
-          <li><strong>Ball & Stick:</strong> Classic representation showing atoms as spheres and bonds as sticks</li>
-          <li><strong>Stick:</strong> Simplified view focusing on the molecular framework</li>
-          <li><strong>Space-Fill:</strong> Van der Waals radii representation showing molecular volume</li>
-          <li><strong>Line:</strong> Minimal wireframe view for clarity</li>
-        </ul>
-      </div>
-
-      <div class="feature-box">
-        <h3>🔍 Molecule Search & Identification</h3>
-        <p>
-          Need to work with a known compound? MolDraw integrates with PubChem to search molecules by name. Simply type a molecule name (like "aspirin", "caffeine", or "benzene") and MolDraw will fetch the structure and load it into the editor. The system can also identify molecules you've drawn and suggest their IUPAC names.
-        </p>
-      </div>
-
-      <div class="feature-box">
-        <h3>📤 Multiple Export Formats</h3>
-        <p>
-          Export your molecular structures in various formats to suit your needs:
-        </p>
-        <ul>
-          <li><strong>PNG:</strong> High-quality images with transparent backgrounds for presentations and publications</li>
-          <li><strong>SDF:</strong> Structure Data Format for compatibility with other chemistry software</li>
-          <li><strong>XYZ:</strong> Coordinate format for computational chemistry</li>
-          <li><strong>X3D:</strong> 3D model format with bonds for web visualization</li>
-          <li><strong>OBJ:</strong> 3D model format compatible with Blender and other 3D software</li>
-        </ul>
-      </div>
-
-      <div class="feature-box">
-        <h3>⚙️ Advanced Features</h3>
-        <ul>
-          <li><strong>Hydrogen Toggle:</strong> Show or hide hydrogen atoms in the 3D view for cleaner visualization</li>
-          <li><strong>Interactive Controls:</strong> Rotate, zoom, and pan the 3D model to examine structures from any angle</li>
-          <li><strong>Real-Time Updates:</strong> Changes in the 2D editor instantly reflect in the 3D viewer</li>
-          <li><strong>No Installation Required:</strong> Runs entirely in your browser, works on any device</li>
-        </ul>
-      </div>
-
-      <h2>Who Can Use MolDraw?</h2>
-
-      <p>
-        MolDraw is designed for anyone who works with molecular structures:
-      </p>
-
-      <ul>
-        <li><strong>Students:</strong> Perfect for organic chemistry courses, lab reports, and homework assignments</li>
-        <li><strong>Researchers:</strong> Quick structure drawing for papers, presentations, and research documentation</li>
-        <li><strong>Educators:</strong> Create teaching materials, exam questions, and visual aids without software costs</li>
-        <li><strong>Pharmaceutical Scientists:</strong> Draw drug molecules and analyze their structures</li>
-        <li><strong>Anyone:</strong> Free access means no barriers to entry for hobbyists or curious learners</li>
-      </ul>
-
-      <h2>Built on Open Source</h2>
-
-      <p>
-        MolDraw is built using <a href="https://github.com/epam/ketcher" target="_blank" rel="noopener noreferrer">Ketcher</a>, an open-source chemical structure editor developed by EPAM Systems. This ensures reliability, transparency, and continuous improvement through community contributions. The 3D visualization is powered by <a href="https://3dmol.csb.pitt.edu/" target="_blank" rel="noopener noreferrer">3Dmol.js</a>, a powerful molecular visualization library.
-      </p>
-
-      <h2>Getting Started</h2>
-
-      <p>
-        Using MolDraw is simple:
-      </p>
-
-      <ol>
-        <li>Visit the MolDraw website</li>
-        <li>Start drawing in the left panel using the intuitive tools</li>
-        <li>Watch your molecule appear in 3D on the right</li>
-        <li>Adjust visualization settings, toggle hydrogens, or change rendering styles</li>
-        <li>Export your structure in your preferred format</li>
-      </ol>
-
-      <p>
-        No account creation, no downloads, no credit card required. Just open your browser and start creating.
-      </p>
-
-      <div class="cta-box">
-        <h3>Ready to Try MolDraw?</h3>
-        <p>Start drawing molecules for free right now. No sign-up required.</p>
-        <a href="/" class="cta-button">Launch MolDraw →</a>
-      </div>
-
-      <h2>About Scidart Academy</h2>
-
-      <p>
-        MolDraw is a project by <a href="https://scidart.com" target="_blank" rel="noopener noreferrer">Scidart Academy</a>, built by <a href="https://rafeeque.com" target="_blank" rel="noopener noreferrer">Rafeeque Mavoor</a>. Our mission is to make scientific tools accessible to everyone, regardless of budget constraints. We believe that powerful chemistry software shouldn't be locked behind expensive licenses.
-      </p>
-
-      <p>
-        For questions, feedback, or collaboration opportunities, please contact us at <a href="mailto:rafeequemavoor@gmail.com">rafeequemavoor@gmail.com</a>.
-      </p>
-    </div>
-
-    <div class="footer">
-      <p>
-        <a href="/">MolDraw</a> | 
-        <a href="/course/index.html">Course</a> | 
-        <a href="/pages/about.html">About</a> | 
-        <a href="/pages/faq.html">FAQ</a> | 
-        <a href="https://scidart.com" target="_blank" rel="noopener noreferrer">Scidart Academy</a>
-      </p>
-      <p style="margin-top: 10px;">
-        Built with <a href="https://github.com/epam/ketcher" target="_blank" rel="noopener noreferrer">Ketcher</a> and <a href="https://3dmol.csb.pitt.edu/" target="_blank" rel="noopener noreferrer">3Dmol.js</a>
-      </p>
-    </div>
-  </div>
+    <footer>MolDraw Blog by Scidart Academy</footer>
+  </main>
 </body>
 </html>

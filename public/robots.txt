@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Allow: /blog/
+Allow: /tools/
 Allow: /pages/
 
 Sitemap: https://moldraw.scidart.com/sitemap.xml

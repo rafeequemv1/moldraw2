@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './App.css';
 import TlcModal from './microapps/tlc/TlcModal';
+import CalculatorModal from './microapps/calculator/CalculatorModal';
 
 function App() {
   const ketcherCanvasWrapRef = useRef(null);
@@ -59,6 +60,7 @@ function App() {
   const [activeSpectrumType, setActiveSpectrumType] = useState('1H');
   const [showAiSetupModal, setShowAiSetupModal] = useState(false);
   const [showTlcModal, setShowTlcModal] = useState(false);
+  const [showCalculatorModal, setShowCalculatorModal] = useState(false);
   const [lonePairs, setLonePairs] = useState([]);
   const lonePairDragRef = useRef(null);
   const host = window.location.hostname;
@@ -2771,6 +2773,13 @@ ${scientificGuardrails}`;
               <div className="tb-sep" />
               <button
                 className="tb-btn"
+                onClick={() => setShowCalculatorModal(true)}
+                title="Open chemistry calculators"
+              >
+                Calculator
+              </button>
+              <button
+                className="tb-btn"
                 onClick={() => setShowTlcModal(true)}
                 title="Open TLC diagram builder"
               >
@@ -2796,7 +2805,9 @@ ${scientificGuardrails}`;
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.57-3.25 3.92L12 14"/><circle cx="12" cy="18" r="1"/></svg>
                 AI Setup
               </a>
+              <a className="tb-btn" href="/tools/index.html" target="_blank" rel="noopener noreferrer" title="Tools">Tools</a>
               <a className="tb-btn" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Course">Course</a>
+              <a className="tb-btn" href="/blog/index.html" target="_blank" rel="noopener noreferrer" title="Blog">Blog</a>
               <a className="tb-btn" href="/pages/about.html" target="_blank" rel="noopener noreferrer" title="About">About</a>
               <a className="tb-btn" href="/pages/updates.html" target="_blank" rel="noopener noreferrer" title="Updates">Updates</a>
             </div>
@@ -3381,6 +3392,7 @@ ${scientificGuardrails}`;
       )}
 
       {showTlcModal && <TlcModal onClose={() => setShowTlcModal(false)} />}
+      {showCalculatorModal && <CalculatorModal onClose={() => setShowCalculatorModal(false)} />}
 
       {/* NMR Spectrum Modal */}
       {showNmrModal && (

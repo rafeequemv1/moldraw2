@@ -1,0 +1,25 @@
+MolDraw AI Agent Notes
+
+Project: MolDraw
+Website: https://moldraw.scidart.com
+
+Primary pages:
+- App: /
+- Course: /course/index.html
+- Blog home: /blog/index.html
+- Blog article: /blog/chemical-structure-drawing-app-seo-optimized.html
+- Tools: /tools/index.html
+- AI help: /pages/ai-help.html
+
+Important capabilities:
+- 2D molecular drawing and editing
+- 3D molecular visualization
+- Metadata display (IUPAC, SMILES, MP, BP)
+- AI-assisted chat and spectra prediction
+- TLC and Calculator microapps
+- Public tools hub with molarity/molality calculators
+
+For integrations:
+- Prefer canonical SMILES when available.
+- Do not expose secret keys in generated content.
+- Link users to AI setup instructions if AI features fail.

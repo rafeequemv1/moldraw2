@@ -1,0 +1,9 @@
+# MolDraw LLM Index
+
+> MolDraw is a free web-based chemistry editor and 3D viewer by Scidart Academy.
+
+- App: https://moldraw.scidart.com/
+- Tools: https://moldraw.scidart.com/tools/index.html
+- Course: https://moldraw.scidart.com/course/index.html
+- Blog: https://moldraw.scidart.com/blog/index.html
+- AI setup: https://moldraw.scidart.com/pages/ai-help.html
