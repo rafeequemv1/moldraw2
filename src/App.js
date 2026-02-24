@@ -2841,40 +2841,55 @@ Include ALL expected peaks with correct splitting patterns and realistic J-coupl
                 </>
               )}
               {!isProtein && currentSmiles && geminiApiKey && (
-                <div className="mol-props-nmr-row">
-                  <button
-                    className="mol-props-nmr-btn"
-                    onClick={() => predictNMR('proton')}
-                    disabled={isNmrLoading}
-                    title="Predict 1H NMR spectrum (AI)"
-                  >
-                    {isNmrLoading ? '...' : '¹H NMR'}
-                  </button>
-                  <button
-                    className="mol-props-nmr-btn mol-props-nmr-btn-c13"
-                    onClick={() => predictNMR('carbon')}
-                    disabled={isNmrLoading}
-                    title="Predict 13C NMR spectrum (AI)"
-                  >
-                    {isNmrLoading ? '...' : '¹³C NMR'}
-                  </button>
-                  <button
-                    className="mol-props-nmr-btn mol-props-nmr-btn-ir"
-                    onClick={() => predictNMR('ir')}
-                    disabled={isNmrLoading}
-                    title="Predict IR spectrum (AI)"
-                  >
-                    {isNmrLoading ? '...' : 'IR'}
-                  </button>
-                  <button
-                    className="mol-props-nmr-btn mol-props-nmr-btn-uv"
-                    onClick={() => predictNMR('uv')}
-                    disabled={isNmrLoading}
-                    title="Predict UV-Vis spectrum (AI)"
-                  >
-                    {isNmrLoading ? '...' : 'UV-Vis'}
-                  </button>
-                </div>
+                <>
+                  <div className="mol-props-model-row">
+                    <span className="mol-props-label">AI model</span>
+                    <select
+                      className="mol-props-model-select"
+                      value={aiModel}
+                      onChange={(e) => setAiModel(e.target.value)}
+                      title="Model for spectrum predictions"
+                    >
+                      {AI_MODEL_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mol-props-nmr-row">
+                    <button
+                      className="mol-props-nmr-btn"
+                      onClick={() => predictNMR('proton')}
+                      disabled={isNmrLoading}
+                      title="Predict 1H NMR spectrum (AI)"
+                    >
+                      {isNmrLoading ? '...' : '¹H NMR'}
+                    </button>
+                    <button
+                      className="mol-props-nmr-btn mol-props-nmr-btn-c13"
+                      onClick={() => predictNMR('carbon')}
+                      disabled={isNmrLoading}
+                      title="Predict 13C NMR spectrum (AI)"
+                    >
+                      {isNmrLoading ? '...' : '¹³C NMR'}
+                    </button>
+                    <button
+                      className="mol-props-nmr-btn mol-props-nmr-btn-ir"
+                      onClick={() => predictNMR('ir')}
+                      disabled={isNmrLoading}
+                      title="Predict IR spectrum (AI)"
+                    >
+                      {isNmrLoading ? '...' : 'IR'}
+                    </button>
+                    <button
+                      className="mol-props-nmr-btn mol-props-nmr-btn-uv"
+                      onClick={() => predictNMR('uv')}
+                      disabled={isNmrLoading}
+                      title="Predict UV-Vis spectrum (AI)"
+                    >
+                      {isNmrLoading ? '...' : 'UV-Vis'}
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           )}

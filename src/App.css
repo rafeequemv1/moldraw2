@@ -506,6 +506,29 @@
   flex-wrap: wrap;
 }
 
+.mol-props-model-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.mol-props-model-select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.mol-props-model-select:focus {
+  outline: none;
+  border-color: #2C7A7B;
+}
+
 .mol-props-nmr-btn {
   flex: 1;
   padding: 5px 0;
