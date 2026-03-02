@@ -114,27 +114,23 @@
   background: #f1f5f9;
 }
 
-.canvas-lp-tool {
+.canvas-lp-hint {
   position: absolute;
   right: 14px;
   bottom: 12px;
   z-index: 130;
   border: 1px solid #d6dde3;
-  background: rgba(255, 255, 255, 0.94);
-  color: #334155;
+  background: rgba(255, 255, 255, 0.92);
+  color: #475569;
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: 6px 9px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   font-family: 'Libre Franklin', sans-serif;
-  cursor: pointer;
+  cursor: default;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transition: all 0.15s ease;
-}
-
-.canvas-lp-tool:hover {
-  background: #f8fafc;
-  border-color: #c3ccd5;
+  max-width: 360px;
+  line-height: 1.35;
 }
 
 /* Brand Header */
@@ -143,10 +139,17 @@
   padding: 8px 16px;
   border-bottom: 1px solid #e8e8e8;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  position: relative;
+  z-index: 220;
+}
+
+.brand-top-row {
+  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 14px;
 }
 
 .brand-name {
@@ -157,12 +160,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .brand-by-text {
   font-size: 12px;
   font-weight: 400;
   color: #666;
+  white-space: nowrap;
 }
 
 .brand-by-link {
@@ -187,7 +192,22 @@
 .header-links {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 2px;
+  justify-content: flex-start;
+  max-width: 100%;
+  overflow: visible;
+  padding-bottom: 2px;
+}
+
+@media (max-width: 1250px) {
+  .brand-header {
+    gap: 8px;
+  }
+  .brand-top-row {
+    flex-wrap: wrap;
+  }
+  .molecule-search-bar { max-width: 100%; }
 }
 
 .tb-btn {
@@ -215,8 +235,45 @@
   color: #111;
 }
 
+.tb-btn-active {
+  background: #eef6f6;
+  color: #1a5a5b;
+}
+
 .tb-btn svg {
   flex-shrink: 0;
+}
+
+.tb-menu-dropdown {
+  position: relative;
+}
+
+.tb-menu-dropdown-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 150px;
+  background: #fff;
+  border: 1px solid #dfe5ec;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(2, 8, 23, 0.14);
+  padding: 6px;
+  z-index: 5000;
+}
+
+.tb-menu-item {
+  display: block;
+  text-decoration: none;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+
+.tb-menu-item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .tb-sep {
@@ -269,9 +326,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 0 2px;
   flex: 1;
-  max-width: 280px;
-  margin-left: auto;
   position: relative;
 }
 
@@ -370,7 +428,7 @@
 }
 
 .viewer-panel {
-  background: #f8f9fa;
+  background: #ffffff;
   position: relative;
   transition: all 0.3s ease;
 }
@@ -1200,6 +1258,7 @@
   width: 100%;
   height: 100%;
   position: relative;
+  background: #ffffff;
 }
 
 /* Feedback Chat Widget - Positioned in 3D viewer panel */
@@ -1583,6 +1642,9 @@
   top: 16px;
   left: 16px;
   z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .pdb-import-btn {
@@ -1602,32 +1664,51 @@
   font-family: 'Libre Franklin', sans-serif;
 }
 
-/* Prominent protein close overlay */
-.close-protein-overlay {
-  position: absolute;
-  bottom: 14px;
-  left: 14px;
-  z-index: 55;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border: 1px solid #c9d1d8;
-  border-radius: 8px;
-  background: rgba(244, 247, 250, 0.9);
-  color: #506173;
-  font-size: 11px;
-  font-weight: 500;
-  font-family: 'Libre Franklin', sans-serif;
+.pdb-close-protein-btn {
+  background: #fff7f7;
+  border: 1px solid #efc1c1;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #8a2f2f;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-  transition: all 0.15s;
+  font-family: 'Libre Franklin', sans-serif;
 }
 
-.close-protein-overlay:hover {
-  background: rgba(235, 240, 245, 0.95);
-  border-color: #b7c2cc;
-  color: #3f5162;
+.pdb-close-protein-btn:hover {
+  background: #ffecec;
+  border-color: #e59a9a;
+}
+
+.protein-quick-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.molecule-quick-toggles {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.protein-quick-toggle {
+  background: #ffffff;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  font-family: 'Libre Franklin', sans-serif;
+}
+
+.protein-quick-toggle.on {
+  background: #ebf4ff;
+  border-color: #90b6ff;
+  color: #1d4ed8;
 }
 
 /* Refresh 3D button */
@@ -1663,6 +1744,189 @@
 
 .pdb-import-btn svg {
   flex-shrink: 0;
+}
+
+/* Miew settings panel */
+.miew-settings-panel {
+  position: absolute;
+  top: 52px;
+  right: 10px;
+  z-index: 220;
+  width: 330px;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 88px);
+  overflow: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  box-shadow: 0 8px 20px rgba(2, 8, 23, 0.12);
+}
+
+.miew-settings-panel-2d {
+  z-index: 260;
+}
+
+.miew-settings-header {
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 7px 9px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.miew-settings-close {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #475569;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.miew-settings-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  padding: 8px 9px 6px;
+}
+
+.miew-settings-tab {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #475569;
+  border-radius: 6px;
+  height: 26px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.miew-settings-tab.active {
+  background: #2C7A7B;
+  border-color: #2C7A7B;
+  color: #ffffff;
+}
+
+.miew-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  padding: 6px 9px 8px;
+}
+
+.miew-mode-grid.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.miew-mode-btn {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #334155;
+  border-radius: 6px;
+  min-height: 26px;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.miew-mode-btn.active {
+  background: #2C7A7B;
+  border-color: #2C7A7B;
+  color: #fff;
+}
+
+.miew-settings-list {
+  border-top: 1px solid #e5e7eb;
+  padding: 4px 9px 8px;
+}
+
+.miew-settings-list.compact {
+  border-top: 0;
+}
+
+.miew-setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-size: 10px;
+  color: #334155;
+}
+
+.miew-setting-select {
+  min-width: 90px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.miew-settings-group-title {
+  padding: 6px 9px 0;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.miew-settings-subtitle {
+  padding: 2px 9px 0;
+  font-size: 9px;
+  line-height: 1.25;
+  color: #7b8a9d;
+}
+
+.miew-toggle-btn {
+  min-width: 52px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.miew-toggle-btn.on {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.miew-toggle-btn.on.dark {
+  background: #374151;
+  border-color: #374151;
+}
+
+.miew-export-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 2px 0 2px;
+}
+
+.miew-settings-empty {
+  font-size: 10px;
+  color: #64748b;
+  padding: 6px 0;
+}
+
+.miew-setting-note {
+  font-size: 9px;
+  color: #7c8da1;
+  margin: -2px 0 3px;
+  line-height: 1.25;
 }
 
 /* AI Chat Assistant (3D panel, well left of Crisp bubble ~54px+24px gap) */

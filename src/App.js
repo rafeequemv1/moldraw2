@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './App.css';
 import TlcModal from './microapps/tlc/TlcModal';
 import CalculatorModal from './microapps/calculator/CalculatorModal';
+import Miew from 'miew';
+import 'miew/dist/miew.min.css';
 
 function App() {
   const ketcherCanvasWrapRef = useRef(null);
@@ -47,9 +49,12 @@ function App() {
   const lastMolfileForAIRef = useRef(null);
   const manual3DRefreshRequestedRef = useRef(false);
   const force3DRefreshOnDeleteRef = useRef(false);
+  const proteinCloseReloadRef = useRef(false);
   const previousAtomCountRef = useRef(0);
   const iupacRequestedRef = useRef(false);
   const copySmilesRequestedRef = useRef(false);
+  const moleculeUpdateSeqRef = useRef(0);
+  const lastRenderedSignatureRef = useRef('');
   const [smilesCopied, setSmilesCopied] = useState(false);
   const [metaSmilesCopied, setMetaSmilesCopied] = useState(false);
   const [metaIupacCopied, setMetaIupacCopied] = useState(false);
@@ -61,8 +66,28 @@ function App() {
   const [showAiSetupModal, setShowAiSetupModal] = useState(false);
   const [showTlcModal, setShowTlcModal] = useState(false);
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
+  const [showViewerSettings, setShowViewerSettings] = useState(false);
+  const [miewSettingsTab, setMiewSettingsTab] = useState('view');
+  const [isMiewEngine, setIsMiewEngine] = useState(false);
+  const [miewMode, setMiewMode] = useState('BS');
+  const [miewColorer, setMiewColorer] = useState('EL');
+  const [miewResolution, setMiewResolution] = useState('medium');
+  const [miewAutoResolution, setMiewAutoResolution] = useState(false);
+  const [miewFog, setMiewFog] = useState(false);
+  const [miewAxes, setMiewAxes] = useState(false);
+  const [miewFps, setMiewFps] = useState(false);
+  const [miewPalette, setMiewPalette] = useState('JM');
+  const [miewBgDark, setMiewBgDark] = useState(false);
+  const [miewFxaa, setMiewFxaa] = useState(true);
+  const [miewAo, setMiewAo] = useState(false);
+  const [miewShadow, setMiewShadow] = useState(false);
+  const [miewClipPlane, setMiewClipPlane] = useState(false);
+  const [miewOutline, setMiewOutline] = useState(true);
+  const [exportTransparentBg, setExportTransparentBg] = useState(true);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [lonePairs, setLonePairs] = useState([]);
   const lonePairDragRef = useRef(null);
+  const moreMenuRef = useRef(null);
   const host = window.location.hostname;
   const isLocalDevHost =
     host === 'localhost' ||
@@ -77,6 +102,35 @@ function App() {
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (balanced)' },
     { value: 'gemini-3.0-flash', label: 'Gemini 3 Flash (fast)' },
     { value: 'gemini-3-pro', label: 'Gemini 3 Pro (high accuracy)' },
+  ];
+  const MIEW_MODE_OPTIONS = [
+    { id: 'LN', label: 'Lines' },
+    { id: 'LC', label: 'Licorice' },
+    { id: 'BS', label: 'Balls' },
+    { id: 'VW', label: 'VDW' },
+    { id: 'TR', label: 'Trace' },
+    { id: 'TU', label: 'Tube' },
+    { id: 'CA', label: 'Cartoon' },
+    { id: 'QS', label: 'Quick Surf' },
+    { id: 'SA', label: 'SAS' },
+    { id: 'SE', label: 'SES' },
+    { id: 'CS', label: 'Contact Surf' },
+    { id: 'TX', label: 'Text' },
+  ];
+  const MIEW_COLOR_OPTIONS = [
+    { id: 'EL', label: 'Element' },
+    { id: 'RT', label: 'Residue' },
+    { id: 'SQ', label: 'Sequence' },
+    { id: 'CH', label: 'Chain' },
+    { id: 'SS', label: 'Structure' },
+    { id: 'UN', label: 'Uniform' },
+    { id: 'CO', label: 'Conditional' },
+    { id: 'CF', label: 'Conformation' },
+    { id: 'TM', label: 'Temperature' },
+    { id: 'OC', label: 'Occupancy' },
+    { id: 'HY', label: 'Hydrophobicity' },
+    { id: 'MO', label: 'Molecule' },
+    { id: 'CB', label: 'Carbon' },
   ];
 
   const promptAiSetupModal = () => {
@@ -95,6 +149,17 @@ function App() {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const onDocClick = (event) => {
+      if (!showMoreMenu) return;
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [showMoreMenu]);
 
   // Initialize IndexedDB for caching
   useEffect(() => {
@@ -181,49 +246,43 @@ function App() {
     }
   }, []);
 
-  // Initialize 3Dmol viewer
+  // Initialize Miew viewer
   useEffect(() => {
-    const init3DViewer = async () => {
+    const initViewer = () => {
       try {
-        const $3Dmol = window.$3Dmol;
-        if (!$3Dmol) {
-          console.error('3Dmol not loaded');
-          return;
-        }
-
         if (viewer3DRef.current && !viewerInstanceRef.current) {
-          const config = { backgroundColor: '#f8f9fa' };
-          const viewer = $3Dmol.createViewer(viewer3DRef.current, config);
-          // Keep track of the intended background so we can restore it after exports
-          viewerBgRef.current = { color: '#f8f9fa', alpha: 1 };
+          const viewer = new Miew({
+            container: viewer3DRef.current,
+            settings: {
+              axes: false,
+              autoRotation: 0,
+            },
+          });
+          if (viewer.init()) {
+            viewer.run();
+          }
+          // Marker for Miew-specific code paths.
+          viewer.__isMiew = true;
+          setIsMiewEngine(true);
+          viewerBgRef.current = { color: '#ffffff', alpha: 1 };
           viewerInstanceRef.current = viewer;
           setIs3DReady(true);
-
-          viewer.addLabel('Draw a structure → see in 3D',
-            {
-              position: { x: 0, y: 0, z: 0 },
-              fontSize: 16,
-              fontColor: '#999',
-              backgroundColor: 'transparent'
-            });
-          viewer.render();
         }
       } catch (error) {
-        console.error('Error initializing 3D viewer:', error);
+        console.error('Error initializing Miew viewer:', error);
       }
     };
 
-    if (!window.$3Dmol) {
-      const script = document.createElement('script');
-      script.src = 'https://3Dmol.csb.pitt.edu/build/3Dmol-min.js';
-      script.async = true;
-      script.onload = () => {
-        setTimeout(init3DViewer, 100);
-      };
-      document.head.appendChild(script);
-    } else {
-      init3DViewer();
-    }
+    initViewer();
+
+    return () => {
+      try {
+        if (viewerInstanceRef.current && viewerInstanceRef.current.__isMiew && typeof viewerInstanceRef.current.term === 'function') {
+          viewerInstanceRef.current.term();
+        }
+      } catch {}
+      viewerInstanceRef.current = null;
+    };
   }, []);
 
   // Search molecule by name and load into Ketcher
@@ -231,6 +290,29 @@ function App() {
   const isPDBID = (query) => {
     const trimmed = query.trim().toUpperCase();
     return /^[A-Z0-9]{4}$/.test(trimmed);
+  };
+
+  const sanitizeSmilesText = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    const lowered = text.toLowerCase();
+    // Guard against accidentally receiving molfile/sdf payloads in the smiles field.
+    if (
+      text.includes('\n') ||
+      text.includes('\r') ||
+      lowered.includes('v2000') ||
+      lowered.includes('v3000') ||
+      lowered.includes('m  end') ||
+      lowered.includes('$$$$')
+    ) {
+      return '';
+    }
+    const compact = text.replace(/\s+/g, '');
+    // Basic SMILES token safety check.
+    if (!/^(?=.*[A-Za-z])[A-Za-z0-9@+\-[\]()=#$\\/%.:*.,]+$/.test(compact)) {
+      return '';
+    }
+    return compact;
   };
 
   const fetchPDBMetadata = async (pdbId) => {
@@ -275,17 +357,23 @@ function App() {
         }
 
         const viewer = viewerInstanceRef.current;
-
-        // Clear previous content (labels, models) before loading protein
-        viewer.removeAllLabels();
-        viewer.clear();
-
-        const model = viewer.addModel(pdbText, 'pdb');
-        proteinModelRef.current = model;
-        lastModelRef.current = model;
-
-        if (model) {
-          model.setStyle({}, { cartoon: { color: 'spectrum' } });
+        const isMiew = !!viewer.__isMiew;
+        let model = null;
+        if (isMiew) {
+          const loaded = await loadIntoMiew(pdbText, 'pdb');
+          if (!loaded) throw new Error('Failed to load PDB in Miew');
+          applyMiewViewerSettings(viewer);
+          applyMiewDisplayMode(miewMode, viewer, miewColorer);
+        } else {
+          // Clear previous content (labels, models) before loading protein
+          viewer.removeAllLabels();
+          viewer.clear();
+          model = viewer.addModel(pdbText, 'pdb');
+          proteinModelRef.current = model;
+          lastModelRef.current = model;
+          if (model) {
+            model.setStyle({}, { cartoon: { color: 'spectrum' } });
+          }
         }
 
         setCurrentMolecule({
@@ -309,12 +397,14 @@ function App() {
         });
 
         // Center and zoom
-        viewer.zoomTo();
-        viewer.rotate(25, { x: 1, y: 1, z: 0 });
-        viewer.render();
+        if (!isMiew) {
+          viewer.zoomTo();
+          viewer.rotate(25, { x: 1, y: 1, z: 0 });
+          viewer.render();
+        }
 
         // Update molecular mass for the newly imported protein
-        if (model) {
+        if (model && !isMiew) {
           const atoms = model.selectedAtoms({});
           setMolecularMass(calculateMolecularMass(atoms, showHydrogens));
         } else {
@@ -1143,9 +1233,128 @@ ${scientificGuardrails}`;
     }
   };
 
+  const loadIntoMiew = useCallback(async (sourceText, fileType, smiles) => {
+    const viewer = viewerInstanceRef.current;
+    if (!viewer || !viewer.__isMiew || typeof viewer.load !== 'function') return false;
+    const normalizedSmiles = (smiles || '').trim();
+    try {
+      if (typeof viewer.reset === 'function') viewer.reset();
+      const attempts = [
+        () => viewer.load(sourceText, { sourceType: 'immediate', fileType }),
+      ];
+
+      // Some Ketcher molfiles can be parsed by Miew only as SDF records.
+      if (fileType === 'mol') {
+        attempts.push(() => viewer.load(`${sourceText}\n$$$$\n`, { sourceType: 'immediate', fileType: 'sdf' }));
+      }
+
+      // Final fallback: let Miew load a canonical 3D SDF from PubChem by SMILES URL.
+      if (normalizedSmiles) {
+        const encodedSmiles = encodeURIComponent(normalizedSmiles);
+        const pubchemSdfUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodedSmiles}/SDF?record_type=3d`;
+        attempts.push(() => viewer.load(pubchemSdfUrl, { sourceType: 'url', fileType: 'sdf' }));
+      }
+
+      let loaded = false;
+      for (const tryLoad of attempts) {
+        try {
+          await tryLoad();
+          loaded = true;
+          break;
+        } catch {
+          // Try next strategy.
+        }
+      }
+
+      if (!loaded) return false;
+      return true;
+    } catch (error) {
+      console.error(`Failed to load ${fileType} into Miew:`, error);
+      return false;
+    }
+  }, []);
+
+  const applyMiewDisplayMode = useCallback((modeId, viewerArg = null, colorerIdArg = null) => {
+    const viewer = viewerArg || viewerInstanceRef.current;
+    if (!viewer || !viewer.__isMiew || typeof viewer.rep !== 'function') return;
+    const colorerId = colorerIdArg || miewColorer;
+    const selectorExpr = showHydrogens ? 'all' : 'not elem H';
+    try {
+      const count = typeof viewer.repCount === 'function' ? Number(viewer.repCount()) : 0;
+      const applyRep = (selectorValue) => {
+        if (count > 0) {
+          for (let i = 0; i < count; i += 1) {
+            viewer.rep(i, { mode: modeId, colorer: colorerId, selector: selectorValue });
+          }
+        } else if (typeof viewer.repAdd === 'function') {
+          viewer.repAdd({ mode: modeId, colorer: colorerId, selector: selectorValue, material: 'SF' });
+        }
+      };
+      if (count > 0) {
+        try {
+          applyRep(selectorExpr);
+        } catch {
+          applyRep('all');
+        }
+      } else if (typeof viewer.repAdd === 'function') {
+        try {
+          applyRep(selectorExpr);
+        } catch {
+          applyRep('all');
+        }
+      }
+      if (typeof viewer.rebuildAll === 'function') viewer.rebuildAll();
+      else if (typeof viewer.rebuild === 'function') viewer.rebuild();
+      else if (typeof viewer.setNeedRender === 'function') viewer.setNeedRender();
+      setMiewMode(modeId);
+      setMiewColorer(colorerId);
+    } catch (error) {
+      console.error('Failed to apply Miew mode:', modeId, error);
+    }
+  }, [miewColorer, showHydrogens]);
+
+  const applyMiewViewerSettings = useCallback((viewerArg = null) => {
+    const viewer = viewerArg || viewerInstanceRef.current;
+    if (!viewer || !viewer.__isMiew || typeof viewer.set !== 'function') return;
+    const bgColor = miewBgDark ? 0x202020 : 0xffffff;
+    const fgFog = miewBgDark ? 0x202020 : 0xffffff;
+    try {
+      viewer.set('resolution', miewResolution);
+      viewer.set('autoResolution', miewAutoResolution);
+      viewer.set('fog', miewFog);
+      viewer.set('axes', miewAxes);
+      viewer.set('fps', miewFps);
+      viewer.set('palette', miewPalette);
+      viewer.set('bg.color', bgColor);
+      viewer.set('fogColor', fgFog);
+      viewer.set('fxaa', miewFxaa);
+      viewer.set('ao', miewAo);
+      viewer.set('shadow.on', miewShadow);
+      viewer.set('draft.clipPlane', miewClipPlane);
+      viewer.set('outline.on', miewOutline);
+      if (typeof viewer.setNeedRender === 'function') viewer.setNeedRender();
+    } catch (error) {
+      console.error('Failed to apply Miew settings:', error);
+    }
+  }, [
+    miewResolution,
+    miewAutoResolution,
+    miewFog,
+    miewAxes,
+    miewFps,
+    miewPalette,
+    miewBgDark,
+    miewFxaa,
+    miewAo,
+    miewShadow,
+    miewClipPlane,
+    miewOutline,
+  ]);
+
   // Apply render style to molecule
   const applyRenderStyle = useCallback((viewer, style, isProteinMode = false) => {
     if (!viewer) return;
+    if (viewer.__isMiew) return;
 
     // Skip style application for proteins (handled separately)
     if (isProteinMode) {
@@ -1242,9 +1451,17 @@ ${scientificGuardrails}`;
     }
 
     try {
+      const updateSeq = ++moleculeUpdateSeqRef.current;
+      const normalizedMolfile = String(molfile || '').trim();
+      const normalizedSmiles = String(smiles || '').trim();
+      const structureSignature = `${normalizedSmiles}||${normalizedMolfile}`;
+      const forceRefresh = manual3DRefreshRequestedRef.current || force3DRefreshOnDeleteRef.current;
+      if (!forceRefresh && structureSignature === lastRenderedSignatureRef.current) {
+        return;
+      }
+
       const viewer = viewerInstanceRef.current;
-      viewer.removeAllLabels();
-      viewer.clear();
+      const isMiew = !!viewer.__isMiew;
 
       // Get molecule name from PubChem
       if (smiles && smiles.trim() !== '') {
@@ -1256,21 +1473,28 @@ ${scientificGuardrails}`;
       if (smiles && smiles.trim() !== '') {
         structure3D = await convertSmilesTo3D(smiles);
       }
+      // Ignore stale async result if a newer update started.
+      if (updateSeq !== moleculeUpdateSeqRef.current) return;
 
       // Always prefer 3D structure for accurate bond lengths
       const structureData = structure3D || molfile;
       const format = structure3D ? 'sdf' : 'mol';
 
-      const lines = structureData.split('\n');
-      const countsLine = lines.find(line => line.trim().match(/^\s*\d+\s+\d+/));
-
-      if (countsLine) {
-        const parts = countsLine.trim().split(/\s+/);
-        const atomCount = parseInt(parts[0]) || 0;
-
-        if (atomCount > 0) {
-          const model = viewer.addModel(structureData, format);
+      if (structureData && String(structureData).trim() !== '') {
+        let model = null;
+        if (isMiew) {
+          const miewFormat = structure3D ? 'sdf' : 'mol';
+          const loaded = await loadIntoMiew(structure3D ? structureData : molfile, miewFormat, smiles);
+          if (updateSeq !== moleculeUpdateSeqRef.current) return;
+          if (!loaded) throw new Error('Failed to load molecule in Miew');
+          applyMiewViewerSettings(viewer);
+          applyMiewDisplayMode(miewMode, viewer, miewColorer);
+        } else {
+          viewer.removeAllLabels();
+          viewer.clear();
+          model = viewer.addModel(structureData, format);
           lastModelRef.current = model;
+        }
 
           // Store current molecule for export - prefer 3D structure for accurate bond lengths
           // If we have 3D structure, use it; otherwise use molfile
@@ -1284,19 +1508,22 @@ ${scientificGuardrails}`;
           if (smiles) {
             cacheMolecule(structureData, smiles);
           }
+          lastRenderedSignatureRef.current = structureSignature;
 
-          // Apply selected render style
+          // Apply selected render style (3Dmol only for now)
           applyRenderStyle(viewer, renderStyle, false);
 
-          // Center and rotate for 3D view
-          viewer.zoomTo();
-          viewer.rotate(25, { x: 1, y: 1, z: 0 });
-          viewer.render();
+          // Center and render
+          if (!isMiew) {
+            viewer.zoomTo();
+            viewer.rotate(25, { x: 1, y: 1, z: 0 });
+            viewer.render();
+          }
 
           // Update molecular mass: prefer 3D model atoms, fall back to molfile parsing
           try {
             let mass = null;
-            if (model) {
+            if (model && !isMiew) {
               const atoms = model.selectedAtoms({});
               mass = calculateMolecularMass(atoms, showHydrogens);
             }
@@ -1306,7 +1533,10 @@ ${scientificGuardrails}`;
             console.error('Error updating molecular mass after 3D update:', err);
             setMolecularMass(calculateMassFromMolfile(molfile));
           }
-        } else {
+      } else {
+        if (!isMiew) {
+          viewer.removeAllLabels();
+          viewer.clear();
           viewer.addLabel('Draw a structure → see in 3D', {
             position: { x: 0, y: 0, z: 0 },
             fontSize: 16,
@@ -1314,20 +1544,24 @@ ${scientificGuardrails}`;
             backgroundColor: 'transparent'
           });
           viewer.render();
-          setCurrentMolecule(null);
-          clearMoleculeProps();
-          setMolecularMass(null);
+        } else if (typeof viewer.reset === 'function') {
+          viewer.reset();
         }
+        lastRenderedSignatureRef.current = structureSignature;
+        setCurrentMolecule(null);
+        clearMoleculeProps();
+        setMolecularMass(null);
       }
     } catch (error) {
       console.error('Error updating 3D molecule:', error);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [renderStyle, applyRenderStyle, cacheMolecule]);
+  }, [renderStyle, applyRenderStyle, cacheMolecule, loadIntoMiew, applyMiewViewerSettings, applyMiewDisplayMode, miewMode, miewColorer]);
 
   // Re-apply style when it changes
   useEffect(() => {
     if (viewerInstanceRef.current && currentMolecule) {
+      if (viewerInstanceRef.current.__isMiew) return;
       if (isProtein) {
         const viewer = viewerInstanceRef.current;
         const proteinModel = proteinModelRef.current;
@@ -1355,6 +1589,12 @@ ${scientificGuardrails}`;
       viewerInstanceRef.current.render();
     }
   }, [renderStyle, showHydrogens, applyRenderStyle, currentMolecule, isProtein]);
+
+  // Keep Miew settings live-synced from UI controls.
+  useEffect(() => {
+    applyMiewViewerSettings();
+    applyMiewDisplayMode(miewMode, null, miewColorer);
+  }, [applyMiewViewerSettings, applyMiewDisplayMode, miewMode, miewColorer]);
 
   // Request molecule update
   const requestMoleculeUpdate = useCallback(() => {
@@ -1412,7 +1652,6 @@ ${scientificGuardrails}`;
           lastMoleculeRef.current = newMolfile;
 
           // If protein is currently loaded, clear it and update immediately (no debounce)
-          const wasProtein = isProtein;
           if (isProtein) {
             setIsProtein(false);
             setCurrentMolecule(null);
@@ -1427,8 +1666,9 @@ ${scientificGuardrails}`;
             clearTimeout(debounceTimeoutRef.current);
           }
           
-          // If switching from protein, update immediately; otherwise use faster debounce (300ms)
-          const debounceTime = wasProtein ? 0 : 300;
+          // Fast but stable sync avoids 3D flicker during drag/edit.
+          const debounceTime = (proteinCloseReloadRef.current ? 0 : 90);
+          proteinCloseReloadRef.current = false;
           
           debounceTimeoutRef.current = setTimeout(() => {
             if (iframeRef.current && isKetcherReady) {
@@ -1439,7 +1679,7 @@ ${scientificGuardrails}`;
         }
       } else if (event.data.type === 'smiles-response') {
         const molfile = window.tempMolfile;
-        const smiles = event.data.smiles;
+        const smiles = sanitizeSmilesText(event.data.smiles);
         const normalizedSmiles = (smiles || '').trim();
 
         // If canvas is empty, clear related UI state and persisted canvas
@@ -1457,7 +1697,7 @@ ${scientificGuardrails}`;
           lastSmilesForAIRef.current = smiles;
           setCurrentSmiles(smiles);
           // Detect multiple disconnected structures (dot-separated SMILES)
-          const hasDot = smiles.includes('.');
+          const hasDot = normalizedSmiles.includes('.');
           setMultiStructure(hasDot);
         }
         if (molfile) {
@@ -1495,14 +1735,7 @@ ${scientificGuardrails}`;
         // Normal flow: molfile came from a prior get-molfile request
         if (molfile) {
           if (!isProtein) {
-            const shouldRefresh3D =
-              !multiStructure ||
-              manual3DRefreshRequestedRef.current ||
-              force3DRefreshOnDeleteRef.current ||
-              normalizedSmiles === '';
-            if (shouldRefresh3D) {
-              updateMolecule3D(molfile, smiles);
-            }
+            updateMolecule3D(molfile, smiles);
             manual3DRefreshRequestedRef.current = false;
             force3DRefreshOnDeleteRef.current = false;
           }
@@ -1646,7 +1879,7 @@ ${scientificGuardrails}`;
         if (iframeRef.current && isKetcherReady && !isProtein) {
           iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
         }
-      }, 2000);
+      }, 400);
       return () => {
         clearInterval(interval);
         if (debounceTimeoutRef.current) {
@@ -1661,17 +1894,17 @@ ${scientificGuardrails}`;
     setShowHydrogens(!showHydrogens);
   };
 
-  // Manual refresh: trigger 3D update from current canvas
-  const refreshManual3D = () => {
-    if (iframeRef.current && isKetcherReady) {
-      manual3DRefreshRequestedRef.current = true;
-      iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
-    }
-  };
-
   // Close/hide currently loaded protein from 3D viewer
   const closeProtein = () => {
-    if (viewerInstanceRef.current && proteinModelRef.current) {
+    if (viewerInstanceRef.current && viewerInstanceRef.current.__isMiew) {
+      try {
+        if (typeof viewerInstanceRef.current.reset === 'function') {
+          viewerInstanceRef.current.reset();
+        }
+      } catch (error) {
+        console.error('Error resetting Miew viewer:', error);
+      }
+    } else if (viewerInstanceRef.current && proteinModelRef.current) {
       try {
         const viewer = viewerInstanceRef.current;
         viewer.removeModel(proteinModelRef.current);
@@ -1686,15 +1919,13 @@ ${scientificGuardrails}`;
     setCurrentMolecule(null);
     clearMoleculeProps();
     setMolecularMass(null);
-  };
 
-  const addLonePairMarker = () => {
-    const wrap = ketcherCanvasWrapRef.current;
-    if (!wrap) return;
-    const rect = wrap.getBoundingClientRect();
-    const x = Math.max(16, Math.min(rect.width - 16, rect.width * 0.5));
-    const y = Math.max(16, Math.min(rect.height - 16, rect.height * 0.62));
-    setLonePairs((prev) => [...prev, { id: Date.now() + Math.random(), x, y, angle: 0, width: 54, height: 30 }]);
+    // Fast path: if a molecule exists in the 2D canvas, reload it immediately in 3D.
+    proteinCloseReloadRef.current = true;
+    manual3DRefreshRequestedRef.current = true;
+    if (iframeRef.current && isKetcherReady) {
+      iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
+    }
   };
 
   const startMoveLonePair = (id, e) => {
@@ -1963,17 +2194,23 @@ ${scientificGuardrails}`;
       }
 
       const viewer = viewerInstanceRef.current;
-
-      // Clear previous content (labels, models) before loading protein
-      viewer.removeAllLabels();
-      viewer.clear();
-
-      const model = viewer.addModel(pdbText, 'pdb');
-      proteinModelRef.current = model;
-      lastModelRef.current = model;
-
-      if (model) {
-        model.setStyle({}, { cartoon: { color: 'spectrum' } });
+      const isMiew = !!viewer.__isMiew;
+      let model = null;
+      if (isMiew) {
+        const loaded = await loadIntoMiew(pdbText, 'pdb');
+        if (!loaded) throw new Error('Failed to load PDB in Miew');
+        applyMiewViewerSettings(viewer);
+        applyMiewDisplayMode(miewMode, viewer, miewColorer);
+      } else {
+        // Clear previous content (labels, models) before loading protein
+        viewer.removeAllLabels();
+        viewer.clear();
+        model = viewer.addModel(pdbText, 'pdb');
+        proteinModelRef.current = model;
+        lastModelRef.current = model;
+        if (model) {
+          model.setStyle({}, { cartoon: { color: 'spectrum' } });
+        }
       }
 
       // Store PDB data
@@ -1999,12 +2236,14 @@ ${scientificGuardrails}`;
       if (headerMeta.title) setMoleculeName(baseName + ' — ' + headerMeta.title);
 
       // Center and zoom
-      viewer.zoomTo();
-      viewer.rotate(25, { x: 1, y: 1, z: 0 });
-      viewer.render();
+      if (!isMiew) {
+        viewer.zoomTo();
+        viewer.rotate(25, { x: 1, y: 1, z: 0 });
+        viewer.render();
+      }
 
       // Update molecular mass for the newly imported protein
-      if (model) {
+      if (model && !isMiew) {
         const atoms = model.selectedAtoms({});
         setMolecularMass(calculateMolecularMass(atoms, showHydrogens));
       } else {
@@ -2022,6 +2261,59 @@ ${scientificGuardrails}`;
   };
 
   // Export 3D model
+  const exportTransparentPng = (sourceCanvas, fileName = 'molecule.png') => {
+    const w = sourceCanvas.width;
+    const h = sourceCanvas.height;
+    if (!w || !h) return;
+    const work = document.createElement('canvas');
+    work.width = w;
+    work.height = h;
+    const ctx = work.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(sourceCanvas, 0, 0);
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const { data } = imageData;
+    const p = (x, y) => (y * w + x) * 4;
+    const corners = [
+      [0, 0],
+      [w - 1, 0],
+      [0, h - 1],
+      [w - 1, h - 1],
+    ];
+    const targets = corners.map(([x, y]) => {
+      const i = p(x, y);
+      return [data[i], data[i + 1], data[i + 2]];
+    });
+    const nearColor = (i) => {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      return targets.some(([tr, tg, tb]) =>
+        Math.abs(r - tr) <= 28 &&
+        Math.abs(g - tg) <= 28 &&
+        Math.abs(b - tb) <= 28
+      );
+    };
+
+    // Remove all background-like pixels globally (including enclosed areas).
+    for (let i = 0; i < data.length; i += 4) {
+      if (nearColor(i)) {
+        data[i + 3] = 0;
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    work.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  };
+
   const exportModel = (format) => {
     if (!viewerInstanceRef.current || !currentMolecule) {
       alert('No molecule to export');
@@ -2029,33 +2321,103 @@ ${scientificGuardrails}`;
     }
 
     const viewer = viewerInstanceRef.current;
+    const isMiew = !!viewer.__isMiew;
     let exportData = '';
     let filename = 'molecule';
     let mimeType = 'text/plain';
 
     switch (format) {
       case 'png': {
+        if (isMiew) {
+          const canvas = viewer3DRef.current?.querySelector('canvas');
+          if (!canvas) {
+            alert('3D canvas not ready yet.');
+            return;
+          }
+          const capturePngFromMiew = () => {
+            if (exportTransparentBg) {
+              exportTransparentPng(canvas, 'molecule.png');
+            } else {
+              canvas.toBlob((blob) => {
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'molecule.png';
+                link.click();
+                URL.revokeObjectURL(url);
+              }, 'image/png');
+            }
+            try {
+              if (typeof viewer.set === 'function') {
+                viewer.set('bg.transparent', false);
+                viewer.set('bg.color', miewBgDark ? 0x202020 : 0xffffff);
+                if (typeof viewer.setNeedRender === 'function') viewer.setNeedRender();
+              }
+            } catch {}
+          };
+          try {
+            if (typeof viewer.set === 'function') {
+              viewer.set('bg.transparent', exportTransparentBg);
+              if (!exportTransparentBg) viewer.set('bg.color', 0xffffff);
+              if (typeof viewer.setNeedRender === 'function') viewer.setNeedRender();
+            }
+          } catch {}
+          requestAnimationFrame(() => requestAnimationFrame(capturePngFromMiew));
+          return;
+        }
         // Export as PNG with transparent background
         const { color: bgColor, alpha: bgAlpha } = viewerBgRef.current;
-        viewer.setBackgroundColor(0xffffff, 0); // Set transparent
+        viewer.setBackgroundColor(0xffffff, exportTransparentBg ? 0 : 1);
         viewer.render();
         const canvas = viewer.getCanvas();
-        canvas.toBlob((blob) => {
-          if (!blob) return;
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'molecule.png';
-          link.click();
-          URL.revokeObjectURL(url);
-          // Restore original background
+        if (exportTransparentBg) {
+          exportTransparentPng(canvas, 'molecule.png');
           viewer.setBackgroundColor(bgColor, bgAlpha);
           viewer.render();
-        }, 'image/png');
+        } else {
+          canvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'molecule.png';
+            link.click();
+            URL.revokeObjectURL(url);
+            // Restore original background
+            viewer.setBackgroundColor(bgColor, bgAlpha);
+            viewer.render();
+          }, 'image/png');
+        }
         return;
       }
 
       case 'jpeg': {
+        if (isMiew) {
+          const canvas = viewer3DRef.current?.querySelector('canvas');
+          if (!canvas) {
+            alert('3D canvas not ready yet.');
+            return;
+          }
+          const bgCanvas = document.createElement('canvas');
+          bgCanvas.width = canvas.width;
+          bgCanvas.height = canvas.height;
+          const ctx = bgCanvas.getContext('2d');
+          if (!ctx) return;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+          ctx.drawImage(canvas, 0, 0);
+          bgCanvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'molecule.jpg';
+            link.click();
+            URL.revokeObjectURL(url);
+          }, 'image/jpeg', 0.95);
+          return;
+        }
         // Export as JPEG with white background
         const { color: bgColor, alpha: bgAlpha } = viewerBgRef.current;
         viewer.setBackgroundColor(0xffffff, 1);
@@ -2095,12 +2457,20 @@ ${scientificGuardrails}`;
         break;
 
       case 'obj':
+        if (isMiew) {
+          alert('OBJ export is not wired for Miew yet.');
+          return;
+        }
         exportData = convertToOBJ(viewer);
         filename = 'molecule.obj';
         mimeType = 'model/obj';
         break;
 
       case 'x3d':
+        if (isMiew) {
+          alert('X3D export is not wired for Miew yet.');
+          return;
+        }
         exportData = convertToX3D(viewer);
         filename = 'molecule.x3d';
         mimeType = 'model/x3d+xml';
@@ -2685,46 +3055,48 @@ ${scientificGuardrails}`;
         <div className="panel ketcher-panel" data-testid="ketcher-panel">
           {/* Brand Header */}
           <div className="brand-header">
-            <div className="brand-name">
-              <img src="/logo.svg" alt="MolDraw" className="brand-logo" />
-              <span className="brand-by-text">by <a href="https://scidart.com" target="_blank" rel="noopener noreferrer" className="brand-by-link">scidart.com</a></span>
-            </div>
-            
-            {/* Molecule Search Bar - Now in header */}
-            <div className="molecule-search-bar">
-              <div className="search-container">
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search molecule or PDB ID (e.g., 1ABC)..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      searchMoleculeByName(searchQuery);
-                    }
-                  }}
-                  disabled={isSearching}
-                />
-                <button
-                  className="search-btn"
-                  onClick={() => searchMoleculeByName(searchQuery)}
-                  disabled={isSearching || !searchQuery.trim()}
-                  title="Search molecule by name or PDB ID"
-                >
-                  {isSearching ? (
-                    <div className="btn-spinner"></div>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="11" cy="11" r="8"></circle>
-                      <path d="m21 21-4.35-4.35"></path>
-                    </svg>
-                  )}
-                </button>
+            <div className="brand-top-row">
+              <div className="brand-name">
+                <img src="/logo.svg" alt="MolDraw" className="brand-logo" />
+                <span className="brand-by-text">by <a href="https://scidart.com" target="_blank" rel="noopener noreferrer" className="brand-by-link">scidart.com</a></span>
               </div>
-              {searchError && (
-                <div className="search-error">{searchError}</div>
-              )}
+
+              {/* Molecule Search Bar - Now in header */}
+              <div className="molecule-search-bar">
+                <div className="search-container">
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search molecule or PDB ID (e.g., 1ABC)..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        searchMoleculeByName(searchQuery);
+                      }
+                    }}
+                    disabled={isSearching}
+                  />
+                  <button
+                    className="search-btn"
+                    onClick={() => searchMoleculeByName(searchQuery)}
+                    disabled={isSearching || !searchQuery.trim()}
+                    title="Search molecule by name or PDB ID"
+                  >
+                    {isSearching ? (
+                      <div className="btn-spinner"></div>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {searchError && (
+                  <div className="search-error">{searchError}</div>
+                )}
+              </div>
             </div>
 
             <div className="header-links">
@@ -2743,7 +3115,7 @@ ${scientificGuardrails}`;
                 ) : (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 )}
-                {smilesCopied ? 'Copied' : 'Copy'}
+                {smilesCopied ? 'Copied' : 'Copy SMILES'}
               </button>
 
               <button
@@ -2768,7 +3140,7 @@ ${scientificGuardrails}`;
                 title="Paste SMILES from clipboard into editor"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
-                Paste
+                Paste SMILES
               </button>
               <div className="tb-sep" />
               <button
@@ -2777,6 +3149,13 @@ ${scientificGuardrails}`;
                 title="Open chemistry calculators"
               >
                 Calculator
+              </button>
+              <button
+                className={`tb-btn ${showViewerSettings ? 'tb-btn-active' : ''}`}
+                onClick={() => setShowViewerSettings((v) => !v)}
+                title="Open 3D viewer settings"
+              >
+                3D Settings
               </button>
               <button
                 className="tb-btn"
@@ -2798,20 +3177,145 @@ ${scientificGuardrails}`;
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 JPG
               </button>
+              <a className="tb-btn" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">
+                Course
+              </a>
 
               <div className="tb-sep" />
-
-              <a className="tb-btn tb-ai-help" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.57-3.25 3.92L12 14"/><circle cx="12" cy="18" r="1"/></svg>
-                AI Setup
-              </a>
-              <a className="tb-btn" href="/tools/index.html" target="_blank" rel="noopener noreferrer" title="Tools">Tools</a>
-              <a className="tb-btn" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Course">Course</a>
-              <a className="tb-btn" href="/blog/index.html" target="_blank" rel="noopener noreferrer" title="Blog">Blog</a>
-              <a className="tb-btn" href="/pages/about.html" target="_blank" rel="noopener noreferrer" title="About">About</a>
-              <a className="tb-btn" href="/pages/updates.html" target="_blank" rel="noopener noreferrer" title="Updates">Updates</a>
+              <div className="tb-menu-dropdown" ref={moreMenuRef}>
+                <button className="tb-btn" onClick={() => setShowMoreMenu((v) => !v)} title="More options">More</button>
+                {showMoreMenu && (
+                  <div className="tb-menu-dropdown-list">
+                  <a className="tb-menu-item" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">AI Setup</a>
+                  <a className="tb-menu-item" href="/tools/index.html" target="_blank" rel="noopener noreferrer" title="Tools">Tools</a>
+                  <a className="tb-menu-item" href="/blog/index.html" target="_blank" rel="noopener noreferrer" title="Blog">Blog</a>
+                  <a className="tb-menu-item" href="/pages/updates.html" target="_blank" rel="noopener noreferrer" title="Updates">Updates</a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
+          {showViewerSettings && (
+            <div className="miew-settings-panel miew-settings-panel-2d">
+              <div className="miew-settings-header">
+                <span>3D Settings</span>
+                <button className="miew-settings-close" onClick={() => setShowViewerSettings(false)}>x</button>
+              </div>
+
+              <div className="miew-settings-tabs">
+                <button className={`miew-settings-tab ${miewSettingsTab === 'view' ? 'active' : ''}`} onClick={() => setMiewSettingsTab('view')}>View</button>
+                <button className={`miew-settings-tab ${miewSettingsTab === 'mode' ? 'active' : ''}`} onClick={() => setMiewSettingsTab('mode')}>Mode</button>
+                <button className={`miew-settings-tab ${miewSettingsTab === 'color' ? 'active' : ''}`} onClick={() => setMiewSettingsTab('color')}>Color</button>
+                <button className={`miew-settings-tab ${miewSettingsTab === 'export' ? 'active' : ''}`} onClick={() => setMiewSettingsTab('export')}>Export</button>
+              </div>
+
+              {miewSettingsTab === 'view' && (
+                <div className="miew-settings-list compact">
+                  <label className="miew-setting-row">
+                    <span>Resolution</span>
+                    <select
+                      value={miewResolution}
+                      onChange={(e) => setMiewResolution(e.target.value)}
+                      className="miew-setting-select"
+                    >
+                      <option value="poor">Poor</option>
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="ultra">Ultra</option>
+                    </select>
+                  </label>
+                  <div className="miew-setting-row"><span>Resolution autodetection</span><button className={`miew-toggle-btn ${miewAutoResolution ? 'on' : ''}`} onClick={() => setMiewAutoResolution((v) => !v)}>{miewAutoResolution ? 'ON' : 'OFF'}</button></div>
+                  <div className="miew-setting-row"><span>Fog</span><button className={`miew-toggle-btn ${miewFog ? 'on' : ''}`} onClick={() => setMiewFog((v) => !v)}>{miewFog ? 'ON' : 'OFF'}</button></div>
+                  <div className="miew-setting-row"><span>Axes</span><button className={`miew-toggle-btn ${miewAxes ? 'on' : ''}`} onClick={() => setMiewAxes((v) => !v)}>{miewAxes ? 'ON' : 'OFF'}</button></div>
+                  <div className="miew-setting-row"><span>FPS counter</span><button className={`miew-toggle-btn ${miewFps ? 'on' : ''}`} onClick={() => setMiewFps((v) => !v)}>{miewFps ? 'ON' : 'OFF'}</button></div>
+                  <label className="miew-setting-row">
+                    <span>Palette</span>
+                    <select
+                      value={miewPalette}
+                      onChange={(e) => setMiewPalette(e.target.value)}
+                      className="miew-setting-select"
+                    >
+                      <option value="JM">Jmol</option>
+                      <option value="CP">CPK</option>
+                      <option value="VM">VMD</option>
+                    </select>
+                  </label>
+                  <div className="miew-setting-row"><span>Background color</span><button className={`miew-toggle-btn ${miewBgDark ? 'on dark' : ''}`} onClick={() => setMiewBgDark((v) => !v)}>{miewBgDark ? 'Dark' : 'Light'}</button></div>
+                  <div className="miew-setting-row"><span>FXAA</span><button className={`miew-toggle-btn ${miewFxaa ? 'on' : ''}`} onClick={() => setMiewFxaa((v) => !v)}>{miewFxaa ? 'ON' : 'OFF'}</button></div>
+                  <div className="miew-setting-note">Smooths jagged edges in the rendered image.</div>
+                  <div className="miew-setting-row"><span>Ambient Occlusion</span><button className={`miew-toggle-btn ${miewAo ? 'on' : ''}`} onClick={() => setMiewAo((v) => !v)}>{miewAo ? 'ON' : 'OFF'}</button></div>
+                  <div className="miew-setting-note">Adds soft contact shadows for depth.</div>
+                  <div className="miew-setting-row"><span>Shadow Map</span><button className={`miew-toggle-btn ${miewShadow ? 'on' : ''}`} onClick={() => setMiewShadow((v) => !v)}>{miewShadow ? 'ON' : 'OFF'}</button></div>
+                  <div className="miew-setting-note">Directional lighting shadows on structures.</div>
+                  <div className="miew-setting-row"><span>Clip Plane</span><button className={`miew-toggle-btn ${miewClipPlane ? 'on' : ''}`} onClick={() => setMiewClipPlane((v) => !v)}>{miewClipPlane ? 'ON' : 'OFF'}</button></div>
+                  <div className="miew-setting-note">Cuts through structures to inspect inside.</div>
+                  <div className="miew-setting-row"><span>Outline</span><button className={`miew-toggle-btn ${miewOutline ? 'on' : ''}`} onClick={() => setMiewOutline((v) => !v)}>{miewOutline ? 'ON' : 'OFF'}</button></div>
+                  <div className="miew-setting-note">Draws subtle edge contour for shape clarity.</div>
+                </div>
+              )}
+
+              {miewSettingsTab === 'mode' && (
+                <>
+                  <div className="miew-settings-group-title">Display mode</div>
+                  <div className="miew-settings-subtitle">Changes how atoms and bonds are rendered (balls, sticks, surface, cartoon).</div>
+                  <div className="miew-mode-grid compact">
+                    {MIEW_MODE_OPTIONS.map((mode) => (
+                      <button
+                        key={mode.id}
+                        className={`miew-mode-btn ${miewMode === mode.id ? 'active' : ''}`}
+                        onClick={() => applyMiewDisplayMode(mode.id, null, miewColorer)}
+                        title={`Display mode: ${mode.label}`}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {miewSettingsTab === 'color' && (
+                <>
+                  <div className="miew-settings-group-title">Display color</div>
+                  <div className="miew-settings-subtitle">Changes coloring logic (element, residue, chain, hydrophobicity, etc.).</div>
+                  <div className="miew-mode-grid compact">
+                    {MIEW_COLOR_OPTIONS.map((colorer) => (
+                      <button
+                        key={colorer.id}
+                        className={`miew-mode-btn ${miewColorer === colorer.id ? 'active' : ''}`}
+                        onClick={() => applyMiewDisplayMode(miewMode, null, colorer.id)}
+                        title={`Color mode: ${colorer.label}`}
+                      >
+                        {colorer.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {miewSettingsTab === 'export' && (
+                <div className="miew-settings-list compact">
+                  <div className="miew-setting-row">
+                    <span>Transparent PNG</span>
+                    <button className={`miew-toggle-btn ${exportTransparentBg ? 'on' : ''}`} onClick={() => setExportTransparentBg((v) => !v)}>{exportTransparentBg ? 'ON' : 'OFF'}</button>
+                  </div>
+                  {!currentMolecule && <div className="miew-settings-empty">Load a molecule to enable exports.</div>}
+                  {currentMolecule && (
+                    <div className="miew-export-grid">
+                      <button onClick={() => exportModel('png')} className="compact-export-btn" title="PNG (transparent)">PNG</button>
+                      <button onClick={() => exportModel('jpeg')} className="compact-export-btn" title="JPEG with white background">JPG</button>
+                      <button onClick={() => exportModel('sdf')} className="compact-export-btn" title="SDF format">SDF</button>
+                      <button onClick={() => exportModel('xyz')} className="compact-export-btn" title="XYZ format">XYZ</button>
+                      <button onClick={() => exportModel('pdb')} className="compact-export-btn" title="PDB format">PDB</button>
+                      {!isMiewEngine && <button onClick={() => exportModel('x3d')} className="compact-export-btn" title="X3D with bonds">X3D</button>}
+                      {!isMiewEngine && <button onClick={() => exportModel('obj')} className="compact-export-btn" title="OBJ for Blender">OBJ</button>}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="ketcher-canvas-wrap" ref={ketcherCanvasWrapRef}>
             <iframe
@@ -2864,14 +3368,9 @@ ${scientificGuardrails}`;
               ))}
             </div>
 
-            {/* In-canvas tool: Lone pair */}
-            <button
-              className="canvas-lp-tool"
-              onClick={addLonePairMarker}
-              title="Add visual lone pair (two dots)"
-            >
-              Lone Pair
-            </button>
+            <div className="canvas-lp-hint" title="How to add lone pair in Ketcher">
+              Add lone pair: select atom, right click > Edit > Radical dropdown.
+            </div>
           </div>
         </div>
 
@@ -3069,22 +3568,10 @@ ${scientificGuardrails}`;
                   data-testid="viewer-3d"
                 />
 
-                {/* Prominent close protein overlay button */}
-                {isProtein && (
-                  <button
-                    className="close-protein-overlay"
-                    onClick={closeProtein}
-                    title="Remove protein from 3D viewer"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    Close Protein
-                  </button>
-                )}
-
                 {/* Multi-structure notice overlay */}
                 {multiStructure && !isProtein && (
                   <div className="multi-struct-notice">
-                    Multi-structure canvas — auto-sync paused
+                    Multi-structure canvas detected
                   </div>
                 )}
               </div>
@@ -3244,6 +3731,33 @@ ${scientificGuardrails}`;
                   </svg>
                   <span>PDB</span>
                 </button>
+                {isProtein && (
+                  <button
+                    className="pdb-close-protein-btn"
+                    onClick={closeProtein}
+                    title="Remove loaded protein"
+                  >
+                    Close
+                  </button>
+                )}
+                {isProtein && isMiewEngine && (
+                  <div className="protein-quick-toggles">
+                    <button
+                      className={`protein-quick-toggle ${miewFog ? 'on' : ''}`}
+                      onClick={() => setMiewFog((v) => !v)}
+                      title="Toggle fog in 3D viewer"
+                    >
+                      Fog {miewFog ? 'ON' : 'OFF'}
+                    </button>
+                    <button
+                      className={`protein-quick-toggle ${miewOutline ? 'on' : ''}`}
+                      onClick={() => setMiewOutline((v) => !v)}
+                      title="Toggle outline in 3D viewer"
+                    >
+                      Outline {miewOutline ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Floating Controls */}
@@ -3255,8 +3769,21 @@ ${scientificGuardrails}`;
                     onChange={(e) => {
                       const newStyle = e.target.value;
                       setRenderStyle(newStyle);
+                      if (viewerInstanceRef.current?.__isMiew) {
+                        const styleToMode = {
+                          'ball-stick': 'BS',
+                          stick: 'LC',
+                          sphere: 'VW',
+                          line: 'LN',
+                          cartoon: 'CA',
+                          surface: 'SE',
+                        };
+                        const modeId = styleToMode[newStyle] || 'BS';
+                        applyMiewDisplayMode(modeId, null, miewColorer);
+                        return;
+                      }
                       // For proteins, apply appropriate style
-                      if (isProtein && viewerInstanceRef.current) {
+                      if (isProtein && viewerInstanceRef.current && !viewerInstanceRef.current.__isMiew) {
                         const viewer = viewerInstanceRef.current;
                         viewer.removeAllSurfaces();
                         if (newStyle === 'cartoon') {
@@ -3310,18 +3837,6 @@ ${scientificGuardrails}`;
                   {showHydrogens ? 'Hide' : 'Show'}
                 </button>
 
-                {/* Refresh 3D when multiple structures */}
-                {multiStructure && !isProtein && (
-                  <button
-                    className="compact-btn refresh3d-btn"
-                    onClick={refreshManual3D}
-                    title="Refresh 3D view (auto-sync paused for multi-structure canvas)"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                    Refresh 3D
-                  </button>
-                )}
-
                 {/* Export Row */}
                 {currentMolecule && (
                   <div className="export-row">
@@ -3329,9 +3844,39 @@ ${scientificGuardrails}`;
                     <button onClick={() => exportModel('jpeg')} className="compact-export-btn" title="JPEG with white background">JPG</button>
                     <button onClick={() => exportModel('sdf')} className="compact-export-btn" title="SDF format">SDF</button>
                     <button onClick={() => exportModel('xyz')} className="compact-export-btn" title="XYZ format">XYZ</button>
-                    <button onClick={() => exportModel('x3d')} className="compact-export-btn" title="X3D with bonds">X3D</button>
-                    <button onClick={() => exportModel('obj')} className="compact-export-btn" title="OBJ for Blender">OBJ</button>
+                    {!isMiewEngine && <button onClick={() => exportModel('x3d')} className="compact-export-btn" title="X3D with bonds">X3D</button>}
+                    {!isMiewEngine && <button onClick={() => exportModel('obj')} className="compact-export-btn" title="OBJ for Blender">OBJ</button>}
                     <button onClick={() => exportModel('pdb')} className="compact-export-btn" title="PDB format">PDB</button>
+                  </div>
+                )}
+                {currentMolecule && (
+                  <div className="molecule-quick-toggles">
+                    <button
+                      className={`protein-quick-toggle ${exportTransparentBg ? 'on' : ''}`}
+                      onClick={() => setExportTransparentBg((v) => !v)}
+                      title="Toggle transparent background for PNG export"
+                    >
+                      Transparent PNG {exportTransparentBg ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                )}
+
+                {isMiewEngine && currentMolecule && !isProtein && (
+                  <div className="molecule-quick-toggles">
+                    <button
+                      className={`protein-quick-toggle ${miewFog ? 'on' : ''}`}
+                      onClick={() => setMiewFog((v) => !v)}
+                      title="Toggle fog in 3D viewer"
+                    >
+                      Fog {miewFog ? 'ON' : 'OFF'}
+                    </button>
+                    <button
+                      className={`protein-quick-toggle ${miewOutline ? 'on' : ''}`}
+                      onClick={() => setMiewOutline((v) => !v)}
+                      title="Toggle outline in 3D viewer"
+                    >
+                      Outline {miewOutline ? 'ON' : 'OFF'}
+                    </button>
                   </div>
                 )}
 

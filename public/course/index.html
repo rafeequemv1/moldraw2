@@ -3,1410 +3,567 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Learn how to use MolDraw. Interactive course covering all features including 2D editing, 3D visualization, molecule search, and export options.">
-  <meta name="keywords" content="MolDraw tutorial, MolDraw course, learn MolDraw, molecule editor guide">
-  <meta property="og:title" content="MolDraw Course - Learn to Use MolDraw" />
-  <meta property="og:description" content="Complete interactive course to master MolDraw. Learn 2D editing, 3D visualization, molecule search, and export features." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://moldraw.scidart.com/og-image.png" />
-  <meta property="og:url" content="https://moldraw.scidart.com/course" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="author" content="Scidart Academy" />
-  <link rel="canonical" href="https://moldraw.scidart.com/course" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <title>MolDraw Course - Learn to Use MolDraw | Scidart Academy</title>
-  
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0GXXMTT1RP"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-0GXXMTT1RP');
-  </script>
-  
+  <meta name="description" content="MolDraw Course: complete official Ketcher documentation in a structured course layout with left navigation.">
+  <title>MolDraw Course | Complete Official Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-      background: #f8f9fa;
-      min-height: 100vh;
-      color: #1a1a1a;
-      line-height: 1.6;
+      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.7;
     }
-
-    .course-wrapper {
-      display: flex;
+    .layout {
+      display: grid;
+      grid-template-columns: 290px 1fr;
       min-height: 100vh;
     }
-
-    /* Left Sidebar - Course Outline */
-    .course-sidebar {
-      width: 280px;
-      background: white;
-      border-right: 1px solid #e8e8e8;
-      position: fixed;
+    .sidebar {
+      position: sticky;
+      top: 0;
+      align-self: start;
       height: 100vh;
       overflow-y: auto;
-      padding: 24px 0;
+      background: #fff;
+      border-right: 1px solid #e5e7eb;
+      padding: 14px 12px 16px;
     }
-
-    .sidebar-header {
-      padding: 0 24px 24px;
-      border-bottom: 1px solid #e8e8e8;
-      margin-bottom: 24px;
+    .sidebar-top {
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e5e7eb;
     }
-
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: #2C7A7B;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 16px;
-      transition: color 0.2s;
-    }
-
-    .back-link:hover {
-      color: #1a5a5b;
-    }
-
-    .sidebar-header h1 {
-      font-size: 24px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin-bottom: 8px;
-    }
-
-    .sidebar-header p {
-      font-size: 14px;
-      color: #666;
-    }
-
-    .course-outline {
-      padding: 0 24px;
-    }
-
-    .outline-item {
-      padding: 12px 16px;
-      margin-bottom: 4px;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.2s;
-      border-left: 3px solid transparent;
-    }
-
-    .outline-item:hover {
-      background: #f8f9fa;
-    }
-
-    .outline-item.active {
-      background: #f0f9fa;
-      border-left-color: #2C7A7B;
-      color: #2C7A7B;
-      font-weight: 600;
-    }
-
-    .outline-item-number {
-      display: inline-block;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #e8e8e8;
-      color: #666;
-      text-align: center;
-      line-height: 24px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-right: 12px;
-    }
-
-    .outline-item.active .outline-item-number {
-      background: #2C7A7B;
-      color: white;
-    }
-
-    .outline-item-title {
-      font-size: 14px;
-    }
-
-    /* Main Content Area */
-    .course-content {
-      flex: 1;
-      margin-left: 280px;
-      background: white;
-      min-height: 100vh;
-    }
-
-    .slide-container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 48px 40px;
-    }
-
-    .slide {
-      display: none;
-      animation: fadeIn 0.4s ease;
-    }
-
-    .slide.active {
-      display: block;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .slide h2 {
-      font-size: 32px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin-bottom: 24px;
+    .sidebar h1 {
+      font-size: 16px;
       line-height: 1.3;
+      margin-bottom: 4px;
     }
-
-    .slide h3 {
-      font-size: 22px;
-      font-weight: 600;
-      color: #2d2d2d;
-      margin-top: 32px;
-      margin-bottom: 16px;
+    .sidebar p {
+      font-size: 12px;
+      color: #64748b;
     }
-
-    .slide p {
-      font-size: 16px;
-      line-height: 1.8;
-      color: #444;
-      margin-bottom: 20px;
+    .toc-title {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin: 10px 0 8px;
     }
-
-    .slide ul, .slide ol {
-      margin-left: 24px;
-      margin-bottom: 20px;
+    .toc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
-
-    .slide li {
-      font-size: 16px;
-      line-height: 1.8;
-      color: #444;
-      margin-bottom: 12px;
-    }
-
-    .slide strong {
-      color: #1a1a1a;
-      font-weight: 600;
-    }
-
-    .slide a {
-      color: #2C7A7B;
+    .toc-link {
       text-decoration: none;
-      border-bottom: 1px solid rgba(44, 122, 123, 0.3);
-      transition: all 0.2s;
+      color: #334155;
+      font-size: 13px;
+      border-radius: 7px;
+      padding: 6px 8px;
     }
-
-    .slide a:hover {
-      color: #1a5a5b;
-      border-bottom-color: #1a5a5b;
+    .toc-link:hover {
+      background: #f1f5f9;
+      color: #0f172a;
     }
-
-    .video-container {
-      position: relative;
-      padding-bottom: 56.25%;
-      height: 0;
-      overflow: hidden;
-      margin: 32px 0;
-      border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    .toc-link.depth-3 {
+      margin-left: 12px;
+      font-size: 12px;
+      color: #475569;
     }
-
-    .video-container iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
+    .chapter-row {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 7px;
+      align-items: start;
+      padding: 4px 2px;
+      border-radius: 7px;
+    }
+    .chapter-row:hover {
+      background: #f8fafc;
+    }
+    .chapter-toggle {
+      margin-top: 4px;
+      width: 14px;
+      height: 14px;
+      accent-color: #2C7A7B;
+      cursor: pointer;
+    }
+    .chapter-link {
+      text-decoration: none;
+      color: #334155;
+      font-size: 13px;
+      border-radius: 7px;
+      padding: 4px 6px;
+      display: block;
       width: 100%;
-      height: 100%;
-      border: none;
-      border-radius: 8px;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
     }
-
-    .feature-box {
-      background: #f8f9fa;
-      border-left: 3px solid #2C7A7B;
-      padding: 20px 24px;
-      margin: 24px 0;
-      border-radius: 4px;
+    .chapter-link:hover {
+      background: #f1f5f9;
+      color: #0f172a;
     }
-
-    .feature-box h4 {
-      font-size: 18px;
+    .chapter-link.active {
+      background: #e6f4f1;
+      color: #0f172a;
       font-weight: 600;
-      color: #2C7A7B;
-      margin-bottom: 12px;
     }
-
-    .highlight {
-      background: #f0f9fa;
-      padding: 20px 24px;
-      border-radius: 8px;
-      margin: 24px 0;
-      border-left: 3px solid #2C7A7B;
+    .chapter-link.done {
+      color: #166534;
+      text-decoration: line-through;
     }
-
-    /* Navigation */
-    .navigation {
-      position: fixed;
-      bottom: 0;
-      left: 280px;
-      right: 0;
-      background: white;
-      border-top: 1px solid #e8e8e8;
-      padding: 20px 40px;
+    .main {
+      padding: 18px;
+    }
+    .course-topbar {
+      max-width: 980px;
+      margin: 0 auto 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+      gap: 10px;
+      flex-wrap: wrap;
     }
-
-    .nav-btn {
+    .back-editor-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      border: 1px solid #2C7A7B;
       background: #2C7A7B;
-      color: white;
-      border: none;
-      padding: 10px 24px;
-      border-radius: 6px;
+      color: #fff;
+      border-radius: 9px;
+      height: 36px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .back-editor-btn:hover {
+      background: #236768;
+      border-color: #236768;
+    }
+    .course-search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 280px;
+      justify-content: flex-end;
+    }
+    .course-search-input {
+      width: min(560px, 100%);
+      height: 38px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 0 12px;
       font-size: 14px;
-      font-weight: 600;
+      background: #fff;
+      color: #0f172a;
+      outline: none;
+    }
+    .course-search-input:focus {
+      border-color: #2C7A7B;
+      box-shadow: 0 0 0 3px rgba(44, 122, 123, 0.12);
+    }
+    .course-search-btn {
+      height: 38px;
+      border: 1px solid #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
+      border-radius: 10px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s;
     }
-
-    .nav-btn:hover:not(:disabled) {
-      background: #1a5a5b;
-      transform: translateY(-1px);
+    .course-search-btn:hover {
+      background: #236768;
+      border-color: #236768;
     }
-
-    .nav-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    .search-hit {
+      background: #fff3bf;
+      color: #111827;
+      padding: 0 1px;
+      border-radius: 3px;
     }
-
-    .nav-btn.prev {
-      background: #6b7280;
+    .content {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 24px;
     }
-
-    .nav-btn.prev:hover:not(:disabled) {
-      background: #4b5563;
+    .status {
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: #64748b;
     }
-
-    .slide-counter {
-      color: #666;
+    .md h1, .md h2, .md h3, .md h4 {
+      color: #0f172a;
+      line-height: 1.3;
+      margin: 22px 0 10px;
+      scroll-margin-top: 14px;
+    }
+    .md h1 { font-size: 31px; margin-top: 6px; }
+    .md h2 { font-size: 25px; border-bottom: 1px solid #e5e7eb; padding-bottom: 7px; }
+    .md h3 { font-size: 20px; }
+    .md h4 { font-size: 17px; }
+    .md p { margin: 10px 0; color: #334155; }
+    .md ul, .md ol { margin: 8px 0 14px 22px; color: #334155; }
+    .md li { margin: 5px 0; }
+    .md img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin: 12px 0;
+      background: #fff;
+    }
+    .md a { color: #2C7A7B; text-decoration: none; }
+    .md a:hover { text-decoration: underline; }
+    .md table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
       font-size: 14px;
-      font-weight: 500;
     }
-
-    @media (max-width: 1024px) {
-      .course-sidebar {
-        width: 240px;
-      }
-
-      .course-content {
-        margin-left: 240px;
-      }
-
-      .navigation {
-        left: 240px;
-      }
+    .md th, .md td {
+      border: 1px solid #e5e7eb;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
     }
-
-    @media (max-width: 768px) {
-      .course-sidebar {
-        display: none;
+    .md code {
+      background: #f1f5f9;
+      border-radius: 5px;
+      padding: 1px 6px;
+      font-size: 13px;
+    }
+    .complete-wrap {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .complete-btn {
+      width: 100%;
+      border: 1px solid #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
+      border-radius: 8px;
+      height: 34px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .complete-btn.done {
+      background: #166534;
+      border-color: #166534;
+    }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid #e5e7eb;
       }
-
-      .course-content {
-        margin-left: 0;
-      }
-
-      .navigation {
-        left: 0;
-        padding: 16px 20px;
-      }
-
-      .slide-container {
-        padding: 32px 20px 100px;
-      }
-
-      .slide h2 {
-        font-size: 26px;
-      }
+      .main { padding: 12px; }
+      .content { padding: 16px; }
     }
   </style>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Course",
-    "name": "MolDraw Complete Course",
-    "description": "Learn how to use MolDraw. Interactive course covering all features.",
-    "provider": {
-      "@type": "Organization",
-      "name": "Scidart Academy",
-      "url": "https://scidart.com"
-    },
-    "courseCode": "MOLDRAW-101",
-    "educationalLevel": "Beginner"
-  }
-  </script>
 </head>
 <body>
-  <div class="course-wrapper">
-    <!-- Left Sidebar -->
-    <div class="course-sidebar">
-      <div class="sidebar-header">
-        <a href="/" class="back-link">← Back to MolDraw</a>
-        <a href="/blog/index.html" class="back-link">📝 Blog</a>
-        <h1>MolDraw Course</h1>
-        <p>Master all features</p>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <h1>Official Documentation Course</h1>
+        <p>Full Ketcher help with section navigation.</p>
       </div>
-      <div class="course-outline" id="courseOutline"></div>
-    </div>
+      <div class="toc-title">Chapters</div>
+      <nav id="toc" class="toc-list" aria-label="Course sections"></nav>
+      <div class="complete-wrap">
+        <button id="completeBtn" class="complete-btn">Complete Course</button>
+      </div>
+    </aside>
 
-    <!-- Main Content -->
-    <div class="course-content">
-      <div class="slide-container">
-        <!-- Slide 1: Introduction -->
-        <div class="slide active" data-slide="0">
-          <h2>Welcome to MolDraw</h2>
-          <p>Welcome to the complete MolDraw course! This interactive tutorial will teach you everything you need to know about using MolDraw.</p>
-          <div class="feature-box">
-            <h4>What You'll Learn</h4>
-            <ul>
-              <li>How to draw and edit molecular structures</li>
-              <li>Using the 3D visualization features</li>
-              <li>Searching for molecules by name</li>
-              <li>Exporting structures in various formats</li>
-              <li>Advanced tips and tricks</li>
-            </ul>
-          </div>
-          <p><strong>Course Duration:</strong> Approximately 15-20 minutes<br>
-          <strong>Level:</strong> Beginner to Intermediate<br>
-          <strong>Prerequisites:</strong> None - perfect for beginners!</p>
-        </div>
-
-        <!-- Slide 2: What is MolDraw -->
-        <div class="slide" data-slide="1">
-          <h2>What is MolDraw?</h2>
-          <p><strong>MolDraw</strong> is a powerful, web-based molecular structure editor that allows you to:</p>
-          <ul>
-            <li>Draw and edit chemical structures in 2D</li>
-            <li>Visualize molecules in 3D in real-time</li>
-            <li>Search for molecules by name using PubChem</li>
-            <li>Export structures in multiple formats (PNG, SDF, XYZ, X3D, OBJ)</li>
-            <li>Identify molecules and get their IUPAC names</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Key Advantages</h4>
-            <p><strong>100% Free:</strong> No subscriptions, no hidden costs<br>
-            <strong>No Installation:</strong> Runs entirely in your browser<br>
-            <strong>Cross-Platform:</strong> Works on Windows, Mac, Linux, and mobile devices<br>
-            <strong>Privacy-Focused:</strong> Your data never leaves your device</p>
-          </div>
-        </div>
-
-        <!-- Slide 3: Getting Started -->
-        <div class="slide" data-slide="2">
-          <h2>Getting Started</h2>
-          <p>Getting started with MolDraw is incredibly simple. Here's how to begin:</p>
-          <ol>
-            <li><strong>Visit the Website:</strong> Go to <a href="/" target="_blank">moldraw.scidart.com</a></li>
-            <li><strong>No Sign-Up Required:</strong> Just open the page and start using it immediately</li>
-            <li><strong>Familiarize Yourself:</strong> The interface is split into two panels:
-              <ul style="margin-top: 10px;">
-                <li><strong>Left Panel:</strong> 2D molecular structure editor (Ketcher)</li>
-                <li><strong>Right Panel:</strong> 3D molecular viewer</li>
-              </ul>
-            </li>
-          </ol>
-          <div class="feature-box">
-            <h4>Your First Molecule</h4>
-            <p>Try drawing a simple molecule like benzene or water. Click on the atom tool in the left panel, then click on the canvas to place atoms. Connect them by clicking and dragging between atoms.</p>
-          </div>
-        </div>
-
-        <!-- Slide 4: Video Tutorial -->
-        <div class="slide" data-slide="3">
-          <h2>Video Tutorial</h2>
-          <p>Watch this comprehensive video tutorial to see MolDraw in action. This video covers all the essential features and will help you get started quickly.</p>
-          <div class="video-container">
-            <iframe src="https://www.youtube.com/embed/LFvrKzA02ok" title="MolDraw Tutorial Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-          </div>
-          <div class="highlight">
-            <strong>Tip:</strong> Feel free to pause the video and try the features yourself as you watch. Hands-on practice is the best way to learn!
-          </div>
-        </div>
-
-        <!-- Slide 5: Drawing Structures -->
-        <div class="slide" data-slide="4">
-          <h2>Drawing Molecular Structures</h2>
-          <p>The left panel contains the Ketcher molecular editor. Here's how to draw structures:</p>
-          <h3>Basic Drawing Tools</h3>
-          <ul>
-            <li><strong>Atom Tool:</strong> Click to place atoms. Click on an existing atom to change its element</li>
-            <li><strong>Bond Tool:</strong> Click and drag between atoms to create bonds</li>
-            <li><strong>Selection Tool:</strong> Click and drag to select atoms/bonds for editing</li>
-            <li><strong>Eraser Tool:</strong> Click on atoms or bonds to delete them</li>
-          </ul>
-          <h3>Advanced Features</h3>
-          <ul>
-            <li><strong>Rings:</strong> Use the ring tool to quickly add common ring structures</li>
-            <li><strong>Charges:</strong> Add formal charges to atoms</li>
-            <li><strong>Stereochemistry:</strong> Indicate stereocenters with wedges and dashes</li>
-            <li><strong>Text Labels:</strong> Add custom text annotations</li>
-          </ul>
-        </div>
-
-        <!-- Slide 6: 3D Visualization -->
-        <div class="slide" data-slide="5">
-          <h2>3D Molecular Visualization</h2>
-          <p>One of MolDraw's standout features is its integrated 3D viewer. As you draw or modify a structure, you can see it rendered in three dimensions in real-time.</p>
-          <h3>Rendering Styles</h3>
-          <ul>
-            <li><strong>Ball & Stick:</strong> Classic representation showing atoms as spheres and bonds as sticks (default)</li>
-            <li><strong>Stick:</strong> Simplified view focusing on the molecular framework</li>
-            <li><strong>Space-Fill:</strong> Van der Waals radii representation showing molecular volume</li>
-            <li><strong>Line:</strong> Minimal wireframe view for clarity</li>
-          </ul>
-          <h3>Interactive Controls</h3>
-          <ul>
-            <li><strong>Rotate:</strong> Click and drag to rotate the molecule</li>
-            <li><strong>Zoom:</strong> Use mouse wheel or pinch gesture on touchscreens</li>
-            <li><strong>Pan:</strong> Right-click and drag (or middle mouse button) to pan</li>
-          </ul>
-        </div>
-
-        <!-- Slide 7: Molecule Search -->
-        <div class="slide" data-slide="6">
-          <h2>Searching for Molecules</h2>
-          <p>Don't want to draw from scratch? MolDraw integrates with PubChem to search for molecules by name!</p>
-          <h3>How to Search</h3>
-          <ol>
-            <li>Type a molecule name in the search bar at the top of the left panel</li>
-            <li>Examples: "aspirin", "caffeine", "benzene", "glucose"</li>
-            <li>Press Enter or click the search button</li>
-            <li>MolDraw will fetch the structure from PubChem and load it into the editor</li>
-          </ol>
-        </div>
-
-        <!-- Slide 8: Export Options -->
-        <div class="slide" data-slide="7">
-          <h2>Exporting Your Structures</h2>
-          <p>MolDraw supports multiple export formats to suit different needs:</p>
-          <h3>Available Formats</h3>
-          <ul>
-            <li><strong>PNG:</strong> High-quality image with transparent background - perfect for presentations</li>
-            <li><strong>SDF:</strong> Structure Data Format - compatible with most chemistry software</li>
-            <li><strong>XYZ:</strong> Coordinate format - ideal for computational chemistry</li>
-            <li><strong>X3D:</strong> 3D model format with bonds - great for web visualization</li>
-            <li><strong>OBJ:</strong> 3D model format - compatible with Blender and other 3D software</li>
-          </ul>
-        </div>
-
-        <!-- Slide 9: Advanced Tips -->
-        <div class="slide" data-slide="8">
-          <h2>Advanced Tips & Tricks</h2>
-          <h3>Workflow Optimization</h3>
-          <ul>
-            <li><strong>Start with Templates:</strong> Use ring structures and templates for common functional groups</li>
-            <li><strong>Use Search First:</strong> If you know the molecule name, search for it rather than drawing from scratch</li>
-            <li><strong>Edit After Search:</strong> Load a molecule from PubChem, then modify it to create derivatives</li>
-          </ul>
-          <h3>3D Visualization Tips</h3>
-          <ul>
-            <li><strong>Switch Styles:</strong> Different rendering styles help visualize different aspects</li>
-            <li><strong>Hide Hydrogens:</strong> For complex molecules, hiding hydrogens makes the structure clearer</li>
-            <li><strong>Rotate Before Export:</strong> Find the best viewing angle before exporting PNG</li>
-          </ul>
-        </div>
-
-        <!-- Slide 10: Use Cases -->
-        <div class="slide" data-slide="9">
-          <h2>Who Can Use MolDraw?</h2>
-          <p>MolDraw is designed for anyone who works with molecular structures:</p>
-          <h3>Students</h3>
-          <ul>
-            <li>Organic chemistry homework and assignments</li>
-            <li>Lab reports and presentations</li>
-            <li>Studying reaction mechanisms</li>
-          </ul>
-          <h3>Researchers</h3>
-          <ul>
-            <li>Quick structure drawing for papers</li>
-            <li>Creating figures for presentations</li>
-            <li>Documenting chemical syntheses</li>
-          </ul>
-          <h3>Educators</h3>
-          <ul>
-            <li>Creating teaching materials</li>
-            <li>Designing exam questions</li>
-            <li>Visual aids for lectures</li>
-          </ul>
-        </div>
-
-        <!-- Slide 11: Troubleshooting -->
-        <div class="slide" data-slide="10">
-          <h2>Troubleshooting & FAQ</h2>
-          <h3>Common Issues</h3>
-          <ul>
-            <li><strong>3D View Not Updating:</strong> Make sure you've drawn a valid structure. Try refreshing the page if issues persist.</li>
-            <li><strong>Search Not Working:</strong> Check your internet connection. PubChem requires an active connection.</li>
-            <li><strong>Export Not Downloading:</strong> Check your browser's download settings.</li>
-          </ul>
-          <h3>Browser Compatibility</h3>
-          <p>MolDraw works best on modern browsers (Chrome, Firefox, Safari, Edge). Make sure JavaScript is enabled.</p>
-        </div>
-
-        <!-- Slide 12: Conclusion -->
-        <div class="slide" data-slide="11">
-          <h2>Congratulations!</h2>
-          <p>You've completed the basic MolDraw course! You now know how to:</p>
-          <ul>
-            <li>✅ Draw and edit molecular structures</li>
-            <li>✅ Use the 3D visualization features</li>
-            <li>✅ Search for molecules by name</li>
-            <li>✅ Export structures in multiple formats</li>
-            <li>✅ Apply advanced tips and techniques</li>
-          </ul>
-          <div class="highlight">
-            <h3>Next Steps</h3>
-            <p>Continue to the comprehensive documentation section to master all advanced features of the Ketcher editor, including R-groups, S-groups, reactions, templates, and keyboard shortcuts.</p>
-          </div>
-        </div>
-
-        <!-- Documentation Section Header -->
-        <div class="slide" data-slide="12">
-          <h2>Complete Documentation</h2>
-          <p>Welcome to the comprehensive documentation section. This section covers all features of the Ketcher molecular editor used in MolDraw.</p>
-          <div class="feature-box">
-            <h4>About This Documentation</h4>
-            <p>This documentation is based on the official <a href="https://github.com/epam/ketcher" target="_blank" rel="noopener noreferrer">Ketcher documentation</a>. Ketcher is the powerful 2D molecular editor that powers MolDraw's drawing capabilities.</p>
-            <p style="margin-top: 16px;"><strong>Note:</strong> Images in this documentation are referenced from the Ketcher GitHub repository. Some features may have slight variations in MolDraw's implementation.</p>
-          </div>
-          <div class="highlight">
-            <h3>Documentation Sections</h3>
-            <ul>
-              <li>Ketcher Interface & Overview</li>
-              <li>Drawing Atoms & Bonds</li>
-              <li>Advanced Drawing Features (R-Groups, S-Groups)</li>
-              <li>Reactions & Templates</li>
-              <li>Stereochemistry</li>
-              <li>File Operations</li>
-              <li>Keyboard Shortcuts</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Documentation: Ketcher Overview -->
-        <div class="slide" data-slide="13">
-          <h2>Ketcher Overview</h2>
-          <p><strong>Ketcher</strong> is a powerful tool for drawing molecular structures and chemical reactions. It contains two modes:</p>
-          <ul>
-            <li><strong>Molecules mode:</strong> Allows drawing and operations with small/organic molecules and reactions</li>
-            <li><strong>Macromolecules mode:</strong> Allows drawing and operations with biomolecules (nucleic acids and peptides)</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Tool Palette</h4>
-            <p>The tool palette provides access to all drawing and editing tools:</p>
-            <ul>
-              <li>Draw and edit molecules by clicking and dragging atoms, bonds, and other elements</li>
-              <li>Delete elements using the Erase tool</li>
-              <li>Select fragments using Lasso, Rectangle, or Fragment selection tools</li>
-              <li>Access templates, rings, and functional groups</li>
-            </ul>
-          </div>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Ketcher-Micro-Whole-Canvas-3.7..png" alt="Ketcher Interface" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin-top: 20px;" /></p>
-        </div>
-
-        <!-- Documentation: Ketcher Molecules Mode -->
-        <div class="slide" data-slide="14">
-          <h2>Ketcher Molecules Mode</h2>
-          <p><strong>Ketcher molecules mode</strong> consists of the following elements:</p>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Ketcher-Micro-Whole-Canvas-3.7..png" alt="Ketcher Molecules Mode" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 20px 0;" /></p>
-          <p><strong>Note:</strong> Depending on the screen size, some tools on the Tool palette can be displayed in expanded or collapsed forms.</p>
-          <h3>Using the Tool Palette</h3>
-          <ul>
-            <li>Draw and edit a molecule or a reaction by clicking on and dragging atoms, bonds, and other elements provided with the buttons on the Atoms toolbar and Tool palette</li>
-            <li>Delete any element of the drawing (atom or bond) by clicking on it with the Erase tool</li>
-            <li>Delete the entire molecule or its fragment using the Lasso, Rectangle, or Fragment selection tool and the Erase tool</li>
-            <li>Draw special structures (see the following sections)</li>
-          </ul>
-          <h3>Selection Methods</h3>
-          <ul>
-            <li><strong>One atom or bond:</strong> Click Lasso or Rectangle Selection tool, then click the atom or bond</li>
-            <li><strong>Entire structure:</strong> Use Fragment Selection tool and click the object, or use Lasso/Rectangle and drag, or Ctrl-click</li>
-            <li><strong>Multiple elements:</strong> Shift-click to select multiple atoms/bonds, or drag around elements to select them</li>
-            <li><strong>Multiple structures:</strong> Ctrl+Shift-click each structure</li>
-          </ul>
-        </div>
-
-        <!-- Documentation: Main Toolbar -->
-        <div class="slide" data-slide="15">
-          <h2>Main Toolbar Features</h2>
-          <p>You can use the buttons of the Main toolbar:</p>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 24px 0;">
-            <div>
-              <h4>File Operations</h4>
-              <ul>
-                <li><strong>Clear Canvas:</strong> Start fresh</li>
-                <li><strong>Open:</strong> Import molecules from files</li>
-                <li><strong>Save As:</strong> Export in various formats</li>
-                <li><strong>Copy/Paste/Cut:</strong> Standard clipboard operations</li>
-              </ul>
-            </div>
-            <div>
-              <h4>Editing Tools</h4>
-              <ul>
-                <li><strong>Undo/Redo:</strong> Manage actions (Ctrl+Z / Ctrl+Shift+Z)</li>
-                <li><strong>Aromatize/Dearomatize:</strong> Toggle aromatic representation</li>
-                <li><strong>Layout:</strong> Auto-arrange structure</li>
-                <li><strong>Clean Up:</strong> Improve appearance</li>
-              </ul>
-            </div>
-          </div>
-          <div class="feature-box">
-            <h4>Advanced Features</h4>
-            <ul>
-              <li><strong>Calculate CIP:</strong> Determine R/S, E/Z stereoconfigurations</li>
-              <li><strong>Check Structure:</strong> Validate molecular properties</li>
-              <li><strong>Calculated Values:</strong> Display molecular properties</li>
-              <li><strong>Add/Remove Hydrogens:</strong> Toggle explicit hydrogen display</li>
-            </ul>
-          </div>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Micro-3.0.-Toolbar.png" alt="Ketcher Toolbar" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin-top: 20px;" /></p>
-          <ul>
-            <li><strong>Clear Canvas</strong> (1) - Clear the drawing area</li>
-            <li><strong>Open…</strong> (2) and <strong>Save As…</strong> (3) - Import/save molecular files</li>
-            <li><strong>Copy with Copy As</strong> (4), <strong>Paste</strong> (5), <strong>Cut</strong> (6) - Clipboard operations</li>
-            <li><strong>Undo</strong> (7) / <strong>Redo</strong> (8) - Manage actions</li>
-            <li><strong>Aromatize</strong> (9) (<code>Alt+a</code>) / <strong>Dearomatize</strong> (10) (<code>Ctrl+Alt+a</code>) - Toggle aromatic representation</li>
-            <li><strong>Layout</strong> (11) - Change structure position</li>
-            <li><strong>Clean Up</strong> (12) - Improve appearance with uniform bond lengths and angles</li>
-            <li><strong>Calculate CIP</strong> (13) - Determine R/S, r/s, and E/Z stereoconfigurations</li>
-            <li><strong>Check Structure</strong> (14) (<code>Alt+s</code>) - Validate structure properties</li>
-            <li><strong>Calculated Values</strong> (15) - Display molecular properties</li>
-            <li><strong>Add/Remove explicit hydrogens</strong> (16) - Toggle hydrogen representation</li>
-            <li><strong>3D Viewer</strong> (17) - View structure in 3D</li>
-            <li><strong>Molecules/Macromolecules switcher</strong> (18) - Switch between modes</li>
-            <li><strong>Settings</strong> (19) - Configure molecular file settings</li>
-            <li><strong>Help</strong> (20) - View Help</li>
-            <li><strong>About</strong> (21) - Version and copyright information</li>
-            <li><strong>Fullscreen mode</strong> (22) - Fullscreen display</li>
-            <li><strong>Zoom panel</strong> (23) - Current zoom percentage with zoom controls</li>
-          </ul>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Structure-Check-3.0..png" alt="Structure Check" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin-top: 10px;" /></p>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/6_calc_values.png" alt="Calculated Values" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin-top: 10px;" /></p>
-        </div>
-
-        <!-- Documentation: Drawing Atoms -->
-        <div class="slide" data-slide="16">
-          <h2>Drawing Atoms</h2>
-          <p>To draw/edit atoms you can:</p>
-          <ul>
-            <li>Select an atom in the Atoms toolbar and click inside the drawing area</li>
-            <li>If the desired atom is absent from the toolbar, click on the <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/PT-Button-3.0..png" alt="PT Button" style="vertical-align: middle; height: 20px;" /> button to invoke the <strong>Periodic Table</strong> and click on the desired atom (available options: <em>Single</em> – selection of a single atom, <em>List</em> – choose an atom from the list of selected options, <em>Not List</em> - exclude any atom on your list at that position)</li>
-            <li>Add an atom to the existing molecule by selecting an atom in the Atoms toolbar, clicking on an atom in the molecule, and dragging the cursor; the atom will be added with a single bond; vacant valences will be filled with the corresponding number of hydrogen atoms</li>
-            <li>Change an atom by selecting an atom in the Atoms toolbar and clicking on the atom to be changed; in the case a wrong valence appears the atom will be underlined in red</li>
-            <li>Change an atom by clicking on an existing atom with the Selection tool and starting to enter text after that</li>
-            <li>Change the charge of an atom by selecting the Charge Plus or Charge Minus tool and clicking consecutively on an atom to increase/decrease its charge</li>
-            <li>Change an atom or its properties by double-clicking on the atom to invoke the Atom Properties dialog (the dialog also provides atom query features)</li>
-            <li>Click on the <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/14.png" alt="Extended Table" style="vertical-align: middle; height: 20px;" /> button to use the Extended table and select a corresponding Generic group or Special Node</li>
-          </ul>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/10_pt_windown.png" alt="Periodic Table" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 20px 0;" /></p>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/12_charge_icons.png" alt="Charge Icons" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 10px 0;" /></p>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/13_atom_propn.png" alt="Atom Properties" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 10px 0;" /></p>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Extended-Table-3.7..png" alt="Extended Table" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 10px 0;" /></p>
-        </div>
-
-        <!-- Documentation: Drawing Bonds -->
-        <div class="slide" data-slide="17">
-          <h2>Drawing Bonds</h2>
-          <p>To draw/edit bonds you can:</p>
-          <ul>
-            <li>Click an arrow on the Bond tool <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/15_bond_icon.png" alt="Bond Icon" style="vertical-align: middle; height: 20px;" /> in the Tool palette to open the drop-down list with the following bond types</li>
-            <li>Select a bond type from the drop down list and click inside the drawing area; a bond of the selected type will be drawn</li>
-            <li>Click on an atom in the molecule; a bond of the selected type will be added to the atom at the angle of 120 degrees</li>
-            <li>Add a bond to the existing molecule by clicking on an atom in the molecule and dragging the cursor; in this case you can set the angle manually</li>
-            <li>Change the bond type by clicking on it</li>
-            <li>Use the Chain Tool <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/18_chain_tool_icon.png" alt="Chain Tool" style="vertical-align: middle; height: 20px;" /> to draw consecutive single bonds</li>
-            <li>Change a bond or its properties by double-clicking on the bond to invoke the Bond Properties dialog</li>
-            <li>Clicking on the drawn stereo and dative bonds change their direction</li>
-            <li>Clicking with the Single Bond tool or Chain tool switches the bond type cyclically: Single-Double-Triple-Single</li>
-          </ul>
-          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0;">
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond1.png" alt="Bond 1" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond2.png" alt="Bond 2" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond3.png" alt="Bond 3" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond4.png" alt="Bond 4" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond5.png" alt="Bond 5" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond6.png" alt="Bond 6" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond7.png" alt="Bond 7" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond8.png" alt="Bond 8" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond9.png" alt="Bond 9" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond91.png" alt="Bond 91" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond92.png" alt="Bond 92" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond93.png" alt="Bond 93" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond94.png" alt="Bond 94" style="height: 40px;" />
-            <img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/bond95.png" alt="Bond 95" style="height: 40px;" />
-          </div>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Bond-Properties-3.0..png" alt="Bond Properties" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 10px 0;" /></p>
-        </div>
-
-        <!-- Documentation: R-Groups -->
-        <div class="slide" data-slide="18">
-          <h2>Drawing R-Groups (Markush Structures)</h2>
-          <p>R-Groups allow you to create Markush structures representing families of compounds:</p>
-          <h3>Creating R-Groups</h3>
-          <ol>
-            <li>Use the <strong>R-Group Label Tool</strong> and click on an atom</li>
-            <li>Select the R-group label (R1, R2, etc.) from the dialog</li>
-            <li>Click Apply to convert the atom to an R-group</li>
-          </ol>
-          <h3>R-Group Members</h3>
-          <ul>
-            <li>Draw the structure you want as an R-group member</li>
-            <li>Use the <strong>R-Group Fragment Tool</strong> to select it</li>
-            <li>Assign it to the appropriate R-group label</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Attachment Points</h4>
-            <p>Use the <strong>Attachment Point Tool</strong> to mark which atom in the R-group member connects to the main structure. You can specify primary and secondary attachment points for multiple connections.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: S-Groups -->
-        <div class="slide" data-slide="19">
-          <h2>Marking S-Groups</h2>
-          <p>S-Groups (Substructure Groups) allow you to mark and annotate parts of structures:</p>
-          <h3>S-Group Types</h3>
-          <ul>
-            <li><strong>Data S-Group:</strong> Attach data (names, values) to atoms or fragments</li>
-            <li><strong>Multiple Group:</strong> Indicate number of replications in contracted form</li>
-            <li><strong>SRU Polymer:</strong> Structural Repeating Unit for polymers</li>
-            <li><strong>Superatom:</strong> Abbreviate part of structure to a text label</li>
-            <li><strong>Query Component:</strong> Support SMARTS query properties</li>
-            <li><strong>Nucleotide Component:</strong> Special superatom for nucleic acids</li>
-          </ul>
-          <div class="highlight">
-            <strong>Superatom S-Groups:</strong> These allow you to abbreviate complex structures (like functional groups) to simple text labels, making drawings cleaner and more readable.
-          </div>
-        </div>
-
-        <!-- Documentation: Reactions -->
-        <div class="slide" data-slide="20">
-          <h2>Drawing Reactions</h2>
-          <p>Ketcher supports drawing chemical reactions with reagents, products, and arrows:</p>
-          <h3>Creating Reactions</h3>
-          <ol>
-            <li>Draw reagents and products as separate structures</li>
-            <li>Use the <strong>Reaction Arrow Tool</strong> to add arrows between them</li>
-            <li>Add plus signs using the <strong>Reaction Plus Tool</strong> for multiple reagents/products</li>
-          </ol>
-          <h3>Reaction Mapping</h3>
-          <ul>
-            <li><strong>Auto-Mapping:</strong> Automatically maps atoms between reagents and products</li>
-            <li><strong>Manual Mapping:</strong> Manually assign mapping numbers</li>
-            <li><strong>Unmapping:</strong> Remove mapping numbers</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Pathway Reactions</h4>
-            <p>Use the <strong>Multi-Tailed Arrow Tool</strong> to create pathway reactions with multiple reagents or products. Adjust arrow length and position by dragging the ends.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: Templates -->
-        <div class="slide" data-slide="21">
-          <h2>Templates & Functional Groups</h2>
-          <p>Templates provide quick access to common ring structures and functional groups:</p>
-          <h3>Ring Templates</h3>
-          <ul>
-            <li>Benzene, Cyclopentadiene, Cyclohexane</li>
-            <li>Cyclopentane, Cyclopropane, Cyclobutane</li>
-            <li>Cycloheptane, Cyclooctane</li>
-          </ul>
-          <h3>Using Templates</h3>
-          <ul>
-            <li>Select template and click to add to canvas</li>
-            <li>Click on existing atom to fuse template</li>
-            <li>Drag from atom to add with single bond connection</li>
-            <li>Click on bond for bond-to-bond fusion</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Functional Groups</h4>
-            <p>Access functional groups from the Templates library. Functional groups can be added to structures and can be expanded, contracted, or have abbreviations removed as needed.</p>
-          </div>
-          <div class="highlight">
-            <strong>Custom Templates:</strong> Draw a structure and save it as a custom template for reuse. Access the Template Library via the Custom Templates button.
-          </div>
-        </div>
-
-        <!-- Documentation: Stereochemistry -->
-        <div class="slide" data-slide="22">
-          <h2>Stereochemistry</h2>
-          <p>Ketcher supports comprehensive stereochemistry representation:</p>
-          <h3>Stereocenters</h3>
-          <ul>
-            <li>Use wedged and dashed bonds to indicate stereochemistry</li>
-            <li><strong>Calculate CIP:</strong> Button automatically assigns R/S, E/Z labels</li>
-            <li>Supports tetrahedral (R/S, r/s) and double bond (E/Z) stereochemistry</li>
-          </ul>
-          <h3>Enhanced Stereochemistry</h3>
-          <ul>
-            <li>Assign Absolute, AND, OR, or Mixed stereo flags</li>
-            <li>Configure stereo display in Settings</li>
-            <li>Control stereo label appearance and colors</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Bond Stereochemistry</h4>
-            <p>Single bonds with up/down wedges indicate tetrahedral stereocenters. Double bonds can show cis/trans (E/Z) stereochemistry. Click on stereo bonds to change their direction.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: File Operations -->
-        <div class="slide" data-slide="23">
-          <h2>Working with Files</h2>
-          <p>Ketcher supports numerous file formats for import and export:</p>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0;">
-            <div>
-              <h4>Molecules Mode Formats</h4>
-              <ul style="font-size: 14px;">
-                <li>Ket Format</li>
-                <li>MDL Molfile (V2000, V3000)</li>
-                <li>SDF, RDF</li>
-                <li>SMILES (Daylight, Extended)</li>
-                <li>CML, InChI, InChIKey</li>
-                <li>SVG, PNG</li>
-                <li>CDXML, CDX</li>
-              </ul>
-            </div>
-            <div>
-              <h4>Macromolecules Mode</h4>
-              <ul style="font-size: 14px;">
-                <li>Ket Format</li>
-                <li>MDL Molfile V3000</li>
-                <li>Sequence (1-letter, 3-letter)</li>
-                <li>FASTA</li>
-                <li>HELM</li>
-                <li>IDT, AxoLabs formats</li>
-                <li>SVG</li>
-              </ul>
-            </div>
-          </div>
-          <div class="highlight">
-            <h4>Opening Files</h4>
-            <ul>
-              <li><strong>Open from File:</strong> Browse and select files from your computer</li>
-              <li><strong>Paste from Clipboard:</strong> Paste file contents directly</li>
-              <li><strong>Open as New:</strong> Clears canvas and loads structure</li>
-              <li><strong>Add to Canvas:</strong> Adds structure without clearing existing work</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Documentation: 3D Viewer (Detailed) -->
-        <div class="slide" data-slide="24">
-          <h2>3D Viewer</h2>
-          <p>The 3D Viewer button on the toolbar opens a modal window displaying the structure in three dimensions:</p>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/8_miew1.png" alt="3D Viewer" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 20px 0;" /></p>
-          <h3>3D Viewer Controls</h3>
-          <ul>
-            <li><strong>Rotate:</strong> Hold the left mouse button and drag to rotate the structure</li>
-            <li><strong>Zoom:</strong> Use mouse wheel to zoom in/out</li>
-          </ul>
-          <div class="feature-box">
-            <h4>3D Viewer Settings</h4>
-            <p>Ketcher Settings allow changing the appearance of the structure and background coloring on the 3D Viewer tab. Default settings include:</p>
-            <ul>
-              <li>"Lines" drawing method</li>
-              <li>"Bright" atom name coloring method</li>
-              <li>"Light" background coloring</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Documentation: Changing Structure Display -->
-        <div class="slide" data-slide="25">
-          <h2>Changing Structure Display</h2>
-          <h3>Rotate Tool</h3>
-          <p>The Rotate tool allows you to change the orientation of structures:</p>
-          <ul>
-            <li>If objects are selected, rotates all selected objects</li>
-            <li>If no objects are selected, rotates the whole canvas</li>
-            <li>Default rotation step is 15 degrees (changeable in Settings)</li>
-            <li>Hold Ctrl for continuous rotation with 1 degree step</li>
-            <li>Select a bond and press <code>Alt+H</code> to place it horizontally</li>
-            <li>Select a bond and press <code>Alt+V</code> to place it vertically</li>
-          </ul>
-          <h3>Flip Tool</h3>
-          <ul>
-            <li><strong>Horizontal Flip</strong> (<code>Alt+H</code>): Flips selected objects or entire structures horizontally</li>
-            <li><strong>Vertical Flip</strong> (<code>Alt+V</code>): Flips selected objects or entire structures vertically</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Highlighting Atoms and Bonds</h4>
-            <p>Right-click on an atom, bond, or multiple selected elements to highlight them with one of eight available colors.</p>
-            <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Highlighting-3.0..png" alt="Highlighting" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin-top: 10px;" /></p>
-          </div>
-          <div class="highlight">
-            <h4>ACS (American Chemical Society) Style</h4>
-            <p>From Settings, you can apply ACS style settings. Structures will change their appearance to comply with ACS publication standards. This can be reset to default values.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: Drawing Graphical Objects -->
-        <div class="slide" data-slide="26">
-          <h2>Drawing Graphical Objects</h2>
-          <p>Ketcher allows you to add graphical elements to your drawings:</p>
-          <h3>Shape Tools</h3>
-          <p>Click the arrow on the Shape Ellipse tool to access:</p>
-          <ul>
-            <li><strong>Shape Ellipse:</strong> Draw ellipses and circles</li>
-            <li><strong>Shape Rectangle:</strong> Draw rectangles and squares</li>
-            <li><strong>Shape Line:</strong> Draw straight lines</li>
-          </ul>
-          <h3>Adding Images</h3>
-          <ul>
-            <li>Select the <strong>Add Image</strong> tool from the Tools palette</li>
-            <li>Click anywhere on the canvas</li>
-            <li>Choose an image file (.png or .svg)</li>
-            <li>The image center will be placed at the click location</li>
-          </ul>
-          <h3>Adding Text Objects</h3>
-          <ul>
-            <li>Click the <strong>Add Text</strong> tool (<code>Alt+T</code>)</li>
-            <li>Click on the canvas to open the Text editor</li>
-            <li>Type text and apply formatting (bold, italic, subscript, superscript)</li>
-            <li>Double-click text objects to edit them</li>
-            <li>Add special symbols using the omega button</li>
-          </ul>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/421_texttool.png" alt="Text Tool" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin-top: 20px;" /></p>
-        </div>
-
-        <!-- Documentation: Ketcher Macromolecules Mode -->
-        <div class="slide" data-slide="27">
-          <h2>Ketcher Macromolecules Mode</h2>
-          <p>Macromolecules mode allows drawing and operations with biomolecules (nucleic acids and peptides).</p>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Macro-canvas-3.9..png" alt="Macromolecules Mode" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 20px 0;" /></p>
-          <h3>Main Toolbar Features</h3>
-          <ul>
-            <li><strong>Clear Canvas:</strong> Clear the drawing area</li>
-            <li><strong>Open/Save As:</strong> Import/export macromolecule files</li>
-            <li><strong>Calculate Properties:</strong> Display molecular properties</li>
-            <li><strong>Create Antisense Strand:</strong> Generate DNA/RNA antisense strands</li>
-            <li><strong>Sync/Non-sync switcher:</strong> Control editing style for double-stranded sequences</li>
-            <li><strong>Mode switcher:</strong> Switch between sequence, snake, and flex layout modes</li>
-            <li><strong>Sequence mode typing type:</strong> Change interpretation of keyboard input (DNA/RNA/Peptide)</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Layout Modes</h4>
-            <p>Macromolecules mode offers three layout modes:</p>
-            <ul>
-              <li><strong>Sequence Mode:</strong> Text-editor-like view with single letter codes</li>
-              <li><strong>Snake Mode:</strong> Visual representation with snake-like bonds</li>
-              <li><strong>Flex Mode:</strong> Visual representation with straight bonds</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Documentation: Macromolecules Library -->
-        <div class="slide" data-slide="28">
-          <h2>Macromolecules Library</h2>
-          <p>The macromolecules library has 4 tabs for organizing monomers and presets:</p>
-          <h3>Library Tabs</h3>
-          <ul>
-            <li><strong>Favorites:</strong> User-selected favorite monomers (starred items)</li>
-            <li><strong>Peptides:</strong> Amino acid monomers organized alphabetically by one-letter codes</li>
-            <li><strong>RNA:</strong> RNA builder, presets, and monomers (sugars, bases, phosphates, nucleotides)</li>
-            <li><strong>CHEM:</strong> Non-RNA and non-amino acid monomers (linkers, tags)</li>
-          </ul>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Library-Tabs-3.9..png" alt="Library Tabs" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 20px 0;" /></p>
-          <div class="feature-box">
-            <h4>Searching the Library</h4>
-            <p>Search using monomer names, symbols, or IDT aliases. Hover over library cards to see detailed previews including:</p>
-            <ul>
-              <li>Monomer name and chemical structure</li>
-              <li>Attachment point positions</li>
-              <li>HELM aliases</li>
-              <li>IDT and AxoLabs aliases</li>
-            </ul>
-          </div>
-          <div class="highlight">
-            <h4>RNA Builder</h4>
-            <p>The RNA Builder creates presets (collections of 2-3 monomers) for nucleotides, nucleosides, or sugar-phosphate pairs. Presets can be saved and reused.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: Sequence Mode -->
-        <div class="slide" data-slide="29">
-          <h2>Sequence Mode</h2>
-          <p>Sequence layout mode provides a text-editor-like view for macromolecules. All nucleotides and amino acids are represented with single letter codes.</p>
-          <h3>Visual Indicators</h3>
-          <ul>
-            <li><strong>Nucleic Acids:</strong> Gray background = modified base, black frame = modified sugar, dot = modified phosphate</li>
-            <li><strong>Peptides:</strong> Modified amino acids are underlined</li>
-            <li><strong>Other Elements:</strong> Represented with @ symbol</li>
-          </ul>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Sequence-Mode-3.4..png" alt="Sequence Mode" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 20px 0;" /></p>
-          <h3>Working in Sequence Mode</h3>
-          <ul>
-            <li>Type or paste text to add monomers (based on typing type switcher)</li>
-            <li>Backbone connections (R1-R2) are established automatically</li>
-            <li>Click library cards to add modified monomers</li>
-            <li>Select and click library cards to replace monomers</li>
-            <li>Right-click to modify nucleotides in RNA Builder or amino acids with modifications</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Typing Type Switcher</h4>
-            <p>Change how keyboard input is interpreted: DNA nucleotide, RNA nucleotide, or amino acid. Available only in sequence layout mode.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: Snake and Flex Modes -->
-        <div class="slide" data-slide="30">
-          <h2>Snake and Flex Modes</h2>
-          <p>Unlike sequence mode, snake and flex modes represent every monomer with a shape:</p>
-          <h3>Monomer Shapes</h3>
-          <ul>
-            <li><strong>Hexagons:</strong> Amino acids (color-coded by type: red=acidic, blue=basic, purple=polar, yellow/green=non-polar)</li>
-            <li><strong>White boxes:</strong> CHEMs</li>
-            <li><strong>Blue rounded squares:</strong> Sugars</li>
-            <li><strong>Rhombuses:</strong> Bases (gray=purines, yellow/orange/purple=pyrimidines)</li>
-            <li><strong>Coral circles:</strong> Phosphates</li>
-            <li><strong>Pentagons:</strong> Unsplit nucleotides</li>
-            <li><strong>Dark rounded squares:</strong> Unresolved IDT/AxoLabs nucleotides</li>
-          </ul>
-          <p><img src="https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/Snake-and-Flex-3-3.8..png" alt="Monomer Shapes" style="max-width: 100%; height: auto; border: 1px solid #e8e8e8; border-radius: 8px; margin: 20px 0;" /></p>
-          <h3>Differences Between Snake and Flex</h3>
-          <ul>
-            <li><strong>Bond Appearance:</strong> Flex uses straight lines; snake uses "snake-like" bonds with joints</li>
-            <li><strong>Auto-layout:</strong> Snake mode automatically layouts structures; flex mode does not</li>
-          </ul>
-          <div class="highlight">
-            <h4>Adding Monomers</h4>
-            <p>Monomers can be added by: opening from file, pasting, drag-and-drop from library, or using the arrow icon on library cards.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: Creating Antisense Chains -->
-        <div class="slide" data-slide="31">
-          <h2>Creating Antisense Chains</h2>
-          <p>Create DNA or RNA antisense strands for selected sequences:</p>
-          <h3>Creating Antisense Strands</h3>
-          <ul>
-            <li>Select the desired sense chain</li>
-            <li>Use the <strong>Create Antisense Strand</strong> icon or right-click menu</li>
-            <li>Choose <strong>Create Antisense DNA Strand</strong> or <strong>Create Antisense RNA Strand</strong></li>
-            <li>The antisense chain is added below with hydrogen bonds established</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Working with Double-Stranded Sequences</h4>
-            <p>In sequence layout mode, a minus/line symbol represents bonds connecting monomers on both sides, allowing representation of non-linear structures like bulge loops.</p>
-          </div>
-          <h3>Sync/Non-sync Editing</h3>
-          <ul>
-            <li><strong>Sync On:</strong> Changes on one side impact the other side (complementary base pairing)</li>
-            <li><strong>Sync Off:</strong> Changes on one side do not affect the other side chemistry</li>
-          </ul>
-          <div class="highlight">
-            <h4>Hydrogen Bonds</h4>
-            <p>Establish or delete hydrogen bonds via the right-click menu. When deleting, all hydrogen bonds involving selected monomers are removed.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: Macromolecules Properties -->
-        <div class="slide" data-slide="32">
-          <h2>Macromolecules Properties</h2>
-          <p>Click the <strong>Calculate Properties</strong> button (<code>Alt+C</code>) to view molecular properties:</p>
-          <h3>General Properties</h3>
-          <ul>
-            <li><strong>Molecular Formula:</strong> Available for any structure</li>
-            <li><strong>Molecular Mass:</strong> In Da, kDa, or MDa units</li>
-          </ul>
-          <h3>Peptide-Specific Properties</h3>
-          <ul>
-            <li><strong>Isoelectric Point:</strong> Median of all pKa values</li>
-            <li><strong>Extinction Coefficient:</strong> For λ=280nm (Gill & von Hippel method)</li>
-            <li><strong>Hydrophobicity:</strong> Graph showing hydrophobicity score (Black & Mould method)</li>
-            <li><strong>Amino Acid Count:</strong> Count of each amino acid by natural analogue</li>
-          </ul>
-          <h3>Nucleic Acid Properties</h3>
-          <ul>
-            <li><strong>Melting Temperature:</strong> For double-stranded sequences (Khandelwal & Bhyravabhotla method)</li>
-            <li><strong>Nucleotide Count:</strong> Count of each base</li>
-          </ul>
-          <div class="feature-box">
-            <h4>Using Properties</h4>
-            <p>The Calculate Properties window is available in all modes. If multiple chains exist, select the chain you want to analyze.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: Macromolecules and Molecules Mode Integration -->
-        <div class="slide" data-slide="33">
-          <h2>Macromolecules and Molecules Mode Integration</h2>
-          <p>Ketcher allows working with both small molecules and macromolecules:</p>
-          <h3>Cross-Mode Visibility</h3>
-          <ul>
-            <li>Macromolecule structures are visible (but not editable) in molecules mode</li>
-            <li>Molecule structures are visible (but not editable) in macromolecules mode</li>
-            <li>Monomers appear differently in molecules mode (full abbreviations) vs macromolecules mode (shapes or codes)</li>
-          </ul>
-          <h3>Establishing Bonds Between Modes</h3>
-          <ol>
-            <li>Draw the molecular structure in <strong>molecules mode</strong></li>
-            <li>Draw the macromolecular structure in <strong>macromolecules mode</strong></li>
-            <li>In macromolecules mode, use the Bond tool to connect from a monomer attachment point to a molecular atom</li>
-          </ol>
-          <div class="feature-box">
-            <h4>Expanding Monomers</h4>
-            <p>In molecules mode, right-click on a monomer and select <strong>Expand monomer</strong> to view its full structure. Multiple monomers can be expanded simultaneously.</p>
-            <p>Expanded monomers behave like S-groups and highlight attachment atoms in blue and leaving groups in yellow when hovered.</p>
-          </div>
-        </div>
-
-        <!-- Documentation: Keyboard Shortcuts -->
-        <div class="slide" data-slide="34">
-          <h2>Keyboard Shortcuts</h2>
-          <p>Master these shortcuts to work more efficiently:</p>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0;">
-            <div>
-              <h4>General (Ctrl = Mod)</h4>
-              <ul style="font-size: 13px; line-height: 1.8;">
-                <li><code>Ctrl+Delete</code> - Clear Canvas</li>
-                <li><code>Ctrl+O</code> - Open</li>
-                <li><code>Ctrl+S</code> - Save As</li>
-                <li><code>Ctrl+Z</code> - Undo</li>
-                <li><code>Ctrl+Shift+Z</code> - Redo</li>
-                <li><code>Ctrl+C</code> - Copy</li>
-                <li><code>Ctrl+V</code> - Paste</li>
-                <li><code>Ctrl+A</code> - Select All</li>
-              </ul>
-            </div>
-            <div>
-              <h4>Tools</h4>
-              <ul style="font-size: 13px; line-height: 1.8;">
-                <li><code>Escape</code> - Cycle selection tools</li>
-                <li><code>Delete</code> - Erase</li>
-                <li><code>1, 2, 3, 4</code> - Bond types</li>
-                <li><code>Alt+R</code> - Rotate Tool</li>
-                <li><code>Alt+H</code> - Horizontal Flip</li>
-                <li><code>Alt+V</code> - Vertical Flip</li>
-                <li><code>Alt+T</code> - Add Text</li>
-              </ul>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px;">
-            <div>
-              <h4>Atoms</h4>
-              <ul style="font-size: 13px; line-height: 1.8;">
-                <li><code>H, C, N, O</code> - Common atoms</li>
-                <li><code>S, P, F, Cl</code> - Other atoms</li>
-                <li><code>R</code> - Pseudoatom</li>
-                <li><code>/</code> - Atom Properties</li>
-              </ul>
-            </div>
-            <div>
-              <h4>Server Operations</h4>
-              <ul style="font-size: 13px; line-height: 1.8;">
-                <li><code>Alt+A</code> - Aromatize</li>
-                <li><code>Ctrl+Alt+A</code> - Dearomatize</li>
-                <li><code>Ctrl+L</code> - Layout</li>
-                <li><code>Alt+S</code> - Check Structure</li>
-              </ul>
-            </div>
-          </div>
-          <div class="highlight" style="margin-top: 24px;">
-            <strong>Note:</strong> On Mac, use <code>Command</code> instead of <code>Ctrl</code>. Press <code>?</code> or <code>Shift+/</code> in Ketcher to view all shortcuts.
-          </div>
-        </div>
-
-        <!-- Documentation: Final Slide -->
-        <div class="slide" data-slide="35">
-          <h2>Documentation Complete!</h2>
-          <p>You've now covered the complete documentation for Ketcher's features in MolDraw!</p>
-          <div class="feature-box">
-            <h4>What You've Learned</h4>
-            <ul>
-              <li>✅ Ketcher interface and toolbars</li>
-              <li>✅ Drawing atoms and bonds</li>
-              <li>✅ Advanced features (R-Groups, S-Groups)</li>
-              <li>✅ Drawing reactions and graphical objects</li>
-              <li>✅ Using templates and functional groups</li>
-              <li>✅ Stereochemistry</li>
-              <li>✅ 3D Viewer and structure display</li>
-              <li>✅ Macromolecules mode (sequence, snake, flex)</li>
-              <li>✅ Macromolecules library and properties</li>
-              <li>✅ Creating antisense chains</li>
-              <li>✅ Mode integration</li>
-              <li>✅ File operations and formats</li>
-              <li>✅ Keyboard shortcuts</li>
-            </ul>
-          </div>
-          <div class="highlight">
-            <h3>Practice Makes Perfect</h3>
-            <p>Now that you understand all the features, practice using them! Try:</p>
-            <ol>
-              <li>Drawing complex structures with R-groups</li>
-              <li>Creating reactions with proper mapping</li>
-              <li>Using templates for common structures</li>
-              <li>Experimenting with stereochemistry</li>
-            </ol>
-          </div>
-          <p style="text-align: center; margin-top: 40px;">
-            <a href="/" style="display: inline-block; background: #2C7A7B; color: white; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-right: 16px;">
-              Start Using MolDraw →
-            </a>
-            <a href="https://github.com/epam/ketcher/blob/master/documentation/help.md" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: white; color: #2C7A7B; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; border: 2px solid #2C7A7B;">
-              Full Ketcher Docs →
-            </a>
-          </p>
+    <main class="main">
+      <div class="course-topbar">
+        <a class="back-editor-btn" href="/" title="Go back to molecule editor">← Back to Editor</a>
+        <div class="course-search-wrap">
+          <input id="courseSearchInput" class="course-search-input" type="text" placeholder="Search in course chapters (e.g., aromatic, reaction, templates)" />
+          <button id="courseSearchBtn" class="course-search-btn" type="button">Search</button>
         </div>
       </div>
-
-      <!-- Navigation -->
-      <div class="navigation">
-        <button class="nav-btn prev" id="prevBtn" onclick="changeSlide(-1)">← Previous</button>
-        <div class="slide-counter">
-          <span id="currentSlide">1</span> / <span id="totalSlides">36</span>
-        </div>
-        <button class="nav-btn next" id="nextBtn" onclick="changeSlide(1)">Next →</button>
-      </div>
-    </div>
+      <section class="content">
+        <div id="status" class="status">Loading official help…</div>
+        <article id="content" class="md"></article>
+      </section>
+    </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
-    let currentSlide = 0;
-    const slides = document.querySelectorAll('.slide');
-    const totalSlides = slides.length;
-    const slideTitles = [
-      'Welcome to MolDraw',
-      'What is MolDraw?',
-      'Getting Started',
-      'Video Tutorial',
-      'Drawing Structures',
-      '3D Visualization',
-      'Molecule Search',
-      'Export Options',
-      'Advanced Tips',
-      'Use Cases',
-      'Troubleshooting',
-      'Congratulations!',
-      'Complete Documentation',
-      'Ketcher Overview',
-      'Ketcher Molecules Mode',
-      'Main Toolbar Features',
-      'Drawing Atoms',
-      'Drawing Bonds',
-      'Drawing R-Groups',
-      'Marking S-Groups',
-      'Drawing Reactions',
-      'Templates toolbar',
-      'Stereochemistry',
-      'Working with Files',
-      '3D Viewer',
-      'Changing Structure Display',
-      'Drawing Graphical Objects',
-      'Ketcher Macromolecules Mode',
-      'Macromolecules Library',
-      'Sequence Mode',
-      'Snake and Flex Modes',
-      'Creating Antisense Chains',
-      'Macromolecules Properties',
-      'Macromolecules Integration',
-      'Hotkeys',
-      'Documentation Complete!'
-    ];
+    const SOURCE_URL = 'https://raw.githubusercontent.com/epam/ketcher/master/documentation/help.md';
+    const IMAGE_BASE = 'https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/';
+    const statusEl = document.getElementById('status');
+    const contentEl = document.getElementById('content');
+    const tocEl = document.getElementById('toc');
+    const completeBtn = document.getElementById('completeBtn');
+    const courseSearchInput = document.getElementById('courseSearchInput');
+    const courseSearchBtn = document.getElementById('courseSearchBtn');
 
-    // Create outline
-    const outline = document.getElementById('courseOutline');
-    slideTitles.forEach((title, index) => {
-      const item = document.createElement('div');
-      item.className = 'outline-item' + (index === 0 ? ' active' : '');
-      item.onclick = () => goToSlide(index);
-      item.innerHTML = `
-        <span class="outline-item-number">${index + 1}</span>
-        <span class="outline-item-title">${title}</span>
-      `;
-      outline.appendChild(item);
+    const slugMap = new Map();
+    const slugify = (text) => {
+      const base = String(text || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[`*_[\]().,!?/:;'"&]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+      const current = slugMap.get(base) || 0;
+      slugMap.set(base, current + 1);
+      return current === 0 ? base : `${base}-${current}`;
+    };
+
+    function updateCompleteBtn() {
+      const done = localStorage.getItem('moldraw_course_complete') === '1';
+      completeBtn.classList.toggle('done', done);
+      completeBtn.textContent = done ? 'Completed' : 'Complete Course';
+    }
+
+    completeBtn.addEventListener('click', () => {
+      localStorage.setItem('moldraw_course_complete', '1');
+      updateCompleteBtn();
     });
+    updateCompleteBtn();
 
-    function showSlide(n) {
-      if (n >= totalSlides) {
-        currentSlide = 0;
-      } else if (n < 0) {
-        currentSlide = totalSlides - 1;
-      } else {
-        currentSlide = n;
-      }
+    const chapterStateKey = 'moldraw_course_chapters';
+    const chapterSelectionKey = 'moldraw_course_selected_chapter';
+    let chapters = [];
+    let activeChapterId = '';
+    const readChapterState = () => {
+      try { return JSON.parse(localStorage.getItem(chapterStateKey) || '{}'); } catch { return {}; }
+    };
+    const writeChapterState = (map) => {
+      localStorage.setItem(chapterStateKey, JSON.stringify(map));
+    };
 
-      slides.forEach((slide, index) => {
-        slide.classList.remove('active');
-        if (index === currentSlide) {
-          slide.classList.add('active');
+    function splitMarkdownIntoChapters(md) {
+      const lines = md.split('\n');
+      const intro = [];
+      const grouped = [];
+      let current = null;
+
+      lines.forEach((line) => {
+        if (/^##\s+/.test(line)) {
+          if (current) grouped.push(current);
+          current = { title: line.replace(/^##\s+/, '').trim(), lines: [line] };
+          return;
+        }
+        if (current) {
+          current.lines.push(line);
+        } else {
+          intro.push(line);
         }
       });
 
-      // Update outline
-      document.querySelectorAll('.outline-item').forEach((item, index) => {
-        item.classList.remove('active');
-        if (index === currentSlide) {
-          item.classList.add('active');
-        }
+      if (current) grouped.push(current);
+
+      const result = [];
+      const introText = intro.join('\n').trim();
+      if (introText) {
+        const introMatch = introText.match(/^#\s+(.+)$/m);
+        const introTitle = introMatch && introMatch[1] ? introMatch[1].trim() : 'Introduction';
+        result.push({ title: introTitle, md: introText });
+      }
+
+      grouped.forEach((group) => {
+        result.push({ title: group.title, md: group.lines.join('\n').trim() });
       });
 
-      // Update counter
-      document.getElementById('currentSlide').textContent = currentSlide + 1;
-      document.getElementById('totalSlides').textContent = totalSlides;
+      if (!result.length) {
+        result.push({ title: 'Documentation', md: md.trim() });
+      }
 
-      // Update buttons
-      document.getElementById('prevBtn').disabled = currentSlide === 0;
-      document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
-
-      // Scroll to top
-      window.scrollTo(0, 0);
+      return result.map((chapter, idx) => ({
+        id: `chapter-${idx + 1}`,
+        title: chapter.title,
+        md: chapter.md,
+      }));
     }
 
-    function changeSlide(direction) {
-      showSlide(currentSlide + direction);
+    function clearSearchHighlights() {
+      const marks = contentEl.querySelectorAll('mark.search-hit');
+      marks.forEach((mark) => {
+        const parent = mark.parentNode;
+        if (!parent) return;
+        parent.replaceChild(document.createTextNode(mark.textContent || ''), mark);
+        parent.normalize();
+      });
     }
 
-    function goToSlide(n) {
-      showSlide(n);
+    function highlightInContent(query) {
+      const term = String(query || '').trim();
+      if (!term) return 0;
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'gi');
+      const walker = document.createTreeWalker(contentEl, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      let node;
+      while ((node = walker.nextNode())) {
+        if (!node.nodeValue || !node.nodeValue.trim()) continue;
+        if (node.parentElement && ['SCRIPT', 'STYLE', 'MARK'].includes(node.parentElement.tagName)) continue;
+        nodes.push(node);
+      }
+      let count = 0;
+      nodes.forEach((textNode) => {
+        const original = textNode.nodeValue;
+        if (!regex.test(original)) return;
+        regex.lastIndex = 0;
+        const frag = document.createDocumentFragment();
+        let last = 0;
+        original.replace(regex, (match, offset) => {
+          frag.appendChild(document.createTextNode(original.slice(last, offset)));
+          const mark = document.createElement('mark');
+          mark.className = 'search-hit';
+          mark.textContent = match;
+          frag.appendChild(mark);
+          count += 1;
+          last = offset + match.length;
+          return match;
+        });
+        frag.appendChild(document.createTextNode(original.slice(last)));
+        textNode.parentNode.replaceChild(frag, textNode);
+      });
+      return count;
     }
 
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') {
-        changeSlide(-1);
-      } else if (e.key === 'ArrowRight') {
-        changeSlide(1);
+    function renderActiveChapter(searchTerm = '') {
+      const chapter = chapters.find((x) => x.id === activeChapterId) || chapters[0];
+      if (!chapter) {
+        contentEl.innerHTML = '';
+        return;
+      }
+
+      activeChapterId = chapter.id;
+      localStorage.setItem(chapterSelectionKey, activeChapterId);
+      contentEl.innerHTML = marked.parse(chapter.md);
+      // Assign stable IDs after render to avoid heading token/object issues.
+      slugMap.clear();
+      const headings = contentEl.querySelectorAll('h1, h2, h3, h4');
+      headings.forEach((h) => {
+        const text = (h.textContent || '').trim();
+        if (!text) return;
+        h.id = slugify(text);
+      });
+      const chapterIndex = chapters.findIndex((x) => x.id === chapter.id) + 1;
+      statusEl.textContent = `Chapter ${chapterIndex} of ${chapters.length}: ${chapter.title}`;
+      buildSidebarTOC();
+      clearSearchHighlights();
+      if (searchTerm) {
+        const hits = highlightInContent(searchTerm);
+        if (hits > 0) {
+          statusEl.textContent = `Chapter ${chapterIndex} of ${chapters.length}: ${chapter.title} • ${hits} match${hits > 1 ? 'es' : ''}`;
+        }
+      }
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    function searchCourse() {
+      const query = String(courseSearchInput.value || '').trim();
+      if (!query) {
+        renderActiveChapter('');
+        return;
+      }
+      const q = query.toLowerCase();
+      const matchedChapter = chapters.find((chapter) =>
+        chapter.title.toLowerCase().includes(q) || chapter.md.toLowerCase().includes(q)
+      );
+      if (!matchedChapter) {
+        statusEl.textContent = `No chapter found for "${query}"`;
+        return;
+      }
+      activeChapterId = matchedChapter.id;
+      renderActiveChapter(query);
+    }
+
+    courseSearchBtn.addEventListener('click', searchCourse);
+    courseSearchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        searchCourse();
       }
     });
 
-    // Initialize
-    showSlide(0);
+    function buildSidebarTOC() {
+      tocEl.innerHTML = '';
+      const state = readChapterState();
+      chapters.forEach((chapter, idx) => {
+        const row = document.createElement('div');
+        row.className = 'chapter-row';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'chapter-toggle';
+        cb.checked = !!state[chapter.id];
+
+        const a = document.createElement('button');
+        a.type = 'button';
+        a.className = 'chapter-link' + (cb.checked ? ' done' : '') + (chapter.id === activeChapterId ? ' active' : '');
+        a.textContent = `Chapter ${idx + 1}: ${chapter.title}`;
+
+        a.addEventListener('click', () => {
+          activeChapterId = chapter.id;
+          renderActiveChapter();
+        });
+
+        cb.addEventListener('change', () => {
+          const next = readChapterState();
+          next[chapter.id] = cb.checked;
+          writeChapterState(next);
+          a.classList.toggle('done', cb.checked);
+        });
+
+        row.appendChild(cb);
+        row.appendChild(a);
+        tocEl.appendChild(row);
+      });
+    }
+
+    async function loadHelp() {
+      try {
+        const res = await fetch(SOURCE_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Cannot load help');
+        let md = await res.text();
+        // Keep chapters in left sidebar; remove in-content table of contents block.
+        md = md.replace(/^# Table of Contents[\s\S]*?(?=\n# Ketcher Overview)/m, '');
+        // Convert image references to absolute raw GitHub URLs.
+        md = md
+          .replace(/src\s*=\s*images\//gi, 'src=' + IMAGE_BASE)
+          .replace(/src\s*=\s*"images\//gi, 'src="' + IMAGE_BASE)
+          .replace(/src\s*=\s*'images\//gi, "src='" + IMAGE_BASE)
+          .replace(/\]\(images\//gi, '](' + IMAGE_BASE);
+
+        marked.setOptions({ gfm: true, breaks: true, mangle: false, headerIds: false });
+        chapters = splitMarkdownIntoChapters(md);
+        const savedChapter = localStorage.getItem(chapterSelectionKey);
+        activeChapterId = chapters.some((c) => c.id === savedChapter) ? savedChapter : chapters[0].id;
+        renderActiveChapter();
+      } catch (e) {
+        statusEl.textContent = 'Failed to load official help.';
+        contentEl.innerHTML = '<h2>Could not load help content</h2><p>Please try again or open the official source directly: <a href="https://github.com/epam/ketcher/blob/master/documentation/help.md" target="_blank" rel="noopener noreferrer">Ketcher help.md</a>.</p>';
+      }
+    }
+
+    loadHelp();
   </script>
 </body>
 </html>

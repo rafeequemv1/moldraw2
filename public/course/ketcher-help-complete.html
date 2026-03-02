@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Complete Ketcher Help reference for MolDraw course, including all sections, images, and hotkeys.">
+  <title>Ketcher Complete Help | MolDraw Course</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: #1a1a1a;
+      line-height: 1.7;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .link-btn {
+      display: inline-flex;
+      align-items: center;
+      height: 32px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 0 10px;
+      text-decoration: none;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 600;
+      background: #fff;
+    }
+    .status {
+      font-size: 12px;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .container {
+      width: min(1180px, 95vw);
+      margin: 14px auto 40px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 22px;
+    }
+    .md h1, .md h2, .md h3, .md h4 {
+      color: #0f172a;
+      margin: 22px 0 10px;
+      line-height: 1.3;
+    }
+    .md h1 { font-size: 30px; margin-top: 8px; }
+    .md h2 { font-size: 24px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; }
+    .md h3 { font-size: 20px; }
+    .md h4 { font-size: 17px; }
+    .md p { margin: 10px 0; color: #334155; }
+    .md ul, .md ol { margin: 8px 0 12px 22px; color: #334155; }
+    .md li { margin: 5px 0; }
+    .md a { color: #2C7A7B; text-decoration: none; }
+    .md a:hover { text-decoration: underline; }
+    .md img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin: 12px 0;
+      background: #fff;
+    }
+    .md table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+    .md th, .md td {
+      border: 1px solid #e5e7eb;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .md code {
+      background: #f1f5f9;
+      border-radius: 5px;
+      padding: 1px 6px;
+      font-size: 13px;
+    }
+    .md pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      overflow: auto;
+      margin: 10px 0 14px;
+    }
+    .md pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="links">
+      <a class="link-btn" href="/course/index.html">← Course</a>
+      <a class="link-btn" href="/documentation/index.html">Documentation</a>
+      <a class="link-btn" href="/">MolDraw App</a>
+      <a class="link-btn" href="https://github.com/epam/ketcher/blob/master/documentation/help.md" target="_blank" rel="noopener noreferrer">Official Source</a>
+    </div>
+    <div id="status" class="status">Loading complete help...</div>
+  </div>
+
+  <main class="container">
+    <div id="content" class="md"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    (async function loadHelp() {
+      const sourceUrl = 'https://raw.githubusercontent.com/epam/ketcher/master/documentation/help.md';
+      const imageBase = 'https://raw.githubusercontent.com/epam/ketcher/master/documentation/images/';
+      const statusEl = document.getElementById('status');
+      const contentEl = document.getElementById('content');
+      try {
+        const res = await fetch(sourceUrl, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Unable to fetch help.md');
+        let md = await res.text();
+
+        // Normalize all image references to absolute raw GitHub URLs.
+        md = md
+          .replace(/src\s*=\s*images\//gi, 'src=' + imageBase)
+          .replace(/src\s*=\s*"images\//gi, 'src="' + imageBase)
+          .replace(/src\s*=\s*'images\//gi, "src='" + imageBase)
+          .replace(/\]\(images\//gi, '](' + imageBase);
+
+        marked.setOptions({ gfm: true, breaks: true, headerIds: true, mangle: false });
+        contentEl.innerHTML = marked.parse(md);
+        statusEl.textContent = 'Synced from official Ketcher help';
+      } catch (error) {
+        statusEl.textContent = 'Failed to load help';
+        contentEl.innerHTML = '<h2>Could not load Ketcher help</h2><p>Please open the Official Source button above.</p>';
+      }
+    })();
+  </script>
+</body>
+</html>

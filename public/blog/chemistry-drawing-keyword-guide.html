@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chemistry drawing guide for students and researchers: practical concepts, clean structure communication, and lightweight workflows.">
+  <meta name="keywords" content="chemistry drawing, chemistry drawings, molecule drawing, molecule drawings, chemical drawing software, free chemistry drawing tool">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="Chemistry Drawing Guide: Concepts and Workflow">
+  <meta property="og:description" content="A minimal educational guide for chemistry drawing workflows, communication clarity, and export-ready structures.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://moldraw.scidart.com/blog/chemistry-drawing-keyword-guide.html">
+  <meta property="og:image" content="https://moldraw.scidart.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Chemistry Drawing Guide: Concepts and Workflow">
+  <meta name="twitter:description" content="Simple and technical chemistry drawing guide with workflow, table, and FAQ.">
+  <link rel="canonical" href="https://moldraw.scidart.com/blog/chemistry-drawing-keyword-guide.html">
+  <title>Chemistry Drawing Guide: Concepts and Workflow | MolDraw Blog</title>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BlogPosting",
+        "headline": "Chemistry Drawing Guide: Concepts and Workflow",
+        "description": "Educational and practical chemistry drawing guide for structure communication.",
+        "author": { "@type": "Organization", "name": "Scidart Academy" },
+        "publisher": { "@type": "Organization", "name": "Scidart Academy" },
+        "datePublished": "2026-03-02",
+        "dateModified": "2026-03-02",
+        "mainEntityOfPage": "https://moldraw.scidart.com/blog/chemistry-drawing-keyword-guide.html"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is chemistry drawing software used for?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Chemistry drawing software is used to create molecular structures, annotate reactions, and export publication-ready figures and structure files."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the difference between chemistry drawing and molecule drawing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Molecule drawing usually focuses on individual structures, while chemistry drawing also includes reactions, annotations, and communication for reports or publications."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I do chemistry drawings online for free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Browser-based tools such as MolDraw allow free chemistry drawing workflows with exports and SMILES handling."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.7;
+    }
+    .layout {
+      width: min(1180px, 95vw);
+      margin: 0 auto;
+      padding: 22px 0 40px;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 16px;
+    }
+    .outline {
+      position: sticky;
+      top: 12px;
+      align-self: start;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .outline h2 {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .outline a {
+      display: block;
+      font-size: 13px;
+      color: #334155;
+      text-decoration: none;
+      border-radius: 7px;
+      padding: 6px 7px;
+      margin-bottom: 3px;
+    }
+    .outline a:hover { background: #f1f5f9; color: #0f172a; }
+    .article {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 22px;
+    }
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .nav a {
+      text-decoration: none;
+      border: 1px solid #d1d5db;
+      color: #334155;
+      background: #fff;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    h1 { font-size: 30px; line-height: 1.2; margin-bottom: 10px; }
+    .meta { font-size: 13px; color: #64748b; margin-bottom: 14px; }
+    h2 { font-size: 22px; margin: 26px 0 10px; scroll-margin-top: 16px; }
+    p { color: #334155; margin-bottom: 12px; }
+    ul { margin: 6px 0 14px 20px; color: #334155; }
+    li { margin-bottom: 7px; }
+    .tip {
+      border: 1px solid #dbeafe;
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      margin: 10px 0 14px;
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    th, td {
+      border-bottom: 1px solid #f1f5f9;
+      padding: 9px 10px;
+      text-align: left;
+      font-size: 14px;
+      color: #334155;
+      vertical-align: top;
+    }
+    th { background: #f8fafc; color: #0f172a; }
+    .diagram {
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      color: #334155;
+      margin: 10px 0 14px;
+    }
+    .faq {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .faq h3 { font-size: 16px; margin-bottom: 5px; }
+    .links {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .links a {
+      text-decoration: none;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      background: #fff;
+    }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .outline { position: static; }
+    }
+    @media (max-width: 720px) {
+      h1 { font-size: 25px; }
+      .article { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <aside class="outline" aria-label="Article outline">
+      <h2>Outline</h2>
+      <a href="#principles">Core Principles</a>
+      <a href="#comparison">Common Tasks Table</a>
+      <a href="#workflow">Minimal Workflow</a>
+      <a href="#quality">Quality Checklist</a>
+      <a href="#faq">FAQ</a>
+    </aside>
+
+    <article class="article">
+      <nav class="nav" aria-label="Blog navigation">
+        <a href="/blog/index.html">← Back to Blog</a>
+        <a href="/">Open MolDraw</a>
+      </nav>
+
+      <h1>Chemistry Drawing Guide: Concepts and Workflow</h1>
+      <div class="meta">Published: 2 Mar 2026 • Author: Scidart Academy</div>
+
+      <p>Chemistry drawings are most useful when they are clear, reproducible, and easy to export. This guide focuses on practical structure communication for students, educators, and lab teams.</p>
+      <div class="tip">Tip: Use consistent atom labels, explicit stereochemistry, and a clear export format strategy from the start.</div>
+
+      <h2 id="principles">Core Principles</h2>
+      <ul>
+        <li>Keep structure geometry readable before adding stylistic details.</li>
+        <li>Use unambiguous notation for stereocenters and ring systems.</li>
+        <li>Preserve machine-readable structure data alongside visuals.</li>
+      </ul>
+
+      <h2 id="comparison">Common Chemistry Drawing Tasks</h2>
+      <div class="table-wrap">
+        <table aria-label="Chemistry drawing task table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Goal</th>
+              <th>Best output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Class assignment drawing</td>
+              <td>Readable and accurate structures</td>
+              <td>PNG or SVG</td>
+            </tr>
+            <tr>
+              <td>Lab notebook record</td>
+              <td>Reproducible structure data</td>
+              <td>SDF + image snapshot</td>
+            </tr>
+            <tr>
+              <td>3D interpretation</td>
+              <td>Visualize orientation and shape</td>
+              <td>XYZ/PDB plus screenshot</td>
+            </tr>
+            <tr>
+              <td>Collaboration handoff</td>
+              <td>Easy transfer between tools</td>
+              <td>SMILES + SDF</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="workflow">Minimal Technical Workflow</h2>
+      <div class="diagram">
+Draw structure (2D) -> Validate naming and bonds -> Open 3D view
+-> Select visual style -> Export PNG/SDF/XYZ/PDB -> Add to report
+      </div>
+
+      <h2 id="quality">Quality Checklist</h2>
+      <ul>
+        <li>Bond angles and labels are readable at report scale.</li>
+        <li>Important stereochemistry is explicit and not implied.</li>
+        <li>A structure file is saved with every final figure.</li>
+      </ul>
+
+      <h2 id="faq">FAQs</h2>
+      <div class="faq">
+        <h3>What makes a chemistry drawing look professional?</h3>
+        <p>Consistent bond style, readable atom labels, clear spacing, and explicit stereochemistry where required.</p>
+      </div>
+      <div class="faq">
+        <h3>Is browser-based molecule drawing reliable for students?</h3>
+        <p>Yes. Browser workflows reduce setup time and make chemistry drawing more accessible across devices.</p>
+      </div>
+      <div class="faq">
+        <h3>Which export format should I choose first?</h3>
+        <p>Use PNG/SVG for visuals and SDF for structure portability; add XYZ/PDB for 3D-focused workflows.</p>
+      </div>
+
+      <div class="links">
+        <a href="/blog/chemdraw-vs-moldraw-free-alternative-guide.html">ChemDraw vs MolDraw</a>
+        <a href="/blog/chemical-structure-drawing-app-seo-optimized.html">Chemical Structure Drawing Guide</a>
+        <a href="/pages/faq.html">MolDraw FAQ</a>
+        <a href="/pages/about.html">About</a>
+      </div>
+    </article>
+  </main>
+</body>
+</html>
