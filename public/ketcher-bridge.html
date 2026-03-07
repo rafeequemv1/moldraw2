@@ -27,6 +27,28 @@
           const ketcher = ketcherFrame.contentWindow.ketcher;
           console.log('Ketcher instance found:', ketcher);
 
+          const tryAddTextLabel = async (editor, text, x, y) => {
+            if (!editor || !text) return false;
+            const clean = String(text).trim();
+            if (!clean) return false;
+            const candidates = [
+              { fn: 'addText', args: [{ text: clean, x, y }] },
+              { fn: 'addText', args: [clean, x, y] },
+              { fn: 'addSimpleObject', args: [{ mode: 'TEXT', text: clean, x, y }] },
+              { fn: 'addSgroup', args: [{ type: 'MUL', text: clean, x, y }] },
+              { fn: 'insertText', args: [{ text: clean, x, y }] },
+            ];
+            for (const candidate of candidates) {
+              if (typeof editor[candidate.fn] === 'function') {
+                try {
+                  await editor[candidate.fn](...candidate.args);
+                  return true;
+                } catch (_) { /* try next signature */ }
+              }
+            }
+            return false;
+          };
+
           // Notify parent that Ketcher is ready
           window.parent.postMessage({ type: 'ketcher-ready' }, '*');
 
@@ -167,6 +189,58 @@
                 console.error('Error appending fragment:', error);
                 window.parent.postMessage({
                   type: 'molecule-set',
+                  success: false,
+                  error: error.message
+                }, '*');
+              }
+            } else if (event.data.type === 'set-reaction-scene') {
+              try {
+                const reactionSmiles = String(event.data.reactionSmiles || '').trim();
+                const reactionName = String(event.data.reactionName || '').trim();
+                const reagents = Array.isArray(event.data.reagents) ? event.data.reagents.filter(Boolean) : [];
+                const conditions = String(event.data.conditions || '').trim();
+                const append = !!event.data.append;
+                if (!reactionSmiles || !reactionSmiles.includes('>>')) {
+                  throw new Error('Invalid reaction SMILES');
+                }
+
+                if (append && typeof ketcher.addFragment === 'function') {
+                  try {
+                    await ketcher.addFragment(reactionSmiles);
+                  } catch {
+                    // Fallback to setMolecule if addFragment does not accept reaction SMILES.
+                    await ketcher.setMolecule(reactionSmiles);
+                  }
+                } else {
+                  await ketcher.setMolecule(reactionSmiles);
+                }
+
+                const editor = ketcher.editor || ketcherFrame.contentWindow.editor || null;
+                let annotationsApplied = false;
+                const annotationLines = [];
+                if (reactionName) annotationLines.push(reactionName);
+                if (reagents.length) annotationLines.push(`Reagents: ${reagents.join(', ')}`);
+                if (conditions) annotationLines.push(`Conditions: ${conditions}`);
+
+                if (editor && annotationLines.length) {
+                  // Best-effort labels placed below reaction.
+                  let y = -3.8;
+                  for (const line of annotationLines) {
+                    const ok = await tryAddTextLabel(editor, line, 0.0, y);
+                    annotationsApplied = annotationsApplied || ok;
+                    y -= 1.2;
+                  }
+                }
+
+                window.parent.postMessage({
+                  type: 'reaction-set',
+                  success: true,
+                  annotationsApplied,
+                }, '*');
+              } catch (error) {
+                console.error('Error setting reaction scene:', error);
+                window.parent.postMessage({
+                  type: 'reaction-set',
                   success: false,
                   error: error.message
                 }, '*');

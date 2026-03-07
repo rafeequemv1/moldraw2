@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './App.css';
 import TlcModal from './microapps/tlc/TlcModal';
 import CalculatorModal from './microapps/calculator/CalculatorModal';
-import Miew from 'miew';
-import 'miew/dist/miew.min.css';
+import ReactionsModal from './microapps/reactions/ReactionsModal';
+import * as $3Dmol from '3dmol';
 
 function App() {
   const ketcherCanvasWrapRef = useRef(null);
@@ -66,22 +66,29 @@ function App() {
   const [showAiSetupModal, setShowAiSetupModal] = useState(false);
   const [showTlcModal, setShowTlcModal] = useState(false);
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
-  const [showViewerSettings, setShowViewerSettings] = useState(false);
-  const [miewSettingsTab, setMiewSettingsTab] = useState('view');
+  const [showReactionsModal, setShowReactionsModal] = useState(false);
+  const [reactionResults, setReactionResults] = useState([]);
+  const [isReactionSearchLoading, setIsReactionSearchLoading] = useState(false);
+  const [reactionSearchError, setReactionSearchError] = useState('');
+  const [includeReactionIntermediates, setIncludeReactionIntermediates] = useState(true);
+  const [includeCanvasReagentNames, setIncludeCanvasReagentNames] = useState(true);
+  const [includeCanvasConditions, setIncludeCanvasConditions] = useState(true);
+  const [appendReactionToCanvas, setAppendReactionToCanvas] = useState(true);
+  const [reactionLoadingStepIdx, setReactionLoadingStepIdx] = useState(0);
   const [isMiewEngine, setIsMiewEngine] = useState(false);
   const [miewMode, setMiewMode] = useState('BS');
   const [miewColorer, setMiewColorer] = useState('EL');
-  const [miewResolution, setMiewResolution] = useState('medium');
-  const [miewAutoResolution, setMiewAutoResolution] = useState(false);
+  const [miewResolution] = useState('medium');
+  const [miewAutoResolution] = useState(false);
   const [miewFog, setMiewFog] = useState(false);
-  const [miewAxes, setMiewAxes] = useState(false);
-  const [miewFps, setMiewFps] = useState(false);
-  const [miewPalette, setMiewPalette] = useState('JM');
-  const [miewBgDark, setMiewBgDark] = useState(false);
-  const [miewFxaa, setMiewFxaa] = useState(true);
-  const [miewAo, setMiewAo] = useState(false);
-  const [miewShadow, setMiewShadow] = useState(false);
-  const [miewClipPlane, setMiewClipPlane] = useState(false);
+  const [miewAxes] = useState(false);
+  const [miewFps] = useState(false);
+  const [miewPalette] = useState('JM');
+  const [miewBgDark] = useState(false);
+  const [miewFxaa] = useState(true);
+  const [miewAo] = useState(false);
+  const [miewShadow] = useState(false);
+  const [miewClipPlane] = useState(false);
   const [miewOutline, setMiewOutline] = useState(true);
   const [exportTransparentBg, setExportTransparentBg] = useState(true);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -103,34 +110,12 @@ function App() {
     { value: 'gemini-3.0-flash', label: 'Gemini 3 Flash (fast)' },
     { value: 'gemini-3-pro', label: 'Gemini 3 Pro (high accuracy)' },
   ];
-  const MIEW_MODE_OPTIONS = [
-    { id: 'LN', label: 'Lines' },
-    { id: 'LC', label: 'Licorice' },
-    { id: 'BS', label: 'Balls' },
-    { id: 'VW', label: 'VDW' },
-    { id: 'TR', label: 'Trace' },
-    { id: 'TU', label: 'Tube' },
-    { id: 'CA', label: 'Cartoon' },
-    { id: 'QS', label: 'Quick Surf' },
-    { id: 'SA', label: 'SAS' },
-    { id: 'SE', label: 'SES' },
-    { id: 'CS', label: 'Contact Surf' },
-    { id: 'TX', label: 'Text' },
-  ];
-  const MIEW_COLOR_OPTIONS = [
-    { id: 'EL', label: 'Element' },
-    { id: 'RT', label: 'Residue' },
-    { id: 'SQ', label: 'Sequence' },
-    { id: 'CH', label: 'Chain' },
-    { id: 'SS', label: 'Structure' },
-    { id: 'UN', label: 'Uniform' },
-    { id: 'CO', label: 'Conditional' },
-    { id: 'CF', label: 'Conformation' },
-    { id: 'TM', label: 'Temperature' },
-    { id: 'OC', label: 'Occupancy' },
-    { id: 'HY', label: 'Hydrophobicity' },
-    { id: 'MO', label: 'Molecule' },
-    { id: 'CB', label: 'Carbon' },
+  const REACTION_LOADING_STEPS = [
+    'Reading query',
+    'Selecting reaction family',
+    'Building reagent options',
+    'Adding conditions and intermediates',
+    'Finalizing preview list',
   ];
 
   const promptAiSetupModal = () => {
@@ -250,26 +235,19 @@ function App() {
   useEffect(() => {
     const initViewer = () => {
       try {
-        if (viewer3DRef.current && !viewerInstanceRef.current) {
-          const viewer = new Miew({
-            container: viewer3DRef.current,
-            settings: {
-              axes: false,
-              autoRotation: 0,
-            },
+        if (viewer3DRef.current && !viewerInstanceRef.current && $3Dmol?.createViewer) {
+          const viewer = $3Dmol.createViewer(viewer3DRef.current, {
+            backgroundColor: 'white',
           });
-          if (viewer.init()) {
-            viewer.run();
-          }
-          // Marker for Miew-specific code paths.
-          viewer.__isMiew = true;
-          setIsMiewEngine(true);
+          viewer.setBackgroundColor('white');
+          viewer.render();
+          setIsMiewEngine(false);
           viewerBgRef.current = { color: '#ffffff', alpha: 1 };
           viewerInstanceRef.current = viewer;
           setIs3DReady(true);
         }
       } catch (error) {
-        console.error('Error initializing Miew viewer:', error);
+        console.error('Error initializing 3Dmol viewer:', error);
       }
     };
 
@@ -277,8 +255,8 @@ function App() {
 
     return () => {
       try {
-        if (viewerInstanceRef.current && viewerInstanceRef.current.__isMiew && typeof viewerInstanceRef.current.term === 'function') {
-          viewerInstanceRef.current.term();
+        if (viewerInstanceRef.current && typeof viewerInstanceRef.current.clear === 'function') {
+          viewerInstanceRef.current.clear();
         }
       } catch {}
       viewerInstanceRef.current = null;
@@ -686,6 +664,186 @@ function App() {
     } catch {
       return {};
     }
+  };
+
+  const extractJsonFromReply = (text) => {
+    let raw = String(text || '').trim();
+    if (!raw) return null;
+    const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) raw = fenceMatch[1].trim();
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
+
+  const sanitizeReactionSearchResults = (payload) => {
+    const list = Array.isArray(payload?.reactions) ? payload.reactions : [];
+    return list
+      .map((item, idx) => {
+        const reactionSmiles = String(item?.reactionSmiles || '').trim();
+        const reactionLooksValid = reactionSmiles.includes('>>');
+        const intermediateSteps = Array.isArray(item?.intermediateSteps)
+          ? item.intermediateSteps
+            .map((step, stepIdx) => {
+              const stepReactionSmiles = String(step?.reactionSmiles || '').trim();
+              return {
+                id: String(step?.id || `${idx}-step-${stepIdx}`),
+                title: String(step?.title || `Step ${stepIdx + 1}`),
+                reactionSmiles: stepReactionSmiles.includes('>>') ? stepReactionSmiles : '',
+                reagents: Array.isArray(step?.reagents) ? step.reagents.filter(Boolean) : [],
+                conditions: String(step?.conditions || ''),
+              };
+            })
+            .filter((step) => step.reactionSmiles)
+          : [];
+        return {
+          id: String(item?.id || `rxn-${idx}`),
+          name: String(item?.name || `Reaction ${idx + 1}`),
+          summary: String(item?.summary || ''),
+          reactionSmiles: reactionLooksValid ? reactionSmiles : '',
+          reactants: Array.isArray(item?.reactants) ? item.reactants.filter(Boolean) : [],
+          products: Array.isArray(item?.products) ? item.products.filter(Boolean) : [],
+          reagents: Array.isArray(item?.reagents) ? item.reagents.filter(Boolean) : [],
+          conditions: String(item?.conditions || ''),
+          intermediateSteps,
+        };
+      })
+      .filter((entry) => entry.name || entry.reactionSmiles);
+  };
+
+  const searchReactionsWithGemini = async (query) => {
+    const cleaned = String(query || '').trim();
+    if (!cleaned || isReactionSearchLoading) return;
+    if (!geminiApiKey) {
+      promptAiSetupModal();
+      setReactionSearchError('Connect Gemini AI first to search reactions.');
+      return;
+    }
+
+    setIsReactionSearchLoading(true);
+    setReactionLoadingStepIdx(0);
+    setReactionSearchError('');
+    const progressTimer = setInterval(() => {
+      setReactionLoadingStepIdx((prev) => Math.min(prev + 1, REACTION_LOADING_STEPS.length - 1));
+    }, 1200);
+    try {
+      const prompt = `You are helping a chemist search for reactions.
+Return ONLY JSON in this exact shape:
+{
+  "reactions": [
+    {
+      "id": "short-id",
+      "name": "reaction name",
+      "summary": "one sentence practical summary",
+      "reactionSmiles": "reactant1.reactant2>>product1.product2",
+      "reactants": ["SMILES", "SMILES"],
+      "products": ["SMILES", "SMILES"],
+      "reagents": ["reagent name", "catalyst name", "solvent"],
+      "conditions": "temperature / time / atmosphere",
+      "intermediateSteps": [
+        {
+          "title": "step title",
+          "reactionSmiles": "reactant>>intermediate",
+          "reagents": ["reagent name"],
+          "conditions": "step condition"
+        }
+      ]
+    }
+  ]
+}
+Provide 4 relevant reactions for this query: "${cleaned}".
+Rules:
+- reactionSmiles must be valid reaction SMILES with ">>".
+- Keep reagent/condition text concise and practical.
+- Prefer real named organic reactions when possible.
+- If intermediate steps are useful, include them in intermediateSteps.
+- If intermediates are not needed, keep intermediateSteps as [].
+- Intermediate-step mode requested by user: ${includeReactionIntermediates ? 'YES - provide steps when meaningful.' : 'NO - keep intermediateSteps empty.'}
+- No markdown, no explanation, only JSON.`;
+
+      const resp = await fetch(AI_CHAT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          smiles: lastSmilesForAIRef.current || null,
+          molfile: lastMolfileForAIRef.current || null,
+          apiKey: geminiApiKey,
+          model: aiModel,
+        }),
+      });
+
+      const data = await parseApiJsonSafe(resp);
+      if (!resp.ok) {
+        setReactionSearchError(formatAiErrorMessage(resp.status, data, 'chat'));
+        return;
+      }
+
+      const parsed = extractJsonFromReply(data?.reply);
+      const cleanedReactions = sanitizeReactionSearchResults(parsed);
+      if (!cleanedReactions.length) {
+        setReactionSearchError('No valid reactions were returned. Try a more specific reaction or reagent query.');
+      }
+      setReactionResults(cleanedReactions);
+    } catch (error) {
+      console.error('Reaction search error:', error);
+      setReactionSearchError('Could not reach Gemini right now. Try again in a moment.');
+    } finally {
+      clearInterval(progressTimer);
+      setIsReactionSearchLoading(false);
+    }
+  };
+
+  const addReactionToCanvas = (reaction, selectedStep = null) => {
+    if (!iframeRef.current || !isKetcherReady) return;
+    const source = selectedStep || reaction;
+    const reactionSmiles = String(source?.reactionSmiles || '').trim();
+    if (!reactionSmiles || !reactionSmiles.includes('>>')) {
+      alert('This reaction entry does not include a valid reaction SMILES.');
+      return;
+    }
+    iframeRef.current.contentWindow.postMessage({
+      type: 'set-reaction-scene',
+      reactionSmiles,
+      reactionName: source?.title || source?.name || reaction?.name || '',
+      reagents: includeCanvasReagentNames && Array.isArray(source?.reagents) ? source.reagents : [],
+      conditions: includeCanvasConditions ? (source?.conditions || '') : '',
+      append: appendReactionToCanvas,
+    }, '*');
+  };
+
+  const addAllIntermediateStepsToCanvas = (reaction) => {
+    if (!iframeRef.current || !isKetcherReady || !reaction) return;
+    const steps = Array.isArray(reaction?.intermediateSteps) ? reaction.intermediateSteps : [];
+    const queue = [
+      ...steps,
+      {
+        title: reaction?.name || 'Final reaction',
+        reactionSmiles: reaction?.reactionSmiles || '',
+        reagents: reaction?.reagents || [],
+        conditions: reaction?.conditions || '',
+      },
+    ].filter((entry) => String(entry?.reactionSmiles || '').includes('>>'));
+
+    if (!queue.length) {
+      alert('No intermediate/final reactions available to add.');
+      return;
+    }
+
+    queue.forEach((entry, idx) => {
+      setTimeout(() => {
+        iframeRef.current?.contentWindow?.postMessage({
+          type: 'set-reaction-scene',
+          reactionSmiles: entry.reactionSmiles,
+          reactionName: entry.title || `Step ${idx + 1}`,
+          reagents: includeCanvasReagentNames && Array.isArray(entry?.reagents) ? entry.reagents : [],
+          conditions: includeCanvasConditions ? (entry?.conditions || '') : '',
+          append: true,
+        }, '*');
+      }, idx * 280);
+    });
   };
 
   const formatAiErrorMessage = (status, payload, context = 'chat') => {
@@ -1575,7 +1733,7 @@ ${scientificGuardrails}`;
             proteinModel.setStyle({}, { sphere: { scale: 0.6 } });
           } else if (renderStyle === 'surface') {
             proteinModel.setStyle({}, { cartoon: { hidden: true } });
-            viewer.addSurface(window.$3Dmol.SurfaceType.VDW, {
+            viewer.addSurface($3Dmol.SurfaceType.VDW, {
               opacity: 0.9,
               colorscheme: { prop: 'b', gradient: 'rwb' },
             });
@@ -1671,6 +1829,7 @@ ${scientificGuardrails}`;
           proteinCloseReloadRef.current = false;
           
           debounceTimeoutRef.current = setTimeout(() => {
+            if (isReactionSearchLoading) return;
             if (iframeRef.current && isKetcherReady) {
               iframeRef.current.contentWindow.postMessage({ type: 'get-smiles' }, '*');
             }
@@ -1734,6 +1893,10 @@ ${scientificGuardrails}`;
 
         // Normal flow: molfile came from a prior get-molfile request
         if (molfile) {
+          if (isReactionSearchLoading) {
+            delete window.tempMolfile;
+            return;
+          }
           if (!isProtein) {
             updateMolecule3D(molfile, smiles);
             manual3DRefreshRequestedRef.current = false;
@@ -1813,6 +1976,10 @@ ${scientificGuardrails}`;
               canvas.width = img.width;
               canvas.height = img.height;
               const ctx = canvas.getContext('2d');
+              if (!ctx) throw new Error('Canvas context unavailable');
+              // JPG has no alpha channel; prefill white to avoid black background.
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
               ctx.drawImage(img, 0, 0);
               drawLonePairsOnCanvas(ctx, canvas.width, canvas.height);
               canvas.toBlob((jpegBlob) => {
@@ -1861,22 +2028,31 @@ ${scientificGuardrails}`;
         } else {
           setSearchError('Failed to load molecule into editor');
         }
+      } else if (event.data.type === 'reaction-set') {
+        if (event.data.success) {
+          setTimeout(() => requestMoleculeUpdate(), 450);
+          if (!event.data.annotationsApplied) {
+            console.warn('Reaction loaded, but text annotations were not applied by Ketcher.');
+          }
+        } else {
+          alert('Failed to load reaction into canvas.');
+        }
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isKetcherReady, updateMolecule3D, requestMoleculeUpdate, isProtein]);
+  }, [isKetcherReady, updateMolecule3D, requestMoleculeUpdate, isProtein, isReactionSearchLoading]);
 
   // Debounce timeout ref for 3D updates
   const debounceTimeoutRef = useRef(null);
 
   // Poll for changes continuously (3D updates are gated separately)
   useEffect(() => {
-    if (isKetcherReady && is3DReady && !isProtein) {
+    if (isKetcherReady && is3DReady && !isProtein && !isReactionSearchLoading) {
       const interval = setInterval(() => {
-        if (iframeRef.current && isKetcherReady && !isProtein) {
+        if (iframeRef.current && isKetcherReady && !isProtein && !isReactionSearchLoading) {
           iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
         }
       }, 400);
@@ -1887,7 +2063,7 @@ ${scientificGuardrails}`;
         }
       };
     }
-  }, [isKetcherReady, is3DReady, isProtein]);
+  }, [isKetcherReady, is3DReady, isProtein, isReactionSearchLoading]);
 
   // Toggle hydrogens
   const toggleHydrogens = () => {
@@ -2423,7 +2599,20 @@ ${scientificGuardrails}`;
         viewer.setBackgroundColor(0xffffff, 1);
         viewer.render();
         const canvas = viewer.getCanvas();
-        canvas.toBlob((blob) => {
+        const bgCanvas = document.createElement('canvas');
+        bgCanvas.width = canvas.width;
+        bgCanvas.height = canvas.height;
+        const ctx = bgCanvas.getContext('2d');
+        if (!ctx) {
+          viewer.setBackgroundColor(bgColor, bgAlpha);
+          viewer.render();
+          return;
+        }
+        // Force compositing on white so transparent pixels never turn black in JPG.
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+        ctx.drawImage(canvas, 0, 0);
+        bgCanvas.toBlob((blob) => {
           if (!blob) return;
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
@@ -3151,11 +3340,11 @@ ${scientificGuardrails}`;
                 Calculator
               </button>
               <button
-                className={`tb-btn ${showViewerSettings ? 'tb-btn-active' : ''}`}
-                onClick={() => setShowViewerSettings((v) => !v)}
-                title="Open 3D viewer settings"
+                className={`tb-btn ${showReactionsModal ? 'tb-btn-active' : ''}`}
+                onClick={() => setShowReactionsModal(true)}
+                title="Open reactions browser"
               >
-                3D Settings
+                Reactions
               </button>
               <button
                 className="tb-btn"
@@ -3196,126 +3385,6 @@ ${scientificGuardrails}`;
             </div>
           </div>
 
-          {showViewerSettings && (
-            <div className="miew-settings-panel miew-settings-panel-2d">
-              <div className="miew-settings-header">
-                <span>3D Settings</span>
-                <button className="miew-settings-close" onClick={() => setShowViewerSettings(false)}>x</button>
-              </div>
-
-              <div className="miew-settings-tabs">
-                <button className={`miew-settings-tab ${miewSettingsTab === 'view' ? 'active' : ''}`} onClick={() => setMiewSettingsTab('view')}>View</button>
-                <button className={`miew-settings-tab ${miewSettingsTab === 'mode' ? 'active' : ''}`} onClick={() => setMiewSettingsTab('mode')}>Mode</button>
-                <button className={`miew-settings-tab ${miewSettingsTab === 'color' ? 'active' : ''}`} onClick={() => setMiewSettingsTab('color')}>Color</button>
-                <button className={`miew-settings-tab ${miewSettingsTab === 'export' ? 'active' : ''}`} onClick={() => setMiewSettingsTab('export')}>Export</button>
-              </div>
-
-              {miewSettingsTab === 'view' && (
-                <div className="miew-settings-list compact">
-                  <label className="miew-setting-row">
-                    <span>Resolution</span>
-                    <select
-                      value={miewResolution}
-                      onChange={(e) => setMiewResolution(e.target.value)}
-                      className="miew-setting-select"
-                    >
-                      <option value="poor">Poor</option>
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="ultra">Ultra</option>
-                    </select>
-                  </label>
-                  <div className="miew-setting-row"><span>Resolution autodetection</span><button className={`miew-toggle-btn ${miewAutoResolution ? 'on' : ''}`} onClick={() => setMiewAutoResolution((v) => !v)}>{miewAutoResolution ? 'ON' : 'OFF'}</button></div>
-                  <div className="miew-setting-row"><span>Fog</span><button className={`miew-toggle-btn ${miewFog ? 'on' : ''}`} onClick={() => setMiewFog((v) => !v)}>{miewFog ? 'ON' : 'OFF'}</button></div>
-                  <div className="miew-setting-row"><span>Axes</span><button className={`miew-toggle-btn ${miewAxes ? 'on' : ''}`} onClick={() => setMiewAxes((v) => !v)}>{miewAxes ? 'ON' : 'OFF'}</button></div>
-                  <div className="miew-setting-row"><span>FPS counter</span><button className={`miew-toggle-btn ${miewFps ? 'on' : ''}`} onClick={() => setMiewFps((v) => !v)}>{miewFps ? 'ON' : 'OFF'}</button></div>
-                  <label className="miew-setting-row">
-                    <span>Palette</span>
-                    <select
-                      value={miewPalette}
-                      onChange={(e) => setMiewPalette(e.target.value)}
-                      className="miew-setting-select"
-                    >
-                      <option value="JM">Jmol</option>
-                      <option value="CP">CPK</option>
-                      <option value="VM">VMD</option>
-                    </select>
-                  </label>
-                  <div className="miew-setting-row"><span>Background color</span><button className={`miew-toggle-btn ${miewBgDark ? 'on dark' : ''}`} onClick={() => setMiewBgDark((v) => !v)}>{miewBgDark ? 'Dark' : 'Light'}</button></div>
-                  <div className="miew-setting-row"><span>FXAA</span><button className={`miew-toggle-btn ${miewFxaa ? 'on' : ''}`} onClick={() => setMiewFxaa((v) => !v)}>{miewFxaa ? 'ON' : 'OFF'}</button></div>
-                  <div className="miew-setting-note">Smooths jagged edges in the rendered image.</div>
-                  <div className="miew-setting-row"><span>Ambient Occlusion</span><button className={`miew-toggle-btn ${miewAo ? 'on' : ''}`} onClick={() => setMiewAo((v) => !v)}>{miewAo ? 'ON' : 'OFF'}</button></div>
-                  <div className="miew-setting-note">Adds soft contact shadows for depth.</div>
-                  <div className="miew-setting-row"><span>Shadow Map</span><button className={`miew-toggle-btn ${miewShadow ? 'on' : ''}`} onClick={() => setMiewShadow((v) => !v)}>{miewShadow ? 'ON' : 'OFF'}</button></div>
-                  <div className="miew-setting-note">Directional lighting shadows on structures.</div>
-                  <div className="miew-setting-row"><span>Clip Plane</span><button className={`miew-toggle-btn ${miewClipPlane ? 'on' : ''}`} onClick={() => setMiewClipPlane((v) => !v)}>{miewClipPlane ? 'ON' : 'OFF'}</button></div>
-                  <div className="miew-setting-note">Cuts through structures to inspect inside.</div>
-                  <div className="miew-setting-row"><span>Outline</span><button className={`miew-toggle-btn ${miewOutline ? 'on' : ''}`} onClick={() => setMiewOutline((v) => !v)}>{miewOutline ? 'ON' : 'OFF'}</button></div>
-                  <div className="miew-setting-note">Draws subtle edge contour for shape clarity.</div>
-                </div>
-              )}
-
-              {miewSettingsTab === 'mode' && (
-                <>
-                  <div className="miew-settings-group-title">Display mode</div>
-                  <div className="miew-settings-subtitle">Changes how atoms and bonds are rendered (balls, sticks, surface, cartoon).</div>
-                  <div className="miew-mode-grid compact">
-                    {MIEW_MODE_OPTIONS.map((mode) => (
-                      <button
-                        key={mode.id}
-                        className={`miew-mode-btn ${miewMode === mode.id ? 'active' : ''}`}
-                        onClick={() => applyMiewDisplayMode(mode.id, null, miewColorer)}
-                        title={`Display mode: ${mode.label}`}
-                      >
-                        {mode.label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {miewSettingsTab === 'color' && (
-                <>
-                  <div className="miew-settings-group-title">Display color</div>
-                  <div className="miew-settings-subtitle">Changes coloring logic (element, residue, chain, hydrophobicity, etc.).</div>
-                  <div className="miew-mode-grid compact">
-                    {MIEW_COLOR_OPTIONS.map((colorer) => (
-                      <button
-                        key={colorer.id}
-                        className={`miew-mode-btn ${miewColorer === colorer.id ? 'active' : ''}`}
-                        onClick={() => applyMiewDisplayMode(miewMode, null, colorer.id)}
-                        title={`Color mode: ${colorer.label}`}
-                      >
-                        {colorer.label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {miewSettingsTab === 'export' && (
-                <div className="miew-settings-list compact">
-                  <div className="miew-setting-row">
-                    <span>Transparent PNG</span>
-                    <button className={`miew-toggle-btn ${exportTransparentBg ? 'on' : ''}`} onClick={() => setExportTransparentBg((v) => !v)}>{exportTransparentBg ? 'ON' : 'OFF'}</button>
-                  </div>
-                  {!currentMolecule && <div className="miew-settings-empty">Load a molecule to enable exports.</div>}
-                  {currentMolecule && (
-                    <div className="miew-export-grid">
-                      <button onClick={() => exportModel('png')} className="compact-export-btn" title="PNG (transparent)">PNG</button>
-                      <button onClick={() => exportModel('jpeg')} className="compact-export-btn" title="JPEG with white background">JPG</button>
-                      <button onClick={() => exportModel('sdf')} className="compact-export-btn" title="SDF format">SDF</button>
-                      <button onClick={() => exportModel('xyz')} className="compact-export-btn" title="XYZ format">XYZ</button>
-                      <button onClick={() => exportModel('pdb')} className="compact-export-btn" title="PDB format">PDB</button>
-                      {!isMiewEngine && <button onClick={() => exportModel('x3d')} className="compact-export-btn" title="X3D with bonds">X3D</button>}
-                      {!isMiewEngine && <button onClick={() => exportModel('obj')} className="compact-export-btn" title="OBJ for Blender">OBJ</button>}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
 
           <div className="ketcher-canvas-wrap" ref={ketcherCanvasWrapRef}>
             <iframe
@@ -3794,7 +3863,7 @@ ${scientificGuardrails}`;
                           viewer.setStyle({}, { sphere: { scale: 0.6 } });
                         } else if (newStyle === 'surface') {
                           viewer.setStyle({}, { cartoon: { hidden: true } });
-                          viewer.addSurface(window.$3Dmol.SurfaceType.VDW, {
+                          viewer.addSurface($3Dmol.SurfaceType.VDW, {
                             opacity: 0.9,
                             colorscheme: { prop: 'b', gradient: 'rwb' },
                           });
@@ -3938,6 +4007,31 @@ ${scientificGuardrails}`;
 
       {showTlcModal && <TlcModal onClose={() => setShowTlcModal(false)} />}
       {showCalculatorModal && <CalculatorModal onClose={() => setShowCalculatorModal(false)} />}
+      <ReactionsModal
+        open={showReactionsModal}
+        onClose={() => setShowReactionsModal(false)}
+        onSearch={searchReactionsWithGemini}
+        onAddReaction={addReactionToCanvas}
+        onAddAllSteps={addAllIntermediateStepsToCanvas}
+        isLoading={isReactionSearchLoading}
+        loadingSteps={REACTION_LOADING_STEPS}
+        activeLoadingStep={reactionLoadingStepIdx}
+        error={reactionSearchError}
+        reactions={reactionResults}
+        includeReactionIntermediates={includeReactionIntermediates}
+        onToggleReactionIntermediates={setIncludeReactionIntermediates}
+        includeCanvasReagentNames={includeCanvasReagentNames}
+        onToggleCanvasReagentNames={setIncludeCanvasReagentNames}
+        includeCanvasConditions={includeCanvasConditions}
+        onToggleCanvasConditions={setIncludeCanvasConditions}
+        appendReactionToCanvas={appendReactionToCanvas}
+        onToggleAppendReactionToCanvas={setAppendReactionToCanvas}
+        hasGeminiApiKey={!!geminiApiKey}
+        onOpenAiSetup={() => {
+          setShowReactionsModal(false);
+          promptAiSetupModal();
+        }}
+      />
 
       {/* NMR Spectrum Modal */}
       {showNmrModal && (
