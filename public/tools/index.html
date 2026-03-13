@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="MolDraw Tools Hub: all dedicated chemistry tools in one page including molecule conversion, PDBQT converters, 3D viewers, calculators, and TLC utilities.">
-  <meta name="keywords" content="chemistry tools hub, smiles tools, pdbqt converter, protein viewer, molarity calculator, dilution calculator, solution prep calculator, MolDraw tools">
+  <meta name="description" content="MolDraw Tools Hub: all dedicated chemistry tools including SMILES, InChI, PDB/PDBQT, MOL/SDF conversion tools, 3D viewers, calculators, and TLC utilities.">
+  <meta name="keywords" content="chemistry tools hub, smiles converter, inchi converter, inchikey converter, pdbqt converter, mol sdf converter, protein viewer, MolDraw tools">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <meta property="og:title" content="MolDraw Tools | Chemistry Calculators and TLC Utilities">
@@ -23,7 +23,7 @@
     "@type": "CollectionPage",
     "name": "MolDraw Tools",
     "url": "https://moldraw.scidart.com/tools/",
-    "description": "All dedicated MolDraw chemistry tools including structure conversion, PDBQT tools, 3D viewers, calculators, and TLC support.",
+    "description": "All dedicated MolDraw chemistry tools including format conversion (SMILES/InChI/PDB/PDBQT/MOL/SDF), 3D viewers, calculators, and TLC support.",
     "publisher": {
       "@type": "Organization",
       "name": "Scidart Academy"
@@ -38,11 +38,30 @@
         { "@type": "ListItem", "position": 5, "name": "SMILES to PDB Converter" },
         { "@type": "ListItem", "position": 6, "name": "SMILES to PDBQT Converter" },
         { "@type": "ListItem", "position": 7, "name": "PDB to PDBQT Converter" },
-        { "@type": "ListItem", "position": 8, "name": "Solution Prep Calculator" },
-        { "@type": "ListItem", "position": 9, "name": "Dilution Calculator" },
-        { "@type": "ListItem", "position": 10, "name": "Molarity Calculator" },
-        { "@type": "ListItem", "position": 11, "name": "Molality Calculator" },
-        { "@type": "ListItem", "position": 12, "name": "TLC Diagram Tool" }
+        { "@type": "ListItem", "position": 8, "name": "SMILES to InChI Converter" },
+        { "@type": "ListItem", "position": 9, "name": "SMILES to InChIKey Converter" },
+        { "@type": "ListItem", "position": 10, "name": "InChI to SMILES Converter" },
+        { "@type": "ListItem", "position": 11, "name": "InChIKey to SMILES Converter" },
+        { "@type": "ListItem", "position": 12, "name": "SMILES to MOL Converter" },
+        { "@type": "ListItem", "position": 13, "name": "SMILES to SDF Converter" },
+        { "@type": "ListItem", "position": 14, "name": "PDB to SMILES Converter" },
+        { "@type": "ListItem", "position": 15, "name": "IUPAC Name to SMILES Converter" },
+        { "@type": "ListItem", "position": 16, "name": "SMILES to IUPAC Name Converter" },
+        { "@type": "ListItem", "position": 17, "name": "MOL2 to SMILES Converter" },
+        { "@type": "ListItem", "position": 18, "name": "CID to SMILES Converter" },
+        { "@type": "ListItem", "position": 19, "name": "SMILES to MOL2 Converter" },
+        { "@type": "ListItem", "position": 20, "name": "SDF to InChI Converter" },
+        { "@type": "ListItem", "position": 21, "name": "SDF to InChIKey Converter" },
+        { "@type": "ListItem", "position": 22, "name": "InChI to InChIKey Converter" },
+        { "@type": "ListItem", "position": 23, "name": "InChIKey to InChI Converter" },
+        { "@type": "ListItem", "position": 24, "name": "MOL to InChI Converter" },
+        { "@type": "ListItem", "position": 25, "name": "MOL to InChIKey Converter" },
+        { "@type": "ListItem", "position": 26, "name": "Interactive Periodic Table" },
+        { "@type": "ListItem", "position": 27, "name": "Solution Prep Calculator" },
+        { "@type": "ListItem", "position": 28, "name": "Dilution Calculator" },
+        { "@type": "ListItem", "position": 29, "name": "Molarity Calculator" },
+        { "@type": "ListItem", "position": 30, "name": "Molality Calculator" },
+        { "@type": "ListItem", "position": 31, "name": "TLC Diagram Tool" }
       ]
     }
   }
@@ -122,7 +141,7 @@
       color: #334155;
       text-align: right;
     }
-    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
     .tool-card {
       background: #fff;
       border: 1px solid #e5e7eb;
@@ -151,11 +170,17 @@
       font-size: 12px;
       font-weight: 700;
     }
+    @media (max-width: 1400px) {
+      .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
     @media (max-width: 980px) {
       .tool-filters { grid-template-columns: 1fr; }
       .tool-filter-count { text-align: left; }
-      .grid { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .hero h1 { font-size: 24px; }
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -219,6 +244,101 @@
         <h2>PDB to PDBQT Converter</h2>
         <p>Convert PDB structures into PDBQT format in a dedicated browser tool page.</p>
         <a href="/tools/free-chem-tools/pdb-to-pdbqt-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles to inchi converter standard inchi">
+        <h2>SMILES to InChI Converter</h2>
+        <p>Generate standard InChI identifiers from SMILES strings.</p>
+        <a href="/tools/free-chem-tools/smiles-to-inchi-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles to inchikey converter">
+        <h2>SMILES to InChIKey Converter</h2>
+        <p>Convert SMILES to compact InChIKey format for indexing.</p>
+        <a href="/tools/free-chem-tools/smiles-to-inchikey-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="inchi to smiles converter">
+        <h2>InChI to SMILES Converter</h2>
+        <p>Convert InChI strings from literature and databases to SMILES.</p>
+        <a href="/tools/free-chem-tools/inchi-to-smiles-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="inchikey to smiles resolver">
+        <h2>InChIKey to SMILES Converter</h2>
+        <p>Resolve InChIKey identifiers to canonical SMILES via API.</p>
+        <a href="/tools/free-chem-tools/inchikey-to-smiles-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles to mol converter molfile">
+        <h2>SMILES to MOL Converter</h2>
+        <p>Convert SMILES strings into MOL files for compatibility workflows.</p>
+        <a href="/tools/free-chem-tools/smiles-to-mol-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles to sdf converter">
+        <h2>SMILES to SDF Converter</h2>
+        <p>Generate SDF output from SMILES for datasets and screening.</p>
+        <a href="/tools/free-chem-tools/smiles-to-sdf-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="pdb to smiles converter ligand">
+        <h2>PDB to SMILES Converter</h2>
+        <p>Convert ligand PDB blocks to SMILES in a best-effort workflow.</p>
+        <a href="/tools/free-chem-tools/pdb-to-smiles-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="iupac name to smiles converter">
+        <h2>IUPAC Name to SMILES Converter</h2>
+        <p>Convert chemical names to SMILES for structure workflows.</p>
+        <a href="/tools/free-chem-tools/iupac-name-to-smiles-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles to iupac name converter">
+        <h2>SMILES to IUPAC Name Converter</h2>
+        <p>Convert SMILES strings into IUPAC names for reporting.</p>
+        <a href="/tools/free-chem-tools/smiles-to-iupac-name-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="mol2 to smiles converter">
+        <h2>MOL2 to SMILES Converter</h2>
+        <p>Convert MOL2 ligand blocks to SMILES format.</p>
+        <a href="/tools/free-chem-tools/mol2-to-smiles-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="cid to smiles converter pubchem">
+        <h2>CID to SMILES Converter</h2>
+        <p>Resolve PubChem CID values to canonical SMILES identifiers.</p>
+        <a href="/tools/free-chem-tools/cid-to-smiles-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles to mol2 converter docking">
+        <h2>SMILES to MOL2 Converter</h2>
+        <p>Convert SMILES into MOL2 format for docking and med-chem workflows.</p>
+        <a href="/tools/free-chem-tools/smiles-to-mol2-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="sdf to inchi converter mol">
+        <h2>SDF to InChI Converter</h2>
+        <p>Convert SDF or MOL blocks into standard InChI identifiers.</p>
+        <a href="/tools/free-chem-tools/sdf-to-inchi-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="sdf to inchikey converter mol">
+        <h2>SDF to InChIKey Converter</h2>
+        <p>Convert SDF or MOL blocks into compact InChIKey strings.</p>
+        <a href="/tools/free-chem-tools/sdf-to-inchikey-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="inchi to inchikey converter">
+        <h2>InChI to InChIKey Converter</h2>
+        <p>Generate compact InChIKeys from full InChI strings.</p>
+        <a href="/tools/free-chem-tools/inchi-to-inchikey-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="inchikey to inchi converter resolver">
+        <h2>InChIKey to InChI Converter</h2>
+        <p>Resolve InChIKey values to full InChI via public chemistry endpoints.</p>
+        <a href="/tools/free-chem-tools/inchikey-to-inchi-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="mol to inchi converter">
+        <h2>MOL to InChI Converter</h2>
+        <p>Convert MOL or SDF structure blocks to standard InChI.</p>
+        <a href="/tools/free-chem-tools/mol-to-inchi-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="mol to inchikey converter">
+        <h2>MOL to InChIKey Converter</h2>
+        <p>Convert MOL or SDF blocks to compact InChIKey identifiers.</p>
+        <a href="/tools/free-chem-tools/mol-to-inchikey-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="lab" data-tool-search="interactive periodic table all elements atomic number metadata chemistry">
+        <h2>Interactive Periodic Table</h2>
+        <p>Explore all 118 elements with atomic, physical, and electronic metadata.</p>
+        <a href="/tools/free-chem-tools/interactive-periodic-table.html">Open tool</a>
       </article>
       <article class="tool-card" data-tool-type="calculator" data-tool-search="solution prep concentration molarity calculator">
         <h2>Solution Prep Calculator</h2>

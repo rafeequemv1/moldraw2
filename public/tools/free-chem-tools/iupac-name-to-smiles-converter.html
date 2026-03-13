@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="IUPAC Name to SMILES converter by MolDraw. Convert systematic chemical names to SMILES with public resolver endpoints.">
+  <meta name="keywords" content="iupac to smiles converter, name to smiles, MolDraw">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://moldraw.scidart.com/tools/free-chem-tools/iupac-name-to-smiles-converter.html">
+  <title>IUPAC Name to SMILES Converter | MolDraw Tools</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Libre Franklin',sans-serif;background:#f8fafc;color:#111827}.container{width:min(920px,94vw);margin:0 auto;padding:24px 0 40px}.top-nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.top-link{display:inline-flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;text-decoration:none;color:#334155;background:#fff;font-size:12px;font-weight:600}.panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px}h1{font-size:28px;margin-bottom:8px}p{font-size:14px;color:#475569;margin-bottom:10px}textarea{width:100%;min-height:80px;border:1px solid #cfd8e3;border-radius:10px;padding:10px 12px;font-size:13px}.output{margin-top:12px;min-height:90px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;padding:10px;white-space:pre-wrap;font-family:'Courier New',monospace;font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}button{height:34px;border:1px solid #2c7a7b;border-radius:8px;background:#2c7a7b;color:#fff;font-size:12px;font-weight:700;padding:0 12px;cursor:pointer}.ghost-btn{background:#fff;border-color:#d1d5db;color:#334155}</style>
+</head>
+<body><main class="container"><nav class="top-nav"><a class="top-link" href="/tools/free-chem-tools/index.html">Back to Free Chem Tools</a><a class="top-link" href="/tools/index.html">All Tools</a></nav><section class="panel"><h1>IUPAC Name to SMILES Converter</h1><p>Convert IUPAC names to SMILES. Useful for turning literature names into structure strings.</p><textarea id="inputData">2-acetyloxybenzoic acid</textarea><div class="actions"><button id="convertBtn" type="button">Convert</button><button id="copyBtn" class="ghost-btn" type="button">Copy</button><button id="clearBtn" class="ghost-btn" type="button">Clear</button></div><div class="output" id="outputBox">SMILES output appears here.</div></section></main>
+<script>
+const input=document.getElementById('inputData');const output=document.getElementById('outputBox');let latest='';
+document.getElementById('convertBtn').addEventListener('click',async()=>{const v=(input.value||'').trim();if(!v)return output.textContent='Please enter an IUPAC name.';output.textContent='Converting...';latest='';try{const r=await fetch(`https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(v)}/smiles`);if(!r.ok)throw new Error();const t=(await r.text()).trim();if(!t)throw new Error();latest=t;output.textContent=t;}catch{output.textContent='Conversion failed. Try an unambiguous chemical name.';}});
+document.getElementById('copyBtn').addEventListener('click',async()=>{if(!latest)return;try{await navigator.clipboard.writeText(latest);}catch{}});
+document.getElementById('clearBtn').addEventListener('click',()=>{input.value='';latest='';output.textContent='SMILES output appears here.';});
+</script></body></html>

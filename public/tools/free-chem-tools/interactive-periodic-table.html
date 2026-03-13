@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive periodic table by MolDraw with accurate data for all 118 elements. Search by symbol/name and view atomic mass, electron configuration, melting/boiling point, oxidation states, and more.">
+  <meta name="keywords" content="interactive periodic table, periodic table with metadata, 118 elements, atomic mass, electron configuration, chemistry tool, MolDraw">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="Interactive Periodic Table (118 Elements) | MolDraw">
+  <meta property="og:description" content="Explore all elements with detailed metadata: atomic number, mass, category, phase, electron configuration, and key physical properties.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://moldraw.scidart.com/tools/free-chem-tools/interactive-periodic-table.html">
+  <link rel="canonical" href="https://moldraw.scidart.com/tools/free-chem-tools/interactive-periodic-table.html">
+  <title>Interactive Periodic Table (118 Elements) | MolDraw Tools</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "MolDraw Interactive Periodic Table",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "url": "https://moldraw.scidart.com/tools/free-chem-tools/interactive-periodic-table.html",
+    "description": "Interactive periodic table with detailed metadata for all 118 elements."
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.5;
+    }
+    .container {
+      width: min(1320px, 96vw);
+      margin: 0 auto;
+      padding: 22px 0 34px;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .top-link {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 6px 10px;
+      text-decoration: none;
+      color: #334155;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .hero {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    .hero h1 {
+      font-size: 30px;
+      margin-bottom: 6px;
+    }
+    .hero p {
+      color: #475569;
+      font-size: 14px;
+      max-width: 980px;
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 220px 220px auto;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .toolbar input,
+    .toolbar select {
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 13px;
+      color: #0f172a;
+      background: #fff;
+    }
+    .status {
+      text-align: right;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 12px;
+      align-items: start;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .pt-grid {
+      display: grid;
+      grid-template-columns: repeat(18, minmax(42px, 1fr));
+      grid-template-rows: repeat(10, 52px);
+      gap: 5px;
+      overflow-x: auto;
+      min-width: 920px;
+    }
+    .el-card {
+      position: relative;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #f8fafc;
+      cursor: pointer;
+      padding: 4px 4px 2px;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+      color: #0f172a;
+      text-align: left;
+    }
+    .el-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(15, 23, 42, 0.1);
+      border-color: #2c7a7b;
+    }
+    .el-card.selected {
+      border-color: #0f766e;
+      box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
+    }
+    .el-num {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      opacity: 0.9;
+    }
+    .el-symbol {
+      display: block;
+      margin-top: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 0.2px;
+    }
+    .el-name {
+      display: block;
+      margin-top: 1px;
+      font-size: 8.5px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.95;
+    }
+    .muted-note {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #334155;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      padding: 3px 8px;
+    }
+    .legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.18);
+    }
+    .details-head {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 10px;
+    }
+    .details-title {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .details-sub {
+      font-size: 13px;
+      color: #475569;
+      margin-top: 5px;
+    }
+    .meta-list {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+    }
+    .meta-row {
+      display: grid;
+      grid-template-columns: 140px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+    .meta-key {
+      color: #64748b;
+      font-weight: 700;
+    }
+    .meta-value {
+      color: #0f172a;
+      word-break: break-word;
+    }
+    .source-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: #0f766e;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1024px) {
+      .toolbar { grid-template-columns: 1fr; }
+      .status { text-align: left; }
+      .hero h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tools navigation">
+      <a class="top-link" href="/tools/free-chem-tools/index.html">Back to Free Chem Tools</a>
+      <a class="top-link" href="/tools/index.html">All Tools</a>
+      <a class="top-link" href="/">MolDraw App</a>
+    </nav>
+
+    <section class="hero">
+      <h1>Interactive Periodic Table (118 Elements)</h1>
+      <p>Explore every element with metadata including atomic number, atomic mass, category, phase, electron configuration, electronegativity, melting point, boiling point, and density. Click an element tile to inspect details.</p>
+    </section>
+
+    <section class="toolbar" aria-label="Periodic table filters">
+      <input id="searchInput" type="text" placeholder="Search by name, symbol, or atomic number..." />
+      <select id="categoryFilter">
+        <option value="all">All categories</option>
+      </select>
+      <select id="phaseFilter">
+        <option value="all">All phases</option>
+      </select>
+      <div class="status" id="statusText">Loading element data...</div>
+    </section>
+
+    <section class="layout">
+      <article class="panel">
+        <div id="tableGrid" class="pt-grid" aria-label="Periodic table grid"></div>
+        <p class="muted-note">Rows 9 and 10 display lanthanides and actinides. Data source includes all known elements (1-118).</p>
+        <div class="legend" id="categoryLegend"></div>
+      </article>
+
+      <aside class="panel" id="detailsPanel" aria-live="polite">
+        <div class="details-head">
+          <div class="details-title">Select</div>
+          <div class="details-sub">Click an element in the table</div>
+        </div>
+        <div class="meta-list" id="metaList"></div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const DATA_URL = 'https://raw.githubusercontent.com/Bowserinator/Periodic-Table-JSON/master/PeriodicTableJSON.json';
+    const state = {
+      elements: [],
+      filtered: [],
+      selectedNumber: null,
+      search: '',
+      category: 'all',
+      phase: 'all'
+    };
+
+    const categoryColors = {
+      'alkali metal': '#f59e0b',
+      'alkaline earth metal': '#f97316',
+      'transition metal': '#f43f5e',
+      'post-transition metal': '#14b8a6',
+      'metalloid': '#22c55e',
+      'polyatomic nonmetal': '#84cc16',
+      'diatomic nonmetal': '#65a30d',
+      'noble gas': '#3b82f6',
+      'lanthanide': '#a855f7',
+      'actinide': '#8b5cf6',
+      'unknown': '#94a3b8',
+      'unknown, probably transition metal': '#a78bfa',
+      'unknown, probably post-transition metal': '#2dd4bf',
+      'unknown, probably metalloid': '#34d399',
+      'unknown, predicted to be noble gas': '#60a5fa',
+      'unknown, but predicted to be an alkali metal': '#fbbf24',
+      'unknown, but predicted to be an alkaline earth metal': '#fb923c'
+    };
+
+    const ui = {
+      grid: document.getElementById('tableGrid'),
+      status: document.getElementById('statusText'),
+      searchInput: document.getElementById('searchInput'),
+      categoryFilter: document.getElementById('categoryFilter'),
+      phaseFilter: document.getElementById('phaseFilter'),
+      detailsPanel: document.getElementById('detailsPanel'),
+      metaList: document.getElementById('metaList'),
+      categoryLegend: document.getElementById('categoryLegend')
+    };
+
+    function sanitizeText(value) {
+      if (value === null || value === undefined || value === '') return '—';
+      if (Array.isArray(value)) return value.join(', ');
+      return String(value);
+    }
+
+    function formatNumber(value, digits = 4) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return '—';
+      return Number(value).toLocaleString(undefined, { maximumFractionDigits: digits });
+    }
+
+    function getCategoryColor(category) {
+      if (!category) return '#94a3b8';
+      return categoryColors[category] || '#94a3b8';
+    }
+
+    function setStatus(text) {
+      ui.status.textContent = text;
+    }
+
+    function row(key, value) {
+      const div = document.createElement('div');
+      div.className = 'meta-row';
+      const k = document.createElement('div');
+      k.className = 'meta-key';
+      k.textContent = key;
+      const v = document.createElement('div');
+      v.className = 'meta-value';
+      v.textContent = value;
+      div.appendChild(k);
+      div.appendChild(v);
+      return div;
+    }
+
+    function renderDetails(el) {
+      const headTitle = ui.detailsPanel.querySelector('.details-title');
+      const headSub = ui.detailsPanel.querySelector('.details-sub');
+
+      if (!el) {
+        headTitle.textContent = 'Select';
+        headSub.textContent = 'Click an element in the table';
+        ui.metaList.innerHTML = '';
+        return;
+      }
+
+      headTitle.textContent = `${el.symbol} - ${el.name}`;
+      headSub.textContent = `Atomic Number ${el.number} | ${sanitizeText(el.category)}`;
+      ui.metaList.innerHTML = '';
+
+      ui.metaList.appendChild(row('Atomic Number', sanitizeText(el.number)));
+      ui.metaList.appendChild(row('Atomic Mass', `${formatNumber(el.atomic_mass, 6)} u`));
+      ui.metaList.appendChild(row('Category', sanitizeText(el.category)));
+      ui.metaList.appendChild(row('Phase (STP)', sanitizeText(el.phase)));
+      ui.metaList.appendChild(row('Group / Period', `${sanitizeText(el.group)} / ${sanitizeText(el.period)}`));
+      ui.metaList.appendChild(row('Block', sanitizeText(el.block)));
+      ui.metaList.appendChild(row('Electron Config', sanitizeText(el.electron_configuration_semantic || el.electron_configuration)));
+      ui.metaList.appendChild(row('Shells', sanitizeText(el.shells)));
+      ui.metaList.appendChild(row('Electronegativity', sanitizeText(el.electronegativity_pauling)));
+      ui.metaList.appendChild(row('Electron Affinity', sanitizeText(el.electron_affinity)));
+      ui.metaList.appendChild(row('Ionization Energy', sanitizeText(el.ionization_energies && el.ionization_energies[0] ? `${el.ionization_energies[0]} kJ/mol` : null)));
+      ui.metaList.appendChild(row('Density', sanitizeText(el.density ? `${el.density} g/L or g/cm3` : null)));
+      ui.metaList.appendChild(row('Melting Point', sanitizeText(el.melt ? `${el.melt} K` : null)));
+      ui.metaList.appendChild(row('Boiling Point', sanitizeText(el.boil ? `${el.boil} K` : null)));
+      ui.metaList.appendChild(row('Molar Heat', sanitizeText(el.molar_heat ? `${el.molar_heat} J/(mol K)` : null)));
+      ui.metaList.appendChild(row('Discovered By', sanitizeText(el.discovered_by)));
+      ui.metaList.appendChild(row('Named By', sanitizeText(el.named_by)));
+      ui.metaList.appendChild(row('Summary', sanitizeText(el.summary)));
+
+      const source = document.createElement('a');
+      source.className = 'source-link';
+      source.target = '_blank';
+      source.rel = 'noopener noreferrer';
+      source.href = el.source || 'https://en.wikipedia.org/wiki/Periodic_table';
+      source.textContent = 'Open reference source';
+      ui.metaList.appendChild(source);
+    }
+
+    function populateFilterOptions() {
+      const categories = Array.from(new Set(state.elements.map((e) => e.category).filter(Boolean))).sort();
+      const phases = Array.from(new Set(state.elements.map((e) => e.phase).filter(Boolean))).sort();
+
+      categories.forEach((cat) => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        ui.categoryFilter.appendChild(opt);
+      });
+      phases.forEach((phase) => {
+        const opt = document.createElement('option');
+        opt.value = phase;
+        opt.textContent = phase;
+        ui.phaseFilter.appendChild(opt);
+      });
+    }
+
+    function renderLegend() {
+      const categories = Array.from(new Set(state.elements.map((e) => e.category).filter(Boolean))).sort();
+      ui.categoryLegend.innerHTML = '';
+      categories.forEach((cat) => {
+        const item = document.createElement('span');
+        item.className = 'legend-item';
+        const color = document.createElement('span');
+        color.className = 'legend-color';
+        color.style.background = getCategoryColor(cat);
+        const text = document.createElement('span');
+        text.textContent = cat;
+        item.appendChild(color);
+        item.appendChild(text);
+        ui.categoryLegend.appendChild(item);
+      });
+    }
+
+    function applyFilters() {
+      const q = state.search.trim().toLowerCase();
+      state.filtered = state.elements.filter((e) => {
+        const matchesSearch = !q
+          || e.name.toLowerCase().includes(q)
+          || e.symbol.toLowerCase().includes(q)
+          || String(e.number).includes(q);
+        const matchesCategory = state.category === 'all' || e.category === state.category;
+        const matchesPhase = state.phase === 'all' || e.phase === state.phase;
+        return matchesSearch && matchesCategory && matchesPhase;
+      });
+    }
+
+    function renderGrid() {
+      ui.grid.innerHTML = '';
+      const visibleSet = new Set(state.filtered.map((e) => e.number));
+
+      state.elements.forEach((el) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'el-card';
+        if (state.selectedNumber === el.number) btn.classList.add('selected');
+        if (!visibleSet.has(el.number)) btn.style.opacity = '0.16';
+        btn.style.gridColumn = String(el.xpos);
+        btn.style.gridRow = String(el.ypos);
+        btn.style.background = getCategoryColor(el.category);
+
+        const num = document.createElement('span');
+        num.className = 'el-num';
+        num.textContent = el.number;
+        const symbol = document.createElement('span');
+        symbol.className = 'el-symbol';
+        symbol.textContent = el.symbol;
+        const name = document.createElement('span');
+        name.className = 'el-name';
+        name.textContent = el.name;
+
+        btn.appendChild(num);
+        btn.appendChild(symbol);
+        btn.appendChild(name);
+
+        btn.addEventListener('click', () => {
+          state.selectedNumber = el.number;
+          renderDetails(el);
+          renderGrid();
+        });
+
+        ui.grid.appendChild(btn);
+      });
+
+      const found = state.filtered.length;
+      setStatus(`Showing ${found} of ${state.elements.length} elements`);
+
+      if (state.selectedNumber && !visibleSet.has(state.selectedNumber)) {
+        const selected = state.elements.find((e) => e.number === state.selectedNumber) || null;
+        renderDetails(selected);
+      }
+    }
+
+    function bindEvents() {
+      ui.searchInput.addEventListener('input', () => {
+        state.search = ui.searchInput.value || '';
+        applyFilters();
+        renderGrid();
+      });
+      ui.categoryFilter.addEventListener('change', () => {
+        state.category = ui.categoryFilter.value;
+        applyFilters();
+        renderGrid();
+      });
+      ui.phaseFilter.addEventListener('change', () => {
+        state.phase = ui.phaseFilter.value;
+        applyFilters();
+        renderGrid();
+      });
+    }
+
+    async function loadData() {
+      setStatus('Loading element data...');
+      try {
+        const res = await fetch(DATA_URL);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const json = await res.json();
+        const elements = Array.isArray(json.elements) ? json.elements : [];
+        if (elements.length < 118) throw new Error('Incomplete periodic table data.');
+
+        state.elements = elements.sort((a, b) => a.number - b.number);
+        populateFilterOptions();
+        renderLegend();
+        bindEvents();
+        applyFilters();
+        state.selectedNumber = 6;
+        renderDetails(state.elements.find((e) => e.number === state.selectedNumber));
+        renderGrid();
+      } catch (err) {
+        setStatus('Failed to load dataset. Check network and retry.');
+        ui.grid.innerHTML = '';
+        ui.metaList.innerHTML = '';
+        const msg = document.createElement('div');
+        msg.className = 'muted-note';
+        msg.textContent = 'Could not fetch periodic table JSON. This tool uses a public, full 118-element dataset.';
+        ui.grid.appendChild(msg);
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

@@ -361,6 +361,17 @@
   flex-shrink: 0;
 }
 
+.tb-icon-only {
+  width: 28px;
+  min-width: 28px;
+  padding: 0;
+}
+
+.tb-icon-only svg {
+  width: 14px;
+  height: 14px;
+}
+
 .tb-menu-dropdown {
   position: relative;
 }
