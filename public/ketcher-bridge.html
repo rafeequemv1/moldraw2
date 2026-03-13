@@ -52,6 +52,55 @@
           // Notify parent that Ketcher is ready
           window.parent.postMessage({ type: 'ketcher-ready' }, '*');
 
+          const getMolfileFingerprint = (molfile) => {
+            const text = String(molfile || '');
+            if (!text.trim()) return '';
+            return text
+              .replace(/\r\n/g, '\n')
+              .split('\n')
+              .map((line) => line.trimEnd())
+              .join('\n')
+              .trim();
+          };
+
+          let lastChangeFingerprint = '';
+          let changeTimer = null;
+          const emitEditorChange = async () => {
+            try {
+              const molfile = await ketcher.getMolfile();
+              const fp = getMolfileFingerprint(molfile);
+              if (fp === lastChangeFingerprint) return;
+              lastChangeFingerprint = fp;
+              const smiles = await ketcher.getSmiles();
+              window.parent.postMessage({
+                type: 'editor-change',
+                molfile,
+                smiles,
+              }, '*');
+            } catch (error) {
+              console.warn('Bridge editor-change emit failed:', error);
+            }
+          };
+          const scheduleEditorChange = () => {
+            if (changeTimer) clearTimeout(changeTimer);
+            changeTimer = setTimeout(() => {
+              emitEditorChange();
+            }, 180);
+          };
+
+          // Best-effort edit listeners; fall back to user-triggered requests if unavailable.
+          try {
+            if (ketcher.editor && typeof ketcher.editor.subscribe === 'function') {
+              ketcher.editor.subscribe('change', scheduleEditorChange);
+            }
+          } catch (_) { /* noop */ }
+          try {
+            const frameDoc = ketcherFrame.contentWindow.document;
+            frameDoc.addEventListener('input', scheduleEditorChange, true);
+            frameDoc.addEventListener('mouseup', scheduleEditorChange, true);
+            frameDoc.addEventListener('keyup', scheduleEditorChange, true);
+          } catch (_) { /* noop */ }
+
           // Listen for requests from parent
           window.addEventListener('message', async function (event) {
             console.log('Bridge received message:', event.data);
@@ -165,6 +214,7 @@
                   type: 'molecule-set',
                   success: true
                 }, '*');
+                scheduleEditorChange();
               } catch (error) {
                 console.error('Error setting molecule:', error);
                 window.parent.postMessage({
@@ -185,6 +235,7 @@
                   type: 'molecule-set',
                   success: true
                 }, '*');
+                scheduleEditorChange();
               } catch (error) {
                 console.error('Error appending fragment:', error);
                 window.parent.postMessage({
@@ -237,6 +288,7 @@
                   success: true,
                   annotationsApplied,
                 }, '*');
+                scheduleEditorChange();
               } catch (error) {
                 console.error('Error setting reaction scene:', error);
                 window.parent.postMessage({
@@ -252,6 +304,7 @@
                   type: 'molecule-set',
                   success: true
                 }, '*');
+                scheduleEditorChange();
               } catch (error) {
                 console.error('Error clearing editor:', error);
                 window.parent.postMessage({

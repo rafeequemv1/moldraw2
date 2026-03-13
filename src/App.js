@@ -466,6 +466,17 @@ function App() {
     return 0;
   };
 
+  const getMolfileFingerprint = (molfile) => {
+    const text = String(molfile || '');
+    if (!text.trim()) return '';
+    return text
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map((line) => line.trimEnd())
+      .join('\n')
+      .trim();
+  };
+
   // Get molecule name + physical properties from PubChem
   const getMoleculeName = async (smiles) => {
     if (!smiles || smiles.trim() === '') {
@@ -1925,12 +1936,44 @@ ${scientificGuardrails}`;
             }
           }
         } catch {}
+      } else if (event.data.type === 'editor-change') {
+        const molfile = event.data.molfile;
+        const smiles = sanitizeSmilesText(event.data.smiles);
+        const normalizedSmiles = (smiles || '').trim();
+
+        if (!normalizedSmiles) {
+          setCurrentSmiles('');
+          setMultiStructure(false);
+          try { localStorage.removeItem('moldraw_canvas'); } catch {}
+          if (molfile && getMolfileAtomCount(molfile) === 0) {
+            clearMoleculeProps();
+          }
+        }
+
+        if (normalizedSmiles !== '') {
+          lastSmilesForAIRef.current = smiles;
+          setCurrentSmiles(smiles);
+          setMultiStructure(normalizedSmiles.includes('.'));
+        }
+        if (molfile) {
+          lastMolfileForAIRef.current = molfile;
+          lastMoleculeRef.current = getMolfileFingerprint(molfile);
+        }
+
+        if (!isProtein && molfile && !isReactionSearchLoading) {
+          updateMolecule3D(molfile, smiles);
+          manual3DRefreshRequestedRef.current = false;
+          force3DRefreshOnDeleteRef.current = false;
+        } else if (smiles && smiles.trim() !== '') {
+          getMoleculeName(smiles);
+        }
       } else if (event.data.type === 'molfile-response') {
         const newMolfile = event.data.molfile;
+        const newMolfileFingerprint = getMolfileFingerprint(newMolfile);
 
         // Keep protein mode isolated from Ketcher polling responses.
         if (viewerMode === 'protein') {
-          lastMoleculeRef.current = newMolfile;
+          lastMoleculeRef.current = newMolfileFingerprint;
           return;
         }
 
@@ -1954,12 +1997,12 @@ ${scientificGuardrails}`;
 
         if (suppressNext3DUpdateRef.current) {
           suppressNext3DUpdateRef.current = false;
-          lastMoleculeRef.current = newMolfile;
+          lastMoleculeRef.current = newMolfileFingerprint;
           return;
         }
 
-        if (newMolfile !== lastMoleculeRef.current) {
-          lastMoleculeRef.current = newMolfile;
+        if (newMolfileFingerprint !== lastMoleculeRef.current) {
+          lastMoleculeRef.current = newMolfileFingerprint;
 
           // If protein is currently loaded, clear it and update immediately (no debounce)
           if (isProtein) {
@@ -2175,16 +2218,11 @@ ${scientificGuardrails}`;
       } else if (event.data.type === 'molecule-set') {
         console.log('Molecule set in Ketcher:', event.data);
         if (event.data.success) {
-          // Trigger update after molecule is set
-          setTimeout(() => {
-            requestMoleculeUpdate();
-          }, 500);
         } else {
           setSearchError('Failed to load molecule into editor');
         }
       } else if (event.data.type === 'reaction-set') {
         if (event.data.success) {
-          setTimeout(() => requestMoleculeUpdate(), 450);
           if (!event.data.annotationsApplied) {
             console.warn('Reaction loaded, but text annotations were not applied by Ketcher.');
           }
@@ -2202,22 +2240,7 @@ ${scientificGuardrails}`;
   // Debounce timeout ref for 3D updates
   const debounceTimeoutRef = useRef(null);
 
-  // Poll for changes continuously (3D updates are gated separately)
-  useEffect(() => {
-    if (isKetcherReady && is3DReady && !isProtein && !isReactionSearchLoading) {
-      const interval = setInterval(() => {
-        if (iframeRef.current && isKetcherReady && !isProtein && !isReactionSearchLoading) {
-          iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
-        }
-      }, 400);
-      return () => {
-        clearInterval(interval);
-        if (debounceTimeoutRef.current) {
-          clearTimeout(debounceTimeoutRef.current);
-        }
-      };
-    }
-  }, [isKetcherReady, is3DReady, isProtein, isReactionSearchLoading]);
+  // Continuous polling removed to avoid 3D refresh loops.
 
   // Toggle hydrogens
   const toggleHydrogens = () => {
