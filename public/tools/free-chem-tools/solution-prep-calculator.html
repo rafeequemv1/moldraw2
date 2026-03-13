@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Solution prep calculator by MolDraw. Calculate required solute mass for target molarity and final solution volume.">
+  <meta name="keywords" content="solution prep calculator, solution preparation chemistry, molarity solution prep, MolDraw tools">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="Solution Prep Calculator | MolDraw Tools">
+  <meta property="og:description" content="Calculate how much solute to weigh for your target molarity and volume.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://moldraw.scidart.com/tools/free-chem-tools/solution-prep-calculator.html">
+  <link rel="canonical" href="https://moldraw.scidart.com/tools/free-chem-tools/solution-prep-calculator.html">
+  <title>Solution Prep Calculator | MolDraw Tools</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; }
+    .container { width: min(760px, 94vw); margin: 0 auto; padding: 24px 0 40px; }
+    .top-nav { display: flex; gap: 10px; margin-bottom: 14px; }
+    .top-link { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 600; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; }
+    h1 { font-size: 27px; color: #0f172a; margin-bottom: 8px; }
+    p { color: #475569; font-size: 14px; margin-bottom: 12px; }
+    label { display: block; font-size: 12px; color: #334155; font-weight: 700; margin-bottom: 10px; }
+    input { width: 100%; margin-top: 4px; height: 34px; border: 1px solid #d7dce2; border-radius: 8px; padding: 0 10px; font-size: 13px; }
+    .result { margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; padding: 12px; color: #0f172a; font-size: 14px; min-height: 46px; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/index.html">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/index.html">Free Chemist Tools</a>
+    </nav>
+    <section class="panel">
+      <h1>Solution Prep Calculator</h1>
+      <p>Calculate required solute mass from target molarity, molecular weight, and final solution volume.</p>
+      <label>Target molarity (M)<input id="targetM" type="number" step="0.0001" value="0.1"></label>
+      <label>Final volume (mL)<input id="finalVol" type="number" step="0.1" value="250"></label>
+      <label>Molecular weight (g/mol)<input id="mw" type="number" step="0.001" value="58.44"></label>
+      <div class="result" id="result">Enter valid values.</div>
+    </section>
+  </main>
+  <script>
+    function num(id) {
+      const value = Number(document.getElementById(id).value);
+      return Number.isFinite(value) ? value : NaN;
+    }
+    function calc() {
+      const m = num('targetM');
+      const volMl = num('finalVol');
+      const mw = num('mw');
+      const out = document.getElementById('result');
+      if (m > 0 && volMl > 0 && mw > 0) {
+        const moles = m * (volMl / 1000);
+        const grams = moles * mw;
+        out.textContent = `Moles needed: ${moles.toFixed(6)} mol | Solute mass: ${grams.toFixed(6)} g`;
+      } else {
+        out.textContent = 'Please enter positive values in all fields.';
+      }
+    }
+    ['targetM', 'finalVol', 'mw'].forEach((id) => document.getElementById(id).addEventListener('input', calc));
+    calc();
+  </script>
+</body>
+</html>

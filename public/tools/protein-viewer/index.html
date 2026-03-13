@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Protein Viewer by MolDraw using 3Dmol.js. Load PDB by ID or file, inspect amino-acid sequences, style individual chains, and style selected sequence regions.">
+  <meta name="keywords" content="protein viewer sequence, chain style protein viewer, 3Dmol chain coloring, PDB viewer with sequence, MolDraw tools">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="Protein Viewer with Sequence and Chain Controls | MolDraw">
+  <meta property="og:description" content="Inspect amino-acid sequence, style chains independently, and highlight selected protein segments.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://moldraw.scidart.com/tools/protein-viewer/index.html">
+  <link rel="canonical" href="https://moldraw.scidart.com/tools/protein-viewer/index.html">
+  <title>Protein Viewer with Sequence and Chain Controls | MolDraw</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(1180px, 94vw); margin: 0 auto; padding: 24px 0 40px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .tab-link { display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 12px; border-radius: 8px; text-decoration: none; border: 1px solid #d1d5db; background: #fff; color: #334155; font-size: 12px; font-weight: 700; }
+    .tab-link.active { border-color: #2C7A7B; background: #2C7A7B; color: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 28px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 18px; color: #0f172a; margin-bottom: 8px; }
+    p { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    .control-grid { display: grid; grid-template-columns: 1.2fr 1fr auto; gap: 8px; align-items: end; }
+    .control-grid label { display: block; font-size: 12px; color: #334155; font-weight: 700; }
+    .control-grid input, .control-grid select { width: 100%; margin-top: 4px; height: 34px; border: 1px solid #cfd8e3; border-radius: 8px; padding: 0 10px; font-size: 13px; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; height: 34px; padding: 0 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .ghost-btn { border-color: #d1d5db; background: #fff; color: #334155; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .download-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 10px; }
+    .download-grid button { width: 100%; font-size: 11px; padding: 0 6px; }
+    .status { margin-top: 8px; font-size: 12px; color: #475569; min-height: 18px; }
+    .viewer-wrap { border: 1px dashed #cbd5e1; background: #f8fafc; border-radius: 10px; min-height: 460px; padding: 10px; }
+    #proteinViewer { width: 100%; height: 440px; border-radius: 8px; background: #ffffff; position: relative; overflow: hidden; }
+    .sequence-layout { display: grid; grid-template-columns: 320px 1fr; gap: 10px; }
+    .chain-panel, .sequence-panel { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #f8fafc; }
+    .chain-list { display: flex; flex-direction: column; gap: 8px; max-height: 430px; overflow: auto; }
+    .chain-item { border: 1px solid #d7dfe8; border-radius: 8px; padding: 8px; background: #fff; }
+    .chain-item.active { border-color: #2C7A7B; box-shadow: 0 0 0 1px #2C7A7B inset; }
+    .chain-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .chain-id { font-size: 12px; font-weight: 800; color: #0f172a; }
+    .chain-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; }
+    .chain-controls select, .chain-controls input[type="color"] { height: 28px; border: 1px solid #cfd8e3; border-radius: 6px; }
+    .chain-controls input[type="color"] { width: 34px; padding: 2px; }
+    .chain-controls label { font-size: 11px; color: #334155; display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+    .sequence-board { border: 1px solid #dbe4ec; border-radius: 8px; background: #fff; max-height: 430px; overflow: auto; padding: 8px; user-select: none; }
+    .seq-chain-row { margin-bottom: 10px; }
+    .seq-chain-title { font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px; }
+    .seq-line { font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.6; color: #334155; word-break: break-word; }
+    .seq-res { display: inline-block; min-width: 11px; text-align: center; border-radius: 3px; padding: 0 1px; cursor: pointer; }
+    .seq-res.sel { background: #fef3c7; color: #92400e; }
+    .seq-res.anchor { outline: 1px solid #2C7A7B; }
+    .seq-res:hover { background: #e2e8f0; }
+    .context-menu { position: fixed; z-index: 9999; width: 230px; border: 1px solid #cfd8e3; border-radius: 10px; background: #fff; padding: 10px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18); display: none; }
+    .context-menu h3 { font-size: 12px; margin-bottom: 8px; color: #0f172a; }
+    .context-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .context-row label { font-size: 11px; color: #475569; }
+    .context-row select, .context-row input[type="color"] { height: 28px; border: 1px solid #d1d5db; border-radius: 6px; }
+    .context-actions { display: flex; gap: 6px; }
+    .tiny-btn { height: 28px; padding: 0 10px; font-size: 11px; }
+    @media (max-width: 980px) {
+      .control-grid { grid-template-columns: 1fr; }
+      .sequence-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <nav class="tabs" aria-label="3D tabs">
+      <a class="tab-link" href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">Molecule 3D</a>
+      <a class="tab-link active" href="/tools/protein-viewer/index.html">Protein Viewer</a>
+      <a class="tab-link" href="/tools/free-chem-tools/index.html">All Chem Tools</a>
+    </nav>
+
+    <section class="panel">
+      <h1>Protein Viewer</h1>
+      <p>Load proteins by PDB ID or upload `.pdb`, inspect amino-acid sequence, style individual chains, and right-click selected sequence regions to restyle or hide them.</p>
+      <div class="control-grid">
+        <label>PDB ID
+          <input id="pdbIdInput" type="text" placeholder="Example: 1CRN" />
+        </label>
+        <label>Default Chain Style
+          <select id="styleSelect">
+            <option value="cartoon">Cartoon</option>
+            <option value="stick">Stick</option>
+            <option value="sphere">Sphere</option>
+            <option value="line">Line</option>
+          </select>
+        </label>
+        <button id="loadPdbIdBtn" type="button">Load PDB ID</button>
+      </div>
+      <div class="actions">
+        <input id="pdbFileInput" type="file" accept=".pdb" style="display:none" />
+        <button id="uploadBtn" class="ghost-btn" type="button">Upload PDB file</button>
+        <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+      </div>
+      <div class="download-grid">
+        <button id="dlPngBtn" class="ghost-btn" type="button">Download PNG</button>
+        <button id="dlJpgBtn" class="ghost-btn" type="button">Download JPG</button>
+        <button id="dlPdbBtn" class="ghost-btn" type="button">Download PDB</button>
+        <button id="dlXyzBtn" class="ghost-btn" type="button">Download XYZ</button>
+        <button id="dlObjBtn" class="ghost-btn" type="button">Download OBJ</button>
+        <button id="dlX3dBtn" class="ghost-btn" type="button">Download X3D</button>
+      </div>
+      <div class="status" id="statusText">Ready.</div>
+    </section>
+
+    <section class="panel">
+      <div class="viewer-wrap">
+        <div id="proteinViewer"></div>
+      </div>
+    </section>
+
+    <section class="panel sequence-layout">
+      <div class="chain-panel">
+        <h2>Chains</h2>
+        <div class="chain-list" id="chainList">Load a protein to list chains.</div>
+      </div>
+      <div class="sequence-panel">
+        <h2>Amino Acid Sequence</h2>
+        <p style="font-size:12px;margin-bottom:8px;">Drag across residues to select a region. Right-click selection to restyle or hide only that segment.</p>
+        <div class="sequence-board" id="sequenceBoard">Load a protein to show sequence.</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="context-menu" id="seqContextMenu">
+    <h3>Selected Segment Style</h3>
+    <div class="context-row">
+      <label for="ctxStyleSelect">Style</label>
+      <select id="ctxStyleSelect">
+        <option value="cartoon">Cartoon</option>
+        <option value="stick">Stick</option>
+        <option value="sphere">Sphere</option>
+        <option value="line">Line</option>
+      </select>
+    </div>
+    <div class="context-row">
+      <label for="ctxColorInput">Color</label>
+      <input id="ctxColorInput" type="color" value="#f59e0b">
+    </div>
+    <div class="context-row">
+      <label for="ctxHideToggle">Hide segment</label>
+      <input id="ctxHideToggle" type="checkbox">
+    </div>
+    <div class="context-actions">
+      <button class="tiny-btn" id="ctxApplyBtn" type="button">Apply</button>
+      <button class="tiny-btn ghost-btn" id="ctxCancelBtn" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <script src="https://3dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+  <script>
+    const viewer = $3Dmol.createViewer(document.getElementById('proteinViewer'), { backgroundColor: 'white' });
+    const statusEl = document.getElementById('statusText');
+    const pdbIdInput = document.getElementById('pdbIdInput');
+    const styleSelect = document.getElementById('styleSelect');
+    const pdbFileInput = document.getElementById('pdbFileInput');
+    const chainListEl = document.getElementById('chainList');
+    const sequenceBoard = document.getElementById('sequenceBoard');
+    const contextMenu = document.getElementById('seqContextMenu');
+
+    let pdbText = '';
+    let chainData = {};
+    let chainSettings = {};
+    let selectedChain = '';
+    let selectedRange = null;
+    let dragStart = null;
+    let isDragging = false;
+    let segmentOverrides = [];
+
+    const aaMap = {
+      ALA:'A', ARG:'R', ASN:'N', ASP:'D', CYS:'C', GLU:'E', GLN:'Q', GLY:'G', HIS:'H', ILE:'I',
+      LEU:'L', LYS:'K', MET:'M', PHE:'F', PRO:'P', SER:'S', THR:'T', TRP:'W', TYR:'Y', VAL:'V',
+      SEC:'U', PYL:'O'
+    };
+
+    function setStatus(text) { statusEl.textContent = text; }
+
+    function parsePdbAtoms(text) {
+      return String(text || '').split(/\r?\n/).filter((line) => line.startsWith('ATOM') || line.startsWith('HETATM'))
+        .map((line) => {
+          const x = parseFloat(line.slice(30, 38));
+          const y = parseFloat(line.slice(38, 46));
+          const z = parseFloat(line.slice(46, 54));
+          const elem = (line.slice(76, 78).trim() || line.slice(12, 16).trim().replace(/[0-9]/g, '').slice(0, 2) || 'C');
+          return { x, y, z, elem };
+        }).filter((a) => Number.isFinite(a.x) && Number.isFinite(a.y) && Number.isFinite(a.z));
+    }
+
+    function pdbToXyz(text) {
+      const atoms = parsePdbAtoms(text);
+      let out = atoms.length + '\nGenerated from PDB by MolDraw Protein Viewer\n';
+      atoms.forEach((a) => { out += `${a.elem} ${a.x} ${a.y} ${a.z}\n`; });
+      return out;
+    }
+
+    function pdbToObj(text) {
+      const atoms = parsePdbAtoms(text);
+      let out = '# OBJ generated from PDB\n';
+      atoms.forEach((a) => { out += `v ${a.x} ${a.y} ${a.z}\n`; });
+      for (let i = 1; i < atoms.length; i++) out += `l ${i} ${i + 1}\n`;
+      return out;
+    }
+
+    function pdbToX3d(text) {
+      const atoms = parsePdbAtoms(text);
+      const points = atoms.map((a) => `${a.x} ${a.y} ${a.z}`).join(', ');
+      let spheres = '';
+      atoms.forEach((a) => { spheres += `<Transform translation="${a.x} ${a.y} ${a.z}"><Shape><Appearance><Material diffuseColor="0.2 0.4 0.8"/></Appearance><Sphere radius="0.2"/></Shape></Transform>`; });
+      return `<?xml version="1.0" encoding="UTF-8"?><X3D profile="Interchange" version="3.3"><Scene>${spheres}<Shape><Appearance><Material emissiveColor="0.15 0.15 0.15"/></Appearance><PointSet><Coordinate point="${points}"/></PointSet></Shape></Scene></X3D>`;
+    }
+
+    function parseChainsAndSequence(text) {
+      const rows = String(text || '').split(/\r?\n/);
+      const byChain = {};
+      const seen = new Set();
+      for (const line of rows) {
+        if (!line.startsWith('ATOM')) continue;
+        const chain = (line[21] || 'A').trim() || 'A';
+        const resi = parseInt(line.slice(22, 26).trim(), 10);
+        const resn = line.slice(17, 20).trim().toUpperCase();
+        if (!Number.isFinite(resi)) continue;
+        const key = `${chain}:${resi}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (!byChain[chain]) byChain[chain] = [];
+        byChain[chain].push({ chain, resi, resn, aa: aaMap[resn] || 'X' });
+      }
+      Object.keys(byChain).forEach((chain) => byChain[chain].sort((a, b) => a.resi - b.resi));
+      return byChain;
+    }
+
+    function getStyleObject(style, color) {
+      if (style === 'stick') return { stick: { color: color || '#2C7A7B', radius: 0.18 } };
+      if (style === 'sphere') return { sphere: { color: color || '#2C7A7B', scale: 0.45 } };
+      if (style === 'line') return { line: { color: color || '#2C7A7B', linewidth: 2 } };
+      return { cartoon: { color: color || '#2C7A7B' } };
+    }
+
+    function getResiArray(chain, start, end) {
+      const residues = chainData[chain] || [];
+      const lo = Math.min(start, end);
+      const hi = Math.max(start, end);
+      return residues.filter((r) => r.resi >= lo && r.resi <= hi).map((r) => r.resi);
+    }
+
+    function applyStyles() {
+      if (!pdbText) return;
+      viewer.setStyle({}, {});
+
+      Object.keys(chainData).forEach((chain) => {
+        const cfg = chainSettings[chain] || { style: styleSelect.value, color: '#2C7A7B', hidden: false };
+        if (cfg.hidden) return;
+        viewer.setStyle({ chain }, getStyleObject(cfg.style, cfg.color));
+      });
+
+      segmentOverrides.forEach((seg) => {
+        const residues = getResiArray(seg.chain, seg.startResi, seg.endResi);
+        if (!residues.length) return;
+        if (seg.hidden) {
+          viewer.setStyle({ chain: seg.chain, resi: residues }, { cartoon: { hidden: true }, stick: { hidden: true }, sphere: { hidden: true }, line: { hidden: true } });
+        } else {
+          viewer.setStyle({ chain: seg.chain, resi: residues }, getStyleObject(seg.style, seg.color));
+        }
+      });
+
+      if (selectedChain && !selectedRange) {
+        viewer.addStyle({ chain: selectedChain }, { stick: { color: '#f59e0b', radius: 0.2 } });
+      }
+      if (selectedRange) {
+        const residues = getResiArray(selectedRange.chain, selectedRange.startResi, selectedRange.endResi);
+        if (residues.length) viewer.addStyle({ chain: selectedRange.chain, resi: residues }, { stick: { color: '#f59e0b', radius: 0.24 } });
+      }
+
+      viewer.render();
+    }
+
+    function renderChainPanel() {
+      const chains = Object.keys(chainData);
+      if (!chains.length) {
+        chainListEl.textContent = 'Load a protein to list chains.';
+        return;
+      }
+      chainListEl.innerHTML = chains.map((chain) => {
+        const cfg = chainSettings[chain];
+        const active = selectedChain === chain ? 'active' : '';
+        return `
+          <div class="chain-item ${active}" data-chain="${chain}">
+            <div class="chain-head">
+              <span class="chain-id">Chain ${chain} (${(chainData[chain] || []).length} residues)</span>
+              <button class="ghost-btn tiny-btn" data-focus-chain="${chain}" type="button">Focus</button>
+            </div>
+            <div class="chain-controls">
+              <select data-style-chain="${chain}">
+                <option value="cartoon" ${cfg.style === 'cartoon' ? 'selected' : ''}>Cartoon</option>
+                <option value="stick" ${cfg.style === 'stick' ? 'selected' : ''}>Stick</option>
+                <option value="sphere" ${cfg.style === 'sphere' ? 'selected' : ''}>Sphere</option>
+                <option value="line" ${cfg.style === 'line' ? 'selected' : ''}>Line</option>
+              </select>
+              <input type="color" data-color-chain="${chain}" value="${cfg.color}">
+              <label><input type="checkbox" data-hide-chain="${chain}" ${cfg.hidden ? 'checked' : ''}>Hide</label>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderSequenceBoard() {
+      const chains = Object.keys(chainData);
+      if (!chains.length) {
+        sequenceBoard.textContent = 'Load a protein to show sequence.';
+        return;
+      }
+      sequenceBoard.innerHTML = chains.map((chain) => {
+        const text = (chainData[chain] || []).map((r) => `<span class="seq-res" data-chain="${chain}" data-resi="${r.resi}">${r.aa}</span>`).join('');
+        return `<div class="seq-chain-row"><div class="seq-chain-title">Chain ${chain}</div><div class="seq-line">${text}</div></div>`;
+      }).join('');
+    }
+
+    function clearSeqSelectionVisual() {
+      sequenceBoard.querySelectorAll('.seq-res.sel,.seq-res.anchor').forEach((el) => el.classList.remove('sel', 'anchor'));
+    }
+
+    function markSeqSelection(range) {
+      clearSeqSelectionVisual();
+      if (!range) return;
+      const lo = Math.min(range.startResi, range.endResi);
+      const hi = Math.max(range.startResi, range.endResi);
+      sequenceBoard.querySelectorAll(`.seq-res[data-chain="${range.chain}"]`).forEach((el) => {
+        const resi = parseInt(el.dataset.resi, 10);
+        if (resi >= lo && resi <= hi) el.classList.add('sel');
+        if (resi === range.startResi) el.classList.add('anchor');
+      });
+    }
+
+    function setSelectedRange(range) {
+      selectedRange = range;
+      selectedChain = range ? range.chain : selectedChain;
+      markSeqSelection(selectedRange);
+      renderChainPanel();
+      applyStyles();
+    }
+
+    function openContextMenu(x, y) {
+      if (!selectedRange) return;
+      contextMenu.style.left = `${x}px`;
+      contextMenu.style.top = `${y}px`;
+      contextMenu.style.display = 'block';
+    }
+
+    function closeContextMenu() {
+      contextMenu.style.display = 'none';
+    }
+
+    function downloadTextFile(content, filename, mime) {
+      const blob = new Blob([content], { type: mime || 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function loadPdbText(text, label) {
+      pdbText = String(text || '').trim();
+      if (!pdbText) return setStatus('No PDB content loaded.');
+      viewer.clear();
+      viewer.addModel(pdbText, 'pdb');
+      chainData = parseChainsAndSequence(pdbText);
+      chainSettings = {};
+      selectedChain = '';
+      selectedRange = null;
+      segmentOverrides = [];
+      Object.keys(chainData).forEach((chain) => {
+        chainSettings[chain] = { style: styleSelect.value, color: '#2C7A7B', hidden: false };
+      });
+      renderChainPanel();
+      renderSequenceBoard();
+      applyStyles();
+      viewer.zoomTo();
+      viewer.render();
+      setStatus(`Loaded ${label}. Chains: ${Object.keys(chainData).join(', ') || 'none'}.`);
+    }
+
+    async function loadPdbById() {
+      const pdbId = (pdbIdInput.value || '').trim().toUpperCase();
+      if (!pdbId) return setStatus('Enter a PDB ID first.');
+      setStatus('Loading PDB from RCSB...');
+      try {
+        const res = await fetch(`https://files.rcsb.org/download/${pdbId}.pdb`);
+        if (!res.ok) throw new Error('Not found');
+        const text = await res.text();
+        await loadPdbText(text, `PDB ID ${pdbId}`);
+      } catch {
+        setStatus('Could not load PDB ID. Check the ID and try again.');
+      }
+    }
+
+    function clearViewer() {
+      pdbText = '';
+      chainData = {};
+      chainSettings = {};
+      selectedChain = '';
+      selectedRange = null;
+      segmentOverrides = [];
+      viewer.clear();
+      viewer.render();
+      renderChainPanel();
+      renderSequenceBoard();
+      closeContextMenu();
+      setStatus('Cleared.');
+    }
+
+    function downloadPng() {
+      if (!pdbText) return setStatus('Load a protein first.');
+      const link = document.createElement('a');
+      link.href = viewer.pngURI();
+      link.download = 'protein-view.png';
+      link.click();
+      setStatus('PNG download started.');
+    }
+
+    function downloadJpg() {
+      if (!pdbText) return setStatus('Load a protein first.');
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
+        link.download = 'protein-view.jpg';
+        link.click();
+        setStatus('JPG download started.');
+      };
+      img.src = viewer.pngURI();
+    }
+
+    document.getElementById('loadPdbIdBtn').addEventListener('click', loadPdbById);
+    document.getElementById('uploadBtn').addEventListener('click', () => pdbFileInput.click());
+    document.getElementById('clearBtn').addEventListener('click', clearViewer);
+    pdbFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      await loadPdbText(text, file.name);
+      pdbFileInput.value = '';
+    });
+
+    styleSelect.addEventListener('change', () => {
+      Object.keys(chainSettings).forEach((chain) => {
+        if (chainSettings[chain]) chainSettings[chain].style = styleSelect.value;
+      });
+      renderChainPanel();
+      applyStyles();
+    });
+
+    chainListEl.addEventListener('click', (e) => {
+      const focusBtn = e.target.closest('[data-focus-chain]');
+      const item = e.target.closest('.chain-item');
+      if (focusBtn) {
+        selectedChain = focusBtn.getAttribute('data-focus-chain');
+        selectedRange = null;
+        renderChainPanel();
+        markSeqSelection(null);
+        applyStyles();
+        return;
+      }
+      if (item) {
+        selectedChain = item.getAttribute('data-chain');
+        selectedRange = null;
+        renderChainPanel();
+        markSeqSelection(null);
+        applyStyles();
+      }
+    });
+
+    chainListEl.addEventListener('change', (e) => {
+      const styleChain = e.target.getAttribute('data-style-chain');
+      if (styleChain) {
+        chainSettings[styleChain].style = e.target.value;
+        applyStyles();
+        return;
+      }
+      const colorChain = e.target.getAttribute('data-color-chain');
+      if (colorChain) {
+        chainSettings[colorChain].color = e.target.value;
+        applyStyles();
+        return;
+      }
+      const hideChain = e.target.getAttribute('data-hide-chain');
+      if (hideChain) {
+        chainSettings[hideChain].hidden = e.target.checked;
+        applyStyles();
+      }
+    });
+
+    sequenceBoard.addEventListener('mousedown', (e) => {
+      const res = e.target.closest('.seq-res');
+      if (!res) return;
+      closeContextMenu();
+      isDragging = true;
+      dragStart = { chain: res.dataset.chain, resi: parseInt(res.dataset.resi, 10) };
+      setSelectedRange({ chain: dragStart.chain, startResi: dragStart.resi, endResi: dragStart.resi });
+    });
+
+    sequenceBoard.addEventListener('mouseover', (e) => {
+      if (!isDragging) return;
+      const res = e.target.closest('.seq-res');
+      if (!res || !dragStart) return;
+      if (res.dataset.chain !== dragStart.chain) return;
+      setSelectedRange({
+        chain: dragStart.chain,
+        startResi: dragStart.resi,
+        endResi: parseInt(res.dataset.resi, 10)
+      });
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      dragStart = null;
+    });
+
+    sequenceBoard.addEventListener('contextmenu', (e) => {
+      const res = e.target.closest('.seq-res');
+      if (!res || !selectedRange) return;
+      e.preventDefault();
+      openContextMenu(e.clientX, e.clientY);
+    });
+
+    document.getElementById('ctxApplyBtn').addEventListener('click', () => {
+      if (!selectedRange) return closeContextMenu();
+      const style = document.getElementById('ctxStyleSelect').value;
+      const color = document.getElementById('ctxColorInput').value;
+      const hidden = document.getElementById('ctxHideToggle').checked;
+      const seg = {
+        chain: selectedRange.chain,
+        startResi: Math.min(selectedRange.startResi, selectedRange.endResi),
+        endResi: Math.max(selectedRange.startResi, selectedRange.endResi),
+        style,
+        color,
+        hidden
+      };
+      segmentOverrides = segmentOverrides.filter((x) => !(x.chain === seg.chain && x.startResi === seg.startResi && x.endResi === seg.endResi));
+      segmentOverrides.push(seg);
+      applyStyles();
+      closeContextMenu();
+      setStatus(`Applied segment style on chain ${seg.chain} residues ${seg.startResi}-${seg.endResi}.`);
+    });
+
+    document.getElementById('ctxCancelBtn').addEventListener('click', closeContextMenu);
+    document.addEventListener('click', (e) => {
+      if (!contextMenu.contains(e.target)) closeContextMenu();
+    });
+
+    document.getElementById('dlPngBtn').addEventListener('click', downloadPng);
+    document.getElementById('dlJpgBtn').addEventListener('click', downloadJpg);
+    document.getElementById('dlPdbBtn').addEventListener('click', () => {
+      if (!pdbText) return setStatus('Load a protein first.');
+      downloadTextFile(pdbText, 'protein.pdb', 'chemical/x-pdb');
+      setStatus('PDB download started.');
+    });
+    document.getElementById('dlXyzBtn').addEventListener('click', () => {
+      if (!pdbText) return setStatus('Load a protein first.');
+      downloadTextFile(pdbToXyz(pdbText), 'protein.xyz', 'chemical/x-xyz');
+      setStatus('XYZ download started.');
+    });
+    document.getElementById('dlObjBtn').addEventListener('click', () => {
+      if (!pdbText) return setStatus('Load a protein first.');
+      downloadTextFile(pdbToObj(pdbText), 'protein.obj', 'model/obj');
+      setStatus('OBJ download started.');
+    });
+    document.getElementById('dlX3dBtn').addEventListener('click', () => {
+      if (!pdbText) return setStatus('Load a protein first.');
+      downloadTextFile(pdbToX3d(pdbText), 'protein.x3d', 'model/x3d+xml');
+      setStatus('X3D download started.');
+    });
+
+    window.addEventListener('resize', () => { viewer.resize(); viewer.render(); });
+  </script>
+</body>
+</html>

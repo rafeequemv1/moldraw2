@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './App.css';
 import TlcModal from './microapps/tlc/TlcModal';
-import CalculatorModal from './microapps/calculator/CalculatorModal';
 import ReactionsModal from './microapps/reactions/ReactionsModal';
 import * as $3Dmol from '3dmol';
 
@@ -29,11 +28,24 @@ function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [is3DPanelOpen, setIs3DPanelOpen] = useState(true);
+  const [viewerMode, setViewerMode] = useState('molecule');
   const [isProtein, setIsProtein] = useState(false);
   const [proteinMeta, setProteinMeta] = useState(null);
+  const [proteinPdbIdInput, setProteinPdbIdInput] = useState('');
+  const [proteinStatus, setProteinStatus] = useState('');
+  const proteinFileInputRef = useRef(null);
+  const [proteinChainData, setProteinChainData] = useState({});
+  const [proteinChainSettings, setProteinChainSettings] = useState({});
+  const [selectedProteinChain, setSelectedProteinChain] = useState('');
+  const [proteinSelectedRange, setProteinSelectedRange] = useState(null);
+  const [proteinSegmentOverrides, setProteinSegmentOverrides] = useState([]);
+  const [proteinSeqMenu, setProteinSeqMenu] = useState({ open: false, x: 0, y: 0 });
+  const proteinSeqDragRef = useRef(null);
+  const moleculeViewCacheRef = useRef(null);
+  const proteinViewCacheRef = useRef(null);
   const [molecularMass, setMolecularMass] = useState(null);
   const [multiStructure, setMultiStructure] = useState(false);
-  const fileInputRef = useRef(null);
+  const [selected3DComponentIdx, setSelected3DComponentIdx] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
@@ -65,7 +77,6 @@ function App() {
   const [activeSpectrumType, setActiveSpectrumType] = useState('1H');
   const [showAiSetupModal, setShowAiSetupModal] = useState(false);
   const [showTlcModal, setShowTlcModal] = useState(false);
-  const [showCalculatorModal, setShowCalculatorModal] = useState(false);
   const [showReactionsModal, setShowReactionsModal] = useState(false);
   const [reactionResults, setReactionResults] = useState([]);
   const [isReactionSearchLoading, setIsReactionSearchLoading] = useState(false);
@@ -93,6 +104,7 @@ function App() {
   const [exportTransparentBg, setExportTransparentBg] = useState(true);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [lonePairs, setLonePairs] = useState([]);
+  const lastSmilesSelectionBaseRef = useRef('');
   const lonePairDragRef = useRef(null);
   const moreMenuRef = useRef(null);
   const host = window.location.hostname;
@@ -263,13 +275,6 @@ function App() {
     };
   }, []);
 
-  // Search molecule by name and load into Ketcher
-  // Check if query is a PDB ID (4 characters, alphanumeric)
-  const isPDBID = (query) => {
-    const trimmed = query.trim().toUpperCase();
-    return /^[A-Z0-9]{4}$/.test(trimmed);
-  };
-
   const sanitizeSmilesText = (value) => {
     const text = String(value || '').trim();
     if (!text) return '';
@@ -293,126 +298,12 @@ function App() {
     return compact;
   };
 
-  const fetchPDBMetadata = async (pdbId) => {
-    try {
-      const res = await fetch(`https://data.rcsb.org/rest/v1/core/entry/${pdbId}`);
-      if (!res.ok) return null;
-      const data = await res.json();
-      const meta = {};
-      if (data.struct?.title) meta.title = data.struct.title;
-      if (data.rcsb_entry_info?.molecular_weight) meta.mw = data.rcsb_entry_info.molecular_weight;
-      if (data.rcsb_entry_info?.deposited_atom_count) meta.atomCount = data.rcsb_entry_info.deposited_atom_count;
-      if (data.rcsb_entry_info?.deposited_polymer_entity_instance_count) meta.chains = data.rcsb_entry_info.deposited_polymer_entity_instance_count;
-      if (data.rcsb_entry_info?.resolution_combined?.[0]) meta.resolution = data.rcsb_entry_info.resolution_combined[0];
-      if (data.rcsb_entry_info?.experimental_method) meta.method = data.rcsb_entry_info.experimental_method;
-      if (data.rcsb_accession_info?.deposit_date) meta.depositDate = data.rcsb_accession_info.deposit_date?.split('T')[0];
-      if (data.pdbx_vrpt_summary?.pdbresolution) meta.resolution = meta.resolution || data.pdbx_vrpt_summary.pdbresolution;
-      meta.pdbId = pdbId;
-      return meta;
-    } catch { return null; }
-  };
-
-  // Fetch PDB structure by ID from RCSB PDB database
-  const fetchPDBByID = async (pdbId) => {
-    try {
-      setIsSearching(true);
-      setSearchError('');
-
-      const upperPDBId = pdbId.trim().toUpperCase();
-      const pdbUrl = `https://files.rcsb.org/download/${upperPDBId}.pdb`;
-
-      console.log('Fetching PDB:', pdbUrl);
-
-      const response = await fetch(pdbUrl);
-
-      if (response.ok) {
-        const pdbText = await response.text();
-
-        if (!viewerInstanceRef.current) {
-          alert('3D viewer not ready. Please wait a moment.');
-          setIsSearching(false);
-          return;
-        }
-
-        const viewer = viewerInstanceRef.current;
-        const isMiew = !!viewer.__isMiew;
-        let model = null;
-        if (isMiew) {
-          const loaded = await loadIntoMiew(pdbText, 'pdb');
-          if (!loaded) throw new Error('Failed to load PDB in Miew');
-          applyMiewViewerSettings(viewer);
-          applyMiewDisplayMode(miewMode, viewer, miewColorer);
-        } else {
-          // Clear previous content (labels, models) before loading protein
-          viewer.removeAllLabels();
-          viewer.clear();
-          model = viewer.addModel(pdbText, 'pdb');
-          proteinModelRef.current = model;
-          lastModelRef.current = model;
-          if (model) {
-            model.setStyle({}, { cartoon: { color: 'spectrum' } });
-          }
-        }
-
-        setCurrentMolecule({
-          data: pdbText,
-          format: 'pdb',
-          has3D: true,
-          isProtein: true
-        });
-
-        setIsProtein(true);
-        setRenderStyle('cartoon');
-        setMoleculeName(upperPDBId);
-        setSearchQuery('');
-
-        // Fetch and set protein metadata from RCSB API
-        fetchPDBMetadata(upperPDBId).then(meta => {
-          if (meta) {
-            setProteinMeta(meta);
-            if (meta.title) setMoleculeName(upperPDBId + ' — ' + meta.title);
-          }
-        });
-
-        // Center and zoom
-        if (!isMiew) {
-          viewer.zoomTo();
-          viewer.rotate(25, { x: 1, y: 1, z: 0 });
-          viewer.render();
-        }
-
-        // Update molecular mass for the newly imported protein
-        if (model && !isMiew) {
-          const atoms = model.selectedAtoms({});
-          setMolecularMass(calculateMolecularMass(atoms, showHydrogens));
-        } else {
-          setMolecularMass(null);
-        }
-
-        setIsSearching(false);
-      } else {
-        setSearchError(`PDB ID "${upperPDBId}" not found in RCSB PDB database`);
-        setIsSearching(false);
-      }
-    } catch (error) {
-      console.error('Error fetching PDB:', error);
-      setSearchError('Failed to fetch PDB structure. Please check the PDB ID and try again.');
-      setIsSearching(false);
-    }
-  };
-
   // Flag to suppress the next 3D update coming from Ketcher polling
   const suppressNext3DUpdateRef = useRef(false);
 
   const searchMoleculeByName = async (moleculeName) => {
     if (!moleculeName || moleculeName.trim() === '') {
-      setSearchError('Please enter a molecule name or PDB ID');
-      return;
-    }
-
-    // Check if it's a PDB ID (4 characters, alphanumeric)
-    if (isPDBID(moleculeName)) {
-      await fetchPDBByID(moleculeName);
+      setSearchError('Please enter a molecule name');
       return;
     }
 
@@ -451,48 +342,7 @@ function App() {
             setSearchQuery('');
             setSearchError('');
 
-            // Also add this structure directly to the 3D scene without clearing
-            try {
-              if (viewerInstanceRef.current) {
-                const viewer = viewerInstanceRef.current;
-                const structure3D = await convertSmilesTo3D(smiles);
-                const structureData = structure3D;
-                const format = 'sdf';
-
-                if (structureData) {
-                  const lines = structureData.split('\n');
-                  const countsLine = lines.find(line => line.trim().match(/^\s*\d+\s+\d+/));
-                  if (countsLine) {
-                    const parts = countsLine.trim().split(/\s+/);
-                    const atomCount = parseInt(parts[0]) || 0;
-                    if (atomCount > 0) {
-                      const model = viewer.addModel(structureData, format);
-                      lastModelRef.current = model;
-                      applyRenderStyle(viewer, renderStyle, false);
-                      viewer.zoomTo();
-                      viewer.rotate(25, { x: 1, y: 1, z: 0 });
-                      viewer.render();
-
-                      // Update name and mass for the newly added molecule
-                      getMoleculeName(smiles);
-                      try {
-                        if (model) {
-                          const atoms = model.selectedAtoms({});
-                          setMolecularMass(calculateMolecularMass(atoms, showHydrogens));
-                        } else {
-                          setMolecularMass(null);
-                        }
-                      } catch (err) {
-                        console.error('Error updating molecular mass after PubChem add:', err);
-                        setMolecularMass(null);
-                      }
-                    }
-                  }
-                }
-              }
-            } catch (err) {
-              console.error('Error adding PubChem structure to 3D viewer:', err);
-            }
+            requestMoleculeUpdate();
           } else {
             setSearchError('Editor not ready. Please try again.');
           }
@@ -519,6 +369,82 @@ function App() {
     setCurrentSmiles('');
     setNmrData(null);
   };
+
+  const parseProteinMetadata = (pdbText, label = '') => {
+    const text = String(pdbText || '');
+    const lines = text.split(/\r?\n/);
+    const atomLines = lines.filter((line) => line.startsWith('ATOM') || line.startsWith('HETATM'));
+    const chainSet = new Set();
+    const massMap = {
+      H: 1.008, C: 12.011, N: 14.007, O: 15.999, S: 32.06, P: 30.974,
+      F: 18.998, CL: 35.45, BR: 79.904, I: 126.904, MG: 24.305, ZN: 65.38,
+      CA: 40.078, NA: 22.99, K: 39.098, FE: 55.845, CU: 63.546, MN: 54.938
+    };
+
+    let mass = 0;
+    atomLines.forEach((line) => {
+      const chain = (line[21] || '').trim();
+      if (chain) chainSet.add(chain);
+      const elemRaw = (line.slice(76, 78).trim() || line.slice(12, 16).trim().replace(/[0-9]/g, '').slice(0, 2)).toUpperCase();
+      if (massMap[elemRaw]) mass += massMap[elemRaw];
+    });
+
+    let method = '';
+    const expdtaLine = lines.find((line) => line.startsWith('EXPDTA'));
+    if (expdtaLine) method = expdtaLine.replace(/^EXPDTA\s+/, '').trim();
+
+    let resolution = '';
+    const resLine = lines.find((line) => /^REMARK\s+2\s+RESOLUTION\./.test(line));
+    if (resLine) {
+      const match = resLine.match(/RESOLUTION\.\s*([0-9.]+)/i);
+      if (match) resolution = match[1];
+    }
+
+    const headerLine = lines.find((line) => line.startsWith('HEADER')) || '';
+    const depositDate = headerLine.slice(50, 59).trim();
+
+    return {
+      name: label || 'Protein structure',
+      method,
+      chains: chainSet.size || '',
+      resolution,
+      atomCount: atomLines.length,
+      mw: mass > 0 ? mass : null,
+      depositDate: depositDate || ''
+    };
+  };
+
+  const parseProteinChains = (pdbText) => {
+    const aaMap = {
+      ALA: 'A', ARG: 'R', ASN: 'N', ASP: 'D', CYS: 'C', GLU: 'E', GLN: 'Q', GLY: 'G',
+      HIS: 'H', ILE: 'I', LEU: 'L', LYS: 'K', MET: 'M', PHE: 'F', PRO: 'P', SER: 'S',
+      THR: 'T', TRP: 'W', TYR: 'Y', VAL: 'V', SEC: 'U', PYL: 'O'
+    };
+    const lines = String(pdbText || '').split(/\r?\n/);
+    const seen = new Set();
+    const chainMap = {};
+    lines.forEach((line) => {
+      if (!line.startsWith('ATOM')) return;
+      const chain = (line[21] || 'A').trim() || 'A';
+      const resi = parseInt(line.slice(22, 26).trim(), 10);
+      const resn = line.slice(17, 20).trim().toUpperCase();
+      if (!Number.isFinite(resi)) return;
+      const key = `${chain}:${resi}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      if (!chainMap[chain]) chainMap[chain] = [];
+      chainMap[chain].push({ chain, resi, resn, aa: aaMap[resn] || 'X' });
+    });
+    Object.keys(chainMap).forEach((chain) => chainMap[chain].sort((a, b) => a.resi - b.resi));
+    return chainMap;
+  };
+
+  const getSmilesComponents = useCallback((smiles) => {
+    return String(smiles || '')
+      .split('.')
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }, []);
 
   const getMolfileAtomCount = (molfile) => {
     if (!molfile || !String(molfile).trim()) return 0;
@@ -1599,6 +1525,208 @@ ${scientificGuardrails}`;
     }
   }, [showHydrogens]);
 
+  const applyProteinStyle = useCallback((viewer, model, style) => {
+    if (!viewer || !model || viewer.__isMiew) return;
+    viewer.removeAllSurfaces();
+    if (style === 'cartoon') {
+      model.setStyle({}, { cartoon: { color: 'spectrum' } });
+    } else if (style === 'stick') {
+      model.setStyle({}, { stick: { radius: 0.15 } });
+    } else if (style === 'sphere') {
+      model.setStyle({}, { sphere: { scale: 0.6 } });
+    } else if (style === 'surface') {
+      model.setStyle({}, { cartoon: { hidden: true } });
+      viewer.addSurface($3Dmol.SurfaceType.VDW, {
+        opacity: 0.9,
+        colorscheme: { prop: 'b', gradient: 'rwb' },
+      });
+    } else {
+      model.setStyle({}, { line: {} });
+    }
+  }, []);
+
+  const proteinStyleObject = useCallback((style, color) => {
+    if (style === 'stick') return { stick: { color: color || '#2C7A7B', radius: 0.16 } };
+    if (style === 'sphere') return { sphere: { color: color || '#2C7A7B', scale: 0.58 } };
+    if (style === 'line') return { line: { color: color || '#2C7A7B', linewidth: 2 } };
+    if (style === 'surface') return { cartoon: { color: color || '#2C7A7B', hidden: true } };
+    return { cartoon: { color: color || '#2C7A7B' } };
+  }, []);
+
+  const applyProteinChainStyles = useCallback((viewer) => {
+    if (!viewer || viewer.__isMiew) return;
+    const chains = Object.keys(proteinChainData || {});
+    if (!chains.length) return;
+
+    viewer.removeAllSurfaces();
+    viewer.setStyle({}, {});
+
+    chains.forEach((chain) => {
+      const cfg = proteinChainSettings[chain] || { style: renderStyle, color: '#2C7A7B', hidden: false };
+      if (cfg.hidden) {
+        viewer.setStyle({ chain }, { cartoon: { hidden: true }, stick: { hidden: true }, sphere: { hidden: true }, line: { hidden: true } });
+        return;
+      }
+      const styleObj = proteinStyleObject(cfg.style, cfg.color);
+      viewer.setStyle({ chain }, styleObj);
+      if (cfg.style === 'surface') {
+        viewer.addSurface($3Dmol.SurfaceType.VDW, { opacity: 0.85, color: cfg.color || '#2C7A7B' }, { chain });
+      }
+    });
+
+    proteinSegmentOverrides.forEach((seg) => {
+      const residues = (proteinChainData[seg.chain] || [])
+        .filter((r) => r.resi >= Math.min(seg.startResi, seg.endResi) && r.resi <= Math.max(seg.startResi, seg.endResi))
+        .map((r) => r.resi);
+      if (!residues.length) return;
+      if (seg.hidden) {
+        viewer.setStyle({ chain: seg.chain, resi: residues }, { cartoon: { hidden: true }, stick: { hidden: true }, sphere: { hidden: true }, line: { hidden: true } });
+      } else {
+        viewer.setStyle({ chain: seg.chain, resi: residues }, proteinStyleObject(seg.style, seg.color));
+      }
+    });
+
+    if (selectedProteinChain) {
+      viewer.addStyle({ chain: selectedProteinChain }, { stick: { color: '#f59e0b', radius: 0.22 } });
+    }
+    if (proteinSelectedRange?.chain) {
+      const residues = (proteinChainData[proteinSelectedRange.chain] || [])
+        .filter((r) => r.resi >= Math.min(proteinSelectedRange.startResi, proteinSelectedRange.endResi) && r.resi <= Math.max(proteinSelectedRange.startResi, proteinSelectedRange.endResi))
+        .map((r) => r.resi);
+      if (residues.length) viewer.addStyle({ chain: proteinSelectedRange.chain, resi: residues }, { stick: { color: '#f59e0b', radius: 0.24 } });
+    }
+
+    viewer.render();
+  }, [proteinChainData, proteinChainSettings, proteinSegmentOverrides, selectedProteinChain, proteinSelectedRange, proteinStyleObject, renderStyle]);
+
+  const loadProteinIntoViewer = useCallback((pdbText, label = 'Protein') => {
+    const viewer = viewerInstanceRef.current;
+    if (!viewer || viewer.__isMiew) return false;
+    const cleanText = String(pdbText || '').trim();
+    if (!cleanText) return false;
+
+    try {
+      viewer.clear();
+      viewer.removeAllSurfaces();
+      const model = viewer.addModel(cleanText, 'pdb');
+      proteinModelRef.current = model;
+      const parsedChains = parseProteinChains(cleanText);
+      setProteinChainData(parsedChains);
+      const nextSettings = {};
+      Object.keys(parsedChains).forEach((chain) => {
+        nextSettings[chain] = { style: renderStyle === 'ball-stick' ? 'cartoon' : renderStyle, color: '#2C7A7B', hidden: false };
+      });
+      setProteinChainSettings(nextSettings);
+      setSelectedProteinChain(Object.keys(parsedChains)[0] || '');
+      setProteinSelectedRange(null);
+      setProteinSegmentOverrides([]);
+      applyProteinStyle(viewer, model, renderStyle === 'ball-stick' ? 'cartoon' : renderStyle);
+      viewer.zoomTo();
+      viewer.render();
+
+      setViewerMode('protein');
+      setIsProtein(true);
+      setCurrentMolecule({ data: cleanText, format: 'pdb', has3D: true, smiles: '' });
+      setProteinMeta(parseProteinMetadata(cleanText, label));
+      setMolecularMass(null);
+      setCurrentSmiles('');
+      setMultiStructure(false);
+      setProteinStatus(`Loaded ${label}.`);
+      const parsedMeta = parseProteinMetadata(cleanText, label);
+      proteinViewCacheRef.current = {
+        pdbText: cleanText,
+        proteinMeta: parsedMeta,
+        label,
+        status: `Loaded ${label}.`,
+        proteinChainData: parsedChains,
+        proteinChainSettings: nextSettings,
+        selectedProteinChain: Object.keys(parsedChains)[0] || '',
+      };
+      return true;
+    } catch (error) {
+      console.error('Failed to load protein into viewer:', error);
+      setProteinStatus('Failed to render this protein structure.');
+      return false;
+    }
+  }, [applyProteinStyle, parseProteinMetadata, parseProteinChains, renderStyle]);
+
+  const restoreMoleculeFromCache = useCallback(() => {
+    const viewer = viewerInstanceRef.current;
+    const cached = moleculeViewCacheRef.current;
+    if (!viewer || viewer.__isMiew || !cached?.currentMolecule?.data) return false;
+    try {
+      viewer.clear();
+      viewer.removeAllSurfaces();
+      const model = viewer.addModel(cached.currentMolecule.data, cached.currentMolecule.format || 'sdf');
+      lastModelRef.current = model;
+      applyRenderStyle(viewer, renderStyle, false);
+      viewer.zoomTo();
+      viewer.render();
+
+      setCurrentMolecule(cached.currentMolecule);
+      setMolecularMass(cached.molecularMass ?? null);
+      setMoleculeName(cached.moleculeName || '');
+      setIupacName(cached.iupacName || '');
+      setBoilingPoint(cached.boilingPoint ?? null);
+      setMeltingPoint(cached.meltingPoint ?? null);
+      setCurrentSmiles(cached.currentSmiles || '');
+      setMultiStructure(!!cached.multiStructure);
+      if (Number.isInteger(cached.selected3DComponentIdx)) {
+        setSelected3DComponentIdx(cached.selected3DComponentIdx);
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to restore molecule from cache:', error);
+      return false;
+    }
+  }, [applyRenderStyle, renderStyle]);
+
+  const loadProteinByPdbId = useCallback(async () => {
+    const pdbId = String(proteinPdbIdInput || '').trim().toUpperCase();
+    if (!pdbId) {
+      setProteinStatus('Enter a PDB ID first (example: 1CRN).');
+      return;
+    }
+    setProteinStatus('Loading protein from RCSB...');
+    try {
+      const response = await fetch(`https://files.rcsb.org/download/${pdbId}.pdb`);
+      if (!response.ok) throw new Error('Protein not found');
+      const pdbText = await response.text();
+      if (!String(pdbText || '').trim()) throw new Error('Empty PDB');
+      loadProteinIntoViewer(pdbText, `PDB ID ${pdbId}`);
+    } catch (error) {
+      console.error('Failed to load PDB ID:', error);
+      setProteinStatus('Could not load that PDB ID. Please check and try again.');
+    }
+  }, [proteinPdbIdInput, loadProteinIntoViewer]);
+
+  const clearProteinFromViewer = useCallback(() => {
+    const viewer = viewerInstanceRef.current;
+    if (isProtein && currentMolecule?.format === 'pdb' && currentMolecule?.data) {
+      proteinViewCacheRef.current = {
+        pdbText: currentMolecule.data,
+        proteinMeta,
+        status: proteinStatus || '',
+      };
+    }
+    if (viewer && !viewer.__isMiew) {
+      viewer.clear();
+      viewer.removeAllSurfaces();
+      viewer.render();
+    }
+    proteinModelRef.current = null;
+    setProteinMeta(null);
+    setProteinStatus('');
+    setIsProtein(false);
+    setViewerMode('molecule');
+    setCurrentMolecule(null);
+    clearMoleculeProps();
+    setMolecularMass(null);
+    if (!restoreMoleculeFromCache()) {
+      setProteinStatus('Switched to molecule mode. Draw or search a molecule to view in 3D.');
+    }
+  }, [isProtein, currentMolecule, proteinMeta, proteinStatus, restoreMoleculeFromCache]);
+
   // Update 3D viewer with molecule
   const updateMolecule3D = useCallback(async (molfile, smiles) => {
     if (!viewerInstanceRef.current) return;
@@ -1612,7 +1740,15 @@ ${scientificGuardrails}`;
       const updateSeq = ++moleculeUpdateSeqRef.current;
       const normalizedMolfile = String(molfile || '').trim();
       const normalizedSmiles = String(smiles || '').trim();
-      const structureSignature = `${normalizedSmiles}||${normalizedMolfile}`;
+      const smilesComponents = getSmilesComponents(normalizedSmiles);
+      const hasMultipleComponents = smilesComponents.length > 1;
+      const safeComponentIdx = hasMultipleComponents
+        ? Math.min(selected3DComponentIdx, smilesComponents.length - 1)
+        : 0;
+      const renderSmiles = hasMultipleComponents
+        ? smilesComponents[safeComponentIdx]
+        : normalizedSmiles;
+      const structureSignature = `${renderSmiles}||${normalizedMolfile}||${safeComponentIdx}`;
       const forceRefresh = manual3DRefreshRequestedRef.current || force3DRefreshOnDeleteRef.current;
       if (!forceRefresh && structureSignature === lastRenderedSignatureRef.current) {
         return;
@@ -1622,14 +1758,14 @@ ${scientificGuardrails}`;
       const isMiew = !!viewer.__isMiew;
 
       // Get molecule name from PubChem
-      if (smiles && smiles.trim() !== '') {
-        getMoleculeName(smiles);
+      if (renderSmiles) {
+        getMoleculeName(renderSmiles);
       }
 
       // Get 3D structure
       let structure3D = null;
-      if (smiles && smiles.trim() !== '') {
-        structure3D = await convertSmilesTo3D(smiles);
+      if (renderSmiles) {
+        structure3D = await convertSmilesTo3D(renderSmiles);
       }
       // Ignore stale async result if a newer update started.
       if (updateSeq !== moleculeUpdateSeqRef.current) return;
@@ -1642,7 +1778,7 @@ ${scientificGuardrails}`;
         let model = null;
         if (isMiew) {
           const miewFormat = structure3D ? 'sdf' : 'mol';
-          const loaded = await loadIntoMiew(structure3D ? structureData : molfile, miewFormat, smiles);
+          const loaded = await loadIntoMiew(structure3D ? structureData : molfile, miewFormat, renderSmiles);
           if (updateSeq !== moleculeUpdateSeqRef.current) return;
           if (!loaded) throw new Error('Failed to load molecule in Miew');
           applyMiewViewerSettings(viewer);
@@ -1659,12 +1795,13 @@ ${scientificGuardrails}`;
           setCurrentMolecule({ 
             data: structure3D || molfile, 
             format: structure3D ? 'sdf' : 'mol',
-            has3D: !!structure3D 
+            has3D: !!structure3D,
+            smiles: renderSmiles
           });
 
           // Cache molecule
-          if (smiles) {
-            cacheMolecule(structureData, smiles);
+          if (renderSmiles) {
+            cacheMolecule(structureData, renderSmiles);
           }
           lastRenderedSignatureRef.current = structureSignature;
 
@@ -1685,11 +1822,11 @@ ${scientificGuardrails}`;
               const atoms = model.selectedAtoms({});
               mass = calculateMolecularMass(atoms, showHydrogens);
             }
-            if (!mass) mass = calculateMassFromMolfile(molfile);
+            if (!mass) mass = calculateMassFromMolfile(structureData);
             setMolecularMass(mass);
           } catch (err) {
             console.error('Error updating molecular mass after 3D update:', err);
-            setMolecularMass(calculateMassFromMolfile(molfile));
+            setMolecularMass(calculateMassFromMolfile(structureData));
           }
       } else {
         if (!isMiew) {
@@ -1714,39 +1851,47 @@ ${scientificGuardrails}`;
       console.error('Error updating 3D molecule:', error);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [renderStyle, applyRenderStyle, cacheMolecule, loadIntoMiew, applyMiewViewerSettings, applyMiewDisplayMode, miewMode, miewColorer]);
+  }, [renderStyle, applyRenderStyle, cacheMolecule, loadIntoMiew, applyMiewViewerSettings, applyMiewDisplayMode, miewMode, miewColorer, getSmilesComponents, selected3DComponentIdx]);
 
   // Re-apply style when it changes
   useEffect(() => {
     if (viewerInstanceRef.current && currentMolecule) {
       if (viewerInstanceRef.current.__isMiew) return;
       if (isProtein) {
-        const viewer = viewerInstanceRef.current;
-        const proteinModel = proteinModelRef.current;
-        viewer.removeAllSurfaces();
-        if (proteinModel) {
-          if (renderStyle === 'cartoon') {
-            proteinModel.setStyle({}, { cartoon: { color: 'spectrum' } });
-          } else if (renderStyle === 'stick') {
-            proteinModel.setStyle({}, { stick: { radius: 0.15 } });
-          } else if (renderStyle === 'sphere') {
-            proteinModel.setStyle({}, { sphere: { scale: 0.6 } });
-          } else if (renderStyle === 'surface') {
-            proteinModel.setStyle({}, { cartoon: { hidden: true } });
-            viewer.addSurface($3Dmol.SurfaceType.VDW, {
-              opacity: 0.9,
-              colorscheme: { prop: 'b', gradient: 'rwb' },
-            });
-          } else {
-            proteinModel.setStyle({}, { line: {} });
-          }
-        }
+        applyProteinChainStyles(viewerInstanceRef.current);
       } else {
         applyRenderStyle(viewerInstanceRef.current, renderStyle, false);
       }
       viewerInstanceRef.current.render();
     }
-  }, [renderStyle, showHydrogens, applyRenderStyle, currentMolecule, isProtein]);
+  }, [renderStyle, showHydrogens, applyRenderStyle, applyProteinChainStyles, currentMolecule, isProtein]);
+
+  useEffect(() => {
+    if (isProtein) return;
+    if (!currentMolecule || currentMolecule.format === 'pdb') return;
+    moleculeViewCacheRef.current = {
+      currentMolecule,
+      molecularMass,
+      moleculeName,
+      iupacName,
+      boilingPoint,
+      meltingPoint,
+      currentSmiles,
+      multiStructure,
+      selected3DComponentIdx,
+    };
+  }, [
+    isProtein,
+    currentMolecule,
+    molecularMass,
+    moleculeName,
+    iupacName,
+    boilingPoint,
+    meltingPoint,
+    currentSmiles,
+    multiStructure,
+    selected3DComponentIdx,
+  ]);
 
   // Keep Miew settings live-synced from UI controls.
   useEffect(() => {
@@ -1782,6 +1927,13 @@ ${scientificGuardrails}`;
         } catch {}
       } else if (event.data.type === 'molfile-response') {
         const newMolfile = event.data.molfile;
+
+        // Keep protein mode isolated from Ketcher polling responses.
+        if (viewerMode === 'protein') {
+          lastMoleculeRef.current = newMolfile;
+          return;
+        }
+
         const newAtomCount = getMolfileAtomCount(newMolfile);
 
         // If atom count dropped, this is likely a deletion and should force 3D sync.
@@ -1812,6 +1964,8 @@ ${scientificGuardrails}`;
           // If protein is currently loaded, clear it and update immediately (no debounce)
           if (isProtein) {
             setIsProtein(false);
+            setViewerMode('molecule');
+            setProteinMeta(null);
             setCurrentMolecule(null);
             clearMoleculeProps();
             if (viewerInstanceRef.current) {
@@ -2043,7 +2197,7 @@ ${scientificGuardrails}`;
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isKetcherReady, updateMolecule3D, requestMoleculeUpdate, isProtein, isReactionSearchLoading]);
+  }, [isKetcherReady, updateMolecule3D, requestMoleculeUpdate, isProtein, isReactionSearchLoading, viewerMode]);
 
   // Debounce timeout ref for 3D updates
   const debounceTimeoutRef = useRef(null);
@@ -2070,39 +2224,72 @@ ${scientificGuardrails}`;
     setShowHydrogens(!showHydrogens);
   };
 
-  // Close/hide currently loaded protein from 3D viewer
-  const closeProtein = () => {
-    if (viewerInstanceRef.current && viewerInstanceRef.current.__isMiew) {
-      try {
-        if (typeof viewerInstanceRef.current.reset === 'function') {
-          viewerInstanceRef.current.reset();
-        }
-      } catch (error) {
-        console.error('Error resetting Miew viewer:', error);
-      }
-    } else if (viewerInstanceRef.current && proteinModelRef.current) {
-      try {
-        const viewer = viewerInstanceRef.current;
-        viewer.removeModel(proteinModelRef.current);
-        viewer.render();
-      } catch (error) {
-        console.error('Error removing protein model:', error);
-      }
+  const handleRenderStyleChange = useCallback((newStyle) => {
+    setRenderStyle(newStyle);
+    if (viewerInstanceRef.current?.__isMiew) {
+      const styleToMode = {
+        'ball-stick': 'BS',
+        stick: 'LC',
+        sphere: 'VW',
+        line: 'LN',
+        cartoon: 'CA',
+        surface: 'SE',
+      };
+      const modeId = styleToMode[newStyle] || 'BS';
+      applyMiewDisplayMode(modeId, null, miewColorer);
+      return;
     }
-    proteinModelRef.current = null;
-    setIsProtein(false);
-    setProteinMeta(null);
-    setCurrentMolecule(null);
-    clearMoleculeProps();
-    setMolecularMass(null);
+    if (isProtein && viewerInstanceRef.current && !viewerInstanceRef.current.__isMiew) {
+      applyProteinStyle(viewerInstanceRef.current, proteinModelRef.current, newStyle);
+      viewerInstanceRef.current.render();
+    }
+  }, [applyMiewDisplayMode, miewColorer, isProtein, applyProteinStyle]);
 
-    // Fast path: if a molecule exists in the 2D canvas, reload it immediately in 3D.
-    proteinCloseReloadRef.current = true;
-    manual3DRefreshRequestedRef.current = true;
-    if (iframeRef.current && isKetcherReady) {
-      iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
-    }
+  const onProteinSeqMouseDown = (chainId, resi) => {
+    proteinSeqDragRef.current = { chainId, startResi: resi, active: true };
+    setProteinSelectedRange({ chain: chainId, startResi: resi, endResi: resi });
+    setProteinSeqMenu({ open: false, x: 0, y: 0 });
   };
+
+  const onProteinSeqMouseEnter = (chainId, resi) => {
+    const drag = proteinSeqDragRef.current;
+    if (!drag?.active || drag.chainId !== chainId) return;
+    setProteinSelectedRange({ chain: chainId, startResi: drag.startResi, endResi: resi });
+  };
+
+  const applyProteinRangeStyle = (style, color, hidden) => {
+    if (!proteinSelectedRange?.chain) return;
+    const segment = {
+      chain: proteinSelectedRange.chain,
+      startResi: Math.min(proteinSelectedRange.startResi, proteinSelectedRange.endResi),
+      endResi: Math.max(proteinSelectedRange.startResi, proteinSelectedRange.endResi),
+      style,
+      color,
+      hidden: !!hidden,
+    };
+    setProteinSegmentOverrides((prev) => {
+      const next = prev.filter((x) => !(x.chain === segment.chain && x.startResi === segment.startResi && x.endResi === segment.endResi));
+      next.push(segment);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const endProteinDrag = () => {
+      if (!proteinSeqDragRef.current?.active) return;
+      proteinSeqDragRef.current = null;
+    };
+    window.addEventListener('mouseup', endProteinDrag);
+    return () => window.removeEventListener('mouseup', endProteinDrag);
+  }, []);
+
+  useEffect(() => {
+    const onDocClick = () => {
+      if (proteinSeqMenu.open) setProteinSeqMenu({ open: false, x: 0, y: 0 });
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, [proteinSeqMenu.open]);
 
   const startMoveLonePair = (id, e) => {
     e.preventDefault();
@@ -2347,92 +2534,6 @@ ${scientificGuardrails}`;
       ]);
     } finally {
       setIsChatLoading(false);
-    }
-  };
-
-  // Handle PDB file import
-  const handlePDBImport = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Check if it's a PDB file
-    if (!file.name.toLowerCase().endsWith('.pdb')) {
-      alert('Please select a PDB file (.pdb)');
-      return;
-    }
-
-    try {
-      const pdbText = await file.text();
-      
-      if (!viewerInstanceRef.current) {
-        alert('3D viewer not ready. Please wait a moment.');
-        return;
-      }
-
-      const viewer = viewerInstanceRef.current;
-      const isMiew = !!viewer.__isMiew;
-      let model = null;
-      if (isMiew) {
-        const loaded = await loadIntoMiew(pdbText, 'pdb');
-        if (!loaded) throw new Error('Failed to load PDB in Miew');
-        applyMiewViewerSettings(viewer);
-        applyMiewDisplayMode(miewMode, viewer, miewColorer);
-      } else {
-        // Clear previous content (labels, models) before loading protein
-        viewer.removeAllLabels();
-        viewer.clear();
-        model = viewer.addModel(pdbText, 'pdb');
-        proteinModelRef.current = model;
-        lastModelRef.current = model;
-        if (model) {
-          model.setStyle({}, { cartoon: { color: 'spectrum' } });
-        }
-      }
-
-      // Store PDB data
-      setCurrentMolecule({
-        data: pdbText,
-        format: 'pdb',
-        has3D: true,
-        isProtein: true
-      });
-      
-      setIsProtein(true);
-      setRenderStyle('cartoon');
-      const baseName = file.name.replace('.pdb', '').toUpperCase();
-      setMoleculeName(baseName);
-
-      // Try to parse PDB header for metadata
-      const headerMeta = { pdbId: baseName };
-      const titleMatch = pdbText.match(/^TITLE\s{5}(.+)/m);
-      if (titleMatch) headerMeta.title = titleMatch[1].trim();
-      const compndMatch = pdbText.match(/^COMPND\s{4}(.+)/m);
-      if (compndMatch) headerMeta.compound = compndMatch[1].trim();
-      setProteinMeta(headerMeta);
-      if (headerMeta.title) setMoleculeName(baseName + ' — ' + headerMeta.title);
-
-      // Center and zoom
-      if (!isMiew) {
-        viewer.zoomTo();
-        viewer.rotate(25, { x: 1, y: 1, z: 0 });
-        viewer.render();
-      }
-
-      // Update molecular mass for the newly imported protein
-      if (model && !isMiew) {
-        const atoms = model.selectedAtoms({});
-        setMolecularMass(calculateMolecularMass(atoms, showHydrogens));
-      } else {
-        setMolecularMass(null);
-      }
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (error) {
-      console.error('Error loading PDB file:', error);
-      alert('Failed to load PDB file. Please check the file format.');
     }
   };
 
@@ -3237,13 +3338,42 @@ ${scientificGuardrails}`;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHydrogens, currentMolecule]);
 
+  useEffect(() => {
+    const components = getSmilesComponents(currentSmiles);
+    if (!components.length) {
+      if (selected3DComponentIdx !== 0) setSelected3DComponentIdx(0);
+      lastSmilesSelectionBaseRef.current = '';
+      return;
+    }
+    const normalized = components.join('.');
+    if (lastSmilesSelectionBaseRef.current !== normalized) {
+      lastSmilesSelectionBaseRef.current = normalized;
+      if (selected3DComponentIdx !== 0) setSelected3DComponentIdx(0);
+      return;
+    }
+    if (selected3DComponentIdx >= components.length) {
+      setSelected3DComponentIdx(0);
+    }
+  }, [currentSmiles, getSmilesComponents, selected3DComponentIdx]);
+
+  useEffect(() => {
+    if (!multiStructure) return;
+    if (!isKetcherReady || !is3DReady || isReactionSearchLoading) return;
+    requestMoleculeUpdate();
+  }, [selected3DComponentIdx, multiStructure, isKetcherReady, is3DReady, isReactionSearchLoading, requestMoleculeUpdate]);
+
+  const smilesComponentsFor3D = getSmilesComponents(currentSmiles);
+  const hasMultipleSmilesComponents = smilesComponentsFor3D.length > 1;
+  const proteinChainIds = Object.keys(proteinChainData || {});
+  const selectedProteinResidues = selectedProteinChain ? (proteinChainData[selectedProteinChain] || []) : [];
+
   return (
     <div className="App">
-      <div className="split-container">
+      <main className="split-container">
         {/* Left: Ketcher 2D Editor */}
-        <div className="panel ketcher-panel" data-testid="ketcher-panel">
+        <section className="panel ketcher-panel" data-testid="ketcher-panel">
           {/* Brand Header */}
-          <div className="brand-header">
+          <header className="brand-header">
             <div className="brand-top-row">
               <div className="brand-name">
                 <img src="/logo.svg" alt="MolDraw" className="brand-logo" />
@@ -3256,7 +3386,7 @@ ${scientificGuardrails}`;
                   <input
                     type="text"
                     className="search-input"
-                    placeholder="Search molecule or PDB ID (e.g., 1ABC)..."
+                    placeholder="Search molecule name (e.g., aspirin, caffeine)..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => {
@@ -3270,7 +3400,7 @@ ${scientificGuardrails}`;
                     className="search-btn"
                     onClick={() => searchMoleculeByName(searchQuery)}
                     disabled={isSearching || !searchQuery.trim()}
-                    title="Search molecule by name or PDB ID"
+                    title="Search molecule by name"
                   >
                     {isSearching ? (
                       <div className="btn-spinner"></div>
@@ -3288,7 +3418,7 @@ ${scientificGuardrails}`;
               </div>
             </div>
 
-            <div className="header-links">
+            <nav className="header-links" aria-label="Primary navigation">
               <button
                 className={`tb-btn${smilesCopied ? ' tb-copied' : ''}`}
                 onClick={() => {
@@ -3333,13 +3463,6 @@ ${scientificGuardrails}`;
               </button>
               <div className="tb-sep" />
               <button
-                className="tb-btn"
-                onClick={() => setShowCalculatorModal(true)}
-                title="Open chemistry calculators"
-              >
-                Calculator
-              </button>
-              <button
                 className={`tb-btn ${showReactionsModal ? 'tb-btn-active' : ''}`}
                 onClick={() => setShowReactionsModal(true)}
                 title="Open reactions browser"
@@ -3369,6 +3492,18 @@ ${scientificGuardrails}`;
               <a className="tb-btn" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">
                 Course
               </a>
+              <div className="header-download-wrap">
+                <a
+                  className="tb-btn tb-download-btn"
+                  href="https://hi.switchy.io/sYek"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Download MolDraw for Windows"
+                >
+                  Download Windows Setup
+                </a>
+                <span className="tb-download-note">iOS, Linux coming soon</span>
+              </div>
 
               <div className="tb-sep" />
               <div className="tb-menu-dropdown" ref={moreMenuRef}>
@@ -3382,8 +3517,8 @@ ${scientificGuardrails}`;
                   </div>
                 )}
               </div>
-            </div>
-          </div>
+            </nav>
+          </header>
 
 
           <div className="ketcher-canvas-wrap" ref={ketcherCanvasWrapRef}>
@@ -3437,14 +3572,71 @@ ${scientificGuardrails}`;
               ))}
             </div>
 
+            {!isProtein && (
+              <div className="canvas-mol-props-card" title="Molecule details">
+                <div className="canvas-mol-props-name">
+                  {(moleculeName && moleculeName !== 'Not found in PubChem') ? moleculeName : 'Selected Molecule'}
+                </div>
+                <div className="canvas-mol-props-row">
+                  <span className="canvas-mol-props-label">IUPAC</span>
+                  <span className="canvas-mol-props-value">{iupacName || 'Unavailable'}</span>
+                  <button
+                    className={`canvas-mol-copy-btn${metaIupacCopied ? ' copied' : ''}`}
+                    onClick={() => {
+                      if (!iupacName) return;
+                      navigator.clipboard.writeText(iupacName).then(() => {
+                        setMetaIupacCopied(true);
+                        setTimeout(() => setMetaIupacCopied(false), 1200);
+                      }).catch(() => {});
+                    }}
+                    title="Copy IUPAC name"
+                    disabled={!iupacName}
+                  >
+                    {metaIupacCopied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div className="canvas-mol-props-row">
+                  <span className="canvas-mol-props-label">SMILES</span>
+                  <span className="canvas-mol-props-value">{currentSmiles || currentMolecule?.smiles || 'Unavailable'}</span>
+                  <button
+                    className={`canvas-mol-copy-btn${metaSmilesCopied ? ' copied' : ''}`}
+                    onClick={() => {
+                      const text = currentSmiles || currentMolecule?.smiles || '';
+                      if (!text) return;
+                      navigator.clipboard.writeText(text).then(() => {
+                        setMetaSmilesCopied(true);
+                        setTimeout(() => setMetaSmilesCopied(false), 1200);
+                      }).catch(() => {});
+                    }}
+                    title="Copy SMILES"
+                    disabled={!(currentSmiles || currentMolecule?.smiles)}
+                  >
+                    {metaSmilesCopied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div className="canvas-mol-props-row">
+                  <span className="canvas-mol-props-label">Molecular Weight</span>
+                  <span className="canvas-mol-props-value">{molecularMass ? `${molecularMass.toFixed(2)} g/mol` : '—'}</span>
+                </div>
+                <div className="canvas-mol-props-row">
+                  <span className="canvas-mol-props-label">Melting Point</span>
+                  <span className="canvas-mol-props-value">{meltingPoint || '—'}</span>
+                </div>
+                <div className="canvas-mol-props-row">
+                  <span className="canvas-mol-props-label">Boiling Point</span>
+                  <span className="canvas-mol-props-value">{boilingPoint || '—'}</span>
+                </div>
+              </div>
+            )}
+
             <div className="canvas-lp-hint" title="How to add lone pair in Ketcher">
               Add lone pair: select atom, right click > Edit > Radical dropdown.
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Right: 3D Viewer */}
-        <div className={`panel viewer-panel ${!is3DPanelOpen ? 'minimized' : ''}`} data-testid="viewer-panel">
+        <section className={`panel viewer-panel ${!is3DPanelOpen ? 'minimized' : ''}`} data-testid="viewer-panel">
           {/* Toggle Button */}
           <button
             className="panel-toggle-btn"
@@ -3464,6 +3656,264 @@ ${scientificGuardrails}`;
 
           {is3DPanelOpen && (
             <>
+          <div className="viewer-top-tabs" role="tablist" aria-label="3D viewer mode switch">
+            <button
+              type="button"
+              className={`viewer-top-tab ${viewerMode === 'molecule' ? 'active' : ''}`}
+              role="tab"
+              aria-selected={viewerMode === 'molecule'}
+              title="Molecule 3D viewer"
+              onClick={() => {
+                if (viewerMode === 'molecule') return;
+                clearProteinFromViewer();
+              }}
+            >
+              Molecule 3D
+            </button>
+            <button
+              type="button"
+              className={`viewer-top-tab ${viewerMode === 'protein' ? 'active' : ''}`}
+              role="tab"
+              aria-selected={viewerMode === 'protein'}
+              title="Protein viewer mode"
+              onClick={() => {
+                if (viewerMode === 'protein') return;
+                if (!isProtein && currentMolecule && currentMolecule.format !== 'pdb') {
+                  moleculeViewCacheRef.current = {
+                    currentMolecule,
+                    molecularMass,
+                    moleculeName,
+                    iupacName,
+                    boilingPoint,
+                    meltingPoint,
+                    currentSmiles,
+                    multiStructure,
+                    selected3DComponentIdx,
+                  };
+                }
+                setViewerMode('protein');
+                setIsProtein(true);
+                const cachedProtein = proteinViewCacheRef.current;
+                if (cachedProtein?.pdbText) {
+                  loadProteinIntoViewer(cachedProtein.pdbText, cachedProtein.label || 'Cached Protein');
+                  setProteinMeta(cachedProtein.proteinMeta || null);
+                  setProteinStatus(cachedProtein.status || 'Loaded cached protein.');
+                  setProteinChainData(cachedProtein.proteinChainData || {});
+                  setProteinChainSettings(cachedProtein.proteinChainSettings || {});
+                  setSelectedProteinChain(cachedProtein.selectedProteinChain || '');
+                  return;
+                }
+                setProteinStatus('Protein mode active. Load a PDB ID or file.');
+                setProteinMeta(null);
+                setCurrentMolecule(null);
+                clearMoleculeProps();
+                setMolecularMass(null);
+                proteinModelRef.current = null;
+                if (viewerInstanceRef.current && !viewerInstanceRef.current.__isMiew) {
+                  viewerInstanceRef.current.clear();
+                  viewerInstanceRef.current.removeAllSurfaces();
+                  viewerInstanceRef.current.render();
+                }
+              }}
+            >
+              Protein Viewer
+            </button>
+            <select
+              className="viewer-top-style-select"
+              value={renderStyle}
+              onChange={(e) => handleRenderStyleChange(e.target.value)}
+              title="3D style"
+            >
+              {isProtein ? (
+                <>
+                  <option value="cartoon">Cartoon</option>
+                  <option value="stick">Stick</option>
+                  <option value="sphere">Space-Fill</option>
+                  <option value="surface">Surface</option>
+                  <option value="line">Line</option>
+                </>
+              ) : (
+                <>
+                  <option value="ball-stick">Ball & Stick</option>
+                  <option value="stick">Stick</option>
+                  <option value="sphere">Space-Fill</option>
+                  <option value="line">Line</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          {viewerMode === 'protein' && (
+            <div className="viewer-protein-controls">
+              <input
+                className="viewer-protein-input"
+                type="text"
+                value={proteinPdbIdInput}
+                onChange={(e) => setProteinPdbIdInput(e.target.value)}
+                placeholder="Enter PDB ID (e.g. 1CRN)"
+                title="PDB ID"
+              />
+              <button className="viewer-protein-btn" onClick={loadProteinByPdbId} title="Load by PDB ID">
+                Load ID
+              </button>
+              <button
+                className="viewer-protein-btn viewer-protein-btn-ghost"
+                onClick={() => proteinFileInputRef.current?.click()}
+                title="Upload PDB file"
+              >
+                Upload PDB
+              </button>
+              <button
+                className="viewer-protein-btn viewer-protein-btn-ghost"
+                onClick={() => {
+                  setProteinStatus('Protein viewer cleared.');
+                  if (viewerInstanceRef.current && !viewerInstanceRef.current.__isMiew) {
+                    viewerInstanceRef.current.clear();
+                    viewerInstanceRef.current.removeAllSurfaces();
+                    viewerInstanceRef.current.render();
+                  }
+                  proteinModelRef.current = null;
+                  setProteinMeta(null);
+                  setProteinChainData({});
+                  setProteinChainSettings({});
+                  setSelectedProteinChain('');
+                  setProteinSelectedRange(null);
+                  setProteinSegmentOverrides([]);
+                  setCurrentMolecule(null);
+                }}
+                title="Clear protein view"
+              >
+                Clear
+              </button>
+              <input
+                ref={proteinFileInputRef}
+                type="file"
+                accept=".pdb,.ent,text/plain"
+                style={{ display: 'none' }}
+                onChange={async (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  if (!file) return;
+                  try {
+                    const text = await file.text();
+                    loadProteinIntoViewer(text, file.name);
+                  } catch (error) {
+                    console.error('Failed to read protein file:', error);
+                    setProteinStatus('Could not read this file. Please upload a valid PDB file.');
+                  } finally {
+                    e.target.value = '';
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {viewerMode === 'protein' && proteinStatus && (
+            <div className="viewer-protein-status">{proteinStatus}</div>
+          )}
+
+          {viewerMode === 'protein' && proteinChainIds.length > 0 && (
+            <div className="viewer-protein-seq-panel">
+              <div className="viewer-protein-seq-controls">
+                <select
+                  className="viewer-protein-chain-select"
+                  value={selectedProteinChain}
+                  onChange={(e) => {
+                    setSelectedProteinChain(e.target.value);
+                    setProteinSelectedRange(null);
+                  }}
+                  title="Select chain"
+                >
+                  {proteinChainIds.map((chainId) => (
+                    <option key={chainId} value={chainId}>Chain {chainId}</option>
+                  ))}
+                </select>
+                <select
+                  className="viewer-protein-chain-style"
+                  value={proteinChainSettings[selectedProteinChain]?.style || 'cartoon'}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setProteinChainSettings((prev) => ({
+                      ...prev,
+                      [selectedProteinChain]: { ...(prev[selectedProteinChain] || {}), style: value }
+                    }));
+                  }}
+                  title="Chain style"
+                >
+                  <option value="cartoon">Cartoon</option>
+                  <option value="stick">Stick</option>
+                  <option value="sphere">Sphere</option>
+                  <option value="line">Line</option>
+                  <option value="surface">Surface</option>
+                </select>
+                <input
+                  className="viewer-protein-chain-color"
+                  type="color"
+                  value={proteinChainSettings[selectedProteinChain]?.color || '#2c7a7b'}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setProteinChainSettings((prev) => ({
+                      ...prev,
+                      [selectedProteinChain]: { ...(prev[selectedProteinChain] || {}), color: value }
+                    }));
+                  }}
+                  title="Chain color"
+                />
+                <label className="viewer-protein-chain-hide">
+                  <input
+                    type="checkbox"
+                    checked={!!proteinChainSettings[selectedProteinChain]?.hidden}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setProteinChainSettings((prev) => ({
+                        ...prev,
+                        [selectedProteinChain]: { ...(prev[selectedProteinChain] || {}), hidden: checked }
+                      }));
+                    }}
+                  />
+                  Hide
+                </label>
+              </div>
+              <div
+                className="viewer-protein-seq-strip"
+                onContextMenu={(e) => {
+                  if (!proteinSelectedRange?.chain) return;
+                  e.preventDefault();
+                  setProteinSeqMenu({ open: true, x: e.clientX, y: e.clientY });
+                }}
+              >
+                {selectedProteinResidues.map((r) => {
+                  const active = proteinSelectedRange?.chain === selectedProteinChain
+                    && r.resi >= Math.min(proteinSelectedRange.startResi, proteinSelectedRange.endResi)
+                    && r.resi <= Math.max(proteinSelectedRange.startResi, proteinSelectedRange.endResi);
+                  return (
+                    <span
+                      key={`${selectedProteinChain}-${r.resi}`}
+                      className={`viewer-protein-seq-res ${active ? 'sel' : ''}`}
+                      onMouseDown={() => onProteinSeqMouseDown(selectedProteinChain, r.resi)}
+                      onMouseEnter={() => onProteinSeqMouseEnter(selectedProteinChain, r.resi)}
+                      title={`${selectedProteinChain}:${r.resi} ${r.resn}`}
+                    >
+                      {r.aa}
+                    </span>
+                  );
+                })}
+              </div>
+              {proteinSeqMenu.open && (
+                <div
+                  className="viewer-protein-seq-menu"
+                  style={{ left: proteinSeqMenu.x, top: proteinSeqMenu.y }}
+                  onMouseLeave={() => setProteinSeqMenu({ open: false, x: 0, y: 0 })}
+                >
+                  <button onClick={() => { applyProteinRangeStyle('cartoon', '#f59e0b', false); setProteinSeqMenu({ open: false, x: 0, y: 0 }); }}>Segment Cartoon</button>
+                  <button onClick={() => { applyProteinRangeStyle('stick', '#f59e0b', false); setProteinSeqMenu({ open: false, x: 0, y: 0 }); }}>Segment Stick</button>
+                  <button onClick={() => { applyProteinRangeStyle('sphere', '#f59e0b', false); setProteinSeqMenu({ open: false, x: 0, y: 0 }); }}>Segment Sphere</button>
+                  <button onClick={() => { applyProteinRangeStyle('line', '#f59e0b', false); setProteinSeqMenu({ open: false, x: 0, y: 0 }); }}>Segment Line</button>
+                  <button onClick={() => { applyProteinRangeStyle('line', '#f59e0b', true); setProteinSeqMenu({ open: false, x: 0, y: 0 }); }}>Hide Segment</button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Molecule / Protein Properties Card */}
           {(moleculeName || molecularMass || proteinMeta || currentSmiles) && (
             <div className="mol-props-card">
@@ -3637,10 +4087,22 @@ ${scientificGuardrails}`;
                   data-testid="viewer-3d"
                 />
 
-                {/* Multi-structure notice overlay */}
-                {multiStructure && !isProtein && (
+                {/* Multi-structure selector overlay */}
+                {hasMultipleSmilesComponents && !isProtein && (
                   <div className="multi-struct-notice">
-                    Multi-structure canvas detected
+                    <span>Multiple structures on canvas</span>
+                    <select
+                      className="multi-struct-select"
+                      value={selected3DComponentIdx}
+                      onChange={(e) => setSelected3DComponentIdx(parseInt(e.target.value, 10) || 0)}
+                      title="Select which structure to render in 3D"
+                    >
+                      {smilesComponentsFor3D.map((_, idx) => (
+                        <option key={`component-${idx}`} value={idx}>
+                          Molecule {idx + 1}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
               </div>
@@ -3778,123 +4240,8 @@ ${scientificGuardrails}`;
                 </button>
               </div>
 
-              {/* PDB Import Button */}
-              <div className="pdb-import-container">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdb"
-                  onChange={handlePDBImport}
-                  style={{ display: 'none' }}
-                  id="pdb-file-input"
-                />
-                <button
-                  className="pdb-import-btn"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Import PDB file (protein structure)"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                  </svg>
-                  <span>PDB</span>
-                </button>
-                {isProtein && (
-                  <button
-                    className="pdb-close-protein-btn"
-                    onClick={closeProtein}
-                    title="Remove loaded protein"
-                  >
-                    Close
-                  </button>
-                )}
-                {isProtein && isMiewEngine && (
-                  <div className="protein-quick-toggles">
-                    <button
-                      className={`protein-quick-toggle ${miewFog ? 'on' : ''}`}
-                      onClick={() => setMiewFog((v) => !v)}
-                      title="Toggle fog in 3D viewer"
-                    >
-                      Fog {miewFog ? 'ON' : 'OFF'}
-                    </button>
-                    <button
-                      className={`protein-quick-toggle ${miewOutline ? 'on' : ''}`}
-                      onClick={() => setMiewOutline((v) => !v)}
-                      title="Toggle outline in 3D viewer"
-                    >
-                      Outline {miewOutline ? 'ON' : 'OFF'}
-                    </button>
-                  </div>
-                )}
-              </div>
-
               {/* Floating Controls */}
               <div className="floating-controls">
-                {/* Style and Color Row */}
-                <div className="control-row">
-                  <select
-                    value={renderStyle}
-                    onChange={(e) => {
-                      const newStyle = e.target.value;
-                      setRenderStyle(newStyle);
-                      if (viewerInstanceRef.current?.__isMiew) {
-                        const styleToMode = {
-                          'ball-stick': 'BS',
-                          stick: 'LC',
-                          sphere: 'VW',
-                          line: 'LN',
-                          cartoon: 'CA',
-                          surface: 'SE',
-                        };
-                        const modeId = styleToMode[newStyle] || 'BS';
-                        applyMiewDisplayMode(modeId, null, miewColorer);
-                        return;
-                      }
-                      // For proteins, apply appropriate style
-                      if (isProtein && viewerInstanceRef.current && !viewerInstanceRef.current.__isMiew) {
-                        const viewer = viewerInstanceRef.current;
-                        viewer.removeAllSurfaces();
-                        if (newStyle === 'cartoon') {
-                          viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
-                        } else if (newStyle === 'stick') {
-                          viewer.setStyle({}, { stick: { radius: 0.15 } });
-                        } else if (newStyle === 'sphere') {
-                          viewer.setStyle({}, { sphere: { scale: 0.6 } });
-                        } else if (newStyle === 'surface') {
-                          viewer.setStyle({}, { cartoon: { hidden: true } });
-                          viewer.addSurface($3Dmol.SurfaceType.VDW, {
-                            opacity: 0.9,
-                            colorscheme: { prop: 'b', gradient: 'rwb' },
-                          });
-                        } else {
-                          viewer.setStyle({}, { line: {} });
-                        }
-                        viewer.render();
-                      }
-                    }}
-                    className="compact-select"
-                    title="Rendering style"
-                  >
-                    {isProtein ? (
-                      <>
-                        <option value="cartoon">Cartoon</option>
-                        <option value="stick">Stick</option>
-                        <option value="sphere">Space-Fill</option>
-                        <option value="surface">Surface</option>
-                        <option value="line">Line</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="ball-stick">Ball & Stick</option>
-                        <option value="stick">Stick</option>
-                        <option value="sphere">Space-Fill</option>
-                        <option value="line">Line</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-
                 {/* Hydrogen Toggle */}
                 <button
                   className={`compact-btn ${showHydrogens ? 'active' : ''}`}
@@ -3915,7 +4262,6 @@ ${scientificGuardrails}`;
                     <button onClick={() => exportModel('xyz')} className="compact-export-btn" title="XYZ format">XYZ</button>
                     {!isMiewEngine && <button onClick={() => exportModel('x3d')} className="compact-export-btn" title="X3D with bonds">X3D</button>}
                     {!isMiewEngine && <button onClick={() => exportModel('obj')} className="compact-export-btn" title="OBJ for Blender">OBJ</button>}
-                    <button onClick={() => exportModel('pdb')} className="compact-export-btn" title="PDB format">PDB</button>
                   </div>
                 )}
                 {currentMolecule && (
@@ -3969,8 +4315,8 @@ ${scientificGuardrails}`;
           {!is3DReady && is3DPanelOpen && (
             <div className="loading-3d">Loading 3D Viewer...</div>
           )}
-        </div>
-      </div>
+        </section>
+      </main>
 
       {/* AI Setup Prompt Modal */}
       {showAiSetupModal && (
@@ -4006,7 +4352,6 @@ ${scientificGuardrails}`;
       )}
 
       {showTlcModal && <TlcModal onClose={() => setShowTlcModal(false)} />}
-      {showCalculatorModal && <CalculatorModal onClose={() => setShowCalculatorModal(false)} />}
       <ReactionsModal
         open={showReactionsModal}
         onClose={() => setShowReactionsModal(false)}

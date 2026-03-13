@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Free SMILES to structure converter by MolDraw with SVG, PNG, and JPG downloads. Paste SMILES and render 2D structures instantly.">
+  <meta name="keywords" content="SMILES to structure, smiles to structure converter, download structure png, SmilesDrawer, MolDraw chemistry tool">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="SMILES to Structure Tool | Free Chemist Tools">
+  <meta property="og:description" content="Paste SMILES, render 2D structures, and download SVG, PNG, or JPG instantly.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://moldraw.scidart.com/tools/free-chem-tools/smiles-to-structure.html">
+  <link rel="canonical" href="https://moldraw.scidart.com/tools/free-chem-tools/smiles-to-structure.html">
+  <title>SMILES to Structure Converter | Free Chemist Tools</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #111827;
+      line-height: 1.6;
+    }
+    .container {
+      width: min(1050px, 94vw);
+      margin: 0 auto;
+      padding: 24px 0 40px;
+    }
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .top-link {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 6px 10px;
+      text-decoration: none;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 600;
+      background: #fff;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 28px;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    p {
+      color: #475569;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .input-wrap {
+      display: grid;
+      gap: 10px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 88px;
+      border: 1px solid #cfd8e3;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #0f172a;
+      font-family: 'Courier New', monospace;
+      resize: vertical;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: 1px solid #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
+      border-radius: 8px;
+      height: 34px;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .ghost-btn {
+      border-color: #d1d5db;
+      background: #fff;
+      color: #334155;
+    }
+    .render-area {
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      border-radius: 10px;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      overflow: auto;
+    }
+    #svgTarget {
+      width: min(560px, 100%);
+      min-height: 240px;
+      background: #fff;
+      border-radius: 8px;
+    }
+    .status {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #475569;
+      min-height: 18px;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/free-chem-tools/index.html">Back to Free Chemist Tools</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel">
+      <h1>SMILES to Structure Converter</h1>
+      <p>Paste a SMILES string and render a compact 2D structure instantly. Download the structure as SVG, PNG, or JPG.</p>
+      <div class="input-wrap">
+        <textarea id="smilesInput" placeholder="Example: CC(=O)OC1=CC=CC=C1C(=O)O">CC(=O)OC1=CC=CC=C1C(=O)O</textarea>
+        <div class="actions">
+          <button id="drawBtn" type="button">Draw structure</button>
+          <button id="downloadSvgBtn" class="ghost-btn" type="button">Download SVG</button>
+          <button id="downloadPngBtn" class="ghost-btn" type="button">Download PNG</button>
+          <button id="downloadJpgBtn" class="ghost-btn" type="button">Download JPG</button>
+          <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+          <button id="sampleBtn" class="ghost-btn" type="button">Load sample</button>
+        </div>
+      </div>
+      <div class="status" id="statusText">Ready.</div>
+    </section>
+
+    <section class="panel">
+      <div class="render-area" aria-label="Rendered structure area">
+        <svg id="svgTarget"></svg>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/smiles-drawer@2.1.1/dist/smiles-drawer.min.js"></script>
+  <script>
+    const inputEl = document.getElementById('smilesInput');
+    const drawBtn = document.getElementById('drawBtn');
+    const downloadSvgBtn = document.getElementById('downloadSvgBtn');
+    const downloadPngBtn = document.getElementById('downloadPngBtn');
+    const downloadJpgBtn = document.getElementById('downloadJpgBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const statusEl = document.getElementById('statusText');
+    const svgSelector = '#svgTarget';
+    const sampleSmiles = 'CC(=O)OC1=CC=CC=C1C(=O)O';
+
+    const moleculeOptions = { width: 520, height: 240 };
+    const reactionOptions = {};
+    const drawer = new SmiDrawer(moleculeOptions, reactionOptions);
+    let lastSmiles = sampleSmiles;
+
+    function drawSmiles() {
+      const smiles = (inputEl.value || '').trim();
+      if (!smiles) {
+        statusEl.textContent = 'Enter a SMILES string first.';
+        return;
+      }
+      try {
+        drawer.draw(smiles, svgSelector, 'light');
+        lastSmiles = smiles;
+        statusEl.textContent = 'Structure rendered successfully.';
+      } catch (err) {
+        statusEl.textContent = 'Could not parse SMILES. Please check your input.';
+      }
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function getRenderedSvgMarkup() {
+      const svgEl = document.querySelector(svgSelector);
+      if (!svgEl || !svgEl.innerHTML.trim()) return null;
+      return svgEl.outerHTML;
+    }
+
+    function downloadSvg() {
+      const svgMarkup = getRenderedSvgMarkup();
+      if (!svgMarkup) {
+        statusEl.textContent = 'Draw a structure before downloading.';
+        return;
+      }
+      downloadBlob(new Blob([svgMarkup], { type: 'image/svg+xml' }), 'smiles-structure.svg');
+      statusEl.textContent = 'SVG download started.';
+    }
+
+    function downloadRaster(type) {
+      const svgMarkup = getRenderedSvgMarkup();
+      if (!svgMarkup) {
+        statusEl.textContent = 'Draw a structure before downloading.';
+        return;
+      }
+      const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = 900;
+        canvas.height = 450;
+        const ctx = canvas.getContext('2d');
+        if (type === 'jpg') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(svgUrl);
+        const mime = type === 'png' ? 'image/png' : 'image/jpeg';
+        const dataUrl = canvas.toDataURL(mime, 0.95);
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = type === 'png' ? 'smiles-structure.png' : 'smiles-structure.jpg';
+        link.click();
+        statusEl.textContent = (type === 'png' ? 'PNG' : 'JPG') + ' download started.';
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(svgUrl);
+        statusEl.textContent = 'Failed to prepare image download.';
+      };
+      img.src = svgUrl;
+    }
+
+    drawBtn.addEventListener('click', drawSmiles);
+    downloadSvgBtn.addEventListener('click', downloadSvg);
+    downloadPngBtn.addEventListener('click', function () { downloadRaster('png'); });
+    downloadJpgBtn.addEventListener('click', function () { downloadRaster('jpg'); });
+    clearBtn.addEventListener('click', function () {
+      inputEl.value = '';
+      document.querySelector(svgSelector).innerHTML = '';
+      statusEl.textContent = 'Cleared.';
+    });
+    sampleBtn.addEventListener('click', function () {
+      inputEl.value = sampleSmiles;
+      drawSmiles();
+    });
+
+    drawSmiles();
+  </script>
+</body>
+</html>

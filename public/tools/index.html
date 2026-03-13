@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="MolDraw Tools: chemistry calculators, TLC diagram tools, and practical wet-lab utilities including molarity, molality, dilution, and solution prep calculators.">
-  <meta name="keywords" content="chemistry tools, molarity calculator, molality calculator, dilution calculator, solution prep calculator, TLC tool, MolDraw tools">
+  <meta name="description" content="MolDraw Tools Hub: all dedicated chemistry tools in one page including molecule conversion, PDBQT converters, 3D viewers, calculators, and TLC utilities.">
+  <meta name="keywords" content="chemistry tools hub, smiles tools, pdbqt converter, protein viewer, molarity calculator, dilution calculator, solution prep calculator, MolDraw tools">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <meta property="og:title" content="MolDraw Tools | Chemistry Calculators and TLC Utilities">
@@ -23,7 +23,7 @@
     "@type": "CollectionPage",
     "name": "MolDraw Tools",
     "url": "https://moldraw.scidart.com/tools/",
-    "description": "Chemistry calculators and utilities including dilution, solution prep, molarity, molality, and TLC support.",
+    "description": "All dedicated MolDraw chemistry tools including structure conversion, PDBQT tools, 3D viewers, calculators, and TLC support.",
     "publisher": {
       "@type": "Organization",
       "name": "Scidart Academy"
@@ -31,11 +31,18 @@
     "mainEntity": {
       "@type": "ItemList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Solution Prep Calculator" },
-        { "@type": "ListItem", "position": 2, "name": "Dilution Calculator" },
-        { "@type": "ListItem", "position": 3, "name": "Molarity Calculator" },
-        { "@type": "ListItem", "position": 4, "name": "Molality Calculator" },
-        { "@type": "ListItem", "position": 5, "name": "TLC Diagram Tool" }
+        { "@type": "ListItem", "position": 1, "name": "SMILES to Structure Tool" },
+        { "@type": "ListItem", "position": 2, "name": "SMILES to 3D Structure Converter" },
+        { "@type": "ListItem", "position": 3, "name": "Protein Viewer (3Dmol.js)" },
+        { "@type": "ListItem", "position": 4, "name": "MOL to SMILES Converter" },
+        { "@type": "ListItem", "position": 5, "name": "SMILES to PDB Converter" },
+        { "@type": "ListItem", "position": 6, "name": "SMILES to PDBQT Converter" },
+        { "@type": "ListItem", "position": 7, "name": "PDB to PDBQT Converter" },
+        { "@type": "ListItem", "position": 8, "name": "Solution Prep Calculator" },
+        { "@type": "ListItem", "position": 9, "name": "Dilution Calculator" },
+        { "@type": "ListItem", "position": 10, "name": "Molarity Calculator" },
+        { "@type": "ListItem", "position": 11, "name": "Molality Calculator" },
+        { "@type": "ListItem", "position": 12, "name": "TLC Diagram Tool" }
       ]
     }
   }
@@ -88,12 +95,34 @@
       font-size: 15px;
       max-width: 920px;
     }
-    .grid {
+    .tool-filters {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      margin-bottom: 16px;
+      grid-template-columns: 1fr 220px auto;
+      gap: 8px;
+      align-items: center;
     }
+    .tool-filters input,
+    .tool-filters select {
+      height: 34px;
+      border: 1px solid #cfd8e3;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 13px;
+      color: #0f172a;
+      background: #fff;
+    }
+    .tool-filter-count {
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      text-align: right;
+    }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
     .tool-card {
       background: #fff;
       border: 1px solid #e5e7eb;
@@ -122,63 +151,10 @@
       font-size: 12px;
       font-weight: 700;
     }
-    .calc-section {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 16px;
-    }
-    .calc-section h2 {
-      font-size: 22px;
-      color: #0f172a;
-      margin-bottom: 6px;
-    }
-    .calc-section p {
-      font-size: 14px;
-      color: #475569;
-      margin-bottom: 12px;
-    }
-    .calc-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .calc-card {
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 12px;
-      background: #f8fafc;
-    }
-    .calc-card h3 {
-      font-size: 16px;
-      margin-bottom: 6px;
-      color: #0f172a;
-    }
-    .calc-card label {
-      display: block;
-      font-size: 12px;
-      color: #334155;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-    .calc-card input {
-      width: 100%;
-      margin-top: 3px;
-      height: 32px;
-      border: 1px solid #d7dce2;
-      border-radius: 8px;
-      padding: 0 8px;
-      font-size: 12px;
-      background: #fff;
-    }
-    .result {
-      margin-top: 8px;
-      font-size: 13px;
-      color: #1f2937;
-      min-height: 22px;
-    }
     @media (max-width: 980px) {
-      .grid, .calc-grid { grid-template-columns: 1fr; }
+      .tool-filters { grid-template-columns: 1fr; }
+      .tool-filter-count { text-align: left; }
+      .grid { grid-template-columns: 1fr; }
       .hero h1 { font-size: 24px; }
     }
   </style>
@@ -196,74 +172,108 @@
       <p>Practical chemistry utilities for everyday lab work and learning. Use calculators for dilution, molarity, and molality, then jump into TLC and advanced drawing workflows in the app.</p>
     </section>
 
-    <section class="grid" aria-label="Tool cards">
-      <article class="tool-card">
-        <h2>Calculator Micro App</h2>
-        <p>Open solution prep, dilution, molarity, and molality calculators directly inside the MolDraw app modal.</p>
-        <a href="/">Open in app</a>
-      </article>
-      <article class="tool-card">
-        <h2>TLC Diagram Tool</h2>
-        <p>Create TLC plates with lane/spot editing and export to SVG or PNG for reports and lab records.</p>
-        <a href="/">Open TLC in app</a>
-      </article>
+    <section class="tool-filters" aria-label="Tool search and filter">
+      <input id="toolSearch" type="text" placeholder="Search tools by name, format, or workflow..." />
+      <select id="toolTypeFilter" aria-label="Filter tools by type">
+        <option value="all">All tool types</option>
+        <option value="conversion">Conversion tools</option>
+        <option value="viewer">3D viewer tools</option>
+        <option value="calculator">Calculators</option>
+        <option value="lab">Lab workflow tools</option>
+      </select>
+      <div class="tool-filter-count" id="toolFilterCount">Showing all tools</div>
     </section>
 
-    <section class="calc-section">
-      <h2>Quick Calculators</h2>
-      <p>These instant calculators are mirrored from the in-app modal for fast access.</p>
-      <div class="calc-grid">
-        <div class="calc-card">
-          <h3>Molarity Calculator</h3>
-          <label>Solute mass (g)<input id="molarityMass" type="number" step="0.001" value="1.50"></label>
-          <label>Molecular weight (g/mol)<input id="molarityMw" type="number" step="0.001" value="58.44"></label>
-          <label>Final solution volume (mL)<input id="molarityVol" type="number" step="0.1" value="250"></label>
-          <div class="result" id="molarityResult">—</div>
-        </div>
-        <div class="calc-card">
-          <h3>Molality Calculator</h3>
-          <label>Solute mass (g)<input id="molalityMass" type="number" step="0.001" value="1.50"></label>
-          <label>Molecular weight (g/mol)<input id="molalityMw" type="number" step="0.001" value="58.44"></label>
-          <label>Solvent mass (g)<input id="molalitySolvent" type="number" step="0.001" value="100"></label>
-          <div class="result" id="molalityResult">—</div>
-        </div>
-      </div>
+    <section class="grid" aria-label="Tool cards">
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles structure 2d image svg png jpg">
+        <h2>SMILES to Structure</h2>
+        <p>Convert SMILES strings to 2D structures and export image files.</p>
+        <a href="/tools/free-chem-tools/smiles-to-structure.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="viewer" data-tool-search="smiles 3d structure viewer sdf xyz pdb obj x3d">
+        <h2>SMILES to 3D Structure</h2>
+        <p>Render molecules in 3D and download common chemistry and model formats.</p>
+        <a href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="viewer" data-tool-search="protein pdb id 3dmol viewer">
+        <h2>Protein Viewer</h2>
+        <p>Load proteins by PDB ID or file using 3Dmol.js with style and export controls.</p>
+        <a href="/tools/protein-viewer/index.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="mol sdf to smiles converter">
+        <h2>MOL to SMILES Converter</h2>
+        <p>Convert MOL/SDF structure blocks to SMILES in a dedicated converter page.</p>
+        <a href="/tools/free-chem-tools/mol-to-smiles-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles to pdb 3d converter">
+        <h2>SMILES to PDB Converter</h2>
+        <p>Convert a SMILES string to downloadable PDB for protein/model pipelines.</p>
+        <a href="/tools/free-chem-tools/smiles-to-pdb-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles to pdbqt docking autodock converter">
+        <h2>SMILES to PDBQT Converter</h2>
+        <p>Generate docking-friendly PDBQT text from SMILES for AutoDock-style workflows.</p>
+        <a href="/tools/free-chem-tools/smiles-to-pdbqt-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="pdb to pdbqt docking converter">
+        <h2>PDB to PDBQT Converter</h2>
+        <p>Convert PDB structures into PDBQT format in a dedicated browser tool page.</p>
+        <a href="/tools/free-chem-tools/pdb-to-pdbqt-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="solution prep concentration molarity calculator">
+        <h2>Solution Prep Calculator</h2>
+        <p>Calculate exact solute amount needed for target molarity and solution volume.</p>
+        <a href="/tools/free-chem-tools/solution-prep-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="dilution c1v1 c2v2 calculator">
+        <h2>Dilution Calculator</h2>
+        <p>Use C1V1=C2V2 workflow for quick dilution planning in dedicated page format.</p>
+        <a href="/tools/free-chem-tools/dilution-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="molarity calculator mass molecular weight volume">
+        <h2>Molarity Calculator</h2>
+        <p>Compute molarity from mass, molecular weight, and final volume.</p>
+        <a href="/tools/free-chem-tools/molarity-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="molality calculator solute solvent mass">
+        <h2>Molality Calculator</h2>
+        <p>Compute molality from solute amount and solvent mass.</p>
+        <a href="/tools/free-chem-tools/molality-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="lab" data-tool-search="tlc diagram thin layer chromatography workflow">
+        <h2>TLC Diagram Tool</h2>
+        <p>TLC workflow guidance and dedicated tool page entry point.</p>
+        <a href="/tools/free-chem-tools/tlc-diagram-tool.html">Open tool</a>
+      </article>
     </section>
   </main>
-
   <script>
-    function num(id) {
-      const v = Number(document.getElementById(id).value);
-      return Number.isFinite(v) ? v : NaN;
-    }
-    function recalc() {
-      const mm = num('molarityMass');
-      const mw = num('molarityMw');
-      const vol = num('molarityVol');
-      const molarityOut = document.getElementById('molarityResult');
-      if (mm > 0 && mw > 0 && vol > 0) {
-        const moles = mm / mw;
-        const M = moles / (vol / 1000);
-        molarityOut.textContent = `Moles: ${moles.toFixed(6)} mol | Molarity: ${M.toFixed(6)} M`;
-      } else {
-        molarityOut.textContent = 'Enter valid positive values.';
-      }
+    const searchInput = document.getElementById('toolSearch');
+    const typeFilter = document.getElementById('toolTypeFilter');
+    const countEl = document.getElementById('toolFilterCount');
+    const cards = Array.from(document.querySelectorAll('.tool-card'));
 
-      const lm = num('molalityMass');
-      const lmw = num('molalityMw');
-      const solvent = num('molalitySolvent');
-      const molalityOut = document.getElementById('molalityResult');
-      if (lm > 0 && lmw > 0 && solvent > 0) {
-        const moles = lm / lmw;
-        const m = moles / (solvent / 1000);
-        molalityOut.textContent = `Moles: ${moles.toFixed(6)} mol | Molality: ${m.toFixed(6)} mol/kg`;
-      } else {
-        molalityOut.textContent = 'Enter valid positive values.';
-      }
+    function applyToolFilters() {
+      const query = (searchInput.value || '').trim().toLowerCase();
+      const selectedType = typeFilter.value;
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const type = card.getAttribute('data-tool-type') || '';
+        const searchable = ((card.getAttribute('data-tool-search') || '') + ' ' + card.textContent).toLowerCase();
+        const typeOk = selectedType === 'all' || type === selectedType;
+        const queryOk = !query || searchable.includes(query);
+        const visible = typeOk && queryOk;
+        card.style.display = visible ? '' : 'none';
+        if (visible) visibleCount += 1;
+      });
+
+      countEl.textContent = `Showing ${visibleCount} of ${cards.length} tools`;
     }
-    ['molarityMass','molarityMw','molarityVol','molalityMass','molalityMw','molalitySolvent']
-      .forEach((id) => document.getElementById(id).addEventListener('input', recalc));
-    recalc();
+
+    searchInput.addEventListener('input', applyToolFilters);
+    typeFilter.addEventListener('change', applyToolFilters);
+    applyToolFilters();
   </script>
 </body>
 </html>

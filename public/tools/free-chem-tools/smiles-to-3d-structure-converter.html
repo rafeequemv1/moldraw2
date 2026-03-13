@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SMILES to 3D structure converter by MolDraw using lightweight 3Dmol.js. Visualize molecules in 3D and download PNG, JPG, SDF, XYZ, PDB, MOL, OBJ, and X3D.">
+  <meta name="keywords" content="SMILES to 3D structure converter, 3Dmol.js, molecule 3D viewer, chemistry tool, SDF XYZ PDB OBJ X3D download">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="SMILES to 3D Structure Converter | Free Chemist Tools">
+  <meta property="og:description" content="Convert SMILES to 3D structure and export in common chemistry and 3D file formats.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://moldraw.scidart.com/tools/free-chem-tools/smiles-to-3d-structure-converter.html">
+  <link rel="canonical" href="https://moldraw.scidart.com/tools/free-chem-tools/smiles-to-3d-structure-converter.html">
+  <title>SMILES to 3D Structure Converter | Free Chemist Tools</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #111827;
+      line-height: 1.6;
+    }
+    .container { width: min(1120px, 94vw); margin: 0 auto; padding: 24px 0 40px; }
+    .top-nav { display: flex; gap: 10px; margin-bottom: 14px; }
+    .top-link {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 6px 10px;
+      text-decoration: none;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 600;
+      background: #fff;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 28px; color: #0f172a; margin-bottom: 8px; }
+    p { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    .input-wrap { display: grid; gap: 10px; }
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      border: 1px solid #cfd8e3;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #0f172a;
+      font-family: 'Courier New', monospace;
+      resize: vertical;
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      border: 1px solid #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
+      border-radius: 8px;
+      height: 34px;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .ghost-btn { border-color: #d1d5db; background: #fff; color: #334155; }
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .download-grid button {
+      width: 100%;
+      min-width: 0;
+      padding: 0 6px;
+      font-size: 11px;
+    }
+    .viewer-wrap {
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      border-radius: 10px;
+      min-height: 420px;
+      padding: 10px;
+    }
+    #viewer3d {
+      width: 100%;
+      height: 400px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    .status { margin-top: 8px; font-size: 12px; color: #475569; min-height: 18px; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/free-chem-tools/index.html">Back to Free Chemist Tools</a>
+      <a class="top-link" href="/tools/protein-viewer/index.html">Protein Viewer tab</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel">
+      <h1>SMILES to 3D Structure Converter</h1>
+      <p>Paste a SMILES string, generate a 3D structure with lightweight 3Dmol.js, and download in major image and structure formats.</p>
+      <div class="input-wrap">
+        <textarea id="smilesInput" placeholder="Example: CC(=O)OC1=CC=CC=C1C(=O)O">CC(=O)OC1=CC=CC=C1C(=O)O</textarea>
+        <div class="actions">
+          <button id="renderBtn" type="button">Render 3D</button>
+          <button id="sampleBtn" class="ghost-btn" type="button">Load sample</button>
+          <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+        </div>
+        <div class="download-grid">
+          <button id="dlPngBtn" class="ghost-btn" type="button">Download PNG</button>
+          <button id="dlJpgBtn" class="ghost-btn" type="button">Download JPG</button>
+          <button id="dlSdfBtn" class="ghost-btn" type="button">Download SDF</button>
+          <button id="dlXyzBtn" class="ghost-btn" type="button">Download XYZ</button>
+          <button id="dlPdbBtn" class="ghost-btn" type="button">Download PDB</button>
+          <button id="dlMolBtn" class="ghost-btn" type="button">Download MOL</button>
+          <button id="dlObjBtn" class="ghost-btn" type="button">Download OBJ</button>
+          <button id="dlX3dBtn" class="ghost-btn" type="button">Download X3D</button>
+        </div>
+      </div>
+      <div class="status" id="statusText">Ready.</div>
+    </section>
+
+    <section class="panel">
+      <div class="viewer-wrap">
+        <div id="viewer3d"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://3dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+  <script>
+    const inputEl = document.getElementById('smilesInput');
+    const statusEl = document.getElementById('statusText');
+    const sampleSmiles = 'CC(=O)OC1=CC=CC=C1C(=O)O';
+    const viewerHost = document.getElementById('viewer3d');
+    const viewer = $3Dmol.createViewer(viewerHost, { backgroundColor: 'white' });
+
+    let latest = {
+      smiles: sampleSmiles,
+      sdf: '',
+      mol: '',
+      pdb: ''
+    };
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function downloadTextFile(content, filename, mime) {
+      const blob = new Blob([content], { type: mime || 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function parseSdf(sdfText) {
+      const lines = String(sdfText || '').split(/\r?\n/);
+      if (lines.length < 6) return { atoms: [], bonds: [] };
+      let countsIdx = -1;
+      for (let i = 0; i < Math.min(lines.length, 12); i++) {
+        if (/^\s*\d+\s+\d+/.test(lines[i])) { countsIdx = i; break; }
+      }
+      if (countsIdx < 0) return { atoms: [], bonds: [] };
+      const countsParts = lines[countsIdx].trim().split(/\s+/);
+      const atomCount = parseInt(countsParts[0], 10) || 0;
+      const bondCount = parseInt(countsParts[1], 10) || 0;
+      const atoms = [];
+      const bonds = [];
+      for (let i = 0; i < atomCount; i++) {
+        const row = lines[countsIdx + 1 + i] || '';
+        const p = row.trim().split(/\s+/);
+        if (p.length >= 4) {
+          atoms.push({ x: parseFloat(p[0]) || 0, y: parseFloat(p[1]) || 0, z: parseFloat(p[2]) || 0, elem: p[3] || 'C' });
+        }
+      }
+      for (let i = 0; i < bondCount; i++) {
+        const row = lines[countsIdx + 1 + atomCount + i] || '';
+        const p = row.trim().split(/\s+/);
+        if (p.length >= 3) {
+          bonds.push({ a1: (parseInt(p[0], 10) || 1) - 1, a2: (parseInt(p[1], 10) || 1) - 1, order: parseInt(p[2], 10) || 1 });
+        }
+      }
+      return { atoms, bonds };
+    }
+
+    function sdfToXyz(sdfText) {
+      const { atoms } = parseSdf(sdfText);
+      let xyz = atoms.length + '\nGenerated by MolDraw SMILES to 3D tool\n';
+      atoms.forEach((a) => { xyz += `${a.elem} ${a.x} ${a.y} ${a.z}\n`; });
+      return xyz;
+    }
+
+    function sdfToObj(sdfText) {
+      const { atoms, bonds } = parseSdf(sdfText);
+      let out = '# OBJ generated by MolDraw SMILES to 3D tool\n';
+      atoms.forEach((a) => { out += `v ${a.x} ${a.y} ${a.z}\n`; });
+      bonds.forEach((b) => {
+        const i = b.a1 + 1, j = b.a2 + 1;
+        if (i > 0 && j > 0) out += `l ${i} ${j}\n`;
+      });
+      return out;
+    }
+
+    function sdfToX3d(sdfText) {
+      const { atoms, bonds } = parseSdf(sdfText);
+      const points = atoms.map((a) => `${a.x} ${a.y} ${a.z}`).join(', ');
+      const coordIndex = bonds.map((b) => `${b.a1} ${b.a2} -1`).join(' ');
+      let spheres = '';
+      atoms.forEach((a) => {
+        spheres += `<Transform translation="${a.x} ${a.y} ${a.z}"><Shape><Appearance><Material diffuseColor="0.2 0.4 0.8"/></Appearance><Sphere radius="0.18"/></Shape></Transform>`;
+      });
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<X3D profile="Interchange" version="3.3">
+  <Scene>
+    ${spheres}
+    <Shape>
+      <Appearance><Material emissiveColor="0.15 0.15 0.15"/></Appearance>
+      <IndexedLineSet coordIndex="${coordIndex}">
+        <Coordinate point="${points}"/>
+      </IndexedLineSet>
+    </Shape>
+  </Scene>
+</X3D>`;
+    }
+
+    async function fetchSdf3d(smiles) {
+      const encoded = encodeURIComponent(smiles);
+      const cactusUrl = `https://cactus.nci.nih.gov/chemical/structure/${encoded}/file?format=sdf&get3d=true`;
+      const pubchemUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/SDF?record_type=3d`;
+      let res = await fetch(cactusUrl);
+      if (!res.ok) res = await fetch(pubchemUrl);
+      if (!res.ok) throw new Error('Could not fetch 3D SDF');
+      return await res.text();
+    }
+
+    async function fetchPdb3d(smiles) {
+      const encoded = encodeURIComponent(smiles);
+      const cactusUrl = `https://cactus.nci.nih.gov/chemical/structure/${encoded}/file?format=pdb&get3d=true`;
+      const res = await fetch(cactusUrl);
+      if (!res.ok) throw new Error('Could not fetch PDB');
+      return await res.text();
+    }
+
+    function sdfToMol(sdfText) {
+      const marker = '\n$$$$';
+      const idx = sdfText.indexOf(marker);
+      return idx > 0 ? sdfText.slice(0, idx).trimEnd() + '\n' : sdfText;
+    }
+
+    async function render3D() {
+      const smiles = (inputEl.value || '').trim();
+      if (!smiles) {
+        setStatus('Please enter a SMILES string first.');
+        return;
+      }
+      setStatus('Generating 3D structure...');
+      try {
+        const sdf = await fetchSdf3d(smiles);
+        latest.smiles = smiles;
+        latest.sdf = sdf;
+        latest.mol = sdfToMol(sdf);
+        latest.pdb = '';
+
+        viewer.clear();
+        viewer.addModel(sdf, 'sdf');
+        viewer.setStyle({}, { stick: { radius: 0.14 }, sphere: { scale: 0.25 } });
+        viewer.zoomTo();
+        viewer.render();
+        setStatus('3D structure rendered. Download any format below.');
+      } catch (e) {
+        setStatus('Failed to generate 3D structure. Try another valid SMILES string.');
+      }
+    }
+
+    function ensureSdf() {
+      return latest.sdf && latest.sdf.trim();
+    }
+
+    async function ensurePdb() {
+      if (latest.pdb && latest.pdb.trim()) return latest.pdb;
+      latest.pdb = await fetchPdb3d(latest.smiles);
+      return latest.pdb;
+    }
+
+    function downloadPng() {
+      if (!ensureSdf()) return setStatus('Render a 3D structure first.');
+      const dataUrl = viewer.pngURI();
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'molecule-3d.png';
+      link.click();
+      setStatus('PNG download started.');
+    }
+
+    function downloadJpg() {
+      if (!ensureSdf()) return setStatus('Render a 3D structure first.');
+      const dataUrl = viewer.pngURI();
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        const jpg = canvas.toDataURL('image/jpeg', 0.95);
+        const link = document.createElement('a');
+        link.href = jpg;
+        link.download = 'molecule-3d.jpg';
+        link.click();
+        setStatus('JPG download started.');
+      };
+      img.src = dataUrl;
+    }
+
+    document.getElementById('renderBtn').addEventListener('click', render3D);
+    document.getElementById('sampleBtn').addEventListener('click', function () { inputEl.value = sampleSmiles; render3D(); });
+    document.getElementById('clearBtn').addEventListener('click', function () {
+      inputEl.value = '';
+      latest = { smiles: '', sdf: '', mol: '', pdb: '' };
+      viewer.clear();
+      viewer.render();
+      setStatus('Cleared.');
+    });
+
+    document.getElementById('dlPngBtn').addEventListener('click', downloadPng);
+    document.getElementById('dlJpgBtn').addEventListener('click', downloadJpg);
+    document.getElementById('dlSdfBtn').addEventListener('click', function () {
+      if (!ensureSdf()) return setStatus('Render a 3D structure first.');
+      downloadTextFile(latest.sdf, 'molecule.sdf', 'chemical/x-mdl-sdfile');
+      setStatus('SDF download started.');
+    });
+    document.getElementById('dlXyzBtn').addEventListener('click', function () {
+      if (!ensureSdf()) return setStatus('Render a 3D structure first.');
+      downloadTextFile(sdfToXyz(latest.sdf), 'molecule.xyz', 'chemical/x-xyz');
+      setStatus('XYZ download started.');
+    });
+    document.getElementById('dlPdbBtn').addEventListener('click', async function () {
+      if (!ensureSdf()) return setStatus('Render a 3D structure first.');
+      try {
+        const pdb = await ensurePdb();
+        downloadTextFile(pdb, 'molecule.pdb', 'chemical/x-pdb');
+        setStatus('PDB download started.');
+      } catch {
+        setStatus('PDB conversion failed for this structure.');
+      }
+    });
+    document.getElementById('dlMolBtn').addEventListener('click', function () {
+      if (!ensureSdf()) return setStatus('Render a 3D structure first.');
+      downloadTextFile(latest.mol, 'molecule.mol', 'chemical/x-mdl-molfile');
+      setStatus('MOL download started.');
+    });
+    document.getElementById('dlObjBtn').addEventListener('click', function () {
+      if (!ensureSdf()) return setStatus('Render a 3D structure first.');
+      downloadTextFile(sdfToObj(latest.sdf), 'molecule.obj', 'model/obj');
+      setStatus('OBJ download started.');
+    });
+    document.getElementById('dlX3dBtn').addEventListener('click', function () {
+      if (!ensureSdf()) return setStatus('Render a 3D structure first.');
+      downloadTextFile(sdfToX3d(latest.sdf), 'molecule.x3d', 'model/x3d+xml');
+      setStatus('X3D download started.');
+    });
+
+    window.addEventListener('resize', function () {
+      viewer.resize();
+      viewer.render();
+    });
+
+    render3D();
+  </script>
+</body>
+</html>

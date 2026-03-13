@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PDB to PDBQT converter by MolDraw. Convert PDB structure text into docking-ready PDBQT format quickly in your browser.">
+  <meta name="keywords" content="pdb to pdbqt converter, pdbqt generator, autodock pdbqt, molecular docking tools, MolDraw">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="PDB to PDBQT Converter | MolDraw Free Chem Tools">
+  <meta property="og:description" content="Convert PDB coordinates to PDBQT format for docking workflows.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://moldraw.scidart.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html">
+  <link rel="canonical" href="https://moldraw.scidart.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html">
+  <title>PDB to PDBQT Converter | MolDraw Free Chem Tools</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "PDB to PDBQT Converter",
+    "applicationCategory": "ScientificApplication",
+    "operatingSystem": "Web",
+    "url": "https://moldraw.scidart.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html",
+    "description": "Convert PDB structure text to PDBQT format for molecular docking workflows."
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; }
+    .container { width: min(980px, 94vw); margin: 0 auto; padding: 24px 0 40px; }
+    .top-nav { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .top-link { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 600; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 28px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    p { color: #475569; font-size: 14px; margin-bottom: 10px; line-height: 1.65; }
+    .io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    textarea { width: 100%; min-height: 260px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #0f172a; font-family: 'Courier New', monospace; resize: vertical; background: #fff; }
+    .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; height: 34px; padding: 0 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .ghost-btn { border-color: #d1d5db; background: #fff; color: #334155; }
+    .status { margin-top: 10px; font-size: 12px; color: #334155; min-height: 20px; }
+    ul { padding-left: 18px; color: #475569; font-size: 14px; line-height: 1.6; }
+    @media (max-width: 860px) { .io-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/free-chem-tools/index.html">Back to Free Chem Tools</a>
+      <a class="top-link" href="/tools/index.html">All Tools</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel">
+      <h1>PDB to PDBQT Converter</h1>
+      <p>Paste a PDB structure and convert it into PDBQT for docking pipelines. This browser tool adds element and charge/type columns in PDBQT layout for fast preparation.</p>
+      <div class="io-grid">
+        <div>
+          <h2>PDB Input</h2>
+          <textarea id="pdbInput" placeholder="Paste PDB content here..."></textarea>
+        </div>
+        <div>
+          <h2>PDBQT Output</h2>
+          <textarea id="pdbqtOutput" placeholder="Converted PDBQT appears here..." readonly></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="convertBtn" type="button">Convert to PDBQT</button>
+        <button id="copyBtn" class="ghost-btn" type="button">Copy PDBQT</button>
+        <button id="downloadBtn" class="ghost-btn" type="button">Download PDBQT</button>
+        <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+      </div>
+      <div class="status" id="statusText">Ready.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Notes for Docking Workflows</h2>
+      <ul>
+        <li>This tool creates a practical PDBQT text layout directly in-browser for rapid prototyping.</li>
+        <li>For production docking runs, you can further refine protonation state and torsion definitions in your docking suite.</li>
+        <li>Use this page as a quick conversion utility when you need a fast PDBQT draft structure.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    const pdbInput = document.getElementById('pdbInput');
+    const pdbqtOutput = document.getElementById('pdbqtOutput');
+    const statusText = document.getElementById('statusText');
+    let latestPdbqt = '';
+
+    function normalizeElement(raw) {
+      const token = String(raw || '').replace(/[^A-Za-z]/g, '').toUpperCase();
+      if (!token) return 'C';
+      if (token.length === 1) return token;
+      const two = token.slice(0, 2);
+      const known = ['CL', 'BR', 'NA', 'MG', 'ZN', 'FE', 'CA', 'MN', 'CU', 'NI'];
+      return known.includes(two) ? two : token[0];
+    }
+
+    function inferElementFromAtomName(atomName) {
+      const cleaned = String(atomName || '').trim().replace(/[0-9]/g, '');
+      if (!cleaned) return 'C';
+      if (cleaned.length >= 2) {
+        const two = normalizeElement(cleaned.slice(0, 2));
+        if (['CL', 'BR', 'NA', 'MG', 'ZN', 'FE', 'CA', 'MN', 'CU', 'NI'].includes(two)) return two;
+      }
+      return normalizeElement(cleaned[0]);
+    }
+
+    function elementToAutoDockType(elem) {
+      const map = {
+        H: 'HD', C: 'C', N: 'N', O: 'OA', S: 'SA', P: 'P',
+        F: 'F', CL: 'Cl', BR: 'Br', I: 'I', NA: 'Na', MG: 'Mg',
+        ZN: 'Zn', FE: 'Fe', CA: 'Ca', MN: 'Mn', CU: 'Cu', NI: 'Ni'
+      };
+      return map[elem] || 'C';
+    }
+
+    function formatCharge(charge) {
+      const n = Number.isFinite(charge) ? charge : 0;
+      return (n >= 0 ? ' ' : '') + n.toFixed(3).padStart(6, ' ');
+    }
+
+    function convertPdbToPdbqt(pdbText) {
+      const lines = String(pdbText || '').split(/\r?\n/);
+      const out = [];
+      for (const line of lines) {
+        if (line.startsWith('ATOM') || line.startsWith('HETATM')) {
+          const atomName = line.slice(12, 16);
+          const elemField = line.slice(76, 78).trim();
+          const elem = normalizeElement(elemField || inferElementFromAtomName(atomName));
+          const base = line.padEnd(66, ' ').slice(0, 66);
+          const charge = formatCharge(0.0);
+          const adType = elementToAutoDockType(elem).padStart(2, ' ');
+          out.push(base + charge + ' ' + adType);
+        } else if (line.startsWith('TER') || line.startsWith('MODEL') || line.startsWith('ENDMDL') || line.startsWith('END')) {
+          out.push(line);
+        }
+      }
+      if (out.length === 0) return '';
+      if (!out[out.length - 1].startsWith('END')) out.push('END');
+      return out.join('\n') + '\n';
+    }
+
+    function setStatus(text) { statusText.textContent = text; }
+
+    document.getElementById('convertBtn').addEventListener('click', () => {
+      const pdb = (pdbInput.value || '').trim();
+      if (!pdb) {
+        setStatus('Paste a PDB structure first.');
+        return;
+      }
+      const pdbqt = convertPdbToPdbqt(pdb);
+      if (!pdbqt) {
+        setStatus('No ATOM/HETATM records were found in the provided PDB text.');
+        return;
+      }
+      latestPdbqt = pdbqt;
+      pdbqtOutput.value = pdbqt;
+      setStatus('PDBQT generated successfully.');
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      if (!latestPdbqt) {
+        setStatus('Convert first, then copy.');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(latestPdbqt);
+        setStatus('PDBQT copied to clipboard.');
+      } catch {
+        setStatus('Clipboard copy failed. You can copy manually from the output box.');
+      }
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      if (!latestPdbqt) {
+        setStatus('Convert first, then download.');
+        return;
+      }
+      const blob = new Blob([latestPdbqt], { type: 'chemical/x-pdbqt' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'structure.pdbqt';
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus('PDBQT download started.');
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      pdbInput.value = '';
+      pdbqtOutput.value = '';
+      latestPdbqt = '';
+      setStatus('Cleared.');
+    });
+  </script>
+</body>
+</html>

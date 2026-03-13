@@ -201,6 +201,57 @@
       border-radius: 12px;
       padding: 24px;
     }
+    .seo-chapter-strip {
+      max-width: 980px;
+      margin: 0 auto 12px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .seo-chapter-strip h2 {
+      font-size: 18px;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+    .seo-chapter-strip p {
+      font-size: 13px;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+    .seo-chapter-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .seo-chapter-links a {
+      text-decoration: none;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      border-radius: 8px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 9px;
+    }
+    .lone-pair-callout {
+      margin-top: 10px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .lone-pair-callout h3 {
+      font-size: 15px;
+      color: #1e3a8a;
+      margin-bottom: 6px;
+    }
+    .lone-pair-callout ol {
+      margin: 0 0 0 18px;
+      color: #1e3a8a;
+      font-size: 13px;
+    }
+    .lone-pair-callout li { margin: 3px 0; }
     .status {
       margin-bottom: 12px;
       font-size: 12px;
@@ -302,6 +353,39 @@
           <button id="courseSearchBtn" class="course-search-btn" type="button">Search</button>
         </div>
       </div>
+      <section class="seo-chapter-strip">
+        <h2>SEO Chapter Pages</h2>
+        <p>Use these dedicated chapter slugs for indexing and quick sharing.</p>
+        <div class="seo-chapter-links">
+          <a href="/course/chapters/3d-viewer.html">3D Viewer</a>
+          <a href="/course/chapters/drawing-atoms.html">Drawing Atoms</a>
+          <a href="/course/chapters/drawing-bonds.html">Drawing Bonds</a>
+          <a href="/course/chapters/drawing-r-groups.html">Drawing R-Groups</a>
+          <a href="/course/chapters/marking-s-groups.html">Marking S-Groups</a>
+          <a href="/course/chapters/changing-structure-display.html">Changing Structure Display</a>
+          <a href="/course/chapters/drawing-reactions.html">Drawing Reactions</a>
+          <a href="/course/chapters/drawing-graphical-objects.html">Drawing Graphical Objects</a>
+          <a href="/course/chapters/templates-toolbar.html">Templates Toolbar</a>
+          <a href="/course/chapters/stereochemistry.html">Stereochemistry</a>
+          <a href="/course/chapters/macromolecules-library.html">Macromolecules Library</a>
+          <a href="/course/chapters/sequence-mode.html">Sequence Mode</a>
+          <a href="/course/chapters/snake-and-flex-modes.html">Snake and Flex Modes</a>
+          <a href="/course/chapters/creating-antisense-chains.html">Creating Antisense Chains</a>
+          <a href="/course/chapters/macromolecules-properties.html">Macromolecules Properties</a>
+          <a href="/course/chapters/macromolecules-and-molecules-mode-integration.html">Macromolecules and Molecules Mode Integration</a>
+          <a href="/course/chapters/add-lone-pair-in-moldraw.html">Add Lone Pair</a>
+        </div>
+        <div class="lone-pair-callout">
+          <h3>How to add a lone pair in MolDraw (most asked)</h3>
+          <ol>
+            <li>Select the atom in your structure.</li>
+            <li>Right-click the selected atom.</li>
+            <li>Choose <strong>Edit</strong>.</li>
+            <li>Open the <strong>Radical</strong> dropdown.</li>
+            <li>Select the lone pair option and apply.</li>
+          </ol>
+        </div>
+      </section>
       <section class="content">
         <div id="status" class="status">Loading official help…</div>
         <article id="content" class="md"></article>

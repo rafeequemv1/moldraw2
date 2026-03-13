@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SMILES to PDBQT converter by MolDraw. Convert a SMILES string into PDBQT format for molecular docking and AutoDock-style workflows.">
+  <meta name="keywords" content="smiles to pdbqt converter, smiles pdbqt tool, autodock input converter, molecular docking format, MolDraw">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="SMILES to PDBQT Converter | MolDraw Free Chem Tools">
+  <meta property="og:description" content="Generate PDBQT from SMILES in a dedicated browser-based chemistry converter.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://moldraw.scidart.com/tools/free-chem-tools/smiles-to-pdbqt-converter.html">
+  <link rel="canonical" href="https://moldraw.scidart.com/tools/free-chem-tools/smiles-to-pdbqt-converter.html">
+  <title>SMILES to PDBQT Converter | MolDraw Free Chem Tools</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "SMILES to PDBQT Converter",
+    "applicationCategory": "ScientificApplication",
+    "operatingSystem": "Web",
+    "url": "https://moldraw.scidart.com/tools/free-chem-tools/smiles-to-pdbqt-converter.html",
+    "description": "Convert SMILES strings to PDBQT format for docking workflows."
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; }
+    .container { width: min(940px, 94vw); margin: 0 auto; padding: 24px 0 40px; }
+    .top-nav { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .top-link { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 600; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 28px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    p { color: #475569; font-size: 14px; margin-bottom: 10px; line-height: 1.65; }
+    textarea { width: 100%; min-height: 240px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #0f172a; font-family: 'Courier New', monospace; resize: vertical; background: #fff; }
+    .input-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+    .input-row input { width: 100%; height: 36px; border: 1px solid #cfd8e3; border-radius: 8px; padding: 0 10px; font-size: 13px; color: #0f172a; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; height: 36px; padding: 0 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .ghost-btn { border-color: #d1d5db; background: #fff; color: #334155; }
+    .status { margin-top: 10px; font-size: 12px; color: #334155; min-height: 20px; }
+    ul { padding-left: 18px; color: #475569; font-size: 14px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/free-chem-tools/index.html">Back to Free Chem Tools</a>
+      <a class="top-link" href="/tools/index.html">All Tools</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel">
+      <h1>SMILES to PDBQT Converter</h1>
+      <p>Convert SMILES to PDBQT in two steps: generate a 3D PDB from SMILES, then transform the structure into PDBQT text for docking-ready workflows.</p>
+      <div class="input-row">
+        <input id="smilesInput" type="text" placeholder="Enter SMILES (example: CC(=O)OC1=CC=CC=C1C(=O)O)" />
+        <button id="convertBtn" type="button">Convert</button>
+      </div>
+      <div class="actions">
+        <button id="copyBtn" class="ghost-btn" type="button">Copy PDBQT</button>
+        <button id="downloadBtn" class="ghost-btn" type="button">Download PDBQT</button>
+        <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+      </div>
+      <textarea id="pdbqtOutput" placeholder="Generated PDBQT appears here..." readonly></textarea>
+      <div class="status" id="statusText">Ready.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Technical Workflow</h2>
+      <ul>
+        <li>Step 1: the tool requests 3D PDB coordinates from a public SMILES conversion endpoint.</li>
+        <li>Step 2: PDB atom lines are rewritten into PDBQT-style records with atom type and charge columns.</li>
+        <li>Use this quick converter for drafts; fine-tune protonation and torsion settings in docking software when needed.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    const smilesInput = document.getElementById('smilesInput');
+    const output = document.getElementById('pdbqtOutput');
+    const statusText = document.getElementById('statusText');
+    let latestPdbqt = '';
+
+    function normalizeElement(raw) {
+      const token = String(raw || '').replace(/[^A-Za-z]/g, '').toUpperCase();
+      if (!token) return 'C';
+      if (token.length === 1) return token;
+      const two = token.slice(0, 2);
+      const known = ['CL', 'BR', 'NA', 'MG', 'ZN', 'FE', 'CA', 'MN', 'CU', 'NI'];
+      return known.includes(two) ? two : token[0];
+    }
+
+    function inferElementFromAtomName(atomName) {
+      const cleaned = String(atomName || '').trim().replace(/[0-9]/g, '');
+      if (!cleaned) return 'C';
+      if (cleaned.length >= 2) {
+        const two = normalizeElement(cleaned.slice(0, 2));
+        if (['CL', 'BR', 'NA', 'MG', 'ZN', 'FE', 'CA', 'MN', 'CU', 'NI'].includes(two)) return two;
+      }
+      return normalizeElement(cleaned[0]);
+    }
+
+    function elementToAutoDockType(elem) {
+      const map = {
+        H: 'HD', C: 'C', N: 'N', O: 'OA', S: 'SA', P: 'P',
+        F: 'F', CL: 'Cl', BR: 'Br', I: 'I', NA: 'Na', MG: 'Mg',
+        ZN: 'Zn', FE: 'Fe', CA: 'Ca', MN: 'Mn', CU: 'Cu', NI: 'Ni'
+      };
+      return map[elem] || 'C';
+    }
+
+    function formatCharge(charge) {
+      const n = Number.isFinite(charge) ? charge : 0;
+      return (n >= 0 ? ' ' : '') + n.toFixed(3).padStart(6, ' ');
+    }
+
+    function convertPdbToPdbqt(pdbText) {
+      const lines = String(pdbText || '').split(/\r?\n/);
+      const out = [];
+      for (const line of lines) {
+        if (line.startsWith('ATOM') || line.startsWith('HETATM')) {
+          const atomName = line.slice(12, 16);
+          const elemField = line.slice(76, 78).trim();
+          const elem = normalizeElement(elemField || inferElementFromAtomName(atomName));
+          const base = line.padEnd(66, ' ').slice(0, 66);
+          const charge = formatCharge(0.0);
+          const adType = elementToAutoDockType(elem).padStart(2, ' ');
+          out.push(base + charge + ' ' + adType);
+        } else if (line.startsWith('TER') || line.startsWith('MODEL') || line.startsWith('ENDMDL') || line.startsWith('END')) {
+          out.push(line);
+        }
+      }
+      if (out.length === 0) return '';
+      if (!out[out.length - 1].startsWith('END')) out.push('END');
+      return out.join('\n') + '\n';
+    }
+
+    function setStatus(text) { statusText.textContent = text; }
+
+    async function convertSmilesToPdbqt() {
+      const smiles = (smilesInput.value || '').trim();
+      if (!smiles) return setStatus('Enter a SMILES string first.');
+      setStatus('Generating 3D PDB from SMILES...');
+      latestPdbqt = '';
+      output.value = '';
+      try {
+        const encoded = encodeURIComponent(smiles);
+        const url = `https://cactus.nci.nih.gov/chemical/structure/${encoded}/file?format=pdb&get3d=true`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('SMILES conversion failed');
+        const pdbText = await res.text();
+        if (!pdbText || !pdbText.trim()) throw new Error('Empty PDB response');
+        const pdbqt = convertPdbToPdbqt(pdbText);
+        if (!pdbqt) throw new Error('Failed to generate PDBQT');
+        latestPdbqt = pdbqt;
+        output.value = pdbqt;
+        setStatus('SMILES converted to PDBQT successfully.');
+      } catch {
+        setStatus('Could not convert this SMILES to PDBQT. Try another valid SMILES.');
+      }
+    }
+
+    document.getElementById('convertBtn').addEventListener('click', convertSmilesToPdbqt);
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      if (!latestPdbqt) return setStatus('Convert first, then copy.');
+      try {
+        await navigator.clipboard.writeText(latestPdbqt);
+        setStatus('PDBQT copied to clipboard.');
+      } catch {
+        setStatus('Clipboard copy failed. You can copy manually from the output box.');
+      }
+    });
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      if (!latestPdbqt) return setStatus('Convert first, then download.');
+      const blob = new Blob([latestPdbqt], { type: 'chemical/x-pdbqt' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'molecule.pdbqt';
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus('PDBQT download started.');
+    });
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      smilesInput.value = '';
+      output.value = '';
+      latestPdbqt = '';
+      setStatus('Cleared.');
+    });
+  </script>
+</body>
+</html>
