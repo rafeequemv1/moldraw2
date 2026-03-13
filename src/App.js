@@ -370,7 +370,7 @@ function App() {
     setNmrData(null);
   };
 
-  const parseProteinMetadata = (pdbText, label = '') => {
+  const parseProteinMetadata = useCallback((pdbText, label = '') => {
     const text = String(pdbText || '');
     const lines = text.split(/\r?\n/);
     const atomLines = lines.filter((line) => line.startsWith('ATOM') || line.startsWith('HETATM'));
@@ -412,9 +412,9 @@ function App() {
       mw: mass > 0 ? mass : null,
       depositDate: depositDate || ''
     };
-  };
+  }, []);
 
-  const parseProteinChains = (pdbText) => {
+  const parseProteinChains = useCallback((pdbText) => {
     const aaMap = {
       ALA: 'A', ARG: 'R', ASN: 'N', ASP: 'D', CYS: 'C', GLU: 'E', GLN: 'Q', GLY: 'G',
       HIS: 'H', ILE: 'I', LEU: 'L', LYS: 'K', MET: 'M', PHE: 'F', PRO: 'P', SER: 'S',
@@ -437,7 +437,7 @@ function App() {
     });
     Object.keys(chainMap).forEach((chain) => chainMap[chain].sort((a, b) => a.resi - b.resi));
     return chainMap;
-  };
+  }, []);
 
   const getSmilesComponents = useCallback((smiles) => {
     return String(smiles || '')
