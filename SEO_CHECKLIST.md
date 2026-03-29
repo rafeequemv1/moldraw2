@@ -60,7 +60,7 @@
    - `public/apple-touch-icon.png` (180x180)
 
 3. **Google Search Console**
-   - Submit sitemap: https://moldraw.scidart.com/sitemap.xml
+   - Submit sitemap: https://www.moldraw.com/sitemap.xml
    - Verify domain ownership
    - Monitor indexing status
 

@@ -10,125 +10,364 @@
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
   <meta name="author" content="Scidart Academy" />
-  <link rel="canonical" href="https://moldraw.scidart.com/pages/faq.html" />
+  <link rel="canonical" href="https://www.moldraw.com/pages/faq.html" />
   <title>MolDraw FAQ - Frequently Asked Questions | Free ChemDraw Alternative</title>
-  
+
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-0GXXMTT1RP"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-0GXXMTT1RP');
   </script>
-  
+
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
-      line-height: 1.7;
-      color: #1a1a1a;
-      background: #f8f9fa;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      line-height: 1.65;
+      color: #1e293b;
+      background: #f8fafc;
     }
 
-    .container {
-      max-width: 800px;
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      z-index: 999;
+      padding: 8px 12px;
+      background: #fff;
+      color: #2C7A7B;
+      font-weight: 600;
+    }
+    .skip-link:focus { left: 8px; top: 8px; }
+
+    .page-wrap {
+      max-width: 1080px;
       margin: 0 auto;
-      padding: 40px 20px;
+      padding: 16px 16px 40px;
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 50px;
-      padding-bottom: 30px;
-      border-bottom: 2px solid #e8e8e8;
+    .faq-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 24px;
+      align-items: start;
     }
 
-    .header h1 {
-      font-size: 42px;
+    .faq-sidebar {
+      position: sticky;
+      top: 12px;
+    }
+    .faq-sidebar-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 11px;
       font-weight: 800;
-      color: #1a1a1a;
-      margin-bottom: 15px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .faq-cat-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .faq-cat-list li {
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .faq-cat-list li:last-child { border-bottom: none; }
+    .faq-cat-list li[hidden] { display: none !important; }
+    .faq-cat-list .faq-cat-btn {
+      display: block;
+      width: 100%;
+      padding: 9px 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      text-align: left;
+      text-decoration: none;
+      border: none;
+      border-left: 3px solid transparent;
+      background: transparent;
+      cursor: pointer;
+    }
+    .faq-cat-list .faq-cat-btn:hover {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .faq-cat-list .faq-cat-btn:focus-visible {
+      outline: 2px solid #2C7A7B;
+      outline-offset: -2px;
+    }
+    .faq-cat-list .faq-cat-btn.faq-cat-active {
+      border-left-color: #2C7A7B;
+      background: #f0fdfa;
+      color: #0f766e;
+    }
+    .faq-cat-list li.faq-cat-all .faq-cat-btn {
+      font-weight: 700;
+      border-bottom: 1px solid #e2e8f0;
     }
 
-    .back-link {
+    .faq-body {
+      min-width: 0;
+    }
+
+    .site-nav {
+      margin-bottom: 12px;
+    }
+    .site-nav a {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      color: #667eea;
+      gap: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #2C7A7B;
       text-decoration: none;
       font-weight: 600;
-      margin-bottom: 30px;
-      transition: color 0.2s;
+      font-size: 13px;
+    }
+    .site-nav a:hover { text-decoration: underline; }
+
+    .page-header {
+      margin-bottom: 14px;
+    }
+    .page-header h1 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: clamp(1.35rem, 4vw, 1.75rem);
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    .page-header p {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: #64748b;
+      margin-top: 4px;
+      max-width: 42em;
     }
 
-    .back-link:hover {
-      color: #764ba2;
+    /* Search */
+    .faq-search-panel {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: linear-gradient(180deg, #f1f5f9 0%, #f1f5f9 88%, transparent 100%);
+      padding-bottom: 10px;
+      margin-bottom: 8px;
+    }
+    .faq-search-form {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .faq-search-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .faq-search-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .faq-search-input-wrap svg {
+      position: absolute;
+      left: 10px;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    #faqSearch {
+      width: 100%;
+      height: 42px;
+      padding: 0 12px 0 36px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      background: #fff;
+      color: #0f172a;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+    #faqSearch:focus {
+      outline: 2px solid #2C7A7B;
+      outline-offset: 1px;
+      border-color: #94a3b8;
+    }
+    #faqSearch::placeholder { color: #94a3b8; }
+
+    .faq-search-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 1.25em;
+    }
+    #faqSearchStatus {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 12px;
+      color: #64748b;
+    }
+    #faqSearchStatus strong { color: #334155; font-weight: 600; }
+
+    /* Main content */
+    main#faq-main { outline: none; }
+
+    .faq-category {
+      margin-bottom: 18px;
+      scroll-margin-top: 16px;
+    }
+    .faq-category:last-of-type { margin-bottom: 0; }
+
+    .faq-cat-heading {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e2e8f0;
     }
 
-    .faq-item {
-      background: white;
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    article.faq-item {
+      background: #fff;
+      border: 1px solid #e2e8f0;
       border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      border-left: 4px solid #667eea;
+      padding: 16px 18px 18px;
+      border-left: 4px solid #2C7A7B;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      max-width: 65ch;
+    }
+    article.faq-item[hidden] {
+      display: none !important;
     }
 
-    .faq-question {
-      font-size: 20px;
+    article.faq-item h3 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 1.05rem;
       font-weight: 700;
-      color: #1a1a1a;
-      margin-bottom: 12px;
+      color: #0f172a;
+      margin-bottom: 10px;
+      line-height: 1.4;
     }
 
     .faq-answer {
-      font-size: 16px;
-      color: #444;
-      line-height: 1.8;
+      font-size: 1.0625rem;
+      color: #334155;
+      line-height: 1.7;
     }
-
+    .faq-answer ul {
+      margin: 6px 0 0 1.1em;
+      padding: 0;
+    }
+    .faq-answer li { margin-bottom: 4px; }
+    .faq-steps {
+      margin: 0 0 8px 1.2em;
+      padding: 0;
+      list-style: decimal;
+    }
+    .faq-steps li { margin-bottom: 4px; }
+    .faq-answer-note {
+      margin: 10px 0 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #64748b;
+    }
     .faq-answer a {
-      color: #667eea;
+      color: #2563eb;
       text-decoration: none;
-      border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+      border-bottom: 1px solid rgba(37, 99, 235, 0.25);
     }
-
     .faq-answer a:hover {
-      color: #764ba2;
-      border-bottom-color: #764ba2;
+      color: #1d4ed8;
+      border-bottom-color: #1d4ed8;
     }
 
-    .footer {
-      margin-top: 60px;
-      padding-top: 30px;
-      border-top: 1px solid #e8e8e8;
+    .faq-category[hidden] {
+      display: none !important;
+    }
+
+    .site-footer {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin-top: 28px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
       text-align: center;
-      color: #666;
-      font-size: 14px;
+      font-size: 12px;
+      color: #64748b;
     }
-
-    .footer a {
-      color: #667eea;
+    .site-footer a {
+      color: #2C7A7B;
       text-decoration: none;
     }
+    .site-footer a:hover { text-decoration: underline; }
 
-    @media (max-width: 600px) {
-      .header h1 {
-        font-size: 32px;
+    @media (max-width: 768px) {
+      .faq-layout {
+        grid-template-columns: 1fr;
+        gap: 14px;
       }
+      .faq-sidebar {
+        position: static;
+      }
+      .faq-cat-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        border-radius: 10px;
+      }
+      .faq-cat-list li.faq-cat-all {
+        flex: 1 1 100%;
+        border-right: none;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      .faq-cat-list li {
+        border-bottom: none;
+        border-right: 1px solid #f1f5f9;
+        flex: 1 1 auto;
+        min-width: calc(50% - 1px);
+      }
+      .faq-cat-list li:nth-child(2n) { border-right: none; }
+      .faq-cat-list .faq-cat-btn {
+        text-align: center;
+        padding: 10px 8px;
+        font-size: 12px;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+      }
+      .faq-cat-list li.faq-cat-all .faq-cat-btn { border-bottom: 3px solid transparent; }
+      .faq-cat-list .faq-cat-btn.faq-cat-active {
+        border-left-color: transparent;
+        border-bottom-color: #2C7A7B;
+      }
+    }
 
-      .faq-question {
-        font-size: 18px;
-      }
+    @media (max-width: 480px) {
+      .page-wrap { padding: 12px 12px 32px; }
     }
   </style>
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -197,108 +436,365 @@
           "@type": "Answer",
           "text": "MolDraw uses 3Dmol.js for accurate 3D molecular visualization. The structures are generated from 2D coordinates and provide realistic representations suitable for educational and research purposes."
         }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I add lone pairs in MolDraw?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Select the atom, right-click, choose Edit, then open Radicals and pick the lone pair or radical style you need."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I add a curvy arrow (electron-pushing arrow)?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "In Ketcher, select the curved arrow tool from the toolbar near other reaction arrows, then click and drag on the canvas from source to destination."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Who built MolDraw?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "MolDraw is built by Scidart Academy and uses the open-source Ketcher editor and 3Dmol.js."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I use MolDraw for commercial purposes?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, MolDraw is free to use for both personal and commercial purposes. Review Ketcher and 3Dmol.js licenses if you distribute a commercial product."
+        }
       }
     ]
   }
   </script>
 </head>
 <body>
-  <div class="container">
-    <a href="/" class="back-link">
-      ← Back to MolDraw
-    </a>
+  <a href="#faq-main" class="skip-link">Skip to questions</a>
 
-    <div class="header">
-      <h1>Frequently Asked Questions</h1>
-      <p style="color: #666; margin-top: 10px;">Everything you need to know about MolDraw</p>
+  <div class="page-wrap">
+    <nav class="site-nav" aria-label="Breadcrumb">
+      <a href="/">← MolDraw</a>
+    </nav>
+
+    <header class="page-header">
+      <h1>Frequently asked questions</h1>
+      <p>Choose <strong>All</strong> to browse every topic, or a category to see only those questions. Search narrows what you see.</p>
+    </header>
+
+    <div class="faq-layout">
+      <aside class="faq-sidebar">
+        <p class="faq-sidebar-title" id="faq-cat-nav-label">Categories</p>
+        <nav aria-labelledby="faq-cat-nav-label">
+          <ul class="faq-cat-list" id="faqCatNav">
+            <li class="faq-cat-all"><button type="button" class="faq-cat-btn faq-cat-active" data-category="all" aria-pressed="true">All topics</button></li>
+            <li><button type="button" class="faq-cat-btn" data-category="faq-cat-general" aria-pressed="false">General</button></li>
+            <li><button type="button" class="faq-cat-btn" data-category="faq-cat-export" aria-pressed="false">Export &amp; formats</button></li>
+            <li><button type="button" class="faq-cat-btn" data-category="faq-cat-privacy" aria-pressed="false">Privacy &amp; data</button></li>
+            <li><button type="button" class="faq-cat-btn" data-category="faq-cat-technical" aria-pressed="false">Technical</button></li>
+            <li><button type="button" class="faq-cat-btn" data-category="faq-cat-editor" aria-pressed="false">Drawing &amp; editor</button></li>
+            <li><button type="button" class="faq-cat-btn" data-category="faq-cat-about" aria-pressed="false">About &amp; licensing</button></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <div class="faq-body">
+    <div class="faq-search-panel">
+      <form class="faq-search-form" role="search" aria-label="Search FAQ" onsubmit="return false;">
+        <label class="faq-search-label" for="faqSearch">Search questions and answers</label>
+        <div class="faq-search-input-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input
+            type="search"
+            id="faqSearch"
+            name="q"
+            autocomplete="off"
+            enterkeyhint="search"
+            placeholder="Search questions…"
+            aria-controls="faq-main"
+            aria-describedby="faqSearchStatus"
+          />
+        </div>
+        <div class="faq-search-meta">
+          <p id="faqSearchStatus" role="status" aria-live="polite">
+            <strong id="faqVisibleCount">13</strong> of <strong id="faqTotalCount">13</strong>
+            <span id="faqSearchHint"> shown</span>
+          </p>
+        </div>
+      </form>
     </div>
 
-    <div class="faq-item">
-      <div class="faq-question">Is MolDraw really free?</div>
-      <div class="faq-answer">
-        Yes, MolDraw is completely free to use. There are no hidden costs, subscriptions, or premium features. It's a free alternative to ChemDraw, built by Scidart Academy to make molecular editing accessible to everyone.
+    <main id="faq-main" tabindex="-1" aria-label="FAQ content">
+      <section class="faq-category" aria-labelledby="faq-cat-general" data-faq-section>
+        <h2 id="faq-cat-general" class="faq-cat-heading">General</h2>
+        <div class="faq-list">
+          <article class="faq-item">
+            <h3>Is MolDraw really free?</h3>
+            <div class="faq-answer">
+              Yes. No hidden fees, subscriptions, or paywalled features. MolDraw is a free alternative to ChemDraw, from Scidart Academy.
+            </div>
+          </article>
+          <article class="faq-item">
+            <h3>Do I need to install anything?</h3>
+            <div class="faq-answer">
+              No. MolDraw runs in your browser — no download, account, or payment.
+            </div>
+          </article>
+          <article class="faq-item">
+            <h3>Can I search for molecules by name?</h3>
+            <div class="faq-answer">
+              Yes. Use the search bar with names like aspirin, caffeine, or benzene; structures load from PubChem.
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-category" aria-labelledby="faq-cat-export" data-faq-section>
+        <h2 id="faq-cat-export" class="faq-cat-heading">Export &amp; formats</h2>
+        <div class="faq-list">
+          <article class="faq-item">
+            <h3>What file formats can I export?</h3>
+            <div class="faq-answer">
+              Including:
+              <ul>
+                <li><strong>PNG</strong> — images (transparent background supported)</li>
+                <li><strong>SDF</strong> — structure data for chemistry tools</li>
+                <li><strong>XYZ</strong> — coordinates for computational chemistry</li>
+                <li><strong>X3D / OBJ</strong> — 3D meshes for viewers and DCC tools</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-category" aria-labelledby="faq-cat-privacy" data-faq-section>
+        <h2 id="faq-cat-privacy" class="faq-cat-heading">Privacy &amp; data</h2>
+        <div class="faq-list">
+          <article class="faq-item">
+            <h3>Is my data stored or shared?</h3>
+            <div class="faq-answer">
+              Structures are processed in your browser; MolDraw does not upload your drawings to a server for storage.
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-category" aria-labelledby="faq-cat-technical" data-faq-section>
+        <h2 id="faq-cat-technical" class="faq-cat-heading">Technical</h2>
+        <div class="faq-list">
+          <article class="faq-item">
+            <h3>What browsers are supported?</h3>
+            <div class="faq-answer">
+              Current Chrome, Firefox, Safari, Edge, and Opera. JavaScript must be enabled.
+            </div>
+          </article>
+          <article class="faq-item">
+            <h3>Can I use MolDraw offline?</h3>
+            <div class="faq-answer">
+              Initial load needs the network (CDN assets). After that, many features work with spotty connectivity; full offline use requires self-hosting.
+            </div>
+          </article>
+          <article class="faq-item">
+            <h3>How accurate is the 3D visualization?</h3>
+            <div class="faq-answer">
+              Built with <a href="https://3dmol.csb.pitt.edu/" target="_blank" rel="noopener noreferrer">3Dmol.js</a>. Styles include ball &amp; stick, stick, space-fill, and line — suitable for teaching and routine visualization; validate structures for publication workflows.
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-category" aria-labelledby="faq-cat-editor" data-faq-section>
+        <h2 id="faq-cat-editor" class="faq-cat-heading">Drawing &amp; editor</h2>
+        <div class="faq-list">
+          <article class="faq-item">
+            <h3>How do I add lone pairs in MolDraw?</h3>
+            <div class="faq-answer">
+              <ol class="faq-steps">
+                <li>Select the atom.</li>
+                <li><strong>Right-click</strong> to open the context menu.</li>
+                <li>Choose <strong>Edit</strong>.</li>
+                <li>Open <strong>Radicals</strong> and pick the lone pair or radical style you need.</li>
+              </ol>
+              <p class="faq-answer-note">You can also add decorative lone-pair markers on exports. More detail: <a href="/course/chapters/add-lone-pair-in-moldraw.html">lone pairs course chapter</a>.</p>
+            </div>
+          </article>
+          <article class="faq-item">
+            <h3>How do I add a curvy arrow (electron-pushing arrow)?</h3>
+            <div class="faq-answer">
+              <ol class="faq-steps">
+                <li>In the Ketcher toolbar (left), open the tools that include <strong>reaction arrows</strong> and drawing objects.</li>
+                <li>Choose the <strong>curved arrow</strong> tool (curved / electron‑flow arrow — not the straight reaction arrow).</li>
+                <li>On the canvas, <strong>click and drag</strong> from the tail (electron source) toward the head (destination bond or atom).</li>
+              </ol>
+              <p class="faq-answer-note">Exact icons vary slightly by Ketcher version; look for the curved arrow next to other arrow and shape tools. For reaction schemes, see <a href="/course/chapters/drawing-reactions.html">Drawing reactions</a> in the course.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-category" aria-labelledby="faq-cat-about" data-faq-section>
+        <h2 id="faq-cat-about" class="faq-cat-heading">About &amp; licensing</h2>
+        <div class="faq-list">
+          <article class="faq-item">
+            <h3>Who built MolDraw?</h3>
+            <div class="faq-answer">
+              <a href="https://www.moldraw.com" target="_blank" rel="noopener noreferrer">Scidart Academy</a> — <a href="https://rafeeque.com" target="_blank" rel="noopener noreferrer">Rafeeque Mavoor</a>. Editor: <a href="https://github.com/epam/ketcher" target="_blank" rel="noopener noreferrer">Ketcher</a>. Contact: <a href="mailto:rafeequemavoor@gmail.com">rafeequemavoor@gmail.com</a>.
+            </div>
+          </article>
+          <article class="faq-item">
+            <h3>Can I use MolDraw for commercial purposes?</h3>
+            <div class="faq-answer">
+              Yes for typical use. If you redistribute or embed MolDraw in a product, check licenses for Ketcher, 3Dmol.js, and other bundled libraries.
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
       </div>
     </div>
 
-    <div class="faq-item">
-      <div class="faq-question">What file formats can I export?</div>
-      <div class="faq-answer">
-        MolDraw supports multiple export formats including:
-        <ul style="margin-top: 10px; margin-left: 20px;">
-          <li><strong>PNG:</strong> High-quality images with transparent backgrounds</li>
-          <li><strong>SDF:</strong> Structure Data Format for compatibility with chemistry software</li>
-          <li><strong>XYZ:</strong> Coordinate format for computational chemistry</li>
-          <li><strong>X3D:</strong> 3D model format with bonds for web visualization</li>
-          <li><strong>OBJ:</strong> 3D model format compatible with Blender and other 3D software</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="faq-item">
-      <div class="faq-question">Do I need to install anything?</div>
-      <div class="faq-answer">
-        No installation required. MolDraw runs entirely in your web browser. Just visit the website and start drawing molecules. No downloads, no account creation, no credit card required.
-      </div>
-    </div>
-
-    <div class="faq-item">
-      <div class="faq-question">Can I search for molecules by name?</div>
-      <div class="faq-answer">
-        Yes! MolDraw integrates with PubChem to search molecules by name. Simply type a molecule name like "aspirin", "caffeine", "benzene", or any common compound name, and MolDraw will fetch the structure and load it into the editor.
-      </div>
-    </div>
-
-    <div class="faq-item">
-      <div class="faq-question">What browsers are supported?</div>
-      <div class="faq-answer">
-        MolDraw works on all modern web browsers including Chrome, Firefox, Safari, Edge, and Opera. It requires JavaScript to be enabled. For the best experience, we recommend using the latest version of your browser.
-      </div>
-    </div>
-
-    <div class="faq-item">
-      <div class="faq-question">Can I use MolDraw offline?</div>
-      <div class="faq-answer">
-        MolDraw requires an internet connection to function as it loads resources from CDNs. However, once loaded, many features work without constant connectivity. For full offline functionality, you would need to host MolDraw locally.
-      </div>
-    </div>
-
-    <div class="faq-item">
-      <div class="faq-question">Is my data stored or shared?</div>
-      <div class="faq-answer">
-        No, MolDraw does not store your molecular structures. Everything runs locally in your browser. Your data never leaves your device, ensuring complete privacy and security.
-      </div>
-    </div>
-
-    <div class="faq-item">
-      <div class="faq-question">How accurate is the 3D visualization?</div>
-      <div class="faq-answer">
-        MolDraw uses <a href="https://3dmol.csb.pitt.edu/" target="_blank" rel="noopener noreferrer">3Dmol.js</a> for accurate 3D molecular visualization. The structures are generated from 2D coordinates and provide realistic representations suitable for educational and research purposes. The visualization includes multiple rendering styles (ball & stick, stick, space-fill, line) to suit different needs.
-      </div>
-    </div>
-
-    <div class="faq-item">
-      <div class="faq-question">Who built MolDraw?</div>
-      <div class="faq-answer">
-        MolDraw is built by <a href="https://scidart.com" target="_blank" rel="noopener noreferrer">Scidart Academy</a>, created by <a href="https://rafeeque.com" target="_blank" rel="noopener noreferrer">Rafeeque Mavoor</a>. It's powered by the open-source <a href="https://github.com/epam/ketcher" target="_blank" rel="noopener noreferrer">Ketcher</a> chemical structure editor. For questions or feedback, contact <a href="mailto:rafeequemavoor@gmail.com">rafeequemavoor@gmail.com</a>.
-      </div>
-    </div>
-
-    <div class="faq-item">
-      <div class="faq-question">Can I use MolDraw for commercial purposes?</div>
-      <div class="faq-answer">
-        Yes, MolDraw is free to use for both personal and commercial purposes. However, please note that MolDraw uses Ketcher (open-source) and 3Dmol.js, so you should review their respective licenses if you plan to use MolDraw in a commercial product.
-      </div>
-    </div>
-
-    <div class="footer">
+    <footer class="site-footer">
       <p>
-        <a href="/">MolDraw</a> | 
-        <a href="/course/index.html">Course</a> | 
-        <a href="/blog/index.html">Blog</a> | 
-        <a href="/pages/about.html">About</a> | 
-        <a href="https://scidart.com" target="_blank" rel="noopener noreferrer">Scidart Academy</a>
+        <a href="/">MolDraw</a> ·
+        <a href="/course/index.html">Course</a> ·
+        <a href="/blog/index.html">Blog</a> ·
+        <a href="/pages/faq.html">FAQ</a> ·
+        <a href="/pages/about.html">About</a> ·
+        <a href="https://www.moldraw.com" target="_blank" rel="noopener noreferrer">Scidart Academy</a>
       </p>
-    </div>
+    </footer>
   </div>
+
+  <script>
+    (function () {
+      var input = document.getElementById('faqSearch');
+      var mainEl = document.getElementById('faq-main');
+      var visibleEl = document.getElementById('faqVisibleCount');
+      var totalEl = document.getElementById('faqTotalCount');
+      var hintEl = document.getElementById('faqSearchHint');
+      var items = Array.prototype.slice.call(document.querySelectorAll('article.faq-item'));
+      var sections = Array.prototype.slice.call(document.querySelectorAll('[data-faq-section]'));
+      var catButtons = Array.prototype.slice.call(document.querySelectorAll('#faqCatNav .faq-cat-btn'));
+      var total = items.length;
+      var selectedCategory = 'all';
+
+      totalEl.textContent = String(total);
+
+      function headingIdForItem(el) {
+        var sec = el.closest('[data-faq-section]');
+        var h = sec ? sec.querySelector('.faq-cat-heading') : null;
+        return h && h.id ? h.id : '';
+      }
+
+      function sectionForHeadingId(id) {
+        var h = id ? document.getElementById(id) : null;
+        return h ? h.closest('[data-faq-section]') : null;
+      }
+
+      function syncButtonUI() {
+        catButtons.forEach(function (btn) {
+          var cat = btn.getAttribute('data-category');
+          var on = cat === selectedCategory;
+          btn.classList.toggle('faq-cat-active', on);
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+
+      function applyHashFromUrl() {
+        var hash = (window.location.hash || '').replace(/^#/, '');
+        if (!hash || hash === 'faq-main') return;
+        var sec = sectionForHeadingId(hash);
+        if (sec) selectedCategory = hash;
+      }
+
+      function runFilter() {
+        var q = (input.value || '').trim().toLowerCase();
+        var n = 0;
+
+        items.forEach(function (el) {
+          var text = (el.textContent || '').toLowerCase();
+          var searchOk = !q || text.indexOf(q) !== -1;
+          var catId = headingIdForItem(el);
+          var catOk = selectedCategory === 'all' || catId === selectedCategory;
+          var show = searchOk && catOk;
+          el.hidden = !show;
+          if (show) n += 1;
+        });
+
+        sections.forEach(function (sec) {
+          var any = sec.querySelector('article.faq-item:not([hidden])');
+          sec.hidden = !any;
+        });
+
+        visibleEl.textContent = String(n);
+        if (q) {
+          hintEl.textContent = ' match “' + q + '”';
+        } else if (selectedCategory === 'all') {
+          hintEl.textContent = ' shown';
+        } else {
+          hintEl.textContent = ' in this category';
+        }
+
+        syncButtonUI();
+      }
+
+      function scrollToCategoryContent() {
+        if (selectedCategory === 'all') {
+          mainEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+        var heading = document.getElementById(selectedCategory);
+        var sec = sectionForHeadingId(selectedCategory);
+        if (heading && sec && !sec.hidden) {
+          heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          mainEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+
+      input.addEventListener('input', runFilter);
+      input.addEventListener('search', function () {
+        if (!input.value) runFilter();
+      });
+
+      catButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var cat = btn.getAttribute('data-category');
+          if (!cat) return;
+          selectedCategory = cat;
+          if (cat === 'all') {
+            try {
+              history.replaceState(null, '', window.location.pathname + window.location.search);
+            } catch (e) { /* ignore */ }
+          } else {
+            try {
+              history.replaceState(null, '', '#' + cat);
+            } catch (e2) { /* ignore */ }
+          }
+          runFilter();
+          scrollToCategoryContent();
+        });
+      });
+
+      window.addEventListener('hashchange', function () {
+        applyHashFromUrl();
+        runFilter();
+        scrollToCategoryContent();
+      });
+
+      applyHashFromUrl();
+      runFilter();
+      if (selectedCategory !== 'all') {
+        setTimeout(scrollToCategoryContent, 100);
+      }
+    })();
+  </script>
 </body>
 </html>

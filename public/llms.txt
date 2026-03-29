@@ -2,8 +2,8 @@
 
 > MolDraw is a free web-based chemistry editor and 3D viewer by Scidart Academy.
 
-- App: https://moldraw.scidart.com/
-- Tools: https://moldraw.scidart.com/tools/index.html
-- Course: https://moldraw.scidart.com/course/index.html
-- Blog: https://moldraw.scidart.com/blog/index.html
-- AI setup: https://moldraw.scidart.com/pages/ai-help.html
+- App: https://www.moldraw.com/
+- Tools: https://www.moldraw.com/tools/index.html
+- Course: https://www.moldraw.com/course/index.html
+- Blog: https://www.moldraw.com/blog/index.html
+- AI setup: https://www.moldraw.com/pages/ai-help.html

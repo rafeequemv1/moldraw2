@@ -4,4 +4,4 @@ Allow: /blog/
 Allow: /tools/
 Allow: /pages/
 
-Sitemap: https://moldraw.scidart.com/sitemap.xml
+Sitemap: https://www.moldraw.com/sitemap.xml

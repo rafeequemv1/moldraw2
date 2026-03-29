@@ -154,102 +154,6 @@
   background: #f1f5f9;
 }
 
-.canvas-lp-hint {
-  position: absolute;
-  right: 14px;
-  bottom: 12px;
-  z-index: 130;
-  border: 1px solid #d6dde3;
-  background: rgba(255, 255, 255, 0.92);
-  color: #475569;
-  border-radius: 8px;
-  padding: 6px 9px;
-  font-size: 11px;
-  font-weight: 500;
-  font-family: 'Libre Franklin', sans-serif;
-  cursor: default;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  max-width: 360px;
-  line-height: 1.35;
-}
-
-.canvas-mol-props-card {
-  position: absolute;
-  right: 14px;
-  bottom: 52px;
-  z-index: 130;
-  max-width: 320px;
-  border: 1px solid #d9e2e8;
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 10px;
-  padding: 7px 9px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
-  backdrop-filter: blur(4px);
-}
-
-.canvas-mol-props-name {
-  font-size: 11px;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.canvas-mol-props-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-top: 1px;
-}
-
-.canvas-mol-props-label {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  color: #64748b;
-  min-width: 78px;
-  flex-shrink: 0;
-}
-
-.canvas-mol-props-value {
-  font-size: 10px;
-  color: #1f2937;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-
-.canvas-mol-copy-btn {
-  height: 18px;
-  border: 1px solid #d1d5db;
-  border-radius: 5px;
-  background: #fff;
-  color: #475569;
-  font-size: 9px;
-  font-weight: 700;
-  padding: 0 6px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.canvas-mol-copy-btn:hover {
-  border-color: #2C7A7B;
-  color: #0f172a;
-}
-
-.canvas-mol-copy-btn:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.canvas-mol-copy-btn.copied {
-  color: #16a34a;
-  border-color: #9fddb3;
-}
-
 /* Brand Header */
 .brand-header {
   background: white;
@@ -402,6 +306,16 @@
 .tb-menu-item:hover {
   background: #f1f5f9;
   color: #0f172a;
+}
+
+button.tb-menu-item {
+  font: inherit;
+  font-family: inherit;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
 .tb-sep {
@@ -849,22 +763,90 @@
   color: #0f172a;
 }
 
-/* Molecule Properties Card */
+/* Molecule Properties Card — overlay on 3D viewer (top right) */
 .mol-props-card {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 50;
-  background: rgba(255, 255, 255, 0.92);
+  top: 10px;
+  right: 10px;
+  z-index: 60;
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(8px);
   border: 1px solid #e0e0e0;
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 8px 12px 10px;
   min-width: 200px;
-  max-width: 300px;
+  max-width: min(300px, calc(100% - 20px));
+  max-height: min(70vh, calc(100% - 24px));
+  overflow: auto;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   animation: propsFadeIn 0.25s ease;
-  display: none;
+}
+
+.mol-props-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -2px -4px 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.mol-props-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.mol-props-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mol-props-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.mol-props-reopen-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 60;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  color: #2C7A7B;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+}
+
+.mol-props-reopen-btn:hover {
+  border-color: #2C7A7B;
+  background: #f7fcfc;
+}
+
+.viewer-3d-stack {
+  min-height: 0;
 }
 
 @keyframes propsFadeIn {

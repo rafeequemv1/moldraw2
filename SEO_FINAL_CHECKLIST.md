@@ -21,7 +21,7 @@
 - [x] **OG Site Name** - "MolDraw" set
 - [x] **OG Locale** - en_US set
 - [x] **Twitter Cards** - Summary and summary_large_image configured
-- [x] **Twitter Site** - @scidart handle set
+- [x] **Twitter Site** - @moldraw handle set
 
 ### Structured Data (Schema.org)
 - [x] **WebApplication Schema** - Homepage with features, pricing, ratings
@@ -91,7 +91,7 @@
 
 3. **Google Search Console Setup** ⚠️
    - Verify domain ownership
-   - Submit sitemap: `https://moldraw.scidart.com/sitemap.xml`
+   - Submit sitemap: `https://www.moldraw.com/sitemap.xml`
    - Monitor indexing status
    - Fix any crawl errors
    - **Action Required**: Manual setup in Google Search Console
@@ -186,7 +186,7 @@
 
 3. **Set Up Google Search Console**
    - Go to https://search.google.com/search-console
-   - Add property: moldraw.scidart.com
+   - Add property: www.moldraw.com
    - Verify ownership
    - Submit sitemap
 

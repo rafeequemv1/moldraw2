@@ -28,6 +28,7 @@ function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [is3DPanelOpen, setIs3DPanelOpen] = useState(true);
+  const [molDetailsOpen, setMolDetailsOpen] = useState(true);
   const [viewerMode, setViewerMode] = useState('molecule');
   const [isProtein, setIsProtein] = useState(false);
   const [proteinMeta, setProteinMeta] = useState(null);
@@ -103,10 +104,12 @@ function App() {
   const [miewOutline, setMiewOutline] = useState(true);
   const [exportTransparentBg, setExportTransparentBg] = useState(true);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [lonePairs, setLonePairs] = useState([]);
   const lastSmilesSelectionBaseRef = useRef('');
   const lonePairDragRef = useRef(null);
   const moreMenuRef = useRef(null);
+  const downloadMenuRef = useRef(null);
   const host = window.location.hostname;
   const isLocalDevHost =
     host === 'localhost' ||
@@ -149,14 +152,31 @@ function App() {
 
   useEffect(() => {
     const onDocClick = (event) => {
-      if (!showMoreMenu) return;
       if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
         setShowMoreMenu(false);
+      }
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
+        setShowDownloadMenu(false);
       }
     };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
-  }, [showMoreMenu]);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search);
+      if (q.get('openTlc') === '1') {
+        setShowTlcModal(true);
+        q.delete('openTlc');
+        const rest = q.toString();
+        const next = `${window.location.pathname}${rest ? `?${rest}` : ''}${window.location.hash || ''}`;
+        window.history.replaceState({}, '', next);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   // Initialize IndexedDB for caching
   useEffect(() => {
@@ -189,6 +209,7 @@ function App() {
           if (state.renderStyle) setRenderStyle(state.renderStyle);
           if (state.showHydrogens !== undefined) setShowHydrogens(state.showHydrogens);
           if (state.is3DPanelOpen !== undefined) setIs3DPanelOpen(state.is3DPanelOpen);
+          if (state.molDetailsOpen !== undefined) setMolDetailsOpen(state.molDetailsOpen);
         }
 
         // Initialize IndexedDB
@@ -207,6 +228,7 @@ function App() {
       renderStyle,
       showHydrogens,
       is3DPanelOpen,
+      molDetailsOpen,
       timestamp: Date.now()
     };
     try {
@@ -214,7 +236,7 @@ function App() {
     } catch (error) {
       console.warn('Failed to save state to localStorage:', error);
     }
-  }, [renderStyle, showHydrogens, is3DPanelOpen]);
+  }, [renderStyle, showHydrogens, is3DPanelOpen, molDetailsOpen]);
 
   useEffect(() => {
     try { localStorage.setItem('moldraw_ai_model', aiModel); } catch {}
@@ -3400,7 +3422,7 @@ ${scientificGuardrails}`;
             <div className="brand-top-row">
               <div className="brand-name">
                 <img src="/logo.svg" alt="MolDraw" className="brand-logo" />
-                <span className="brand-by-text">by <a href="https://scidart.com" target="_blank" rel="noopener noreferrer" className="brand-by-link">scidart.com</a></span>
+                <span className="brand-by-text">by <a href="https://www.moldraw.com" target="_blank" rel="noopener noreferrer" className="brand-by-link">moldraw.com</a></span>
               </div>
 
               {/* Molecule Search Bar - Now in header */}
@@ -3492,26 +3514,74 @@ ${scientificGuardrails}`;
               >
                 Reactions
               </button>
-              <button
+              <a
                 className="tb-btn"
-                onClick={() => setShowTlcModal(true)}
-                title="Open TLC diagram builder"
+                href="/tools/index.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Calculators, converters, TLC, and more"
               >
-                TLC
-              </button>
+                Tools
+              </a>
 
-              <button className="tb-btn" onClick={() => { if (iframeRef.current && isKetcherReady) iframeRef.current.contentWindow.postMessage({ type: 'get-svg' }, '*'); }} title="Download SVG">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                SVG
-              </button>
-              <button className="tb-btn" onClick={() => { if (iframeRef.current && isKetcherReady) iframeRef.current.contentWindow.postMessage({ type: 'get-png' }, '*'); }} title="Download PNG">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                PNG
-              </button>
-              <button className="tb-btn" onClick={() => { if (iframeRef.current && isKetcherReady) iframeRef.current.contentWindow.postMessage({ type: 'get-png-jpeg' }, '*'); }} title="Download JPEG">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                JPG
-              </button>
+              <div className="tb-menu-dropdown" ref={downloadMenuRef}>
+                <button
+                  type="button"
+                  className="tb-btn"
+                  disabled={!isKetcherReady}
+                  onClick={() => setShowDownloadMenu((v) => !v)}
+                  title="Download structure (SVG, PNG, or JPEG)"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" style={{ marginLeft: 2, opacity: 0.75 }}>
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                {showDownloadMenu && (
+                  <div className="tb-menu-dropdown-list" role="menu" aria-label="Download format">
+                    <button
+                      type="button"
+                      className="tb-menu-item"
+                      role="menuitem"
+                      onClick={() => {
+                        if (iframeRef.current && isKetcherReady) {
+                          iframeRef.current.contentWindow.postMessage({ type: 'get-svg' }, '*');
+                        }
+                        setShowDownloadMenu(false);
+                      }}
+                    >
+                      SVG
+                    </button>
+                    <button
+                      type="button"
+                      className="tb-menu-item"
+                      role="menuitem"
+                      onClick={() => {
+                        if (iframeRef.current && isKetcherReady) {
+                          iframeRef.current.contentWindow.postMessage({ type: 'get-png' }, '*');
+                        }
+                        setShowDownloadMenu(false);
+                      }}
+                    >
+                      PNG
+                    </button>
+                    <button
+                      type="button"
+                      className="tb-menu-item"
+                      role="menuitem"
+                      onClick={() => {
+                        if (iframeRef.current && isKetcherReady) {
+                          iframeRef.current.contentWindow.postMessage({ type: 'get-png-jpeg' }, '*');
+                        }
+                        setShowDownloadMenu(false);
+                      }}
+                    >
+                      JPEG
+                    </button>
+                  </div>
+                )}
+              </div>
               <a
                 className="tb-btn tb-icon-only"
                 href="/tools/free-chem-tools/interactive-periodic-table.html"
@@ -3529,6 +3599,9 @@ ${scientificGuardrails}`;
               </a>
               <a className="tb-btn" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">
                 Course
+              </a>
+              <a className="tb-btn" href="/pages/faq.html" target="_blank" rel="noopener noreferrer" title="Frequently asked questions">
+                FAQ
               </a>
               <div className="header-download-wrap">
                 <a
@@ -3549,7 +3622,7 @@ ${scientificGuardrails}`;
                 {showMoreMenu && (
                   <div className="tb-menu-dropdown-list">
                   <a className="tb-menu-item" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">AI Setup</a>
-                  <a className="tb-menu-item" href="/tools/index.html" target="_blank" rel="noopener noreferrer" title="Tools">Tools</a>
+                  <a className="tb-menu-item" href="/tools/index.html#tlc-tool" target="_blank" rel="noopener noreferrer" title="TLC diagram tool on Tools hub">TLC diagram</a>
                   <a className="tb-menu-item" href="/blog/index.html" target="_blank" rel="noopener noreferrer" title="Blog">Blog</a>
                   <a className="tb-menu-item" href="/pages/updates.html" target="_blank" rel="noopener noreferrer" title="Updates">Updates</a>
                   </div>
@@ -3610,66 +3683,6 @@ ${scientificGuardrails}`;
               ))}
             </div>
 
-            {!isProtein && (
-              <div className="canvas-mol-props-card" title="Molecule details">
-                <div className="canvas-mol-props-name">
-                  {(moleculeName && moleculeName !== 'Not found in PubChem') ? moleculeName : 'Selected Molecule'}
-                </div>
-                <div className="canvas-mol-props-row">
-                  <span className="canvas-mol-props-label">IUPAC</span>
-                  <span className="canvas-mol-props-value">{iupacName || 'Unavailable'}</span>
-                  <button
-                    className={`canvas-mol-copy-btn${metaIupacCopied ? ' copied' : ''}`}
-                    onClick={() => {
-                      if (!iupacName) return;
-                      navigator.clipboard.writeText(iupacName).then(() => {
-                        setMetaIupacCopied(true);
-                        setTimeout(() => setMetaIupacCopied(false), 1200);
-                      }).catch(() => {});
-                    }}
-                    title="Copy IUPAC name"
-                    disabled={!iupacName}
-                  >
-                    {metaIupacCopied ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-                <div className="canvas-mol-props-row">
-                  <span className="canvas-mol-props-label">SMILES</span>
-                  <span className="canvas-mol-props-value">{currentSmiles || currentMolecule?.smiles || 'Unavailable'}</span>
-                  <button
-                    className={`canvas-mol-copy-btn${metaSmilesCopied ? ' copied' : ''}`}
-                    onClick={() => {
-                      const text = currentSmiles || currentMolecule?.smiles || '';
-                      if (!text) return;
-                      navigator.clipboard.writeText(text).then(() => {
-                        setMetaSmilesCopied(true);
-                        setTimeout(() => setMetaSmilesCopied(false), 1200);
-                      }).catch(() => {});
-                    }}
-                    title="Copy SMILES"
-                    disabled={!(currentSmiles || currentMolecule?.smiles)}
-                  >
-                    {metaSmilesCopied ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-                <div className="canvas-mol-props-row">
-                  <span className="canvas-mol-props-label">Molecular Weight</span>
-                  <span className="canvas-mol-props-value">{molecularMass ? `${molecularMass.toFixed(2)} g/mol` : '—'}</span>
-                </div>
-                <div className="canvas-mol-props-row">
-                  <span className="canvas-mol-props-label">Melting Point</span>
-                  <span className="canvas-mol-props-value">{meltingPoint || '—'}</span>
-                </div>
-                <div className="canvas-mol-props-row">
-                  <span className="canvas-mol-props-label">Boiling Point</span>
-                  <span className="canvas-mol-props-value">{boilingPoint || '—'}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="canvas-lp-hint" title="How to add lone pair in Ketcher">
-              Add lone pair: select atom, right click > Edit > Radical dropdown.
-            </div>
           </div>
         </section>
 
@@ -3952,173 +3965,204 @@ ${scientificGuardrails}`;
             </div>
           )}
 
-          {/* Molecule / Protein Properties Card */}
-          {(moleculeName || molecularMass || proteinMeta || currentSmiles) && (
-            <div className="mol-props-card">
-              {moleculeName && moleculeName !== 'Not found in PubChem' && (
-                <div className="mol-props-row mol-props-name">{moleculeName}</div>
-              )}
-              {isProtein && proteinMeta && (
-                <>
-                  {proteinMeta.method && (
-                    <div className="mol-props-row">
-                      <span className="mol-props-label">Method</span>
-                      <span className="mol-props-value">{proteinMeta.method}</span>
+              <div className="viewer-3d-stack" style={{ position: 'relative', width: '100%', height: '100%' }}>
+                {(moleculeName || molecularMass || proteinMeta || currentSmiles) && molDetailsOpen && (
+                  <div className="mol-props-card">
+                    <div className="mol-props-card-header">
+                      <span className="mol-props-card-title">{isProtein ? 'Structure details' : 'Molecule details'}</span>
+                      <button
+                        type="button"
+                        className="mol-props-close-btn"
+                        onClick={() => setMolDetailsOpen(false)}
+                        title="Hide details"
+                        aria-label="Hide molecule details"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
                     </div>
-                  )}
-                  {proteinMeta.chains && (
-                    <div className="mol-props-row">
-                      <span className="mol-props-label">Chains</span>
-                      <span className="mol-props-value">{proteinMeta.chains}</span>
-                    </div>
-                  )}
-                  {proteinMeta.resolution && (
-                    <div className="mol-props-row">
-                      <span className="mol-props-label">Resolution</span>
-                      <span className="mol-props-value">{proteinMeta.resolution} &#197;</span>
-                    </div>
-                  )}
-                  {proteinMeta.atomCount && (
-                    <div className="mol-props-row">
-                      <span className="mol-props-label">Atoms</span>
-                      <span className="mol-props-value">{proteinMeta.atomCount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {proteinMeta.mw && (
-                    <div className="mol-props-row">
-                      <span className="mol-props-label">MW</span>
-                      <span className="mol-props-value">{(proteinMeta.mw / 1000).toFixed(1)} kDa</span>
-                    </div>
-                  )}
-                  {proteinMeta.depositDate && (
-                    <div className="mol-props-row">
-                      <span className="mol-props-label">Deposited</span>
-                      <span className="mol-props-value">{proteinMeta.depositDate}</span>
-                    </div>
-                  )}
-                </>
-              )}
-              {!isProtein && currentSmiles && (
-                <div className="mol-props-row mol-props-multiline-row">
-                  <span className="mol-props-label">IUPAC</span>
-                  <span className="mol-props-value mol-props-iupac" title={iupacName || 'IUPAC name unavailable'}>
-                    {iupacName || 'IUPAC name unavailable'}
-                  </span>
-                  <button
-                    className={`mol-props-copy-btn${metaIupacCopied ? ' mol-props-copy-btn-copied' : ''}`}
-                    onClick={() => {
-                      if (!iupacName) return;
-                      navigator.clipboard.writeText(iupacName).then(() => {
-                        setMetaIupacCopied(true);
-                        setTimeout(() => setMetaIupacCopied(false), 1200);
-                      }).catch(() => {});
-                    }}
-                    title="Copy IUPAC name"
-                    disabled={!iupacName}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                    </svg>
-                    {metaIupacCopied ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-              )}
-              {!isProtein && currentSmiles && (
-                <div className="mol-props-row mol-props-multiline-row">
-                  <span className="mol-props-label">SMILES</span>
-                  <span className="mol-props-value mol-props-smiles" title={currentSmiles}>{currentSmiles}</span>
-                  <button
-                    className={`mol-props-copy-btn${metaSmilesCopied ? ' mol-props-copy-btn-copied' : ''}`}
-                    onClick={() => {
-                      navigator.clipboard.writeText(currentSmiles).then(() => {
-                        setMetaSmilesCopied(true);
-                        setTimeout(() => setMetaSmilesCopied(false), 1200);
-                      }).catch(() => {});
-                    }}
-                    title="Copy SMILES"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                    </svg>
-                    {metaSmilesCopied ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-              )}
-              {!isProtein && molecularMass && (
-                <div className="mol-props-row">
-                  <span className="mol-props-label">Mass</span>
-                  <span className="mol-props-value">{molecularMass.toFixed(2)} g/mol</span>
-                </div>
-              )}
-              {!isProtein && (meltingPoint || boilingPoint) && (
-                <>
-                  <div className="mol-props-row">
-                    <span className="mol-props-label">MP</span>
-                    <span className="mol-props-value">{meltingPoint || '—'}</span>
+                    {moleculeName && moleculeName !== 'Not found in PubChem' && (
+                      <div className="mol-props-row mol-props-name">{moleculeName}</div>
+                    )}
+                    {isProtein && proteinMeta && (
+                      <>
+                        {proteinMeta.method && (
+                          <div className="mol-props-row">
+                            <span className="mol-props-label">Method</span>
+                            <span className="mol-props-value">{proteinMeta.method}</span>
+                          </div>
+                        )}
+                        {proteinMeta.chains && (
+                          <div className="mol-props-row">
+                            <span className="mol-props-label">Chains</span>
+                            <span className="mol-props-value">{proteinMeta.chains}</span>
+                          </div>
+                        )}
+                        {proteinMeta.resolution && (
+                          <div className="mol-props-row">
+                            <span className="mol-props-label">Resolution</span>
+                            <span className="mol-props-value">{proteinMeta.resolution} &#197;</span>
+                          </div>
+                        )}
+                        {proteinMeta.atomCount && (
+                          <div className="mol-props-row">
+                            <span className="mol-props-label">Atoms</span>
+                            <span className="mol-props-value">{proteinMeta.atomCount.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {proteinMeta.mw && (
+                          <div className="mol-props-row">
+                            <span className="mol-props-label">MW</span>
+                            <span className="mol-props-value">{(proteinMeta.mw / 1000).toFixed(1)} kDa</span>
+                          </div>
+                        )}
+                        {proteinMeta.depositDate && (
+                          <div className="mol-props-row">
+                            <span className="mol-props-label">Deposited</span>
+                            <span className="mol-props-value">{proteinMeta.depositDate}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {!isProtein && currentSmiles && (
+                      <div className="mol-props-row mol-props-multiline-row">
+                        <span className="mol-props-label">IUPAC</span>
+                        <span className="mol-props-value mol-props-iupac" title={iupacName || 'IUPAC name unavailable'}>
+                          {iupacName || 'IUPAC name unavailable'}
+                        </span>
+                        <button
+                          className={`mol-props-copy-btn${metaIupacCopied ? ' mol-props-copy-btn-copied' : ''}`}
+                          onClick={() => {
+                            if (!iupacName) return;
+                            navigator.clipboard.writeText(iupacName).then(() => {
+                              setMetaIupacCopied(true);
+                              setTimeout(() => setMetaIupacCopied(false), 1200);
+                            }).catch(() => {});
+                          }}
+                          title="Copy IUPAC name"
+                          disabled={!iupacName}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                          </svg>
+                          {metaIupacCopied ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    )}
+                    {!isProtein && currentSmiles && (
+                      <div className="mol-props-row mol-props-multiline-row">
+                        <span className="mol-props-label">SMILES</span>
+                        <span className="mol-props-value mol-props-smiles" title={currentSmiles}>{currentSmiles}</span>
+                        <button
+                          className={`mol-props-copy-btn${metaSmilesCopied ? ' mol-props-copy-btn-copied' : ''}`}
+                          onClick={() => {
+                            navigator.clipboard.writeText(currentSmiles).then(() => {
+                              setMetaSmilesCopied(true);
+                              setTimeout(() => setMetaSmilesCopied(false), 1200);
+                            }).catch(() => {});
+                          }}
+                          title="Copy SMILES"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                          </svg>
+                          {metaSmilesCopied ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    )}
+                    {!isProtein && molecularMass && (
+                      <div className="mol-props-row">
+                        <span className="mol-props-label">Mass</span>
+                        <span className="mol-props-value">{molecularMass.toFixed(2)} g/mol</span>
+                      </div>
+                    )}
+                    {!isProtein && (meltingPoint || boilingPoint) && (
+                      <>
+                        <div className="mol-props-row">
+                          <span className="mol-props-label">MP</span>
+                          <span className="mol-props-value">{meltingPoint || '—'}</span>
+                        </div>
+                        <div className="mol-props-row">
+                          <span className="mol-props-label">BP</span>
+                          <span className="mol-props-value">{boilingPoint || '—'}</span>
+                        </div>
+                      </>
+                    )}
+                    {!isProtein && currentSmiles && geminiApiKey && (
+                      <>
+                        <div className="mol-props-model-row">
+                          <span className="mol-props-label">AI model</span>
+                          <select
+                            className="mol-props-model-select"
+                            value={aiModel}
+                            onChange={(e) => setAiModel(e.target.value)}
+                            title="Model for spectrum predictions"
+                          >
+                            {AI_MODEL_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="mol-props-nmr-row">
+                          <button
+                            className="mol-props-nmr-btn"
+                            onClick={() => predictNMR('proton')}
+                            disabled={isNmrLoading}
+                            title="Predict 1H NMR spectrum (AI)"
+                          >
+                            {isNmrLoading ? '...' : '¹H NMR'}
+                          </button>
+                          <button
+                            className="mol-props-nmr-btn mol-props-nmr-btn-c13"
+                            onClick={() => predictNMR('carbon')}
+                            disabled={isNmrLoading}
+                            title="Predict 13C NMR spectrum (AI)"
+                          >
+                            {isNmrLoading ? '...' : '¹³C NMR'}
+                          </button>
+                          <button
+                            className="mol-props-nmr-btn mol-props-nmr-btn-ir"
+                            onClick={() => predictNMR('ir')}
+                            disabled={isNmrLoading}
+                            title="Predict IR spectrum (AI)"
+                          >
+                            {isNmrLoading ? '...' : 'IR'}
+                          </button>
+                          <button
+                            className="mol-props-nmr-btn mol-props-nmr-btn-uv"
+                            onClick={() => predictNMR('uv')}
+                            disabled={isNmrLoading}
+                            title="Predict UV-Vis spectrum (AI)"
+                          >
+                            {isNmrLoading ? '...' : 'UV-Vis'}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div className="mol-props-row">
-                    <span className="mol-props-label">BP</span>
-                    <span className="mol-props-value">{boilingPoint || '—'}</span>
-                  </div>
-                </>
-              )}
-              {!isProtein && currentSmiles && geminiApiKey && (
-                <>
-                  <div className="mol-props-model-row">
-                    <span className="mol-props-label">AI model</span>
-                    <select
-                      className="mol-props-model-select"
-                      value={aiModel}
-                      onChange={(e) => setAiModel(e.target.value)}
-                      title="Model for spectrum predictions"
-                    >
-                      {AI_MODEL_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mol-props-nmr-row">
-                    <button
-                      className="mol-props-nmr-btn"
-                      onClick={() => predictNMR('proton')}
-                      disabled={isNmrLoading}
-                      title="Predict 1H NMR spectrum (AI)"
-                    >
-                      {isNmrLoading ? '...' : '¹H NMR'}
-                    </button>
-                    <button
-                      className="mol-props-nmr-btn mol-props-nmr-btn-c13"
-                      onClick={() => predictNMR('carbon')}
-                      disabled={isNmrLoading}
-                      title="Predict 13C NMR spectrum (AI)"
-                    >
-                      {isNmrLoading ? '...' : '¹³C NMR'}
-                    </button>
-                    <button
-                      className="mol-props-nmr-btn mol-props-nmr-btn-ir"
-                      onClick={() => predictNMR('ir')}
-                      disabled={isNmrLoading}
-                      title="Predict IR spectrum (AI)"
-                    >
-                      {isNmrLoading ? '...' : 'IR'}
-                    </button>
-                    <button
-                      className="mol-props-nmr-btn mol-props-nmr-btn-uv"
-                      onClick={() => predictNMR('uv')}
-                      disabled={isNmrLoading}
-                      title="Predict UV-Vis spectrum (AI)"
-                    >
-                      {isNmrLoading ? '...' : 'UV-Vis'}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+                )}
 
-              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                {(moleculeName || molecularMass || proteinMeta || currentSmiles) && !molDetailsOpen && (
+                  <button
+                    type="button"
+                    className="mol-props-reopen-btn"
+                    onClick={() => setMolDetailsOpen(true)}
+                    title={isProtein ? 'Show structure details' : 'Show molecule details'}
+                    aria-label={isProtein ? 'Show structure details' : 'Show molecule details'}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <rect x="4" y="4" width="16" height="16" rx="2" />
+                      <line x1="9" y1="9" x2="15" y2="9" />
+                      <line x1="9" y1="12" x2="15" y2="12" />
+                      <line x1="9" y1="15" x2="13" y2="15" />
+                    </svg>
+                  </button>
+                )}
+
                 <div
                   ref={viewer3DRef}
                   className="viewer-3d"

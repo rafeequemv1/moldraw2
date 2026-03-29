@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Free chemical equation balancer online: balance redox and stoichiometric reactions with integer coefficients. Step-by-step how-to, preset examples (combustion, synthesis, neutralization), and technical notes for students and teachers. Works in your browser — no install.">
+  <meta name="keywords" content="balance chemical equation, chemical equation balancer, stoichiometry calculator, reaction balancing tool, chemistry homework, redox balance, MolDraw">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="Chemical Equation Balancer (Free) | MolDraw Tools">
+  <meta property="og:description" content="Balance chemical equations instantly with integer coefficients. Preset examples, how-to guide, and browser-based calculator for chemistry education.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/chemical-equation-balancer.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Chemical Equation Balancer | MolDraw">
+  <meta name="twitter:description" content="Free online tool to balance chemical reactions with clear steps and classroom-ready examples.">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/chemical-equation-balancer.html">
+  <title>Chemical Equation Balancer — Balance Reactions Online | Free Chemistry Tool</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "MolDraw Chemical Equation Balancer",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/chemical-equation-balancer.html",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "description": "Balance chemical equations in the browser using a matrix stoichiometry method with smallest whole-number coefficients.",
+    "publisher": { "@type": "Organization", "name": "Scidart Academy" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to balance a chemical equation with this tool",
+    "description": "Enter reactants and products as plain formulas, then balance.",
+    "step": [
+      { "@type": "HowToStep", "name": "Enter reactants", "text": "Type each formula separated by + on the left side (e.g. H2 + O2)." },
+      { "@type": "HowToStep", "name": "Enter products", "text": "Type each formula separated by + on the right side (e.g. H2O)." },
+      { "@type": "HowToStep", "name": "Balance", "text": "Click Balance equation to compute the smallest integer coefficients." }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Does this tool balance ionic or half-reactions?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "This page balances neutral molecular formulas using element conservation (stoichiometric matrix). Ionic equations with separate ions, charges, or electron terms need manual redox methods beyond this demo."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What formula syntax is supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Element symbols, optional subscripts, and parentheses groups such as Ca(OH)2 or Al2(SO4)3. Charges and hydrates are not parsed."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.65;
+    }
+    .container { width: min(900px, 94vw); margin: 0 auto; padding: 24px 0 48px; }
+    .top-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    .top-link {
+      display: inline-flex; align-items: center;
+      border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px;
+      text-decoration: none; color: #334155; font-size: 12px; font-weight: 600; background: #fff;
+    }
+    .hero {
+      background: linear-gradient(135deg, #f0fdfa 0%, #fff 50%);
+      border: 1px solid #e5e7eb; border-radius: 16px; padding: 22px 24px; margin-bottom: 18px;
+    }
+    .hero h1 { font-size: clamp(1.5rem, 4vw, 2rem); color: #0f172a; margin-bottom: 10px; line-height: 1.2; }
+    .hero .lead { color: #475569; font-size: 15px; max-width: 52rem; }
+    .panel {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px 22px; margin-bottom: 16px;
+    }
+    .panel h2 { font-size: 1.15rem; color: #0f172a; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; }
+    .panel h3 { font-size: 1rem; color: #334155; margin: 16px 0 8px; }
+    .eq-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .eq-row label { font-size: 12px; font-weight: 700; color: #475569; width: 100%; }
+    .eq-row input[type="text"] {
+      flex: 1; min-width: 200px; height: 42px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 10px;
+      font-size: 15px; font-family: ui-monospace, 'Cascadia Code', monospace;
+    }
+    .arrow-txt { font-weight: 800; color: #2C7A7B; font-size: 18px; padding: 0 4px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 42px; padding: 0 18px; border-radius: 10px; border: none;
+      background: #2C7A7B; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+    }
+    .btn:hover { background: #236663; }
+    .btn-secondary { background: #fff; color: #0f766e; border: 1px solid #2C7A7B; }
+    .btn-secondary:hover { background: #f0fdfa; }
+    .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .presets button { font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; cursor: pointer; color: #334155; font-weight: 600; }
+    .presets button:hover { border-color: #2C7A7B; color: #0f766e; }
+    .result {
+      margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0;
+      font-size: 17px; font-family: ui-monospace, monospace; color: #0f172a; min-height: 52px; word-break: break-word;
+    }
+    .result.err { background: #fef2f2; border-color: #fecaca; color: #991b1b; font-family: inherit; font-size: 14px; }
+    .doc p, .doc li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    .doc ul { margin-left: 1.2em; margin-bottom: 12px; }
+    .doc ol { margin-left: 1.2em; margin-bottom: 12px; }
+    .doc strong { color: #1e293b; }
+    .tech { font-size: 13px; color: #64748b; }
+    .tech code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+    .faq details { margin-bottom: 10px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; background: #fafafa; }
+    .faq summary { font-weight: 700; cursor: pointer; color: #334155; }
+    .faq p { margin-top: 8px; font-size: 14px; color: #475569; }
+    @media (max-width: 560px) {
+      .eq-row input[type="text"] { min-width: 100%; }
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/free-chem-tools/index.html">Free Chemist Tools</a>
+      <a class="top-link" href="/tools/index.html">MolDraw Tools Hub</a>
+      <a class="top-link" href="/">MolDraw App</a>
+    </nav>
+
+    <header class="hero">
+      <h1>Chemical equation balancer</h1>
+      <p class="lead">
+        Balance stoichiometric reactions in your browser: enter plain molecular formulas, get <strong>smallest whole-number coefficients</strong> by element conservation (matrix method over rational numbers). Ideal for homework, labs, and teaching combustion, synthesis, and acid–base examples — optimized for clarity and search-friendly documentation.
+      </p>
+    </header>
+
+    <section class="panel" aria-labelledby="tool-title">
+      <h2 id="tool-title">Balance your equation</h2>
+      <p style="font-size:14px;color:#64748b;margin-bottom:12px;">Use <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">+</code> between species. Arrow is fixed as <strong>→</strong>. Subscripts are normal digits (e.g. <code>H2O</code>, <code>Ca(OH)2</code>).</p>
+      <div class="eq-row">
+        <label for="reactants">Reactants</label>
+        <input id="reactants" type="text" value="H2 + O2" placeholder="e.g. Fe + O2" autocomplete="off" spellcheck="false" aria-describedby="hint-r" />
+      </div>
+      <div class="eq-row" style="margin-bottom:4px;">
+        <span class="arrow-txt" aria-hidden="true">→</span>
+      </div>
+      <div class="eq-row">
+        <label for="products">Products</label>
+        <input id="products" type="text" value="H2O" placeholder="e.g. Fe2O3" autocomplete="off" spellcheck="false" aria-describedby="hint-p" />
+      </div>
+      <p id="hint-r" class="visually-hidden">Left side formulas separated by plus signs.</p>
+      <p id="hint-p" class="visually-hidden">Right side formulas separated by plus signs.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;">
+        <button type="button" class="btn" id="btnBalance">Balance equation</button>
+        <button type="button" class="btn btn-secondary" id="btnClear">Clear result</button>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin-top:10px;">Preset examples (click to load):</p>
+      <div class="presets" id="presets" role="group" aria-label="Preset reactions"></div>
+      <div id="out" class="result" role="status" aria-live="polite">Click “Balance equation” or choose a preset.</div>
+    </section>
+
+    <section class="panel doc">
+      <h2>How to use this tool (detailed)</h2>
+      <ol>
+        <li><strong>Enter reactants</strong> in the first box, each compound separated by <code>+</code>. Example: <code>CH4 + O2</code>.</li>
+        <li><strong>Enter products</strong> in the second box. Example: <code>CO2 + H2O</code>.</li>
+        <li>Click <strong>Balance equation</strong>. Coefficients are reduced to the <strong>smallest positive integers</strong> that satisfy atom balance.</li>
+        <li>Use <strong>preset buttons</strong> below the inputs to load classroom-standard reactions (combustion, ammonia synthesis, rust, neutralization).</li>
+        <li>If you see an error, check spelling of elements (first letter uppercase), parentheses, and that every element appears on both sides when it must.</li>
+      </ol>
+      <h3>Formula rules supported</h3>
+      <ul>
+        <li>Element symbols follow IUPAC-style one- or two-letter forms (<code>Na</code>, <code>Cl</code>, <code>U</code>).</li>
+        <li>Optional integer subscripts after each symbol or closing parenthesis: <code>H2SO4</code>, <code>Ca(OH)2</code>, <code>Al2(SO4)3</code>.</li>
+        <li>Nested groups in parentheses; a multiplier after <code>)</code> applies to the whole group.</li>
+      </ul>
+      <h3>What this balancer does (technical)</h3>
+      <p class="tech">
+        The tool builds a <strong>composition vector</strong> for each compound (atom counts per formula), then a <strong>stoichiometry matrix</strong>: for each element, reactant counts minus product counts weighted by unknown coefficients must equal zero.
+        It finds a non-trivial vector in the <strong>null space</strong> using exact <strong>rational (BigInt fraction)</strong> Gaussian elimination, then scales to the smallest integer solution. This matches standard linear-algebra treatments of reaction balancing taught in general chemistry.
+      </p>
+      <h3>Limitations</h3>
+      <ul>
+        <li><strong>Ions, charges, and electrons</strong> (e.g. net ionic or half-reactions) are <strong>not</strong> parsed — use textbook redox or acid–base methods for those.</li>
+        <li><strong>Hydrates</strong> written as <code>·</code> or <code>.</code> are not supported; expand water of hydration manually if needed.</li>
+      </ul>
+    </section>
+
+    <section class="panel faq">
+      <h2>FAQ</h2>
+      <details>
+        <summary>Why is my equation “unbalanceable” here?</summary>
+        <p>The reaction may be incomplete (missing product or intermediate), incorrectly typed, or require ionic/electron bookkeeping this tool does not model.</p>
+      </details>
+      <details>
+        <summary>Does balancing prove a reaction happens?</summary>
+        <p>No — balancing only enforces <strong>atom conservation</strong>. Thermodynamics, kinetics, and conditions determine whether a reaction is observed in the lab.</p>
+      </details>
+      <details>
+        <summary>Is my data sent to a server?</summary>
+        <p>No. All parsing and math run locally in your browser.</p>
+      </details>
+    </section>
+
+    <p style="text-align:center;font-size:13px;color:#64748b;margin-top:24px;">
+      Part of <a href="/tools/index.html" style="color:#2C7A7B;font-weight:600;">MolDraw Tools</a> ·
+      <a href="/" style="color:#2C7A7B;font-weight:600;">MolDraw molecule editor</a>
+    </p>
+  </main>
+
+  <script>
+(function () {
+  'use strict';
+
+  function gcd(a, b) {
+    a = a < 0n ? -a : a;
+    b = b < 0n ? -b : b;
+    while (b !== 0n) { var t = a % b; a = b; b = t; }
+    return a;
+  }
+  function lcm(a, b) { return (a / gcd(a, b)) * b; }
+
+  function Q(n, d) {
+    if (d === 0n) throw new Error('div0');
+    if (d < 0n) { n = -n; d = -d; }
+    var g = gcd(n < 0n ? -n : n, d);
+    this.n = n / g;
+    this.d = d / g;
+  }
+  Q.prototype.add = function (o) { return new Q(this.n * o.d + o.n * this.d, this.d * o.d); };
+  Q.prototype.sub = function (o) { return new Q(this.n * o.d - o.n * this.d, this.d * o.d); };
+  Q.prototype.mul = function (o) { return new Q(this.n * o.n, this.d * o.d); };
+  Q.prototype.div = function (o) { return new Q(this.n * o.d, this.d * o.n); };
+  Q.prototype.neg = function () { return new Q(-this.n, this.d); };
+  Q.prototype.isZero = function () { return this.n === 0n; };
+
+  function parseFormula(str) {
+    str = str.replace(/\s/g, '');
+    if (!str) throw new Error('Empty formula');
+    var i = 0;
+    function readGroup(stop) {
+      var counts = {};
+      while (i < str.length && str[i] !== stop) {
+        if (str[i] === '(') {
+          i++;
+          var inner = readGroup(')');
+          if (str[i] !== ')') throw new Error('Missing )');
+          i++;
+          var mult = readInt();
+          mult = mult === 0n ? 1n : mult;
+          Object.keys(inner).forEach(function (el) {
+            counts[el] = (counts[el] || 0n) + inner[el] * mult;
+          });
+        } else if (str[i] >= 'A' && str[i] <= 'Z') {
+          var el = str[i++];
+          if (i < str.length && str[i] >= 'a' && str[i] <= 'z') el += str[i++];
+          var n = readInt();
+          n = n === 0n ? 1n : n;
+          counts[el] = (counts[el] || 0n) + n;
+        } else {
+          throw new Error('Invalid character in formula');
+        }
+      }
+      return counts;
+    }
+    function readInt() {
+      if (i >= str.length || str[i] < '0' || str[i] > '9') return 0n;
+      var v = 0n;
+      while (i < str.length && str[i] >= '0' && str[i] <= '9') {
+        v = v * 10n + BigInt(str[i].charCodeAt(0) - 48);
+        i++;
+      }
+      return v;
+    }
+    var out = readGroup('');
+    if (i !== str.length) throw new Error('Extra characters in formula');
+    return out;
+  }
+
+  function parseSide(sideStr) {
+    var parts = sideStr.split('+').map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!parts.length) throw new Error('Side is empty');
+    return parts.map(parseFormula);
+  }
+
+  function balance(leftStr, rightStr) {
+    var left = parseSide(leftStr);
+    var right = parseSide(rightStr);
+    var compounds = left.concat(right);
+    var nL = left.length;
+    var elemSet = {};
+    compounds.forEach(function (c) {
+      Object.keys(c).forEach(function (e) { elemSet[e] = true; });
+    });
+    var elements = Object.keys(elemSet).sort();
+    var m = elements.length;
+    var n = compounds.length;
+    if (n < 2) throw new Error('Need at least two species total');
+
+    var M = [];
+    for (var r = 0; r < m; r++) {
+      var row = [];
+      var e = elements[r];
+      for (var c = 0; c < n; c++) {
+        var cnt = compounds[c][e] || 0n;
+        row.push(c < nL ? new Q(cnt, 1n) : new Q(-cnt, 1n));
+      }
+      M.push(row);
+    }
+
+    var A = M.map(function (row) { return row.slice(); });
+    var r = 0;
+    var c;
+    var j;
+    var rr;
+    for (c = 0; c < n; c++) {
+      var piv = -1;
+      for (rr = r; rr < m; rr++) {
+        if (!A[rr][c].isZero()) { piv = rr; break; }
+      }
+      if (piv === -1) continue;
+      var tmp = A[r]; A[r] = A[piv]; A[piv] = tmp;
+      var inv = new Q(A[r][c].d, A[r][c].n);
+      for (j = c; j < n; j++) A[r][j] = A[r][j].mul(inv);
+      for (rr = 0; rr < m; rr++) {
+        if (rr !== r && !A[rr][c].isZero()) {
+          var f = A[rr][c];
+          for (j = c; j < n; j++) A[rr][j] = A[rr][j].sub(f.mul(A[r][j]));
+        }
+      }
+      r++;
+    }
+
+    var isPivotCol = {};
+    var row;
+    for (row = 0; row < m; row++) {
+      var lead = -1;
+      for (c = 0; c < n; c++) {
+        if (!A[row][c].isZero()) { lead = c; break; }
+      }
+      if (lead !== -1) isPivotCol[lead] = true;
+    }
+    var freeCol = -1;
+    for (c = 0; c < n; c++) {
+      if (!isPivotCol[c]) { freeCol = c; break; }
+    }
+    if (freeCol === -1) throw new Error('No free variable — check formulas');
+
+    var x = new Array(n);
+    for (c = 0; c < n; c++) x[c] = new Q(0n, 1n);
+    x[freeCol] = new Q(1n, 1n);
+    for (row = m - 1; row >= 0; row--) {
+      lead = -1;
+      for (c = 0; c < n; c++) {
+        if (!A[row][c].isZero()) { lead = c; break; }
+      }
+      if (lead === -1) continue;
+      var sum = new Q(0n, 1n);
+      for (c = lead + 1; c < n; c++) {
+        sum = sum.add(A[row][c].mul(x[c]));
+      }
+      x[lead] = new Q(0n, 1n).sub(sum);
+    }
+
+    var den = 1n;
+    for (c = 0; c < n; c++) {
+      den = lcm(den, x[c].d);
+    }
+    var ints = x.map(function (q, idx) {
+      var num = q.n * (den / q.d);
+      return num;
+    });
+    var g = ints[0] < 0n ? -ints[0] : ints[0];
+    for (c = 1; c < n; c++) {
+      var v = ints[c] < 0n ? -ints[c] : ints[c];
+      g = gcd(g, v);
+    }
+    if (g === 0n) throw new Error('Trivial solution');
+    ints = ints.map(function (v) { return v / g; });
+    for (c = 0; c < n; c++) {
+      if (ints[c] <= 0n) throw new Error('Negative coefficient — reaction may be reversed or invalid');
+    }
+    return ints;
+  }
+
+  function formatEq(leftParts, rightParts, coeffs) {
+    var nL = leftParts.length;
+    function fmt(i) {
+      var c = coeffs[i];
+      var f = leftParts[i] || rightParts[i - nL];
+      var cs = c === 1n ? '' : String(c);
+      return cs + f;
+    }
+    var leftS = [];
+    for (var i = 0; i < nL; i++) leftS.push(fmt(i));
+    var rightS = [];
+    for (i = nL; i < coeffs.length; i++) rightS.push(fmt(i));
+    return leftS.join(' + ') + ' → ' + rightS.join(' + ');
+  }
+
+  var PRESETS = [
+    { label: 'H₂ + O₂ → H₂O', left: 'H2 + O2', right: 'H2O' },
+    { label: 'CH₄ combustion', left: 'CH4 + O2', right: 'CO2 + H2O' },
+    { label: 'NH₃ synthesis', left: 'N2 + H2', right: 'NH3' },
+    { label: 'Fe + O₂ → Fe₂O₃', left: 'Fe + O2', right: 'Fe2O3' },
+    { label: 'NaOH + HCl', left: 'NaOH + HCl', right: 'NaCl + H2O' },
+    { label: 'Ca(OH)₂ + HCl', left: 'Ca(OH)2 + HCl', right: 'CaCl2 + H2O' },
+    { label: 'Al + O₂ → Al₂O₃', left: 'Al + O2', right: 'Al2O3' }
+  ];
+
+  var elR = document.getElementById('reactants');
+  var elP = document.getElementById('products');
+  var out = document.getElementById('out');
+  var presetsEl = document.getElementById('presets');
+
+  PRESETS.forEach(function (p) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = p.label;
+    b.title = p.left + ' → ' + p.right;
+    b.addEventListener('click', function () {
+      elR.value = p.left;
+      elP.value = p.right;
+      out.textContent = 'Loaded: ' + p.label + ' — click Balance equation.';
+      out.classList.remove('err');
+    });
+    presetsEl.appendChild(b);
+  });
+
+  function run() {
+    out.classList.remove('err');
+    try {
+      var leftParts = elR.value.split('+').map(function (s) { return s.trim(); }).filter(Boolean);
+      var rightParts = elP.value.split('+').map(function (s) { return s.trim(); }).filter(Boolean);
+      var coeffs = balance(elR.value, elP.value);
+      out.textContent = formatEq(leftParts, rightParts, coeffs);
+    } catch (e) {
+      out.classList.add('err');
+      out.textContent = 'Could not balance: ' + (e && e.message ? e.message : String(e));
+    }
+  }
+
+  document.getElementById('btnBalance').addEventListener('click', run);
+  document.getElementById('btnClear').addEventListener('click', function () {
+    out.textContent = '';
+    out.classList.remove('err');
+  });
+})();
+  </script>
+</body>
+</html>

@@ -10,19 +10,19 @@
   <meta property="og:title" content="MolDraw Tools | Chemistry Calculators and TLC Utilities">
   <meta property="og:description" content="Use practical chemistry tools: solution prep, dilution, molarity, molality, and TLC utilities by MolDraw.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://moldraw.scidart.com/tools/">
-  <meta property="og:image" content="https://moldraw.scidart.com/og-image.png">
+  <meta property="og:url" content="https://www.moldraw.com/tools/">
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="MolDraw Tools | Chemistry Calculators">
   <meta name="twitter:description" content="Practical chemistry calculators and TLC utilities for daily wet-lab workflows.">
-  <link rel="canonical" href="https://moldraw.scidart.com/tools/">
+  <link rel="canonical" href="https://www.moldraw.com/tools/">
   <title>MolDraw Tools | Chemistry Calculators and Lab Utilities</title>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "name": "MolDraw Tools",
-    "url": "https://moldraw.scidart.com/tools/",
+    "url": "https://www.moldraw.com/tools/",
     "description": "All dedicated MolDraw chemistry tools including format conversion (SMILES/InChI/PDB/PDBQT/MOL/SDF), 3D viewers, calculators, and TLC support.",
     "publisher": {
       "@type": "Organization",
@@ -61,7 +61,8 @@
         { "@type": "ListItem", "position": 28, "name": "Dilution Calculator" },
         { "@type": "ListItem", "position": 29, "name": "Molarity Calculator" },
         { "@type": "ListItem", "position": 30, "name": "Molality Calculator" },
-        { "@type": "ListItem", "position": 31, "name": "TLC Diagram Tool" }
+        { "@type": "ListItem", "position": 31, "name": "Chemical Equation Balancer" },
+        { "@type": "ListItem", "position": 32, "name": "TLC Diagram Tool" }
       ]
     }
   }
@@ -169,6 +170,20 @@
       text-decoration: none;
       font-size: 12px;
       font-weight: 700;
+    }
+    .tool-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .tool-card a.tool-card-secondary {
+      background: #fff;
+      color: #2C7A7B;
+      border: 1px solid #2C7A7B;
+    }
+    .tool-card a.tool-card-secondary:hover {
+      background: #f7fcfc;
     }
     @media (max-width: 1400px) {
       .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -360,10 +375,18 @@
         <p>Compute molality from solute amount and solvent mass.</p>
         <a href="/tools/free-chem-tools/molality-calculator.html">Open tool</a>
       </article>
-      <article class="tool-card" data-tool-type="lab" data-tool-search="tlc diagram thin layer chromatography workflow">
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="balance chemical equation stoichiometry coefficients reactants products matrix">
+        <h2>Chemical Equation Balancer</h2>
+        <p>Balance reaction equations with rational arithmetic; presets, how-to, and technical notes for homework and lab prep.</p>
+        <a href="/tools/free-chem-tools/chemical-equation-balancer.html">Open tool</a>
+      </article>
+      <article id="tlc-tool" class="tool-card" data-tool-type="lab" data-tool-search="tlc diagram thin layer chromatography workflow moldraw plate">
         <h2>TLC Diagram Tool</h2>
-        <p>TLC workflow guidance and dedicated tool page entry point.</p>
-        <a href="/tools/free-chem-tools/tlc-diagram-tool.html">Open tool</a>
+        <p>Workflow guide, then open the interactive TLC plate builder inside MolDraw or read the standalone helper page.</p>
+        <div class="tool-card-actions">
+          <a href="/?openTlc=1">Open in MolDraw</a>
+          <a class="tool-card-secondary" href="/tools/free-chem-tools/tlc-diagram-tool.html">Guide page</a>
+        </div>
       </article>
     </section>
   </main>
