@@ -261,6 +261,30 @@
   color: #1a5a5b;
 }
 
+.tb-btn-windows-app {
+  gap: 5px;
+  padding: 0 8px 0 6px;
+  text-decoration: none;
+  color: #334155;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+
+.tb-btn-windows-app:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+
+.tb-btn-windows-app .tb-windows-logo {
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+
+.tb-btn-windows-text {
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .tb-btn svg {
   flex-shrink: 0;
 }
@@ -517,13 +541,99 @@ button.tb-menu-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
   padding: 6px 10px 8px 44px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.98);
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
+
+.viewer-panel-toolbar--compact {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 4px 6px 6px 38px;
+  border-bottom: 1px solid #eef1f4;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.viewer-toolbar-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.viewer-panel-toolbar--compact .viewer-top-tabs {
+  flex: 1;
+  min-width: 0;
+}
+
+.viewer-protein-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  padding-top: 4px;
+  border-top: 1px solid #eef1f4;
+}
+
+.viewer-3d-style-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid #eef1f4;
+}
+
+.viewer-3d-style-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.viewer-protein-status-inline {
+  flex: 1;
+  min-width: 120px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-protein-seq-bar {
+  flex-shrink: 0;
+  padding: 4px 8px 5px 38px;
+  border-bottom: 1px solid #e8ecf0;
+  background: rgba(252, 252, 253, 0.98);
+  z-index: 155;
+}
+
+.viewer-protein-seq-bar .viewer-protein-seq-controls {
+  margin-bottom: 4px;
+}
+
+.viewer-protein-seq-bar .viewer-protein-seq-strip {
+  min-height: 28px;
+  max-height: 56px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.viewer-protein-seq-bar .viewer-protein-seq-res {
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .viewer-panel-toolbar .viewer-top-tabs {
@@ -547,6 +657,10 @@ button.tb-menu-item {
   flex-shrink: 0;
 }
 
+.viewer-panel-toolbar--compact .viewer-toolbar-extras {
+  gap: 0;
+}
+
 .viewer-toolbar-extra {
   appearance: none;
   border: none;
@@ -561,6 +675,43 @@ button.tb-menu-item {
   text-decoration: none;
   white-space: nowrap;
   transition: color 0.15s ease, background 0.15s ease;
+}
+
+.viewer-panel-toolbar--compact .viewer-toolbar-extra {
+  padding: 4px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.viewer-toolbar-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: #2c7a7b;
+  border: 1px solid #2c7a7b;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.viewer-toolbar-download:hover {
+  background: #205f60;
+  border-color: #205f60;
+  color: #fff;
+}
+
+.viewer-toolbar-download .viewer-windows-icon {
+  opacity: 0.95;
 }
 
 a.viewer-toolbar-extra:hover,
@@ -627,6 +778,13 @@ button.viewer-toolbar-extra:hover {
   box-shadow: none;
 }
 
+.viewer-panel-toolbar--compact .viewer-top-tabs {
+  padding: 2px 3px;
+  gap: 4px;
+  border-radius: 7px;
+  border-color: #e8ecf0;
+}
+
 .viewer-top-tab {
   height: 28px;
   padding: 0 10px;
@@ -648,10 +806,53 @@ button.viewer-toolbar-extra:hover {
   color: #0f172a;
 }
 
+.viewer-panel-toolbar--compact .viewer-top-tab:not(.active):hover {
+  border-color: #ea580c;
+  filter: brightness(0.98);
+}
+
+.viewer-panel-toolbar--compact .viewer-top-tab--protein:not(.active):hover {
+  border-color: #d97706;
+}
+
 .viewer-top-tab.active {
-  border-color: #2C7A7B;
-  background: #2C7A7B;
+  border-color: #2c7a7b;
+  background: #2c7a7b;
   color: #ffffff;
+}
+
+.viewer-panel-toolbar--compact .viewer-top-tab--mol:not(.active) {
+  background: linear-gradient(180deg, #fffdfb 0%, #fff7ed 100%);
+  border-color: #fdba74;
+  color: #9a3412;
+}
+
+.viewer-panel-toolbar--compact .viewer-top-tab--mol.active {
+  background: linear-gradient(145deg, #fb923c 0%, #ea580c 55%, #c2410c 100%);
+  border-color: #9a3412;
+  color: #fffaf5;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);
+}
+
+.viewer-panel-toolbar--compact .viewer-top-tab--protein:not(.active) {
+  background: linear-gradient(180deg, #fffefb 0%, #fffbeb 100%);
+  border-color: #fcd34d;
+  color: #b45309;
+}
+
+.viewer-panel-toolbar--compact .viewer-top-tab--protein.active {
+  background: linear-gradient(145deg, #fcd34d 0%, #f59e0b 45%, #d97706 100%);
+  border-color: #b45309;
+  color: #1c1917;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+}
+
+.viewer-panel-toolbar--compact .viewer-top-tab {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
 }
 
 .viewer-top-style-select {
@@ -666,47 +867,42 @@ button.viewer-toolbar-extra:hover {
   padding: 0 8px;
 }
 
+.viewer-panel-toolbar--compact .viewer-top-style-select {
+  height: 24px;
+  min-width: 102px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 6px;
+  border-radius: 6px;
+}
+
 .viewer-top-style-select:focus {
   outline: none;
   border-color: #2C7A7B;
 }
 
-.viewer-protein-controls {
-  position: absolute;
-  top: 52px;
-  left: 44px;
-  z-index: 138;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #d7dee3;
-  border-radius: 10px;
-  padding: 6px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-}
-
 .viewer-protein-input {
-  height: 30px;
-  width: 190px;
+  height: 22px;
+  width: 72px;
+  min-width: 64px;
   border: 1px solid #d1d5db;
-  border-radius: 7px;
+  border-radius: 5px;
   background: #fff;
   color: #0f172a;
-  padding: 0 10px;
-  font-size: 12px;
+  padding: 0 6px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 .viewer-protein-btn {
-  height: 30px;
+  height: 22px;
   border: 1px solid #2C7A7B;
-  border-radius: 7px;
+  border-radius: 5px;
   background: #2C7A7B;
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 0 9px;
+  padding: 0 7px;
   cursor: pointer;
 }
 
@@ -716,68 +912,104 @@ button.viewer-toolbar-extra:hover {
   color: #334155;
 }
 
-.viewer-protein-status {
-  position: absolute;
-  top: 96px;
-  left: 44px;
-  z-index: 137;
-  background: rgba(255, 255, 255, 0.93);
-  border: 1px solid #d9e0e6;
-  border-radius: 8px;
-  padding: 5px 9px;
-  font-size: 11px;
-  color: #334155;
-  max-width: 360px;
-}
-
-.viewer-protein-seq-panel {
-  position: absolute;
-  left: 44px;
-  right: 12px;
-  top: 130px;
-  z-index: 136;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid #d9e0e6;
-  border-radius: 10px;
-  padding: 8px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-}
-
 .viewer-protein-seq-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 0;
 }
 
 .viewer-protein-chain-select,
 .viewer-protein-chain-style {
-  height: 28px;
+  height: 22px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 5px;
   background: #fff;
   color: #334155;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 0 8px;
+  padding: 0 5px;
+}
+
+.viewer-protein-chain-color-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .viewer-protein-chain-color {
-  width: 30px;
-  height: 28px;
+  width: 24px;
+  height: 22px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 5px;
   background: #fff;
-  padding: 2px;
+  padding: 1px;
+}
+
+.viewer-protein-spectrum-btn {
+  height: 22px;
+  min-width: 22px;
+  padding: 0 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #fecaca, #fde68a, #86efac, #93c5fd, #c4b5fd);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  color: #1e293b;
+}
+
+.viewer-protein-spectrum-btn:hover {
+  border-color: #94a3b8;
 }
 
 .viewer-protein-chain-hide {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
+  gap: 3px;
+  font-size: 10px;
   color: #334155;
   font-weight: 600;
+}
+
+/* Protein mode: details card docks under chrome; 3D fills remaining height */
+.viewer-panel--protein-ui .viewer-3d-stack--protein {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.viewer-panel--protein-ui .viewer-3d-stack--protein .mol-props-card.mol-props-card--protein {
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
+  align-self: flex-start;
+  width: auto;
+  max-width: min(400px, calc(100% - 48px));
+  margin: 8px 10px 6px 38px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+  flex-shrink: 0;
+  max-height: min(38vh, 280px);
+  animation: propsFadeIn 0.22s ease;
+}
+
+.viewer-panel--protein-ui .viewer-3d-stack--protein .mol-props-reopen-btn {
+  position: static;
+  align-self: flex-start;
+  margin: 4px 0 2px 38px;
+  flex-shrink: 0;
+}
+
+.viewer-panel--protein-ui .viewer-3d-stack--protein .viewer-3d {
+  flex: 1;
+  min-height: 0;
+  height: auto;
 }
 
 .viewer-protein-seq-strip {
@@ -2561,39 +2793,21 @@ button.viewer-toolbar-extra:hover {
     font-size: 11px;
   }
 
-  .viewer-protein-controls {
-    top: 56px;
-    left: 36px;
-    right: 8px;
-    flex-wrap: wrap;
-    padding: 5px;
-    gap: 5px;
+  .viewer-protein-toolbar-row {
+    padding-left: 0;
+  }
+
+  .viewer-protein-seq-bar {
+    padding-left: 36px;
+    padding-right: 8px;
   }
 
   .viewer-protein-input {
-    width: 100%;
-    height: 28px;
+    width: 64px;
   }
 
-  .viewer-protein-btn {
-    height: 28px;
-  }
-
-  .viewer-protein-status {
-    top: 118px;
-    left: 36px;
-    right: 8px;
-    max-width: none;
-  }
-
-  .viewer-protein-seq-panel {
-    left: 36px;
-    right: 8px;
-    top: 152px;
-  }
-
-  .viewer-protein-seq-controls {
-    flex-wrap: wrap;
+  .viewer-panel--protein-ui .viewer-3d-stack--protein .mol-props-reopen-btn {
+    margin-left: 36px;
   }
 }
 
