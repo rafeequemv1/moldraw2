@@ -16,6 +16,8 @@
   <meta name="twitter:title" content="MolDraw Tools | Chemistry Calculators">
   <meta name="twitter:description" content="Practical chemistry calculators and TLC utilities for daily wet-lab workflows.">
   <link rel="canonical" href="https://www.moldraw.com/tools/">
+  <link rel="stylesheet" href="/css/site-footer.css" />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index" />
   <title>MolDraw Tools | Chemistry Calculators and Lab Utilities</title>
   <script type="application/ld+json">
   {
@@ -115,6 +117,101 @@
       font-size: 15px;
       max-width: 920px;
     }
+    .tools-layout {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .tools-category-sidebar {
+      flex: 0 0 200px;
+      position: sticky;
+      top: 12px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px 10px;
+    }
+    .tools-category-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+      padding: 0 4px;
+    }
+    .tools-category-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .tools-cat-btn {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+    .tools-cat-btn:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .tools-cat-btn.active {
+      background: #2C7A7B;
+      color: #fff;
+      border-color: #2C7A7B;
+    }
+    .tools-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .featured-tools {
+      margin-bottom: 16px;
+    }
+    .featured-tools-heading {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+    .featured-tools-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .tool-card-featured {
+      position: relative;
+      border: 1px solid rgba(212, 175, 55, 0.42);
+      background: linear-gradient(165deg, #fffdf7 0%, #fffefb 38%, #fff 100%);
+      box-shadow:
+        0 0 0 1px rgba(253, 230, 138, 0.65),
+        0 1px 3px rgba(180, 130, 40, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .tool-card-featured .featured-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #2C7A7B;
+      margin-bottom: 6px;
+    }
+    .tool-card-featured h2 {
+      font-size: 19px;
+    }
     .tool-filters {
       background: #fff;
       border: 1px solid #e5e7eb;
@@ -122,19 +219,35 @@
       padding: 12px;
       margin-bottom: 14px;
       display: grid;
-      grid-template-columns: 1fr 220px auto;
-      gap: 8px;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
       align-items: center;
     }
-    .tool-filters input,
-    .tool-filters select {
-      height: 34px;
-      border: 1px solid #cfd8e3;
-      border-radius: 8px;
-      padding: 0 10px;
-      font-size: 13px;
+    .tool-filters-top {
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid #e8e4dc;
+      background: linear-gradient(180deg, #fffefb 0%, #ffffff 100%);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    }
+    .tool-filters-top input {
+      height: 42px;
+      border-radius: 10px;
+      border: 1px solid #d9d0c4;
+      padding: 0 14px;
+      font-size: 14px;
       color: #0f172a;
       background: #fff;
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.85);
+    }
+    .tool-filters-top input::placeholder {
+      color: #94a3b8;
+    }
+    .tool-filters-top input:focus {
+      outline: none;
+      border-color: #c9a227;
+      box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.22);
     }
     .tool-filter-count {
       font-size: 12px;
@@ -189,6 +302,26 @@
       .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 980px) {
+      .featured-tools-grid { grid-template-columns: 1fr; }
+      .tools-layout { flex-direction: column; }
+      .tools-category-sidebar {
+        position: static;
+        flex: none;
+        width: 100%;
+      }
+      .tools-category-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .tools-cat-btn {
+        width: auto;
+        flex: 1 1 auto;
+        min-width: calc(50% - 4px);
+        text-align: center;
+        font-size: 12px;
+        padding: 7px 8px;
+      }
       .tool-filters { grid-template-columns: 1fr; }
       .tool-filter-count { text-align: left; }
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -207,21 +340,53 @@
       <a class="top-link" href="/blog/index.html">Blog</a>
     </nav>
 
-    <section class="hero">
-      <h1>MolDraw Tools</h1>
-      <p>Practical chemistry utilities for everyday lab work and learning. Use calculators for dilution, molarity, and molality, then jump into TLC and advanced drawing workflows in the app.</p>
+    <section class="tool-filters tool-filters-top" aria-label="Search tools">
+      <input id="toolSearch" type="search" placeholder="Search tools by name, format, or workflow..." autocomplete="off" />
+      <div class="tool-filter-count" id="toolFilterCount">Showing all tools</div>
     </section>
 
-    <section class="tool-filters" aria-label="Tool search and filter">
-      <input id="toolSearch" type="text" placeholder="Search tools by name, format, or workflow..." />
-      <select id="toolTypeFilter" aria-label="Filter tools by type">
-        <option value="all">All tool types</option>
-        <option value="conversion">Conversion tools</option>
-        <option value="viewer">3D viewer tools</option>
-        <option value="calculator">Calculators</option>
-        <option value="lab">Lab workflow tools</option>
-      </select>
-      <div class="tool-filter-count" id="toolFilterCount">Showing all tools</div>
+    <section class="hero">
+      <h1>MolDraw Tools</h1>
+      <p>Practical chemistry utilities for everyday lab work and learning. Featured tools below include TLC plates, the periodic table, and equation balancing; browse converters, viewers, and calculators in the directory.</p>
+    </section>
+
+    <div class="tools-layout">
+      <aside class="tools-category-sidebar" aria-label="Tool categories">
+        <div class="tools-category-title">Categories</div>
+        <ul class="tools-category-list" role="tablist">
+          <li><button type="button" class="tools-cat-btn active" role="tab" aria-selected="true" data-tool-type="all" id="cat-all">All tools</button></li>
+          <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="conversion" id="cat-conversion">Conversion</button></li>
+          <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="viewer" id="cat-viewer">3D viewers</button></li>
+          <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="calculator" id="cat-calculator">Calculators</button></li>
+          <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="lab" id="cat-lab">Lab workflows</button></li>
+        </ul>
+      </aside>
+      <div class="tools-main">
+    <section class="featured-tools" aria-labelledby="featured-tools-heading">
+      <h2 id="featured-tools-heading" class="featured-tools-heading">Featured</h2>
+      <div class="featured-tools-grid">
+        <article id="tlc-tool" class="tool-card tool-card-featured" data-tool-type="lab" data-tool-search="tlc diagram thin layer chromatography workflow moldraw plate">
+          <span class="featured-badge">Lab</span>
+          <h2>TLC diagram</h2>
+          <p>Build TLC plates in MolDraw: spots, solvent front, and annotations—open the in-app plate or the guide.</p>
+          <div class="tool-card-actions">
+            <a href="/?openTlc=1">Open in MolDraw</a>
+            <a class="tool-card-secondary" href="/tools/free-chem-tools/tlc-diagram-tool.html">Guide</a>
+          </div>
+        </article>
+        <article class="tool-card tool-card-featured" data-tool-type="lab" data-tool-search="interactive periodic table all elements atomic number metadata chemistry">
+          <span class="featured-badge">Reference</span>
+          <h2>Interactive periodic table</h2>
+          <p>All 118 elements with atomic mass, electron configuration, and key physical properties.</p>
+          <a href="/tools/free-chem-tools/interactive-periodic-table.html">Open table</a>
+        </article>
+        <article class="tool-card tool-card-featured" data-tool-type="calculator" data-tool-search="balance chemical equation stoichiometry coefficients reactants products matrix">
+          <span class="featured-badge">Calculator</span>
+          <h2>Chemical equation balancer</h2>
+          <p>Balance reactions with clear steps—homework, labs, and quick stoichiometry checks.</p>
+          <a href="/tools/free-chem-tools/chemical-equation-balancer.html">Open balancer</a>
+        </article>
+      </div>
     </section>
 
     <section class="grid" aria-label="Tool cards">
@@ -350,11 +515,6 @@
         <p>Convert MOL or SDF blocks to compact InChIKey identifiers.</p>
         <a href="/tools/free-chem-tools/mol-to-inchikey-converter.html">Open tool</a>
       </article>
-      <article class="tool-card" data-tool-type="lab" data-tool-search="interactive periodic table all elements atomic number metadata chemistry">
-        <h2>Interactive Periodic Table</h2>
-        <p>Explore all 118 elements with atomic, physical, and electronic metadata.</p>
-        <a href="/tools/free-chem-tools/interactive-periodic-table.html">Open tool</a>
-      </article>
       <article class="tool-card" data-tool-type="calculator" data-tool-search="solution prep concentration molarity calculator">
         <h2>Solution Prep Calculator</h2>
         <p>Calculate exact solute amount needed for target molarity and solution volume.</p>
@@ -375,30 +535,19 @@
         <p>Compute molality from solute amount and solvent mass.</p>
         <a href="/tools/free-chem-tools/molality-calculator.html">Open tool</a>
       </article>
-      <article class="tool-card" data-tool-type="calculator" data-tool-search="balance chemical equation stoichiometry coefficients reactants products matrix">
-        <h2>Chemical Equation Balancer</h2>
-        <p>Balance reaction equations with rational arithmetic; presets, how-to, and technical notes for homework and lab prep.</p>
-        <a href="/tools/free-chem-tools/chemical-equation-balancer.html">Open tool</a>
-      </article>
-      <article id="tlc-tool" class="tool-card" data-tool-type="lab" data-tool-search="tlc diagram thin layer chromatography workflow moldraw plate">
-        <h2>TLC Diagram Tool</h2>
-        <p>Workflow guide, then open the interactive TLC plate builder inside MolDraw or read the standalone helper page.</p>
-        <div class="tool-card-actions">
-          <a href="/?openTlc=1">Open in MolDraw</a>
-          <a class="tool-card-secondary" href="/tools/free-chem-tools/tlc-diagram-tool.html">Guide page</a>
-        </div>
-      </article>
     </section>
+      </div>
+    </div>
   </main>
   <script>
     const searchInput = document.getElementById('toolSearch');
-    const typeFilter = document.getElementById('toolTypeFilter');
     const countEl = document.getElementById('toolFilterCount');
     const cards = Array.from(document.querySelectorAll('.tool-card'));
+    const categoryButtons = Array.from(document.querySelectorAll('.tools-cat-btn'));
+    let selectedType = 'all';
 
     function applyToolFilters() {
       const query = (searchInput.value || '').trim().toLowerCase();
-      const selectedType = typeFilter.value;
       let visibleCount = 0;
 
       cards.forEach((card) => {
@@ -415,8 +564,63 @@
     }
 
     searchInput.addEventListener('input', applyToolFilters);
-    typeFilter.addEventListener('change', applyToolFilters);
+
+    categoryButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        selectedType = btn.getAttribute('data-tool-type') || 'all';
+        categoryButtons.forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        applyToolFilters();
+      });
+    });
+
     applyToolFilters();
   </script>
+  <footer class="site-footer-root" role="contentinfo">
+    <div class="site-footer-inner">
+      <div class="site-footer-line">
+        <span class="site-footer-lede">MolDraw — free molecule drawing app and 3D viewer · <span class="site-footer-entity">Scidart Academy</span></span>
+        <span class="site-footer-sep" aria-hidden="true">·</span>
+        <nav class="site-footer-nav" aria-label="Site policies and information">
+          <a href="/pages/about.html">About</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/pages/contact.html">Contact</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/pages/authors.html">Authors</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/pages/editorial-guidelines.html">Editorial</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/pages/sitemap.html">Sitemap</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/pages/privacy-policy.html">Privacy</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/pages/terms-of-service.html">Terms</a>
+        </nav>
+        <span class="site-footer-sep" aria-hidden="true">·</span>
+        <span class="site-footer-copy">© <span data-footer-year>2026</span> Scidart Academy</span>
+        <ul class="site-footer-social" aria-label="Social profiles">
+          <li>
+            <a class="site-footer-social-link" href="https://www.youtube.com/@MolDraw" target="_blank" rel="noopener noreferrer me" title="YouTube @MolDraw" aria-label="MolDraw on YouTube">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </a>
+          </li>
+          <li>
+            <a class="site-footer-social-link" href="https://x.com/DrawMol35803" target="_blank" rel="noopener noreferrer me" title="X" aria-label="MolDraw on X">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+          </li>
+          <li>
+            <a class="site-footer-social-link" href="https://www.linkedin.com/company/moldraw" target="_blank" rel="noopener noreferrer me" title="LinkedIn" aria-label="MolDraw on LinkedIn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <script src="/js/site-footer.js" defer></script>
+  </footer>
 </body>
 </html>

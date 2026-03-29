@@ -2,15 +2,21 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.moldraw.com/</loc>
-    <lastmod>2024-01-01</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/blog/</loc>
-    <lastmod>2024-01-01</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.moldraw.com/blog/download-moldraw-windows.html</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/blog/chemical-structure-drawing-app-seo-optimized.html</loc>
@@ -44,19 +50,19 @@
   </url>
   <url>
     <loc>https://www.moldraw.com/pages/about.html</loc>
-    <lastmod>2024-01-01</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/pages/faq.html</loc>
-    <lastmod>2024-01-01</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/course/</loc>
-    <lastmod>2024-01-01</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -200,187 +206,187 @@
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/index.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-structure.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-3d-structure-converter.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/protein-viewer/index.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/mol-to-smiles-converter.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-pdb-converter.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-pdbqt-converter.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-inchi-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-inchikey-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/inchi-to-smiles-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/inchikey-to-smiles-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-mol-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-sdf-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/pdb-to-smiles-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/iupac-name-to-smiles-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-iupac-name-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/mol2-to-smiles-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/cid-to-smiles-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/smiles-to-mol2-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/sdf-to-inchi-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/sdf-to-inchikey-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/inchi-to-inchikey-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/inchikey-to-inchi-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/mol-to-inchi-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/mol-to-inchikey-converter.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/interactive-periodic-table.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/solution-prep-calculator.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/dilution-calculator.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/molarity-calculator.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/molality-calculator.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
@@ -392,7 +398,7 @@
   </url>
   <url>
     <loc>https://www.moldraw.com/tools/free-chem-tools/tlc-diagram-tool.html</loc>
-    <lastmod>2026-03-12</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -416,7 +422,7 @@
   </url>
   <url>
     <loc>https://www.moldraw.com/pages/sitemap.html</loc>
-    <lastmod>2026-03-11</lastmod>
+    <lastmod>2026-03-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

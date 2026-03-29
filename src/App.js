@@ -3422,7 +3422,7 @@ ${scientificGuardrails}`;
             <div className="brand-top-row">
               <div className="brand-name">
                 <img src="/logo.svg" alt="MolDraw" className="brand-logo" />
-                <span className="brand-by-text">by <a href="https://www.moldraw.com" target="_blank" rel="noopener noreferrer" className="brand-by-link">moldraw.com</a></span>
+                <span className="brand-by-text">by <a href="https://scidart.com" target="_blank" rel="noopener noreferrer" className="brand-by-link">scidart.com</a></span>
               </div>
 
               {/* Molecule Search Bar - Now in header */}
@@ -3519,7 +3519,7 @@ ${scientificGuardrails}`;
                 href="/tools/index.html"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Calculators, converters, TLC, and more"
+                title="Calculators, converters, and chemistry tools"
               >
                 Tools
               </a>
@@ -3582,27 +3582,6 @@ ${scientificGuardrails}`;
                   </div>
                 )}
               </div>
-              <a
-                className="tb-btn tb-icon-only"
-                href="/tools/free-chem-tools/interactive-periodic-table.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Open Interactive Periodic Table"
-                aria-label="Open Interactive Periodic Table"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="3" y1="9" x2="21" y2="9" />
-                  <line x1="9" y1="9" x2="9" y2="21" />
-                  <line x1="15" y1="9" x2="15" y2="21" />
-                </svg>
-              </a>
-              <a className="tb-btn" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">
-                Course
-              </a>
-              <a className="tb-btn" href="/pages/faq.html" target="_blank" rel="noopener noreferrer" title="Frequently asked questions">
-                FAQ
-              </a>
               <div className="header-download-wrap">
                 <a
                   className="tb-btn tb-download-btn"
@@ -3621,8 +3600,9 @@ ${scientificGuardrails}`;
                 <button className="tb-btn" onClick={() => setShowMoreMenu((v) => !v)} title="More options">More</button>
                 {showMoreMenu && (
                   <div className="tb-menu-dropdown-list">
+                  <a className="tb-menu-item" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">Course</a>
+                  <a className="tb-menu-item" href="/pages/faq.html" target="_blank" rel="noopener noreferrer" title="Frequently asked questions">FAQ</a>
                   <a className="tb-menu-item" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">AI Setup</a>
-                  <a className="tb-menu-item" href="/tools/index.html#tlc-tool" target="_blank" rel="noopener noreferrer" title="TLC diagram tool on Tools hub">TLC diagram</a>
                   <a className="tb-menu-item" href="/blog/index.html" target="_blank" rel="noopener noreferrer" title="Blog">Blog</a>
                   <a className="tb-menu-item" href="/pages/updates.html" target="_blank" rel="noopener noreferrer" title="Updates">Updates</a>
                   </div>
@@ -3707,92 +3687,131 @@ ${scientificGuardrails}`;
 
           {is3DPanelOpen && (
             <>
-          <div className="viewer-top-tabs" role="tablist" aria-label="3D viewer mode switch">
-            <button
-              type="button"
-              className={`viewer-top-tab ${viewerMode === 'molecule' ? 'active' : ''}`}
-              role="tab"
-              aria-selected={viewerMode === 'molecule'}
-              title="Molecule 3D viewer"
-              onClick={() => {
-                if (viewerMode === 'molecule') return;
-                clearProteinFromViewer();
-              }}
-            >
-              Molecule 3D
-            </button>
-            <button
-              type="button"
-              className={`viewer-top-tab ${viewerMode === 'protein' ? 'active' : ''}`}
-              role="tab"
-              aria-selected={viewerMode === 'protein'}
-              title="Protein viewer mode"
-              onClick={() => {
-                if (viewerMode === 'protein') return;
-                if (!isProtein && currentMolecule && currentMolecule.format !== 'pdb') {
-                  moleculeViewCacheRef.current = {
-                    currentMolecule,
-                    molecularMass,
-                    moleculeName,
-                    iupacName,
-                    boilingPoint,
-                    meltingPoint,
-                    currentSmiles,
-                    multiStructure,
-                    selected3DComponentIdx,
-                  };
-                }
-                setViewerMode('protein');
-                setIsProtein(true);
-                const cachedProtein = proteinViewCacheRef.current;
-                if (cachedProtein?.pdbText) {
-                  loadProteinIntoViewer(cachedProtein.pdbText, cachedProtein.label || 'Cached Protein');
-                  setProteinMeta(cachedProtein.proteinMeta || null);
-                  setProteinStatus(cachedProtein.status || 'Loaded cached protein.');
-                  setProteinChainData(cachedProtein.proteinChainData || {});
-                  setProteinChainSettings(cachedProtein.proteinChainSettings || {});
-                  setSelectedProteinChain(cachedProtein.selectedProteinChain || '');
-                  return;
-                }
-                setProteinStatus('Protein mode active. Load a PDB ID or file.');
-                setProteinMeta(null);
-                setCurrentMolecule(null);
-                clearMoleculeProps();
-                setMolecularMass(null);
-                proteinModelRef.current = null;
-                if (viewerInstanceRef.current && !viewerInstanceRef.current.__isMiew) {
-                  viewerInstanceRef.current.clear();
-                  viewerInstanceRef.current.removeAllSurfaces();
-                  viewerInstanceRef.current.render();
-                }
-              }}
-            >
-              Protein Viewer
-            </button>
-            <select
-              className="viewer-top-style-select"
-              value={renderStyle}
-              onChange={(e) => handleRenderStyleChange(e.target.value)}
-              title="3D style"
-            >
-              {isProtein ? (
-                <>
-                  <option value="cartoon">Cartoon</option>
-                  <option value="stick">Stick</option>
-                  <option value="sphere">Space-Fill</option>
-                  <option value="surface">Surface</option>
-                  <option value="line">Line</option>
-                </>
-              ) : (
-                <>
-                  <option value="ball-stick">Ball & Stick</option>
-                  <option value="stick">Stick</option>
-                  <option value="sphere">Space-Fill</option>
-                  <option value="line">Line</option>
-                </>
-              )}
-            </select>
-          </div>
+          <header className="viewer-panel-toolbar">
+            <div className="viewer-top-tabs" role="tablist" aria-label="3D viewer mode switch">
+              <button
+                type="button"
+                className={`viewer-top-tab ${viewerMode === 'molecule' ? 'active' : ''}`}
+                role="tab"
+                aria-selected={viewerMode === 'molecule'}
+                title="Molecule 3D viewer"
+                onClick={() => {
+                  if (viewerMode === 'molecule') return;
+                  clearProteinFromViewer();
+                }}
+              >
+                Molecule 3D
+              </button>
+              <button
+                type="button"
+                className={`viewer-top-tab ${viewerMode === 'protein' ? 'active' : ''}`}
+                role="tab"
+                aria-selected={viewerMode === 'protein'}
+                title="Protein viewer mode"
+                onClick={() => {
+                  if (viewerMode === 'protein') return;
+                  if (!isProtein && currentMolecule && currentMolecule.format !== 'pdb') {
+                    moleculeViewCacheRef.current = {
+                      currentMolecule,
+                      molecularMass,
+                      moleculeName,
+                      iupacName,
+                      boilingPoint,
+                      meltingPoint,
+                      currentSmiles,
+                      multiStructure,
+                      selected3DComponentIdx,
+                    };
+                  }
+                  setViewerMode('protein');
+                  setIsProtein(true);
+                  const cachedProtein = proteinViewCacheRef.current;
+                  if (cachedProtein?.pdbText) {
+                    loadProteinIntoViewer(cachedProtein.pdbText, cachedProtein.label || 'Cached Protein');
+                    setProteinMeta(cachedProtein.proteinMeta || null);
+                    setProteinStatus(cachedProtein.status || 'Loaded cached protein.');
+                    setProteinChainData(cachedProtein.proteinChainData || {});
+                    setProteinChainSettings(cachedProtein.proteinChainSettings || {});
+                    setSelectedProteinChain(cachedProtein.selectedProteinChain || '');
+                    return;
+                  }
+                  setProteinStatus('Protein mode active. Load a PDB ID or file.');
+                  setProteinMeta(null);
+                  setCurrentMolecule(null);
+                  clearMoleculeProps();
+                  setMolecularMass(null);
+                  proteinModelRef.current = null;
+                  if (viewerInstanceRef.current && !viewerInstanceRef.current.__isMiew) {
+                    viewerInstanceRef.current.clear();
+                    viewerInstanceRef.current.removeAllSurfaces();
+                    viewerInstanceRef.current.render();
+                  }
+                }}
+              >
+                Protein Viewer
+              </button>
+              <select
+                className="viewer-top-style-select"
+                value={renderStyle}
+                onChange={(e) => handleRenderStyleChange(e.target.value)}
+                title="3D style"
+              >
+                {isProtein ? (
+                  <>
+                    <option value="cartoon">Cartoon</option>
+                    <option value="stick">Stick</option>
+                    <option value="sphere">Space-Fill</option>
+                    <option value="surface">Surface</option>
+                    <option value="line">Line</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="ball-stick">Ball & Stick</option>
+                    <option value="stick">Stick</option>
+                    <option value="sphere">Space-Fill</option>
+                    <option value="line">Line</option>
+                  </>
+                )}
+              </select>
+            </div>
+            <nav className="viewer-toolbar-extras" aria-label="Viewer resources">
+              <a
+                className="viewer-toolbar-extra"
+                href="/course/index.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="MolDraw course"
+              >
+                Course
+              </a>
+              <a
+                className="viewer-toolbar-extra"
+                href="/pages/faq.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Frequently asked questions"
+              >
+                FAQ
+              </a>
+              <button
+                type="button"
+                className="viewer-toolbar-extra"
+                onClick={() => setShowAiSetupModal(true)}
+                title="Gemini API key and AI assistant setup"
+              >
+                AI setup
+              </button>
+              <a
+                className="viewer-toolbar-extra"
+                href="/blog/index.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="MolDraw blog"
+              >
+                Blog
+              </a>
+            </nav>
+          </header>
 
           {viewerMode === 'protein' && (
             <div className="viewer-protein-controls">

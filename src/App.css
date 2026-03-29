@@ -185,21 +185,21 @@
 }
 
 .brand-by-text {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
-  color: #666;
+  color: #94a3b8;
   white-space: nowrap;
 }
 
 .brand-by-link {
-  color: #2C7A7B;
+  color: #94a3b8;
   text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s;
+  font-weight: 500;
+  transition: color 0.15s ease;
 }
 
 .brand-by-link:hover {
-  color: #1a5a5b;
+  color: #64748b;
   text-decoration: underline;
 }
 
@@ -337,10 +337,10 @@ button.tb-menu-item {
 }
 
 .tb-download-btn {
-  height: 24px;
+  height: 28px;
   padding: 0 8px;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   color: #ffffff;
   background: #2C7A7B;
   border: 1px solid #2C7A7B;
@@ -509,6 +509,71 @@ button.tb-menu-item {
   min-width: 40px;
 }
 
+/* Sticky top toolbar — 3D viewer */
+.viewer-panel-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 160;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 6px 10px 8px 44px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.98);
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.viewer-panel-toolbar .viewer-top-tabs {
+  position: static;
+  left: auto;
+  top: auto;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  backdrop-filter: none;
+  padding: 0;
+}
+
+.viewer-toolbar-extras {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.viewer-toolbar-extra {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #64748b;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+a.viewer-toolbar-extra:hover,
+button.viewer-toolbar-extra:hover {
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.viewer-toolbar-extra:focus-visible {
+  outline: 2px solid #2C7A7B;
+  outline-offset: 1px;
+}
+
 /* Panel Toggle Button */
 .panel-toggle-btn {
   position: absolute;
@@ -537,6 +602,7 @@ button.tb-menu-item {
   box-shadow: 0 4px 12px rgba(44, 122, 123, 0.3);
 }
 
+/* Floating tab cluster (legacy / when not inside sticky toolbar) */
 .viewer-top-tabs {
   position: absolute;
   top: 8px;
@@ -551,6 +617,14 @@ button.tb-menu-item {
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(4px);
   box-shadow: 0 1px 5px rgba(15, 23, 42, 0.08);
+}
+
+.viewer-panel-toolbar .viewer-top-tabs {
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: rgba(248, 250, 252, 0.9);
+  padding: 4px 5px;
+  box-shadow: none;
 }
 
 .viewer-top-tab {
@@ -599,7 +673,7 @@ button.tb-menu-item {
 
 .viewer-protein-controls {
   position: absolute;
-  top: 46px;
+  top: 52px;
   left: 44px;
   z-index: 138;
   display: flex;
@@ -644,7 +718,7 @@ button.tb-menu-item {
 
 .viewer-protein-status {
   position: absolute;
-  top: 90px;
+  top: 96px;
   left: 44px;
   z-index: 137;
   background: rgba(255, 255, 255, 0.93);
@@ -660,7 +734,7 @@ button.tb-menu-item {
   position: absolute;
   left: 44px;
   right: 12px;
-  top: 122px;
+  top: 130px;
   z-index: 136;
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid #d9e0e6;
@@ -847,6 +921,9 @@ button.tb-menu-item {
 
 .viewer-3d-stack {
   min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes propsFadeIn {
@@ -2455,6 +2532,17 @@ button.tb-menu-item {
     font-size: 13px;
   }
 
+  .viewer-panel-toolbar {
+    padding: 6px 8px 8px 40px;
+    align-items: flex-start;
+  }
+
+  .viewer-panel-toolbar .viewer-top-tabs {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+  }
+
   .viewer-top-tabs {
     top: 8px;
     left: 36px;
@@ -2468,8 +2556,13 @@ button.tb-menu-item {
     font-size: 11px;
   }
 
+  .viewer-toolbar-extra {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
   .viewer-protein-controls {
-    top: 40px;
+    top: 56px;
     left: 36px;
     right: 8px;
     flex-wrap: wrap;
@@ -2487,7 +2580,7 @@ button.tb-menu-item {
   }
 
   .viewer-protein-status {
-    top: 112px;
+    top: 118px;
     left: 36px;
     right: 8px;
     max-width: none;
@@ -2496,7 +2589,7 @@ button.tb-menu-item {
   .viewer-protein-seq-panel {
     left: 36px;
     right: 8px;
-    top: 142px;
+    top: 152px;
   }
 
   .viewer-protein-seq-controls {

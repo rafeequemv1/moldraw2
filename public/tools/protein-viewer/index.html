@@ -80,7 +80,7 @@
       <p>Load proteins by PDB ID or upload `.pdb`, inspect amino-acid sequence, style individual chains, and right-click selected sequence regions to restyle or hide them.</p>
       <div class="control-grid">
         <label>PDB ID
-          <input id="pdbIdInput" type="text" placeholder="Example: 1CRN" />
+          <input id="pdbIdInput" type="text" placeholder="Example: 1CRN" value="1CRN" />
         </label>
         <label>Default Chain Style
           <select id="styleSelect">
@@ -584,6 +584,11 @@
     });
 
     window.addEventListener('resize', () => { viewer.resize(); viewer.render(); });
+
+    (async function loadDefaultPreset() {
+      setStatus('Loading default structure (1CRN)...');
+      await loadPdbById();
+    })();
   </script>
 </body>
 </html>
