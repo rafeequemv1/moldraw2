@@ -2485,16 +2485,17 @@ ${scientificGuardrails}`;
     }
   }, [applyMiewDisplayMode, miewColorer, isProtein, applyProteinStyle]);
 
-  const onProteinSeqMouseDown = (chainId, resi) => {
-    proteinSeqDragRef.current = { chainId, startResi: resi, active: true };
+  const onProteinSeqPointerDown = (chainId, resi, e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const strip = e.currentTarget.closest('.viewer-protein-seq-strip');
+    if (strip && typeof strip.setPointerCapture === 'function') {
+      try {
+        strip.setPointerCapture(e.pointerId);
+      } catch (_) { /* ignore */ }
+    }
+    proteinSeqDragRef.current = { chainId, startResi: resi, active: true, pointerId: e.pointerId };
     setProteinSelectedRange({ chain: chainId, startResi: resi, endResi: resi });
     setProteinSeqMenu({ open: false, x: 0, y: 0 });
-  };
-
-  const onProteinSeqMouseEnter = (chainId, resi) => {
-    const drag = proteinSeqDragRef.current;
-    if (!drag?.active || drag.chainId !== chainId) return;
-    setProteinSelectedRange({ chain: chainId, startResi: drag.startResi, endResi: resi });
   };
 
   const applyProteinRangeStyle = (style, color, hidden) => {
@@ -2515,12 +2516,34 @@ ${scientificGuardrails}`;
   };
 
   useEffect(() => {
-    const endProteinDrag = () => {
-      if (!proteinSeqDragRef.current?.active) return;
+    const onSeqPointerMove = (e) => {
+      const drag = proteinSeqDragRef.current;
+      if (!drag?.active || e.pointerId !== drag.pointerId) return;
+      const top = document.elementFromPoint(e.clientX, e.clientY);
+      const cell = top && top.closest && top.closest('.viewer-protein-seq-res');
+      if (!cell) return;
+      const r = parseInt(cell.getAttribute('data-resi'), 10);
+      const ch = cell.getAttribute('data-chain');
+      if (ch !== drag.chainId || Number.isNaN(r)) return;
+      setProteinSelectedRange({
+        chain: drag.chainId,
+        startResi: drag.startResi,
+        endResi: r,
+      });
+    };
+    const endSeqPointerDrag = (e) => {
+      const drag = proteinSeqDragRef.current;
+      if (!drag?.active || e.pointerId !== drag.pointerId) return;
       proteinSeqDragRef.current = null;
     };
-    window.addEventListener('mouseup', endProteinDrag);
-    return () => window.removeEventListener('mouseup', endProteinDrag);
+    window.addEventListener('pointermove', onSeqPointerMove);
+    window.addEventListener('pointerup', endSeqPointerDrag);
+    window.addEventListener('pointercancel', endSeqPointerDrag);
+    return () => {
+      window.removeEventListener('pointermove', onSeqPointerMove);
+      window.removeEventListener('pointerup', endSeqPointerDrag);
+      window.removeEventListener('pointercancel', endSeqPointerDrag);
+    };
   }, []);
 
   useEffect(() => {
@@ -2532,12 +2555,22 @@ ${scientificGuardrails}`;
   }, [proteinSeqMenu.open]);
 
   const startMoveLonePair = (id, e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
+    e.stopPropagation();
     const marker = lonePairs.find((lp) => lp.id === id);
     if (!marker) return;
+    const el = e.currentTarget;
+    if (typeof el.setPointerCapture === 'function') {
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch (_) { /* ignore */ }
+    }
     lonePairDragRef.current = {
       type: 'move',
       id,
+      pointerId: e.pointerId,
+      captureEl: el,
       startClientX: e.clientX,
       startClientY: e.clientY,
       startX: marker.x,
@@ -2546,17 +2579,26 @@ ${scientificGuardrails}`;
   };
 
   const startRotateLonePair = (id, e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     const marker = lonePairs.find((lp) => lp.id === id);
     const wrap = ketcherCanvasWrapRef.current;
     if (!marker || !wrap) return;
+    const el = e.currentTarget;
+    if (typeof el.setPointerCapture === 'function') {
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch (_) { /* ignore */ }
+    }
     const rect = wrap.getBoundingClientRect();
     const centerX = rect.left + marker.x;
     const centerY = rect.top + marker.y;
     lonePairDragRef.current = {
       type: 'rotate',
       id,
+      pointerId: e.pointerId,
+      captureEl: el,
       centerX,
       centerY,
       startRad: Math.atan2(e.clientY - centerY, e.clientX - centerX),
@@ -2567,7 +2609,7 @@ ${scientificGuardrails}`;
   useEffect(() => {
     const onMove = (e) => {
       const drag = lonePairDragRef.current;
-      if (!drag) return;
+      if (!drag || e.pointerId !== drag.pointerId) return;
       const wrap = ketcherCanvasWrapRef.current;
       if (!wrap) return;
       const rect = wrap.getBoundingClientRect();
@@ -2587,17 +2629,26 @@ ${scientificGuardrails}`;
       }
     };
 
-    const onUp = () => {
+    const onUp = (e) => {
+      const drag = lonePairDragRef.current;
+      if (!drag || e.pointerId !== drag.pointerId) return;
+      if (drag.captureEl && typeof drag.captureEl.releasePointerCapture === 'function') {
+        try {
+          drag.captureEl.releasePointerCapture(drag.pointerId);
+        } catch (_) { /* ignore */ }
+      }
       lonePairDragRef.current = null;
     };
 
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
     return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
     };
-  }, [lonePairs]);
+  }, []);
 
   const getLonePairExportShapes = (targetW, targetH) => {
     const wrap = ketcherCanvasWrapRef.current;
@@ -3834,23 +3885,26 @@ ${scientificGuardrails}`;
                     height: lp.height || 30,
                     transform: `translate(-50%, -50%) rotate(${lp.angle}deg)`,
                   }}
-                  onMouseDown={(e) => startMoveLonePair(lp.id, e)}
+                  onPointerDown={(e) => startMoveLonePair(lp.id, e)}
                   onDoubleClick={() => setLonePairs((prev) => prev.filter((x) => x.id !== lp.id))}
-                  title="Drag to move, rotate with handle, double-click to delete"
+                  title="Drag to move, rotate with handle, double-tap or double-click to delete"
                 >
                   <div className="lp-bounds">
                     <span className="lp-dot lp-dot-left" />
                     <span className="lp-dot lp-dot-right" />
                   </div>
                   <button
+                    type="button"
                     className="lp-rotate-handle"
-                    onMouseDown={(e) => startRotateLonePair(lp.id, e)}
+                    onPointerDown={(e) => startRotateLonePair(lp.id, e)}
                     title="Rotate lone pair"
                   >
                     R
                   </button>
                   <button
+                    type="button"
                     className="lp-delete-btn"
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -4181,8 +4235,9 @@ ${scientificGuardrails}`;
                     <span
                       key={`${selectedProteinChain}-${r.resi}`}
                       className={`viewer-protein-seq-res ${active ? 'sel' : ''}`}
-                      onMouseDown={() => onProteinSeqMouseDown(selectedProteinChain, r.resi)}
-                      onMouseEnter={() => onProteinSeqMouseEnter(selectedProteinChain, r.resi)}
+                      data-resi={r.resi}
+                      data-chain={selectedProteinChain}
+                      onPointerDown={(e) => onProteinSeqPointerDown(selectedProteinChain, r.resi, e)}
                       title={`${selectedProteinChain}:${r.resi} ${r.resn}`}
                     >
                       {r.aa}
@@ -4194,7 +4249,7 @@ ${scientificGuardrails}`;
                 <div
                   className="viewer-protein-seq-menu"
                   style={{ left: proteinSeqMenu.x, top: proteinSeqMenu.y }}
-                  onMouseLeave={() => setProteinSeqMenu({ open: false, x: 0, y: 0 })}
+                  onPointerLeave={() => setProteinSeqMenu({ open: false, x: 0, y: 0 })}
                 >
                   <button type="button" onClick={() => { applyProteinRangeStyle('cartoon', '#f59e0b', false); setProteinSeqMenu({ open: false, x: 0, y: 0 }); }}>Segment Cartoon</button>
                   <button type="button" onClick={() => { applyProteinRangeStyle('stick', '#f59e0b', false); setProteinSeqMenu({ open: false, x: 0, y: 0 }); }}>Segment Stick</button>

@@ -13,6 +13,12 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #ketcher-frame {
+      touch-action: auto;
     }
   </style>
   <script>
@@ -98,6 +104,8 @@
             const frameDoc = ketcherFrame.contentWindow.document;
             frameDoc.addEventListener('input', scheduleEditorChange, true);
             frameDoc.addEventListener('mouseup', scheduleEditorChange, true);
+            frameDoc.addEventListener('pointerup', scheduleEditorChange, true);
+            frameDoc.addEventListener('touchend', scheduleEditorChange, { capture: true, passive: true });
             frameDoc.addEventListener('keyup', scheduleEditorChange, true);
           } catch (_) { /* noop */ }
 

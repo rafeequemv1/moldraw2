@@ -1,0 +1,20 @@
+/**
+ * Touch / Apple Pencil / stylus helpers for embedded Ketcher.
+ * Loaded after Ketcher's bundle CSS.
+ */
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body,
+#root {
+  touch-action: manipulation;
+  overscroll-behavior: contain;
+}
+
+/* Drawing surface: let the editor own the gesture (pan/zoom conflicts with browser) */
+#root canvas {
+  touch-action: none;
+}

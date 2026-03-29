@@ -1,6 +1,9 @@
 .App {
-  width: 100vw;
-  height: 100vh;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -11,18 +14,22 @@
 
 .split-container {
   display: flex;
+  flex: 1 1 0;
   width: 100%;
-  height: auto;
-  flex: 1;
+  max-width: 100%;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .panel {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  /* Let toolbars/logo stay fully visible; scroll only inside canvas / 3D stack */
+  overflow: visible;
 }
 
 .app-footer {
@@ -66,12 +73,15 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  min-width: 0;
+  min-height: 0;
 }
 
 .ketcher-canvas-wrap {
   position: relative;
   flex: 1;
   min-height: 0;
+  touch-action: manipulation;
 }
 
 .lp-overlay {
@@ -88,6 +98,7 @@
   pointer-events: auto;
   cursor: move;
   user-select: none;
+  touch-action: none;
 }
 
 .lp-bounds {
@@ -165,12 +176,17 @@
   gap: 8px;
   position: relative;
   z-index: 220;
+  flex-shrink: 0;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .brand-top-row {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .brand-name {
@@ -182,6 +198,8 @@
   align-items: center;
   gap: 8px;
   white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .brand-by-text {
@@ -204,18 +222,23 @@
 }
 
 .brand-logo {
-  height: 32px; /* 20% smaller (40px * 0.8) */
+  height: 32px;
+  max-height: min(32px, 8vh);
   width: auto;
+  max-width: 100%;
   display: inline-block;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 
 .header-links {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 2px;
+  flex-wrap: wrap;
+  gap: 4px 2px;
   justify-content: flex-start;
+  min-width: 0;
   max-width: 100%;
   overflow: visible;
   padding-bottom: 2px;
@@ -229,6 +252,30 @@
     flex-wrap: wrap;
   }
   .molecule-search-bar { max-width: 100%; }
+}
+
+/* Short viewports: keep logo + 3D toolbar readable */
+@media (max-height: 720px) {
+  .brand-header {
+    padding: 6px 12px;
+    gap: 6px;
+  }
+
+  .brand-logo {
+    height: 26px;
+    max-height: min(26px, 10vh);
+  }
+
+  .viewer-panel-toolbar--compact {
+    padding: 3px 6px 4px 36px;
+    gap: 3px;
+  }
+
+  .viewer-panel-toolbar--compact .viewer-top-tab {
+    height: 22px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
 }
 
 .tb-btn {
@@ -520,12 +567,15 @@ button.tb-menu-item {
   width: 100%;
   border: none;
   display: block;
+  touch-action: auto;
 }
 
 .viewer-panel {
   background: #ffffff;
   position: relative;
   transition: all 0.3s ease;
+  min-width: 0;
+  min-height: 0;
 }
 
 .viewer-panel.minimized {
@@ -563,10 +613,12 @@ button.tb-menu-item {
 
 .viewer-toolbar-top-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   min-width: 0;
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 
 .viewer-panel-toolbar--compact .viewer-top-tabs {
@@ -648,6 +700,9 @@ button.tb-menu-item {
   background: transparent;
   backdrop-filter: none;
   padding: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: flex-start;
 }
 
 .viewer-toolbar-extras {
@@ -655,6 +710,10 @@ button.tb-menu-item {
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 100%;
+  row-gap: 4px;
 }
 
 .viewer-panel-toolbar--compact .viewer-toolbar-extras {
@@ -725,12 +784,12 @@ button.viewer-toolbar-extra:hover {
   outline-offset: 1px;
 }
 
-/* Panel Toggle Button */
+/* Panel Toggle Button — anchor to top so it never covers Molecule/Protein tabs on short viewports */
 .panel-toggle-btn {
   position: absolute;
   left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 10px;
+  transform: none;
   width: 28px;
   height: 28px;
   border: none;
@@ -742,15 +801,24 @@ button.viewer-toolbar-extra:hover {
   align-items: center;
   justify-content: center;
   color: #666;
-  transition: all 0.2s;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
   z-index: 200;
+}
+
+.viewer-panel.minimized .panel-toggle-btn {
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .panel-toggle-btn:hover {
   background: #2C7A7B;
   color: white;
-  transform: translateY(-50%) scale(1.1);
+  transform: scale(1.08);
   box-shadow: 0 4px 12px rgba(44, 122, 123, 0.3);
+}
+
+.viewer-panel.minimized .panel-toggle-btn:hover {
+  transform: translateY(-50%) scale(1.08);
 }
 
 /* Floating tab cluster (legacy / when not inside sticky toolbar) */
@@ -807,12 +875,13 @@ button.viewer-toolbar-extra:hover {
 }
 
 .viewer-panel-toolbar--compact .viewer-top-tab:not(.active):hover {
-  border-color: #ea580c;
-  filter: brightness(0.98);
+  border-color: #cbd5e1;
+  background: #f8fafc;
 }
 
 .viewer-panel-toolbar--compact .viewer-top-tab--protein:not(.active):hover {
-  border-color: #d97706;
+  border-color: #d4d4d3;
+  background: #f9f9f8;
 }
 
 .viewer-top-tab.active {
@@ -821,30 +890,31 @@ button.viewer-toolbar-extra:hover {
   color: #ffffff;
 }
 
+/* Molecule / Protein: very subtle distinction (compact toolbar only) */
 .viewer-panel-toolbar--compact .viewer-top-tab--mol:not(.active) {
-  background: linear-gradient(180deg, #fffdfb 0%, #fff7ed 100%);
-  border-color: #fdba74;
-  color: #9a3412;
+  background: #fafbfc;
+  border-color: #e8ecf0;
+  color: #64748b;
 }
 
 .viewer-panel-toolbar--compact .viewer-top-tab--mol.active {
-  background: linear-gradient(145deg, #fb923c 0%, #ea580c 55%, #c2410c 100%);
-  border-color: #9a3412;
-  color: #fffaf5;
-  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+  box-shadow: none;
 }
 
 .viewer-panel-toolbar--compact .viewer-top-tab--protein:not(.active) {
-  background: linear-gradient(180deg, #fffefb 0%, #fffbeb 100%);
-  border-color: #fcd34d;
-  color: #b45309;
+  background: #fafafa;
+  border-color: #e8e8e7;
+  color: #64748b;
 }
 
 .viewer-panel-toolbar--compact .viewer-top-tab--protein.active {
-  background: linear-gradient(145deg, #fcd34d 0%, #f59e0b 45%, #d97706 100%);
-  border-color: #b45309;
-  color: #1c1917;
-  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+  background: #f4f4f3;
+  border-color: #d4d4d3;
+  color: #3f3f3a;
+  box-shadow: none;
 }
 
 .viewer-panel-toolbar--compact .viewer-top-tab {
@@ -1022,6 +1092,8 @@ button.viewer-toolbar-extra:hover {
   overflow: auto;
   user-select: none;
   font-family: 'Courier New', monospace;
+  touch-action: pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
 }
 
 .viewer-protein-seq-res {
@@ -1153,9 +1225,11 @@ button.viewer-toolbar-extra:hover {
 
 .viewer-3d-stack {
   min-height: 0;
-  flex: 1;
+  min-width: 0;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 @keyframes propsFadeIn {
@@ -2381,6 +2455,7 @@ button.viewer-toolbar-extra:hover {
   height: 100%;
   border: none;
   display: block;
+  touch-action: auto;
 }
 
 .viewer-3d {
@@ -2388,6 +2463,7 @@ button.viewer-toolbar-extra:hover {
   height: 100%;
   position: relative;
   background: #ffffff;
+  touch-action: none;
 }
 
 /* Feedback Chat Widget - Positioned in 3D viewer panel */
@@ -2747,6 +2823,18 @@ button.viewer-toolbar-extra:hover {
 @media (max-width: 768px) {
   .split-container {
     flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .ketcher-panel,
+  .viewer-panel:not(.minimized) {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
   }
   
   .ketcher-panel {
@@ -3341,4 +3429,52 @@ button.viewer-toolbar-extra:hover {
 
 .ai-key-save:hover {
   background: #1a5a5b;
+}
+
+/* Touch / tablet / stylus: larger hit targets, smoother interaction */
+@media (pointer: coarse) {
+  .tb-btn {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+
+  .tb-btn-windows-app {
+    min-height: 44px;
+    padding: 0 12px 0 10px;
+  }
+
+  .panel-toggle-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .viewer-panel-toolbar--compact .viewer-top-tab {
+    min-height: 40px;
+    padding: 0 12px;
+  }
+
+  .viewer-protein-btn {
+    min-height: 40px;
+    padding: 0 12px;
+  }
+
+  .viewer-protein-input {
+    min-height: 40px;
+  }
+
+  .lp-rotate-handle,
+  .lp-delete-btn {
+    min-width: 40px;
+    min-height: 36px;
+  }
+
+  .viewer-protein-seq-res {
+    min-width: 14px;
+    padding: 2px 1px;
+  }
+
+  .mol-props-close-btn {
+    width: 44px;
+    height: 44px;
+  }
 }
