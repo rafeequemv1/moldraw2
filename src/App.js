@@ -259,16 +259,39 @@ function App() {
     setShowApiKeyInput(true);
   };
 
-  // Close AI chat when Crisp opens; mutual exclusivity
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (window.$crisp && typeof window.$crisp.is === 'function') {
-        clearInterval(interval);
-        window.$crisp.push(['on', 'chat:opened', () => setIsChatOpen(false)]);
+  const closeCharlaWidget = useCallback(() => {
+    try {
+      const widget = document.querySelector('charla-widget');
+      if (widget) {
+        ['close', 'hide', 'minimize'].forEach((method) => {
+          if (typeof widget[method] === 'function') {
+            try { widget[method](); } catch {}
+          }
+        });
+        widget.dispatchEvent(new CustomEvent('charla:close', { bubbles: true }));
       }
-    }, 1000);
-    return () => clearInterval(interval);
+      const charlaApi = window.Charla || window.charla;
+      if (charlaApi) {
+        ['close', 'hide', 'minimize'].forEach((method) => {
+          if (typeof charlaApi[method] === 'function') {
+            try { charlaApi[method](); } catch {}
+          }
+        });
+      }
+    } catch {
+      /* ignore third-party widget API differences */
+    }
   }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle('ai-chat-panel-open', isChatOpen);
+    if (isChatOpen) {
+      closeCharlaWidget();
+    }
+    return () => {
+      document.body.classList.remove('ai-chat-panel-open');
+    };
+  }, [isChatOpen, closeCharlaWidget]);
 
   useEffect(() => {
     const onDocClick = (event) => {
@@ -3663,7 +3686,139 @@ ${scientificGuardrails}`;
 
   return (
     <div className="App">
-      <main className="split-container">
+      <main className={`split-container${isChatOpen ? ' split-container--chat-open' : ''}`}>
+        {isChatOpen && (
+          <aside className="ai-chat-panel ai-chat-panel--left" aria-label="MolDraw AI assistant">
+            <div className="ai-chat-box">
+              <div className="ai-chat-header">
+                <div>
+                  <div className="ai-chat-header-title">MolDraw AI</div>
+                  <div className="ai-chat-header-sub">
+                    {(AI_MODEL_OPTIONS.find((m) => m.value === aiModel)?.label || 'Gemini Flash')} · Draw, name &amp; explore
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <a
+                    className="ai-chat-header-close"
+                    href="/pages/ai-help.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="How to use AI assistant"
+                    style={{ fontSize: 12, textDecoration: 'none' }}
+                  >
+                    ?
+                  </a>
+                  <button
+                    className="ai-chat-header-close"
+                    onClick={() => setShowApiKeyInput(v => !v)}
+                    title="API key settings"
+                    style={{ fontSize: 14 }}
+                  >
+                    ⚙
+                  </button>
+                  <button
+                    className="ai-chat-header-close"
+                    onClick={() => setIsChatOpen(false)}
+                    title="Close chat"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              {showApiKeyInput && (
+                <div className="ai-key-row">
+                  <select
+                    className="ai-model-select"
+                    value={aiModel}
+                    onChange={(e) => setAiModel(e.target.value)}
+                    title="Choose chat model"
+                  >
+                    {AI_MODEL_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="password"
+                    className="ai-key-input"
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    placeholder="Paste Gemini API key..."
+                    onBlur={() => {
+                      try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
+                    }}
+                  />
+                  <button
+                    className="ai-key-save"
+                    onClick={() => {
+                      try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
+                      setShowApiKeyInput(false);
+                      if (geminiApiKey) {
+                        setChatMessages((msgs) => [...msgs, { role: 'assistant', text: 'API key saved. You can now ask me anything!' }]);
+                      }
+                    }}
+                  >
+                    {geminiApiKey ? '✓ Save' : 'Save'}
+                  </button>
+                </div>
+              )}
+
+              <div className="ai-chat-messages">
+                {chatMessages.length === 0 && (
+                  <div className="ai-chat-message assistant">
+                    {geminiApiKey ? (
+                      <span>Try: "draw aspirin", "name this molecule", "show a Fischer esterification", or ask about properties.</span>
+                    ) : (
+                      <div className="ai-key-help-card">
+                        <strong>Connect Gemini to use MolDraw AI</strong>
+                        <ol>
+                          <li>
+                            Open{' '}
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">
+                              Google AI Studio API Keys
+                            </a>.
+                          </li>
+                          <li>Sign in with your Google account.</li>
+                          <li>Choose <strong>Create API key</strong> and copy the key.</li>
+                          <li>Press the ⚙ button above, paste the key, then press <strong>Save</strong>.</li>
+                        </ol>
+                        <a className="ai-key-help-link" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer">
+                          Open detailed setup guide
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {chatMessages.map((m, idx) => (
+                  <div
+                    key={idx}
+                    className={`ai-chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}
+                  >
+                    <span>{m.text}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="ai-chat-input-row">
+                <textarea
+                  className="ai-chat-input"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                  placeholder="draw caffeine, name this, add ethanol..."
+                  rows={3}
+                />
+                <button
+                  className="ai-chat-send-btn"
+                  onClick={sendChatMessage}
+                  disabled={isChatLoading || !chatInput.trim()}
+                >
+                  {isChatLoading ? '...' : '→'}
+                </button>
+              </div>
+            </div>
+          </aside>
+        )}
+
         {/* Left: Ketcher 2D Editor */}
         <section className="panel ketcher-panel" data-testid="ketcher-panel">
           {/* Brand Header */}
@@ -3755,23 +3910,15 @@ ${scientificGuardrails}`;
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
                 Paste SMILES
               </button>
-              <div className="tb-sep" />
               <button
-                className={`tb-btn ${showReactionsModal ? 'tb-btn-active' : ''}`}
-                onClick={() => setShowReactionsModal(true)}
-                title="Open reactions browser"
+                type="button"
+                className={`tb-btn tb-btn-ai ${isChatOpen ? 'tb-btn-ai-active' : ''}`}
+                onClick={() => setIsChatOpen((open) => !open)}
+                title="Open MolDraw AI assistant"
               >
-                Reactions
+                <span className="tb-ai-star" aria-hidden="true">★</span>
+                AI
               </button>
-              <a
-                className="tb-btn"
-                href="/tools/index.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Calculators, converters, and chemistry tools"
-              >
-                Tools
-              </a>
 
               <div className="tb-menu-dropdown" ref={downloadMenuRef}>
                 <button
@@ -3788,7 +3935,7 @@ ${scientificGuardrails}`;
                   </svg>
                 </button>
                 {showDownloadMenu && (
-                  <div className="tb-menu-dropdown-list" role="menu" aria-label="Download format">
+                  <div className="tb-menu-dropdown-list tb-download-menu-list" role="menu" aria-label="Download format">
                     <button
                       type="button"
                       className="tb-menu-item"
@@ -3832,19 +3979,6 @@ ${scientificGuardrails}`;
                 )}
               </div>
 
-              <div className="tb-sep" />
-              <div className="tb-menu-dropdown" ref={moreMenuRef}>
-                <button className="tb-btn" onClick={() => setShowMoreMenu((v) => !v)} title="More options">More</button>
-                {showMoreMenu && (
-                  <div className="tb-menu-dropdown-list">
-                  <a className="tb-menu-item" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">Course</a>
-                  <a className="tb-menu-item" href="/pages/faq.html" target="_blank" rel="noopener noreferrer" title="Frequently asked questions">FAQ</a>
-                  <a className="tb-menu-item" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">AI Setup</a>
-                  <a className="tb-menu-item" href="/blog/index.html" target="_blank" rel="noopener noreferrer" title="Blog">Blog</a>
-                  <a className="tb-menu-item" href="/pages/updates.html" target="_blank" rel="noopener noreferrer" title="Updates">Updates</a>
-                  </div>
-                )}
-              </div>
               <a
                 className="tb-btn tb-btn-windows-app"
                 href="https://hi.switchy.io/sYek"
@@ -3852,14 +3986,10 @@ ${scientificGuardrails}`;
                 rel="noopener noreferrer"
                 title="Download MolDraw for Windows"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="tb-windows-logo">
-                  <path
-                    fill="currentColor"
-                    d="M3 3h9v9H3V3zm9 0h9v9h-9V3zM3 12h9v9H3v-9zm9 0h9v9h-9v-9z"
-                  />
-                </svg>
-                <span className="tb-btn-windows-text">Windows</span>
+                <img src="/windows-install-logo.png" alt="" aria-hidden="true" className="tb-windows-logo" />
+                <span className="tb-btn-windows-text">Install Windows</span>
               </a>
+              <span className="tb-platform-note">MacOS and Linux coming soon</span>
             </nav>
           </header>
 
@@ -4001,6 +4131,23 @@ ${scientificGuardrails}`;
               </button>
             </div>
             <nav className="viewer-toolbar-extras" aria-label="Viewer resources">
+              <button
+                type="button"
+                className={`viewer-toolbar-extra ${showReactionsModal ? 'active' : ''}`}
+                onClick={() => setShowReactionsModal(true)}
+                title="Open reactions browser"
+              >
+                Reactions
+              </button>
+              <a
+                className="viewer-toolbar-extra"
+                href="/tools/index.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Calculators, converters, and chemistry tools"
+              >
+                Tools
+              </a>
               <a
                 className="viewer-toolbar-extra"
                 href="/course/index.html"
@@ -4036,6 +4183,25 @@ ${scientificGuardrails}`;
               >
                 Blog
               </a>
+              <div className="tb-menu-dropdown viewer-toolbar-more" ref={moreMenuRef}>
+                <button
+                  type="button"
+                  className="viewer-toolbar-extra"
+                  onClick={() => setShowMoreMenu((v) => !v)}
+                  title="More links"
+                >
+                  More
+                </button>
+                {showMoreMenu && (
+                  <div className="tb-menu-dropdown-list">
+                    <a className="tb-menu-item" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">Course</a>
+                    <a className="tb-menu-item" href="/pages/faq.html" target="_blank" rel="noopener noreferrer" title="Frequently asked questions">FAQ</a>
+                    <a className="tb-menu-item" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">AI Setup</a>
+                    <a className="tb-menu-item" href="/blog/index.html" target="_blank" rel="noopener noreferrer" title="Blog">Blog</a>
+                    <a className="tb-menu-item" href="/pages/updates.html" target="_blank" rel="noopener noreferrer" title="Updates">Updates</a>
+                  </div>
+                )}
+              </div>
             </nav>
             </div>
             {viewerMode === 'protein' && (
@@ -4491,139 +4657,6 @@ ${scientificGuardrails}`;
                 )}
               </div>
 
-              {/* AI Chat Assistant */}
-              <div className="ai-chat-widget">
-                {isChatOpen && (
-                  <div className="ai-chat-box">
-                    <div className="ai-chat-header">
-                      <div>
-                        <div className="ai-chat-header-title">MolDraw AI</div>
-                        <div className="ai-chat-header-sub">
-                          {(AI_MODEL_OPTIONS.find((m) => m.value === aiModel)?.label || 'Gemini Flash')} · Draw, name &amp; explore
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        <a
-                          className="ai-chat-header-close"
-                          href="/pages/ai-help.html"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="How to use AI assistant"
-                          style={{ fontSize: 12, textDecoration: 'none' }}
-                        >
-                          ?
-                        </a>
-                        <button
-                          className="ai-chat-header-close"
-                          onClick={() => setShowApiKeyInput(v => !v)}
-                          title="API key settings"
-                          style={{ fontSize: 14 }}
-                        >
-                          ⚙
-                        </button>
-                        <button
-                          className="ai-chat-header-close"
-                          onClick={() => setIsChatOpen(false)}
-                          title="Close chat"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-
-                    {showApiKeyInput && (
-                      <div className="ai-key-row">
-                        <select
-                          className="ai-model-select"
-                          value={aiModel}
-                          onChange={(e) => setAiModel(e.target.value)}
-                          title="Choose chat model"
-                        >
-                          {AI_MODEL_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="password"
-                          className="ai-key-input"
-                          value={geminiApiKey}
-                          onChange={(e) => setGeminiApiKey(e.target.value)}
-                          placeholder="Paste Gemini API key..."
-                          onBlur={() => {
-                            try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
-                          }}
-                        />
-                        <button
-                          className="ai-key-save"
-                          onClick={() => {
-                            try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
-                            setShowApiKeyInput(false);
-                            if (geminiApiKey) {
-                              setChatMessages((msgs) => [...msgs, { role: 'assistant', text: 'API key saved. You can now ask me anything!' }]);
-                            }
-                          }}
-                        >
-                          {geminiApiKey ? '✓ Save' : 'Save'}
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="ai-chat-messages">
-                      {chatMessages.length === 0 && (
-                        <div className="ai-chat-message assistant">
-                          <span>
-                            {geminiApiKey
-                              ? 'Try: "draw aspirin", "name this molecule", "show a Fischer esterification", or ask about properties.'
-                              : <>Paste your Gemini API key via ⚙ above. <a href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" style={{ color: '#2C7A7B' }}>How to get a key →</a></>}
-                          </span>
-                        </div>
-                      )}
-                      {chatMessages.map((m, idx) => (
-                        <div
-                          key={idx}
-                          className={`ai-chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}
-                        >
-                          <span>{m.text}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="ai-chat-input-row">
-                      <textarea
-                        className="ai-chat-input"
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
-                        placeholder="draw caffeine, name this, add ethanol..."
-                        rows={1}
-                      />
-                      <button
-                        className="ai-chat-send-btn"
-                        onClick={sendChatMessage}
-                        disabled={isChatLoading || !chatInput.trim()}
-                      >
-                        {isChatLoading ? '...' : '→'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <button
-                  className="ai-chat-toggle"
-                  onClick={() => {
-                    setIsChatOpen((open) => {
-                      const willOpen = !open;
-                      // Close Crisp when opening AI chat
-                      if (willOpen && window.$crisp) {
-                        try { window.$crisp.push(['do', 'chat:close']); } catch {}
-                      }
-                      return willOpen;
-                    });
-                  }}
-                  title="AI assistant"
-                >
-                  AI
-                </button>
-              </div>
-
               {/* Floating Controls */}
               <div className="floating-controls">
                 {/* Hydrogen Toggle */}
@@ -4700,6 +4733,7 @@ ${scientificGuardrails}`;
             <div className="loading-3d">Loading 3D Viewer...</div>
           )}
         </section>
+
       </main>
 
       {/* AI Setup Prompt Modal */}

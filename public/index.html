@@ -210,17 +210,16 @@
     </script>
     
     
-    <!-- Crisp Chat -->
-    <style>
-      .crisp-client .cc-1brb6[data-full-view=true] .cc-1brb6[data-visible=true] {
-        bottom: 18px !important;
-        right: 18px !important;
-      }
-    </style>
-    <script type="text/javascript">
-      window.$crisp=[];
-      window.CRISP_WEBSITE_ID="0ba021f9-3b4c-45b5-a780-c53b592ae9f1";
-      (function(){var d=document;var s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();
+    <!-- Charla Support Chat -->
+    <script>
+      window.addEventListener('load', function() {
+        var widgetElement = document.createElement('charla-widget');
+        widgetElement.setAttribute('p', '5e6b67da-62ae-4645-acbe-d56d94aa0a63');
+        document.body.appendChild(widgetElement);
+        var widgetCode = document.createElement('script');
+        widgetCode.src = 'https://app.charla.com/widget/widget.js';
+        document.body.appendChild(widgetCode);
+      });
     </script>
   </head>
   <body>
