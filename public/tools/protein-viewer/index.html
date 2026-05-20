@@ -66,13 +66,14 @@
       .sequence-layout { grid-template-columns: 1fr; }
     }
   </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
 <body>
   <main class="container">
     <nav class="tabs" aria-label="3D tabs">
       <a class="tab-link" href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">Molecule 3D</a>
       <a class="tab-link active" href="/tools/protein-viewer/index.html">Protein Viewer</a>
-      <a class="tab-link" href="/tools/free-chem-tools/index.html">All Chem Tools</a>
+      <a class="tab-link" href="/tools/free-chem-tools/">All Chem Tools</a>
     </nav>
 
     <section class="panel">
@@ -590,5 +591,6 @@
       await loadPdbById();
     })();
   </script>
+  <script src="/js/site-topbar.js" defer></script>
 </body>
 </html>

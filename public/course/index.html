@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="MolDraw Course: complete official Ketcher documentation in a structured course layout with left navigation.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/course/index.html">
   <title>MolDraw Course | Complete Official Documentation</title>
   <link rel="stylesheet" href="/css/site-footer.css" />
   <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index" />
@@ -269,6 +271,38 @@
       background: #166534;
       border-color: #166534;
     }
+    .crawl-chapters {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .crawl-chapters-title {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    .crawl-chapters-list {
+      display: grid;
+      gap: 3px;
+      max-height: 210px;
+      overflow: auto;
+    }
+    .crawl-chapters-list a {
+      display: block;
+      padding: 3px 6px;
+      border-radius: 6px;
+      color: #475569;
+      font-size: 11px;
+      line-height: 1.35;
+      text-decoration: none;
+    }
+    .crawl-chapters-list a:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
     @media (max-width: 980px) {
       .layout { grid-template-columns: 1fr; }
       .sidebar {
@@ -281,6 +315,7 @@
       .content { padding: 16px; }
     }
   </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
 <body>
   <div class="layout">
@@ -291,6 +326,33 @@
       </div>
       <div class="toc-title">Chapters</div>
       <nav id="toc" class="toc-list" aria-label="Course sections"></nav>
+      <nav class="crawl-chapters" aria-label="Crawlable course chapter pages">
+        <div class="crawl-chapters-title">Chapter Pages</div>
+        <div class="crawl-chapters-list">
+          <a href="/course/chapters/getting-started-with-moldraw.html">Getting Started with MolDraw</a>
+          <a href="/course/chapters/drawing-structures-and-bonds.html">Drawing Structures and Bonds</a>
+          <a href="/course/chapters/naming-smiles-and-properties.html">Naming, SMILES, and Properties</a>
+          <a href="/course/chapters/export-and-file-formats.html">Export and File Formats</a>
+          <a href="/course/chapters/reaction-and-tlc-workflows.html">Reaction and TLC Workflows</a>
+          <a href="/course/chapters/add-lone-pair-in-moldraw.html">Add Lone Pair in MolDraw</a>
+          <a href="/course/chapters/3d-viewer.html">3D Viewer</a>
+          <a href="/course/chapters/drawing-atoms.html">Drawing Atoms</a>
+          <a href="/course/chapters/drawing-bonds.html">Drawing Bonds</a>
+          <a href="/course/chapters/drawing-r-groups.html">Drawing R-Groups</a>
+          <a href="/course/chapters/marking-s-groups.html">Marking S-Groups</a>
+          <a href="/course/chapters/changing-structure-display.html">Changing Structure Display</a>
+          <a href="/course/chapters/drawing-reactions.html">Drawing Reactions</a>
+          <a href="/course/chapters/drawing-graphical-objects.html">Drawing Graphical Objects</a>
+          <a href="/course/chapters/templates-toolbar.html">Templates Toolbar</a>
+          <a href="/course/chapters/stereochemistry.html">Stereochemistry</a>
+          <a href="/course/chapters/macromolecules-library.html">Macromolecules Library</a>
+          <a href="/course/chapters/sequence-mode.html">Sequence Mode</a>
+          <a href="/course/chapters/snake-and-flex-modes.html">Snake and Flex Modes</a>
+          <a href="/course/chapters/creating-antisense-chains.html">Creating Antisense Chains</a>
+          <a href="/course/chapters/macromolecules-properties.html">Macromolecules Properties</a>
+          <a href="/course/chapters/macromolecules-and-molecules-mode-integration.html">Macromolecules and Molecules Mode Integration</a>
+        </div>
+      </nav>
       <div class="complete-wrap">
         <button id="completeBtn" class="complete-btn">Complete Course</button>
       </div>
@@ -611,5 +673,6 @@
 
     loadHelp();
   </script>
+  <script src="/js/site-topbar.js" defer></script>
 </body>
 </html>

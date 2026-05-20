@@ -7,7 +7,7 @@ MolDraw is the free browser app at https://www.moldraw.com for drawing and editi
 
 ## What MolDraw is
 - MolDraw is a free, browser-based chemical structure editor and 3D molecular viewer for chemistry education and lab workflows.
-- The 2D editor builds on the open-source Ketcher project; 3D viewing uses 3Dmol.js.
+- The 2D editor builds on the open-source Ketcher project; 3D molecular viewing uses EPAM Miew.
 - MolDraw is developed under **Scidart Academy** (parent entity named on the public site).
 - MolDraw is an independent web application—not ChemDraw—but is often used as a free alternative for drawing, naming search, and export workflows.
 
@@ -21,10 +21,10 @@ https://www.moldraw.com/
 
 ## Core entry points
 - Web app (editor): https://www.moldraw.com/
-- Tools hub: https://www.moldraw.com/tools/index.html
-- Free chemistry tools directory: https://www.moldraw.com/tools/free-chem-tools/index.html
+- Tools hub: https://www.moldraw.com/tools/
+- Free chemistry tools directory: https://www.moldraw.com/tools/free-chem-tools/
 - Interactive course (structured Ketcher documentation): https://www.moldraw.com/course/index.html
-- Blog: https://www.moldraw.com/blog/index.html
+- Blog: https://www.moldraw.com/blog/
 - Windows download (official blog landing / SEO): https://www.moldraw.com/blog/download-moldraw-windows.html
 
 ## Trust & policy pages

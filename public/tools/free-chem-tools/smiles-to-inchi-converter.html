@@ -42,12 +42,13 @@
     button { height: 34px; border: 1px solid #2c7a7b; border-radius: 8px; background: #2c7a7b; color: #fff; font-size: 12px; font-weight: 700; padding: 0 12px; cursor: pointer; }
     .ghost-btn { background: #fff; border-color: #d1d5db; color: #334155; }
   </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
 <body>
   <main class="container">
     <nav class="top-nav" aria-label="Tool navigation">
-      <a class="top-link" href="/tools/free-chem-tools/index.html">Back to Free Chem Tools</a>
-      <a class="top-link" href="/tools/index.html">All Tools</a>
+      <a class="top-link" href="/tools/free-chem-tools/">Back to Free Chem Tools</a>
+      <a class="top-link" href="/tools/">All Tools</a>
     </nav>
     <section class="panel">
       <h1>SMILES to InChI Converter</h1>
@@ -90,5 +91,6 @@
       input.value = ''; latest = ''; output.textContent = 'InChI output appears here.';
     });
   </script>
+  <script src="/js/site-topbar.js" defer></script>
 </body>
 </html>

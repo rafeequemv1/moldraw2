@@ -7,6 +7,26 @@
       "source": "/index.php",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/tools/index.html",
+      "destination": "/tools/",
+      "permanent": true
+    },
+    {
+      "source": "/blog/index.html",
+      "destination": "/blog/",
+      "permanent": true
+    },
+    {
+      "source": "/tools/free-chem-tools/index.html",
+      "destination": "/tools/free-chem-tools/",
+      "permanent": true
+    },
+    {
+      "source": "/documentation/index.html",
+      "destination": "/documentation/",
+      "permanent": true
     }
   ]
 }

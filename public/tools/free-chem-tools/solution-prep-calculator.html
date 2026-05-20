@@ -29,12 +29,13 @@
     input { width: 100%; margin-top: 4px; height: 34px; border: 1px solid #d7dce2; border-radius: 8px; padding: 0 10px; font-size: 13px; }
     .result { margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; padding: 12px; color: #0f172a; font-size: 14px; min-height: 46px; }
   </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
 <body>
   <main class="container">
     <nav class="top-nav" aria-label="Tool navigation">
-      <a class="top-link" href="/tools/index.html">Back to Tools Hub</a>
-      <a class="top-link" href="/tools/free-chem-tools/index.html">Free Chemist Tools</a>
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/">Free Chemist Tools</a>
     </nav>
     <section class="panel">
       <h1>Solution Prep Calculator</h1>
@@ -66,5 +67,6 @@
     ['targetM', 'finalVol', 'mw'].forEach((id) => document.getElementById(id).addEventListener('input', calc));
     calc();
   </script>
+  <script src="/js/site-topbar.js" defer></script>
 </body>
 </html>

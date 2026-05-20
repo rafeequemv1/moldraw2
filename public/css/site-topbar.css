@@ -1,0 +1,95 @@
+.site-topbar-root {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: 'Libre Franklin', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.site-topbar-inner {
+  width: min(1180px, 94vw);
+  min-height: 44px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.site-topbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #0f172a;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.site-topbar-logo {
+  display: block;
+  height: 26px;
+  width: auto;
+}
+
+.site-topbar-by {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.site-topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.site-topbar-link {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 999px;
+  color: #334155;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.site-topbar-link:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.site-topbar-cta {
+  background: #2C7A7B;
+  color: #fff;
+}
+
+.site-topbar-cta:hover {
+  background: #1a5a5b;
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .site-topbar-inner {
+    width: 100%;
+    padding: 0 10px;
+  }
+
+  .site-topbar-by {
+    display: none;
+  }
+
+  .site-topbar-link {
+    font-size: 11px;
+    padding: 0 8px;
+  }
+}

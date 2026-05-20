@@ -4,6 +4,71 @@ import TlcModal from './microapps/tlc/TlcModal';
 import ReactionsModal from './microapps/reactions/ReactionsModal';
 import * as $3Dmol from '3dmol';
 
+const LUCKY_SHOWER_COLORS = [
+  '#f97316',
+  '#facc15',
+  '#22c55e',
+  '#06b6d4',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#ef4444',
+];
+
+function createLuckyShowerItems() {
+  return Array.from({ length: 52 }, (_, index) => {
+    const isBenzene = index % 4 === 0;
+    const color = LUCKY_SHOWER_COLORS[Math.floor(Math.random() * LUCKY_SHOWER_COLORS.length)];
+
+    return {
+      id: `${Date.now()}-${index}`,
+      type: isBenzene ? 'benzene' : 'spaghetti',
+      color,
+      fill: `${color}33`,
+      left: Math.random() * 100,
+      size: isBenzene ? 16 + Math.random() * 18 : 32 + Math.random() * 50,
+      delay: Math.random() * 1.1,
+      duration: 4.8 + Math.random() * 2.3,
+      drift: -40 + Math.random() * 80,
+      rotate: Math.random() * 360,
+    };
+  });
+}
+
+function cleanAiResponseText(text) {
+  const raw = String(text || '').replace(/\r/g, '\n');
+  const withoutFences = raw.replace(/```(?:\w+)?\s*([\s\S]*?)```/g, '$1');
+  const lines = withoutFences
+    .split('\n')
+    .map((line) => line
+      .replace(/^\s*(?:[-*•]+|\d+[.)])\s*/, '')
+      .replace(/^#+\s*/, '')
+      .replace(/[*_`>★☆]+/g, '')
+      .replace(/\s+/g, ' ')
+      .trim())
+    .filter(Boolean);
+
+  return (lines.length ? lines : [withoutFences.trim()])
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function getAiResponseParagraphs(text) {
+  const clean = cleanAiResponseText(text);
+  if (!clean) return [];
+
+  return clean
+    .split(/\n+/)
+    .flatMap((line) => {
+      const trimmed = line.trim();
+      if (trimmed.length < 150) return [trimmed];
+      const sentences = trimmed.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [trimmed];
+      return sentences.map((sentence) => sentence.trim()).filter(Boolean);
+    })
+    .slice(0, 8);
+}
+
 /**
  * NCI Cactus `get3d` SDF often drops or replaces bracketed alkali atoms (e.g. [K], [Li]).
  * In those cases we keep the Ketcher molfile so 3Dmol shows the same composition as 2D.
@@ -197,6 +262,8 @@ function App() {
   const [isNmrLoading, setIsNmrLoading] = useState(false);
   const [activeSpectrumType, setActiveSpectrumType] = useState('1H');
   const [showAiSetupModal, setShowAiSetupModal] = useState(false);
+  const [luckyShowerItems, setLuckyShowerItems] = useState([]);
+  const luckyShowerTimeoutRef = useRef(null);
   const [showTlcModal, setShowTlcModal] = useState(false);
   const [showReactionsModal, setShowReactionsModal] = useState(false);
   const [reactionResults, setReactionResults] = useState([]);
@@ -225,11 +292,13 @@ function App() {
   const [exportTransparentBg, setExportTransparentBg] = useState(true);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [showSpectrumMenu, setShowSpectrumMenu] = useState(false);
   const [lonePairs, setLonePairs] = useState([]);
   const lastSmilesSelectionBaseRef = useRef('');
   const lonePairDragRef = useRef(null);
   const moreMenuRef = useRef(null);
   const downloadMenuRef = useRef(null);
+  const spectrumMenuRef = useRef(null);
   const host = window.location.hostname;
   const isLocalDevHost =
     host === 'localhost' ||
@@ -300,6 +369,9 @@ function App() {
       }
       if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
         setShowDownloadMenu(false);
+      }
+      if (spectrumMenuRef.current && !spectrumMenuRef.current.contains(event.target)) {
+        setShowSpectrumMenu(false);
       }
     };
     document.addEventListener('mousedown', onDocClick);
@@ -1133,6 +1205,16 @@ ${scientificGuardrails}`;
     } finally {
       setIsNmrLoading(false);
     }
+  };
+
+  const getSpectrumRequestType = (text) => {
+    const normalized = String(text || '').toLowerCase();
+    if (!/(predict|show|generate|simulate|spectrum|spectra|nmr|ir|uv|peak)/.test(normalized)) return null;
+    if (/(13c|¹³c|c13|carbon)/.test(normalized)) return 'carbon';
+    if (/(ir|infrared)/.test(normalized)) return 'ir';
+    if (/(uv|uv-vis|uv vis|visible)/.test(normalized)) return 'uv';
+    if (/(1h|¹h|h1|proton|nmr)/.test(normalized)) return 'proton';
+    return null;
   };
 
   // Lorentzian line shape: L(x) = (0.5 * w) / ((x - x0)^2 + (0.5 * w)^2)
@@ -2781,6 +2863,13 @@ ${scientificGuardrails}`;
     const text = chatInput.trim();
     if (!text || isChatLoading) return;
 
+    const spectrumRequestType = getSpectrumRequestType(text);
+    if (spectrumRequestType) {
+      setChatInput('');
+      predictNMR(spectrumRequestType);
+      return;
+    }
+
     if (!geminiApiKey) {
       promptAiSetupModal();
       setChatMessages((msgs) => [...msgs, { role: 'assistant', text: 'Please enter your Gemini API key above to get started.' }]);
@@ -2815,7 +2904,7 @@ ${scientificGuardrails}`;
       const data = await parseApiJsonSafe(resp);
       if (!resp.ok) {
         const friendly = formatAiErrorMessage(resp.status, data, 'chat');
-        setChatMessages((msgs) => [...msgs, { role: 'assistant', text: friendly }]);
+        setChatMessages((msgs) => [...msgs, { role: 'assistant', text: cleanAiResponseText(friendly) }]);
         return;
       }
       let replyText = data?.reply
@@ -2839,12 +2928,12 @@ ${scientificGuardrails}`;
         replyText = actionObj.assistant_message;
       }
 
-      setChatMessages((msgs) => [...msgs, { role: 'assistant', text: replyText }]);
+      setChatMessages((msgs) => [...msgs, { role: 'assistant', text: cleanAiResponseText(replyText) }]);
     } catch (error) {
       console.error('AI chat error:', error);
       setChatMessages((msgs) => [
         ...msgs,
-        { role: 'assistant', text: 'Could not reach the AI service. For local use, run "npm run ai-server". On deployed app, check Vercel function logs.' },
+        { role: 'assistant', text: 'Could not reach the AI service. For local use, run npm run ai-server. On deployed app, check Vercel function logs.' },
       ]);
     } finally {
       setIsChatLoading(false);
@@ -3676,6 +3765,26 @@ ${scientificGuardrails}`;
     requestMoleculeUpdate();
   }, [selected3DComponentIdx, multiStructure, isKetcherReady, is3DReady, isReactionSearchLoading, requestMoleculeUpdate]);
 
+  const triggerLuckyShower = useCallback(() => {
+    if (luckyShowerTimeoutRef.current) {
+      clearTimeout(luckyShowerTimeoutRef.current);
+    }
+
+    setLuckyShowerItems(createLuckyShowerItems());
+    luckyShowerTimeoutRef.current = setTimeout(() => {
+      setLuckyShowerItems([]);
+      luckyShowerTimeoutRef.current = null;
+    }, 8200);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (luckyShowerTimeoutRef.current) {
+        clearTimeout(luckyShowerTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const smilesComponentsFor3D = getSmilesComponents(currentSmiles);
   const hasMultipleSmilesComponents = smilesComponentsFor3D.length > 1;
   const proteinChainIds = Object.keys(proteinChainData || {});
@@ -3748,9 +3857,47 @@ ${scientificGuardrails}`;
       'Give a concise answer with examples',
     ];
   })();
+  const handleAiSuggestionClick = (suggestion) => {
+    const spectrumRequestType = getSpectrumRequestType(suggestion);
+    if (spectrumRequestType) {
+      setChatInput('');
+      predictNMR(spectrumRequestType);
+      return;
+    }
+    setChatInput(suggestion);
+  };
 
   return (
     <div className="App">
+      {luckyShowerItems.length > 0 && (
+        <div className="lucky-shower" aria-hidden="true">
+          {luckyShowerItems.map((item) => (
+            <span
+              key={item.id}
+              className={`lucky-shower-item lucky-shower-item--${item.type}`}
+              style={{
+                '--lucky-left': `${item.left}%`,
+                '--lucky-size': `${item.size}px`,
+                '--lucky-color': item.color,
+                '--lucky-fill': item.fill,
+                '--lucky-delay': `${item.delay}s`,
+                '--lucky-duration': `${item.duration}s`,
+                '--lucky-drift': `${item.drift}px`,
+                '--lucky-rotate': `${item.rotate}deg`,
+              }}
+            >
+              {item.type === 'benzene' ? (
+                <svg viewBox="0 0 100 100" role="img" focusable="false">
+                  <polygon points="50,6 88,28 88,72 50,94 12,72 12,28" />
+                  <circle cx="50" cy="50" r="25" />
+                </svg>
+              ) : (
+                <span className="lucky-spaghetti-strand" />
+              )}
+            </span>
+          ))}
+        </div>
+      )}
       <main className={`split-container${isChatOpen ? ' split-container--chat-open' : ''}`}>
         {isChatOpen && (
           <aside className="ai-chat-panel ai-chat-panel--left" aria-label="MolDraw AI assistant">
@@ -3832,7 +3979,10 @@ ${scientificGuardrails}`;
                 {chatMessages.length === 0 && (
                   <div className="ai-chat-message assistant">
                     {geminiApiKey ? (
-                      <span>Try: "draw aspirin", "name this molecule", "show a Fischer esterification", or ask about properties.</span>
+                      <div className="ai-chat-response">
+                        <p>Try drawing aspirin, naming this molecule, or asking about properties.</p>
+                        <p>Use the Predict NMR menu for spectra.</p>
+                      </div>
                     ) : (
                       <div className="ai-key-help-card">
                         <strong>Connect Gemini to use MolDraw AI</strong>
@@ -3859,7 +4009,15 @@ ${scientificGuardrails}`;
                     key={idx}
                     className={`ai-chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}
                   >
-                    <span>{m.text}</span>
+                    {m.role === 'user' ? (
+                      <span>{m.text}</span>
+                    ) : (
+                      <div className="ai-chat-response">
+                        {getAiResponseParagraphs(m.text).map((paragraph, paragraphIdx) => (
+                          <p key={paragraphIdx}>{paragraph}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -3869,7 +4027,7 @@ ${scientificGuardrails}`;
                     key={suggestion}
                     type="button"
                     className="ai-chat-chip"
-                    onClick={() => setChatInput(suggestion)}
+                    onClick={() => handleAiSuggestionClick(suggestion)}
                     title={suggestion}
                   >
                     {suggestion}
@@ -3903,7 +4061,15 @@ ${scientificGuardrails}`;
           <header className="brand-header">
             <div className="brand-top-row">
               <div className="brand-name">
-                <img src="/logo.svg" alt="MolDraw" className="brand-logo" />
+                <button
+                  type="button"
+                  className="brand-logo-button"
+                  onClick={triggerLuckyShower}
+                  title="MolDraw surprise"
+                  aria-label="Start MolDraw spaghetti shower"
+                >
+                  <img src="/logo.svg" alt="MolDraw" className="brand-logo" />
+                </button>
                 <span className="brand-by-text">by <a href="https://scidart.com" target="_blank" rel="noopener noreferrer" className="brand-by-link">scidart.com</a></span>
               </div>
 
@@ -3988,6 +4154,78 @@ ${scientificGuardrails}`;
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
                 Paste SMILES
               </button>
+
+              <div className="tb-menu-dropdown" ref={spectrumMenuRef}>
+                <button
+                  type="button"
+                  className="tb-btn tb-btn-spectrum"
+                  onClick={() => {
+                    setShowSpectrumMenu((v) => !v);
+                    setShowDownloadMenu(false);
+                  }}
+                  title="Predict spectra for the current molecule"
+                >
+                  <span>Predict NMR</span>
+                  <span className="tb-beta-tag">BETA</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" style={{ marginLeft: 2, opacity: 0.75 }}>
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                {showSpectrumMenu && (
+                  <div className="tb-menu-dropdown-list tb-spectrum-menu-list" role="menu" aria-label="Predict spectrum">
+                    <div className="tb-spectrum-note">Prediction only. May not be accurate.</div>
+                    <button
+                      type="button"
+                      className="tb-menu-item"
+                      role="menuitem"
+                      disabled={isNmrLoading}
+                      onClick={() => {
+                        setShowSpectrumMenu(false);
+                        predictNMR('proton');
+                      }}
+                    >
+                      ¹H NMR
+                    </button>
+                    <button
+                      type="button"
+                      className="tb-menu-item"
+                      role="menuitem"
+                      disabled={isNmrLoading}
+                      onClick={() => {
+                        setShowSpectrumMenu(false);
+                        predictNMR('carbon');
+                      }}
+                    >
+                      ¹³C NMR
+                    </button>
+                    <button
+                      type="button"
+                      className="tb-menu-item"
+                      role="menuitem"
+                      disabled={isNmrLoading}
+                      onClick={() => {
+                        setShowSpectrumMenu(false);
+                        predictNMR('ir');
+                      }}
+                    >
+                      IR
+                    </button>
+                    <button
+                      type="button"
+                      className="tb-menu-item"
+                      role="menuitem"
+                      disabled={isNmrLoading}
+                      onClick={() => {
+                        setShowSpectrumMenu(false);
+                        predictNMR('uv');
+                      }}
+                    >
+                      UV-Vis
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <button
                 type="button"
                 className={`tb-btn tb-btn-ai ${isChatOpen ? 'tb-btn-ai-active' : ''}`}
