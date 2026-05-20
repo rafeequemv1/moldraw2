@@ -3683,6 +3683,71 @@ ${scientificGuardrails}`;
   const showMolDetailsPanel = viewerMode === 'protein'
     ? Boolean(proteinMeta)
     : Boolean(moleculeName || molecularMass || proteinMeta || currentSmiles);
+  const aiChatSuggestions = (() => {
+    const input = chatInput.trim().toLowerCase();
+    const hasMolecule = Boolean(currentSmiles || lastSmilesForAIRef.current || currentMolecule);
+    const base = hasMolecule
+      ? [
+        'Name this molecule',
+        'Give IUPAC name',
+        'Predict 1H NMR for this molecule',
+        'Explain this structure for a student',
+      ]
+      : [
+        'What is the IUPAC name?',
+        'Draw aspirin',
+        'Draw caffeine',
+        'Show a Fischer esterification',
+      ];
+
+    if (!input) return base;
+    if (/(draw|create|make|add|structure|molecule|ring|benzene|aspirin|caffeine)/i.test(input)) {
+      return [
+        `Draw ${chatInput.trim()}`,
+        `Add ${chatInput.trim()} to the canvas`,
+        'Draw it and explain the key functional groups',
+        'Create a clean teaching example',
+      ];
+    }
+    if (/(name|iupac|common|identify)/i.test(input)) {
+      return [
+        'Give IUPAC and common name',
+        'Name this molecule and list synonyms',
+        'Explain the naming step by step',
+        'Identify functional groups first',
+      ];
+    }
+    if (/(nmr|ir|uv|spectrum|spectra|peak)/i.test(input)) {
+      return [
+        'Predict 1H NMR peaks',
+        'Predict 13C NMR peaks',
+        'Predict IR functional group peaks',
+        'Explain the spectrum in simple terms',
+      ];
+    }
+    if (/(reaction|mechanism|reagent|product|synthesis)/i.test(input)) {
+      return [
+        'Find reactions for this molecule',
+        'Show reaction mechanism steps',
+        'Suggest reagents and conditions',
+        'Add a reaction scheme to the canvas',
+      ];
+    }
+    if (/(property|mass|boiling|melting|solubility|logp|polar)/i.test(input)) {
+      return [
+        'Estimate key physical properties',
+        'Explain polarity and solubility',
+        'Calculate molecular weight',
+        'Compare properties with a similar molecule',
+      ];
+    }
+    return [
+      `Ask: ${chatInput.trim()}`,
+      'Turn this into a molecule drawing',
+      'Explain this as a chemistry tutor',
+      'Give a concise answer with examples',
+    ];
+  })();
 
   return (
     <div className="App">
@@ -3796,6 +3861,19 @@ ${scientificGuardrails}`;
                   >
                     <span>{m.text}</span>
                   </div>
+                ))}
+              </div>
+              <div className="ai-chat-chip-row" aria-label="Suggested AI prompts">
+                {aiChatSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="ai-chat-chip"
+                    onClick={() => setChatInput(suggestion)}
+                    title={suggestion}
+                  >
+                    {suggestion}
+                  </button>
                 ))}
               </div>
               <div className="ai-chat-input-row">
