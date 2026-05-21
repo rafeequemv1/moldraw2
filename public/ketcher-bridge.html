@@ -71,6 +71,7 @@
 
           let lastChangeFingerprint = '';
           let changeTimer = null;
+          let clipboardSvgCache = '';
           const emitEditorChange = async () => {
             try {
               const molfile = await ketcher.getMolfile();
@@ -83,6 +84,7 @@
                 molfile,
                 smiles,
               }, '*');
+              refreshClipboardCache();
             } catch (error) {
               console.warn('Bridge editor-change emit failed:', error);
             }
@@ -93,6 +95,70 @@
               emitEditorChange();
             }, 180);
           };
+
+          async function refreshClipboardCache() {
+            try {
+              const struct = await ketcher.getKet();
+              const svgBlob = await ketcher.generateImage(struct, { outputFormat: 'svg' });
+              clipboardSvgCache = await svgBlob.text();
+            } catch (_) {
+              clipboardSvgCache = '';
+            }
+          }
+
+          const exportStructureForClipboard = async () => {
+            const struct = await ketcher.getKet();
+            const svgBlob = await ketcher.generateImage(struct, { outputFormat: 'svg' });
+            const svgText = await svgBlob.text();
+            let smiles = '';
+            try {
+              smiles = await ketcher.getSmiles();
+            } catch (_) { /* optional fallback text */ }
+            window.parent.postMessage({
+              type: 'clipboard-structure-response',
+              svg: svgText,
+              smiles
+            }, '*');
+          };
+
+          const getStructureSvgText = async () => {
+            const struct = await ketcher.getKet();
+            const svgBlob = await ketcher.generateImage(struct, { outputFormat: 'svg' });
+            return svgBlob.text();
+          };
+
+          const copyStructureSvgToClipboard = async () => {
+            if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+              throw new Error('SVG clipboard is not available in this browser.');
+            }
+
+            const struct = await ketcher.getKet();
+            const svgBlob = await ketcher.generateImage(struct, { outputFormat: 'svg' });
+            const svgText = await svgBlob.text();
+            const svgFileBlob = new Blob([svgText], { type: 'image/svg+xml' });
+            const htmlBlob = new Blob([`<meta charset="utf-8"><div>${svgText}</div>`], { type: 'text/html' });
+
+            try {
+              await navigator.clipboard.write([
+                new ClipboardItem({
+                  'image/svg+xml': svgFileBlob,
+                  'text/html': htmlBlob,
+                })
+              ]);
+            } catch (_) {
+              await navigator.clipboard.write([
+                new ClipboardItem({
+                  'text/html': htmlBlob,
+                })
+              ]);
+            }
+
+            window.parent.postMessage({ type: 'clipboard-structure-copied' }, '*');
+            return true;
+          };
+
+          window.moldrawCopyStructureSvg = copyStructureSvgToClipboard;
+          window.moldrawGetStructureSvg = getStructureSvgText;
 
           // Best-effort edit listeners; fall back to user-triggered requests if unavailable.
           try {
@@ -107,7 +173,45 @@
             frameDoc.addEventListener('pointerup', scheduleEditorChange, true);
             frameDoc.addEventListener('touchend', scheduleEditorChange, { capture: true, passive: true });
             frameDoc.addEventListener('keyup', scheduleEditorChange, true);
+            frameDoc.addEventListener('keydown', function (event) {
+              const key = String(event.key || '').toLowerCase();
+              if (!(event.ctrlKey || event.metaKey) || key !== 'c') return;
+              const target = event.target;
+              const tagName = String(target?.tagName || '').toLowerCase();
+              const isEditable = tagName === 'input' || tagName === 'textarea' || target?.isContentEditable;
+              const selectedText = String(frameDoc.getSelection?.() || '');
+              if (isEditable || selectedText) return;
+
+              event.preventDefault();
+              (async function () {
+                if (typeof window.parent.moldrawCopySvgFromBridge === 'function') {
+                  const svgText = await getStructureSvgText();
+                  await window.parent.moldrawCopySvgFromBridge(svgText);
+                  return;
+                }
+                await exportStructureForClipboard();
+              })().catch(function (error) {
+                console.error('Error copying structure SVG:', error);
+                window.parent.postMessage({
+                  type: 'clipboard-structure-error',
+                  error: error.message
+                }, '*');
+              });
+            }, true);
+            frameDoc.addEventListener('copy', function (event) {
+              const target = event.target;
+              const tagName = String(target?.tagName || '').toLowerCase();
+              const isEditable = tagName === 'input' || tagName === 'textarea' || target?.isContentEditable;
+              const selectedText = String(frameDoc.getSelection?.() || '');
+              if (isEditable || selectedText || !clipboardSvgCache) return;
+
+              event.preventDefault();
+              event.clipboardData.setData('text/html', `<meta charset="utf-8"><div>${clipboardSvgCache}</div>`);
+              event.clipboardData.setData('image/svg+xml', clipboardSvgCache);
+            }, true);
           } catch (_) { /* noop */ }
+
+          refreshClipboardCache();
 
           // Listen for requests from parent
           window.addEventListener('message', async function (event) {
@@ -161,6 +265,16 @@
                 console.error('Error getting SVG:', error);
                 window.parent.postMessage({
                   type: 'svg-error',
+                  error: error.message
+                }, '*');
+              }
+            } else if (event.data.type === 'copy-structure') {
+              try {
+                await copyStructureSvgToClipboard();
+              } catch (error) {
+                console.error('Error copying structure for clipboard:', error);
+                window.parent.postMessage({
+                  type: 'clipboard-structure-error',
                   error: error.message
                 }, '*');
               }

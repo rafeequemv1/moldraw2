@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Dashboard | MolDraw</title>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family: 'Libre Franklin', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .dashboard-layout {
+      width: min(1180px, 94vw);
+      margin: 0 auto;
+      padding: 28px 0 48px;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 18px;
+    }
+    .dashboard-sidebar {
+      display: none;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 10px;
+      height: fit-content;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+    }
+    .dashboard-sidebar.visible { display: block; }
+    .dashboard-nav-item {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: flex-start;
+      border: none;
+      border-radius: 10px;
+      background: #2C7A7B;
+      color: #fff;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .dashboard-main {
+      min-width: 0;
+    }
+    .dashboard-card {
+      min-height: 360px;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
+      padding: 24px;
+    }
+    .dashboard-blank {
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .dashboard-title {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: -0.04em;
+    }
+    .dashboard-subtitle {
+      margin: 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+    .requests-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .requests-head h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+    .requests-status {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .request-list {
+      display: grid;
+      gap: 12px;
+    }
+    .request-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 14px;
+      background: #fbfdff;
+    }
+    .request-card h2 {
+      margin: 0 0 6px;
+      color: #0f172a;
+      font-size: 16px;
+    }
+    .request-meta {
+      margin: 0 0 8px;
+      color: #64748b;
+      font-size: 12px;
+    }
+    .request-desc {
+      margin: 0;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .request-images {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .request-images a {
+      display: block;
+      width: 86px;
+      height: 66px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #dbe4ee;
+      background: #fff;
+    }
+    .request-images img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    @media (max-width: 760px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="dashboard-layout">
+    <aside id="dashboard-sidebar" class="dashboard-sidebar" aria-label="Dashboard sections">
+      <button class="dashboard-nav-item" type="button">Feature requests</button>
+    </aside>
+    <section class="dashboard-main">
+      <div id="dashboard-root" class="dashboard-card">
+        <div class="dashboard-blank">
+          <div>
+            <h1 class="dashboard-title">Dashboard</h1>
+            <p class="dashboard-subtitle">Loading your MolDraw account...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="/js/site-topbar.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://wwehouchqznsvnrosaeb.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_lP5X_egPBmD__qqKPjyoyg_M4iNUj_C';
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const root = document.getElementById('dashboard-root');
+    const sidebar = document.getElementById('dashboard-sidebar');
+
+    const escapeHtml = (value) => String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    function renderBlank(message) {
+      sidebar.classList.remove('visible');
+      root.innerHTML = `
+        <div class="dashboard-blank">
+          <div>
+            <h1 class="dashboard-title">Dashboard</h1>
+            <p class="dashboard-subtitle">${escapeHtml(message)}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRequests(requests) {
+      sidebar.classList.add('visible');
+      const cards = requests.length ? requests.map((request) => {
+        const images = Array.isArray(request.image_urls) ? request.image_urls : [];
+        return `
+          <article class="request-card">
+            <h2>${escapeHtml(request.title)}</h2>
+            <p class="request-meta">
+              ${escapeHtml(request.name)} · ${escapeHtml(request.email)} · ${escapeHtml(new Date(request.created_at).toLocaleString())}
+            </p>
+            <p class="request-desc">${escapeHtml(request.description)}</p>
+            ${images.length ? `
+              <div class="request-images">
+                ${images.map((url) => `
+                  <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
+                    <img src="${escapeHtml(url)}" alt="Feature request attachment">
+                  </a>
+                `).join('')}
+              </div>
+            ` : ''}
+          </article>
+        `;
+      }).join('') : '<p class="dashboard-subtitle">No feature requests yet.</p>';
+
+      root.innerHTML = `
+        <div class="requests-head">
+          <h1>Feature requests</h1>
+          <span class="requests-status">${requests.length} total</span>
+        </div>
+        <div class="request-list">${cards}</div>
+      `;
+    }
+
+    async function loadDashboard() {
+      const { data: sessionData } = await client.auth.getSession();
+      const user = sessionData && sessionData.session && sessionData.session.user;
+      if (!user) {
+        renderBlank('Sign in from the MolDraw app to open dashboard tools.');
+        return;
+      }
+
+      const { data: profile, error: profileError } = await client
+        .from('users')
+        .select('name,email,is_admin,role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError || !profile || !(profile.is_admin || profile.role === 'admin')) {
+        renderBlank('Blank for now. Saved molecules and account tools will appear here later.');
+        return;
+      }
+
+      const { data: requests, error: requestError } = await client
+        .from('feature_requests')
+        .select('id,name,email,title,description,image_urls,status,created_at')
+        .order('created_at', { ascending: false });
+
+      if (requestError) {
+        renderBlank(requestError.message || 'Could not load feature requests.');
+        return;
+      }
+
+      renderRequests(requests || []);
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

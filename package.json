@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.1",
     "3dmol": "^2.5.3",
     "ketcher-core": "^2.7.2",
     "ketcher-react": "^2.7.2",
     "ketcher-standalone": "^2.7.2",
+    "posthog-js": "^1.374.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",

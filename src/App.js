@@ -3,6 +3,7 @@ import './App.css';
 import TlcModal from './microapps/tlc/TlcModal';
 import ReactionsModal from './microapps/reactions/ReactionsModal';
 import * as $3Dmol from '3dmol';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 const LUCKY_SHOWER_COLORS = [
   '#f97316',
@@ -13,6 +14,18 @@ const LUCKY_SHOWER_COLORS = [
   '#8b5cf6',
   '#ec4899',
   '#ef4444',
+];
+
+const DESIGNATION_OPTIONS = [
+  'Student',
+  'Researcher',
+  'Scientist',
+  'Faculty',
+  'Pharma',
+  'Artist',
+  'Educator',
+  'Industry Professional',
+  'Other',
 ];
 
 function createLuckyShowerItems() {
@@ -27,7 +40,7 @@ function createLuckyShowerItems() {
       fill: `${color}33`,
       left: Math.random() * 100,
       size: isBenzene ? 16 + Math.random() * 18 : 32 + Math.random() * 50,
-      delay: Math.random() * 1.1,
+      delay: Math.random() * 0.35,
       duration: 4.8 + Math.random() * 2.3,
       drift: -40 + Math.random() * 80,
       rotate: Math.random() * 360,
@@ -254,6 +267,8 @@ function App() {
   const moleculeUpdateSeqRef = useRef(0);
   const lastRenderedSignatureRef = useRef('');
   const [smilesCopied, setSmilesCopied] = useState(false);
+  const [structureCopied, setStructureCopied] = useState(false);
+  const [structureCopyError, setStructureCopyError] = useState(false);
   const [metaSmilesCopied, setMetaSmilesCopied] = useState(false);
   const [metaIupacCopied, setMetaIupacCopied] = useState(false);
   const [currentSmiles, setCurrentSmiles] = useState('');
@@ -293,6 +308,30 @@ function App() {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showSpectrumMenu, setShowSpectrumMenu] = useState(false);
+  const [authSession, setAuthSession] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('signin');
+  const [authForm, setAuthForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    designation: 'Student',
+  });
+  const [authError, setAuthError] = useState('');
+  const [authNotice, setAuthNotice] = useState('');
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [showFeatureRequestModal, setShowFeatureRequestModal] = useState(false);
+  const [featureRequestForm, setFeatureRequestForm] = useState({
+    name: '',
+    email: '',
+    title: '',
+    description: '',
+  });
+  const [featureRequestFiles, setFeatureRequestFiles] = useState([]);
+  const [featureRequestError, setFeatureRequestError] = useState('');
+  const [featureRequestNotice, setFeatureRequestNotice] = useState('');
+  const [isFeatureRequestSubmitting, setIsFeatureRequestSubmitting] = useState(false);
   const [lonePairs, setLonePairs] = useState([]);
   const lastSmilesSelectionBaseRef = useRef('');
   const lonePairDragRef = useRef(null);
@@ -314,6 +353,11 @@ function App() {
     { value: 'gemini-3.0-flash', label: 'Gemini 3 Flash (fast)' },
     { value: 'gemini-3-pro', label: 'Gemini 3 Pro (high accuracy)' },
   ];
+  const authDisplayName =
+    userProfile?.name ||
+    authSession?.user?.user_metadata?.name ||
+    authSession?.user?.email?.split('@')[0] ||
+    'Account';
   const REACTION_LOADING_STEPS = [
     'Reading query',
     'Selecting reaction family',
@@ -326,6 +370,201 @@ function App() {
     setShowAiSetupModal(true);
     setIsChatOpen(true);
     setShowApiKeyInput(true);
+  };
+
+  const fetchUserProfile = useCallback(async (userId) => {
+    if (!supabase || !userId) return;
+    const { data, error } = await supabase
+      .from('users')
+      .select('name,email,designation,is_admin,role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!error) {
+      setUserProfile(data || null);
+    }
+  }, []);
+
+  const openAuthModal = (mode = 'signin') => {
+    setAuthMode(mode);
+    setAuthError('');
+    setAuthNotice('');
+    setShowAuthModal(true);
+  };
+
+  const updateAuthForm = (field, value) => {
+    setAuthForm((form) => ({ ...form, [field]: value }));
+  };
+
+  const saveUserProfile = async (userId, form) => {
+    if (!supabase || !userId) return;
+    await supabase.from('users').upsert({
+      id: userId,
+      name: form.name.trim(),
+      email: form.email.trim(),
+      designation: form.designation,
+    }, { onConflict: 'id' });
+  };
+
+  const handleAuthSubmit = async (event) => {
+    event.preventDefault();
+    setAuthError('');
+    setAuthNotice('');
+
+    if (!isSupabaseConfigured || !supabase) {
+      setAuthError('Supabase is not configured yet.');
+      return;
+    }
+
+    const email = authForm.email.trim();
+    const password = authForm.password;
+    const name = authForm.name.trim();
+
+    if (!email || !password || (authMode === 'signup' && !name)) {
+      setAuthError('Please fill all required fields.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setAuthError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setIsAuthLoading(true);
+    try {
+      if (authMode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name,
+              designation: authForm.designation,
+            },
+            emailRedirectTo: window.location.origin,
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.session?.user) {
+          await saveUserProfile(data.session.user.id, { ...authForm, email, name });
+          await fetchUserProfile(data.session.user.id);
+          setShowAuthModal(false);
+        } else {
+          setAuthNotice('Account created. Check your email to confirm, then sign in.');
+          setAuthMode('signin');
+          setAuthForm((form) => ({ ...form, password: '' }));
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        if (data?.user) await fetchUserProfile(data.user.id);
+        setShowAuthModal(false);
+        setAuthForm((form) => ({ ...form, password: '' }));
+      }
+    } catch (error) {
+      setAuthError(error?.message || 'Authentication failed. Please try again.');
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setAuthSession(null);
+    setUserProfile(null);
+  };
+
+  const openFeatureRequestModal = () => {
+    setFeatureRequestForm((form) => ({
+      ...form,
+      name: form.name || userProfile?.name || authSession?.user?.user_metadata?.name || '',
+      email: form.email || userProfile?.email || authSession?.user?.email || '',
+    }));
+    setFeatureRequestFiles([]);
+    setFeatureRequestError('');
+    setFeatureRequestNotice('');
+    setShowFeatureRequestModal(true);
+  };
+
+  const updateFeatureRequestForm = (field, value) => {
+    setFeatureRequestForm((form) => ({ ...form, [field]: value }));
+  };
+
+  const handleFeatureRequestFiles = (event) => {
+    const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'));
+    setFeatureRequestFiles(files.slice(0, 5));
+  };
+
+  const submitFeatureRequest = async (event) => {
+    event.preventDefault();
+    setFeatureRequestError('');
+    setFeatureRequestNotice('');
+
+    if (!isSupabaseConfigured || !supabase) {
+      setFeatureRequestError('Feature requests are not connected yet.');
+      return;
+    }
+
+    const name = featureRequestForm.name.trim();
+    const email = featureRequestForm.email.trim();
+    const title = featureRequestForm.title.trim();
+    const description = featureRequestForm.description.trim();
+
+    if (!name || !email || !title || !description) {
+      setFeatureRequestError('Please add your name, email, title, and request.');
+      return;
+    }
+
+    setIsFeatureRequestSubmitting(true);
+    try {
+      const imageUrls = [];
+      const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      for (const file of featureRequestFiles) {
+        const safeName = file.name.replace(/[^a-z0-9._-]/gi, '-').toLowerCase();
+        const path = `${requestId}/${Date.now()}-${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('feature-request-images')
+          .upload(path, file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+          .from('feature-request-images')
+          .getPublicUrl(path);
+        if (data?.publicUrl) imageUrls.push(data.publicUrl);
+      }
+
+      const { error } = await supabase.from('feature_requests').insert({
+        user_id: authSession?.user?.id || null,
+        name,
+        email,
+        title,
+        description,
+        image_urls: imageUrls,
+      });
+
+      if (error) throw error;
+
+      setFeatureRequestNotice('Feature request sent. Thank you.');
+      setFeatureRequestForm({
+        name: userProfile?.name || authSession?.user?.user_metadata?.name || '',
+        email: userProfile?.email || authSession?.user?.email || '',
+        title: '',
+        description: '',
+      });
+      setFeatureRequestFiles([]);
+    } catch (error) {
+      setFeatureRequestError(error?.message || 'Could not send this feature request.');
+    } finally {
+      setIsFeatureRequestSubmitting(false);
+    }
   };
 
   const closeCharlaWidget = useCallback(() => {
@@ -351,6 +590,36 @@ function App() {
       /* ignore third-party widget API differences */
     }
   }, []);
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      const session = data?.session || null;
+      setAuthSession(session);
+      if (session?.user?.id) {
+        void fetchUserProfile(session.user.id);
+      }
+    });
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setAuthSession(session);
+      if (session?.user?.id) {
+        void fetchUserProfile(session.user.id);
+      } else {
+        setUserProfile(null);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      data?.subscription?.unsubscribe();
+    };
+  }, [fetchUserProfile]);
 
   useEffect(() => {
     document.body.classList.toggle('ai-chat-panel-open', isChatOpen);
@@ -2430,6 +2699,17 @@ ${scientificGuardrails}`;
       } else if (event.data.type === 'svg-error') {
         console.error('SVG export error:', event.data.error);
         alert('Failed to export SVG: ' + (event.data.error || 'Unknown error'));
+      } else if (event.data.type === 'clipboard-structure-response') {
+        copyStructureToSystemClipboard(event.data.svg);
+      } else if (event.data.type === 'clipboard-structure-copied') {
+        setStructureCopyError(false);
+        setStructureCopied(true);
+        setTimeout(() => setStructureCopied(false), 1600);
+      } else if (event.data.type === 'clipboard-structure-error') {
+        console.error('Clipboard structure export error:', event.data.error);
+        setStructureCopied(false);
+        setStructureCopyError(true);
+        setTimeout(() => setStructureCopyError(false), 2200);
       } else if (event.data.type === 'png-response') {
         // PNG data comes as array buffer or data URL
         try {
@@ -2845,6 +3125,152 @@ ${scientificGuardrails}`;
       return svgText;
     }
   };
+
+  const svgToPngBlob = (svgText) => new Promise((resolve, reject) => {
+    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const width = Math.max(1, img.naturalWidth || img.width || 900);
+        const height = Math.max(1, img.naturalHeight || img.height || 500);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas context unavailable');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to create PNG clipboard image'));
+        }, 'image/png');
+      } catch (error) {
+        URL.revokeObjectURL(url);
+        reject(error);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to render SVG for clipboard'));
+    };
+    img.src = url;
+  });
+
+  const copySvgHtmlLegacy = (html) => {
+    const scratch = document.createElement('div');
+    scratch.setAttribute('contenteditable', 'true');
+    scratch.style.position = 'fixed';
+    scratch.style.left = '-10000px';
+    scratch.style.top = '0';
+    scratch.style.width = '1px';
+    scratch.style.height = '1px';
+    scratch.style.overflow = 'hidden';
+    scratch.innerHTML = html;
+    document.body.appendChild(scratch);
+
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(scratch);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    const ok = document.execCommand('copy');
+    selection.removeAllRanges();
+    scratch.remove();
+    if (!ok) throw new Error('Legacy SVG copy failed');
+  };
+
+  const copyStructureToSystemClipboard = async (svgText) => {
+    const finalSvg = composeSvgWithLonePairs(svgText);
+    const html = `<meta charset="utf-8"><div>${finalSvg}</div>`;
+
+    try {
+      if (!navigator.clipboard || typeof window.ClipboardItem === 'undefined') {
+        throw new Error('Rich clipboard is not available in this browser.');
+      }
+
+      const svgBlob = new Blob([finalSvg], { type: 'image/svg+xml' });
+      const htmlBlob = new Blob([html], { type: 'text/html' });
+      const pngBlob = await svgToPngBlob(finalSvg);
+
+      const clipboardData = { 'text/html': htmlBlob };
+      if (!window.ClipboardItem.supports || window.ClipboardItem.supports('image/svg+xml')) {
+        clipboardData['image/svg+xml'] = svgBlob;
+      }
+      if (!window.ClipboardItem.supports || window.ClipboardItem.supports('image/png')) {
+        clipboardData['image/png'] = pngBlob;
+      }
+
+      await navigator.clipboard.write([new ClipboardItem(clipboardData)]);
+
+      setStructureCopyError(false);
+      setStructureCopied(true);
+      setTimeout(() => setStructureCopied(false), 1600);
+    } catch (error) {
+      try {
+        copySvgHtmlLegacy(html);
+        setStructureCopyError(false);
+        setStructureCopied(true);
+        setTimeout(() => setStructureCopied(false), 1600);
+      } catch (fallbackError) {
+        console.error('Failed to copy structure SVG:', error, fallbackError);
+        setStructureCopied(false);
+        setStructureCopyError(true);
+        setTimeout(() => setStructureCopyError(false), 2200);
+      }
+    }
+  };
+
+  const copyStructureSvg = useCallback(async () => {
+    if (!iframeRef.current || !isKetcherReady) return;
+
+    const bridgeWindow = iframeRef.current.contentWindow;
+    try {
+      if (typeof bridgeWindow.moldrawGetStructureSvg === 'function') {
+        const svgText = await bridgeWindow.moldrawGetStructureSvg();
+        await copyStructureToSystemClipboard(svgText);
+        return;
+      }
+    } catch (error) {
+      console.error('Direct structure SVG copy failed:', error);
+      setStructureCopied(false);
+      setStructureCopyError(true);
+      setTimeout(() => setStructureCopyError(false), 2200);
+      return;
+    }
+
+    bridgeWindow.postMessage({ type: 'copy-structure' }, '*');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isKetcherReady, lonePairs]);
+
+  useEffect(() => {
+    window.moldrawCopySvgFromBridge = (svgText) => copyStructureToSystemClipboard(svgText);
+    return () => {
+      if (window.moldrawCopySvgFromBridge) {
+        delete window.moldrawCopySvgFromBridge;
+      }
+    };
+  });
+
+  useEffect(() => {
+    const onCopyShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'c') return;
+      const target = event.target;
+      const tagName = String(target?.tagName || '').toLowerCase();
+      const isEditable = tagName === 'input' || tagName === 'textarea' || target?.isContentEditable;
+      const selectedText = String(window.getSelection?.() || '');
+      if (isEditable || selectedText) return;
+      if (!iframeRef.current || !isKetcherReady) return;
+
+      event.preventDefault();
+      void copyStructureSvg();
+    };
+
+    window.addEventListener('keydown', onCopyShortcut, true);
+    return () => window.removeEventListener('keydown', onCopyShortcut, true);
+  }, [isKetcherReady, copyStructureSvg]);
 
   const runCanvasActionFromAI = (actionObj) => {
     if (!actionObj || !iframeRef.current || !isKetcherReady) return;
@@ -4131,6 +4557,23 @@ ${scientificGuardrails}`;
               </button>
 
               <button
+                type="button"
+                className={`tb-btn${structureCopied ? ' tb-copied' : ''}${structureCopyError ? ' tb-copy-error' : ''}`}
+                onClick={copyStructureSvg}
+                disabled={!isKetcherReady}
+                title="Copy structure SVG for PowerPoint, Affinity, Canva, and design apps"
+              >
+                {structureCopied ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                ) : structureCopyError ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="M21 14l-5-5L5 20"/></svg>
+                )}
+                {structureCopied ? 'Copied SVG' : structureCopyError ? 'Copy failed' : 'Copy SVG'}
+              </button>
+
+              <button
                 className="tb-btn"
                 onClick={async () => {
                   if (!iframeRef.current || !isKetcherReady) return;
@@ -4235,6 +4678,31 @@ ${scientificGuardrails}`;
                 <span className="tb-ai-star" aria-hidden="true">★</span>
                 AI
               </button>
+
+              <button
+                type="button"
+                className="tb-btn tb-btn-feature-request"
+                onClick={openFeatureRequestModal}
+                title="Request a MolDraw feature"
+              >
+                Request feature
+              </button>
+
+              <a
+                className="tb-btn"
+                href="/pages/contact.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Contact MolDraw"
+              >
+                Contact
+              </a>
+
+              {(structureCopied || structureCopyError) && (
+                <span className={`tb-copy-structure-note${structureCopyError ? ' tb-copy-structure-note-error' : ''}`}>
+                  {structureCopied ? 'SVG copied' : 'SVG copy blocked'}
+                </span>
+              )}
 
               <div className="tb-menu-dropdown" ref={downloadMenuRef}>
                 <button
@@ -4447,14 +4915,6 @@ ${scientificGuardrails}`;
               </button>
             </div>
             <nav className="viewer-toolbar-extras" aria-label="Viewer resources">
-              <button
-                type="button"
-                className={`viewer-toolbar-extra ${showReactionsModal ? 'active' : ''}`}
-                onClick={() => setShowReactionsModal(true)}
-                title="Open reactions browser"
-              >
-                Reactions
-              </button>
               <a
                 className="viewer-toolbar-extra"
                 href="/tools/index.html"
@@ -4475,30 +4935,59 @@ ${scientificGuardrails}`;
               </a>
               <a
                 className="viewer-toolbar-extra"
-                href="/pages/faq.html"
+                href="/pages/about.html"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Frequently asked questions"
+                title="About MolDraw"
               >
-                FAQ
+                About
               </a>
-              <button
-                type="button"
-                className="viewer-toolbar-extra"
-                onClick={() => setShowAiSetupModal(true)}
-                title="Gemini API key and AI assistant setup"
-              >
-                AI
-              </button>
-              <a
-                className="viewer-toolbar-extra"
-                href="/blog/index.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="MolDraw blog"
-              >
-                Blog
-              </a>
+              {authSession?.user ? (
+                <>
+                  <button
+                    type="button"
+                    className="viewer-toolbar-extra viewer-toolbar-auth-user"
+                    onClick={() => openAuthModal('signin')}
+                    title={userProfile?.designation ? `${userProfile.designation} account` : 'Signed in account'}
+                  >
+                    {authDisplayName}
+                  </button>
+                  <a
+                    className="viewer-toolbar-extra viewer-toolbar-dashboard"
+                    href="/dashboard/"
+                    title="Open your MolDraw dashboard"
+                  >
+                    Dashboard
+                  </a>
+                  <button
+                    type="button"
+                    className="viewer-toolbar-extra"
+                    onClick={handleSignOut}
+                    title="Sign out of MolDraw"
+                  >
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="viewer-toolbar-extra"
+                    onClick={() => openAuthModal('signin')}
+                    title="Sign in to MolDraw"
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    type="button"
+                    className="viewer-toolbar-extra viewer-toolbar-auth-cta"
+                    onClick={() => openAuthModal('signup')}
+                    title="Create a MolDraw account"
+                  >
+                    Sign up
+                  </button>
+                </>
+              )}
               <div className="tb-menu-dropdown viewer-toolbar-more" ref={moreMenuRef}>
                 <button
                   type="button"
@@ -4510,6 +4999,17 @@ ${scientificGuardrails}`;
                 </button>
                 {showMoreMenu && (
                   <div className="tb-menu-dropdown-list">
+                    <button
+                      type="button"
+                      className="tb-menu-item"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowReactionsModal(true);
+                      }}
+                      title="Open reactions browser"
+                    >
+                      Reactions
+                    </button>
                     <a className="tb-menu-item" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">Course</a>
                     <a className="tb-menu-item" href="/pages/faq.html" target="_blank" rel="noopener noreferrer" title="Frequently asked questions">FAQ</a>
                     <a className="tb-menu-item" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">AI Setup</a>
@@ -5082,6 +5582,197 @@ ${scientificGuardrails}`;
               <button className="ai-setup-modal-close" onClick={() => setShowAiSetupModal(false)}>Close</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showFeatureRequestModal && (
+        <div className="feature-request-backdrop" onClick={() => setShowFeatureRequestModal(false)}>
+          <form className="feature-request-modal" onSubmit={submitFeatureRequest} onClick={(e) => e.stopPropagation()}>
+            <div className="feature-request-header">
+              <div>
+                <div className="feature-request-title">Request a feature</div>
+                <div className="feature-request-subtitle">Tell us what would make MolDraw better for your workflow.</div>
+              </div>
+              <button type="button" className="feature-request-close" onClick={() => setShowFeatureRequestModal(false)} aria-label="Close feature request modal">×</button>
+            </div>
+
+            <div className="feature-request-grid">
+              <label className="feature-request-field">
+                <span>Name</span>
+                <input
+                  type="text"
+                  value={featureRequestForm.name}
+                  onChange={(e) => updateFeatureRequestForm('name', e.target.value)}
+                  placeholder="Your name"
+                  autoComplete="name"
+                  required
+                />
+              </label>
+              <label className="feature-request-field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  value={featureRequestForm.email}
+                  onChange={(e) => updateFeatureRequestForm('email', e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  required
+                />
+              </label>
+            </div>
+
+            <label className="feature-request-field">
+              <span>Feature title</span>
+              <input
+                type="text"
+                value={featureRequestForm.title}
+                onChange={(e) => updateFeatureRequestForm('title', e.target.value)}
+                placeholder="Example: Save molecule to dashboard"
+                maxLength={160}
+                required
+              />
+            </label>
+
+            <label className="feature-request-field">
+              <span>What should it do?</span>
+              <textarea
+                value={featureRequestForm.description}
+                onChange={(e) => updateFeatureRequestForm('description', e.target.value)}
+                placeholder="Describe the feature, problem, or workflow."
+                rows={5}
+                required
+              />
+            </label>
+
+            <label className="feature-request-field">
+              <span>Upload image/s optional</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                multiple
+                onChange={handleFeatureRequestFiles}
+              />
+              {featureRequestFiles.length > 0 && (
+                <small>{featureRequestFiles.length} image{featureRequestFiles.length === 1 ? '' : 's'} selected. Max 5 MB each.</small>
+              )}
+            </label>
+
+            {featureRequestNotice && <div className="feature-request-notice">{featureRequestNotice}</div>}
+            {featureRequestError && <div className="feature-request-error">{featureRequestError}</div>}
+
+            <div className="feature-request-actions">
+              <button type="submit" className="feature-request-submit" disabled={isFeatureRequestSubmitting}>
+                {isFeatureRequestSubmitting ? 'Sending...' : 'Send request'}
+              </button>
+              <button type="button" className="feature-request-cancel" onClick={() => setShowFeatureRequestModal(false)}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {showAuthModal && (
+        <div className="auth-modal-backdrop" onClick={() => setShowAuthModal(false)}>
+          <form className="auth-modal" onSubmit={handleAuthSubmit} onClick={(e) => e.stopPropagation()}>
+            <div className="auth-modal-header">
+              <div>
+                <div className="auth-modal-title">
+                  {authMode === 'signup' ? 'Create MolDraw account' : authSession?.user ? 'MolDraw account' : 'Sign in to MolDraw'}
+                </div>
+                <div className="auth-modal-subtitle">
+                  The editor stays free and open. Accounts will power saved work later.
+                </div>
+              </div>
+              <button type="button" className="auth-modal-x" onClick={() => setShowAuthModal(false)} aria-label="Close auth modal">×</button>
+            </div>
+
+            <div className="auth-mode-switch" role="tablist" aria-label="Authentication mode">
+              <button
+                type="button"
+                className={authMode === 'signin' ? 'active' : ''}
+                onClick={() => {
+                  setAuthMode('signin');
+                  setAuthError('');
+                  setAuthNotice('');
+                }}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                className={authMode === 'signup' ? 'active' : ''}
+                onClick={() => {
+                  setAuthMode('signup');
+                  setAuthError('');
+                  setAuthNotice('');
+                }}
+              >
+                Sign up
+              </button>
+            </div>
+
+            {authMode === 'signup' && (
+              <>
+                <label className="auth-field">
+                  <span>Name</span>
+                  <input
+                    type="text"
+                    value={authForm.name}
+                    onChange={(e) => updateAuthForm('name', e.target.value)}
+                    placeholder="Your name"
+                    autoComplete="name"
+                    required
+                  />
+                </label>
+                <label className="auth-field">
+                  <span>Designation</span>
+                  <select
+                    value={authForm.designation}
+                    onChange={(e) => updateAuthForm('designation', e.target.value)}
+                    required
+                  >
+                    {DESIGNATION_OPTIONS.map((designation) => (
+                      <option key={designation} value={designation}>{designation}</option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            )}
+
+            <label className="auth-field">
+              <span>Email</span>
+              <input
+                type="email"
+                value={authForm.email}
+                onChange={(e) => updateAuthForm('email', e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+              />
+            </label>
+
+            <label className="auth-field">
+              <span>Password</span>
+              <input
+                type="password"
+                value={authForm.password}
+                onChange={(e) => updateAuthForm('password', e.target.value)}
+                placeholder="At least 6 characters"
+                autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
+                minLength={6}
+                required
+              />
+            </label>
+
+            {authNotice && <div className="auth-notice">{authNotice}</div>}
+            {authError && <div className="auth-error">{authError}</div>}
+
+            <div className="auth-actions">
+              <button type="submit" className="auth-submit" disabled={isAuthLoading}>
+                {isAuthLoading ? 'Please wait...' : authMode === 'signup' ? 'Create account' : 'Sign in'}
+              </button>
+              <button type="button" className="auth-cancel" onClick={() => setShowAuthModal(false)}>Cancel</button>
+            </div>
+          </form>
         </div>
       )}
 
