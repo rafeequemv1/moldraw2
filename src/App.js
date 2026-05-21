@@ -4561,7 +4561,7 @@ ${scientificGuardrails}`;
                 className={`tb-btn${structureCopied ? ' tb-copied' : ''}${structureCopyError ? ' tb-copy-error' : ''}`}
                 onClick={copyStructureSvg}
                 disabled={!isKetcherReady}
-                title="Copy structure SVG for PowerPoint, Affinity, Canva, and design apps"
+                title="Copy structure SVG. Shortcut: Ctrl+C"
               >
                 {structureCopied ? (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -4570,7 +4570,7 @@ ${scientificGuardrails}`;
                 ) : (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="14" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="M21 14l-5-5L5 20"/></svg>
                 )}
-                {structureCopied ? 'Copied SVG' : structureCopyError ? 'Copy failed' : 'Copy SVG'}
+                {structureCopied ? 'Copied SVG' : structureCopyError ? 'Copy failed' : 'Copy SVG (Ctrl+C)'}
               </button>
 
               <button
