@@ -321,6 +321,7 @@ function App() {
   const [authError, setAuthError] = useState('');
   const [authNotice, setAuthNotice] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [showUpdatesModal, setShowUpdatesModal] = useState(false);
   const [showFeatureRequestModal, setShowFeatureRequestModal] = useState(false);
   const [featureRequestForm, setFeatureRequestForm] = useState({
     name: '',
@@ -3126,6 +3127,73 @@ ${scientificGuardrails}`;
     }
   };
 
+  const makeSvgBackgroundTransparent = (svgText) => {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svgEl = doc.documentElement;
+      if (!svgEl || String(svgEl.tagName).toLowerCase() !== 'svg') return svgText;
+
+      const stripBackgroundStyle = (el) => {
+        const style = el.getAttribute('style');
+        if (!style) return;
+        const cleaned = style
+          .split(';')
+          .map((rule) => rule.trim())
+          .filter((rule) => {
+            const prop = rule.split(':')[0]?.trim().toLowerCase();
+            return prop !== 'background' && prop !== 'background-color';
+          })
+          .join('; ');
+        if (cleaned) el.setAttribute('style', cleaned);
+        else el.removeAttribute('style');
+      };
+
+      const isWhite = (value = '') => {
+        const color = String(value).trim().toLowerCase().replace(/\s+/g, '');
+        return color === 'white'
+          || color === '#fff'
+          || color === '#ffffff'
+          || color === 'rgb(255,255,255)'
+          || color === 'rgba(255,255,255,1)';
+      };
+
+      const getStyleValue = (el, prop) => {
+        const style = el.getAttribute('style') || '';
+        const rule = style.split(';').find((item) => item.split(':')[0]?.trim().toLowerCase() === prop);
+        return rule ? rule.split(':').slice(1).join(':').trim() : '';
+      };
+
+      const vb = (svgEl.getAttribute('viewBox') || '').trim().split(/\s+/).map(Number);
+      const svgW = parseFloat(svgEl.getAttribute('width')) || (vb.length === 4 ? vb[2] : 0);
+      const svgH = parseFloat(svgEl.getAttribute('height')) || (vb.length === 4 ? vb[3] : 0);
+      const coversCanvas = (rect) => {
+        const x = parseFloat(rect.getAttribute('x') || '0') || 0;
+        const y = parseFloat(rect.getAttribute('y') || '0') || 0;
+        const wAttr = String(rect.getAttribute('width') || '').trim();
+        const hAttr = String(rect.getAttribute('height') || '').trim();
+        const w = parseFloat(wAttr);
+        const h = parseFloat(hAttr);
+        const fullWidth = wAttr === '100%' || (svgW && Math.abs(w - svgW) < 1);
+        const fullHeight = hAttr === '100%' || (svgH && Math.abs(h - svgH) < 1);
+        return Math.abs(x) < 1 && Math.abs(y) < 1 && fullWidth && fullHeight;
+      };
+
+      stripBackgroundStyle(svgEl);
+      Array.from(svgEl.querySelectorAll('rect')).forEach((rect) => {
+        const fill = rect.getAttribute('fill') || getStyleValue(rect, 'fill');
+        const fillOpacity = parseFloat(rect.getAttribute('fill-opacity') || getStyleValue(rect, 'fill-opacity') || '1');
+        if (coversCanvas(rect) && isWhite(fill) && fillOpacity > 0) {
+          rect.remove();
+        }
+      });
+
+      return new XMLSerializer().serializeToString(doc);
+    } catch {
+      return svgText;
+    }
+  };
+
   const svgToPngBlob = (svgText) => new Promise((resolve, reject) => {
     const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(svgBlob);
@@ -3139,8 +3207,6 @@ ${scientificGuardrails}`;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error('Canvas context unavailable');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
         canvas.toBlob((blob) => {
           URL.revokeObjectURL(url);
@@ -3183,7 +3249,7 @@ ${scientificGuardrails}`;
   };
 
   const copyStructureToSystemClipboard = async (svgText) => {
-    const finalSvg = composeSvgWithLonePairs(svgText);
+    const finalSvg = makeSvgBackgroundTransparent(composeSvgWithLonePairs(svgText));
     const html = `<meta charset="utf-8"><div>${finalSvg}</div>`;
 
     try {
@@ -4681,6 +4747,15 @@ ${scientificGuardrails}`;
 
               <button
                 type="button"
+                className="tb-btn tb-btn-updates"
+                onClick={() => setShowUpdatesModal(true)}
+                title="See recent MolDraw updates"
+              >
+                Updates
+              </button>
+
+              <button
+                type="button"
                 className="tb-btn tb-btn-feature-request"
                 onClick={openFeatureRequestModal}
                 title="Request a MolDraw feature"
@@ -5580,6 +5655,51 @@ ${scientificGuardrails}`;
                 Open AI settings
               </button>
               <button className="ai-setup-modal-close" onClick={() => setShowAiSetupModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUpdatesModal && (
+        <div className="feature-request-backdrop" onClick={() => setShowUpdatesModal(false)}>
+          <div className="updates-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="feature-request-header">
+              <div>
+                <div className="updates-eyebrow">MolDraw updates</div>
+                <div className="feature-request-title">What is new</div>
+                <div className="feature-request-subtitle">Recent improvements added to the editor and viewer.</div>
+              </div>
+              <button type="button" className="feature-request-close" onClick={() => setShowUpdatesModal(false)} aria-label="Close updates modal">×</button>
+            </div>
+
+            <div className="updates-list">
+              <article className="updates-card updates-card-highlight">
+                <div className="updates-card-title">Transparent SVG copy and paste</div>
+                <p>
+                  Use <strong>Copy SVG (Ctrl+C)</strong> to copy the current 2D structure with a transparent background.
+                  Paste it into tools like PowerPoint, Canva, Illustrator, Affinity, and other design or presentation apps.
+                </p>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-title">Predict NMR menu</div>
+                <p>Predict ¹H NMR, ¹³C NMR, IR, and UV-Vis from the 2D toolbar. Predictions are marked beta and may not be fully accurate.</p>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-title">AI chat panel</div>
+                <p>The AI assistant now opens as a full-height side panel with cleaner answers, compact suggestions, and quick chemistry prompts.</p>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-title">Accounts and dashboard</div>
+                <p>Supabase sign-in/sign-up is available from the 3D top bar. Signed-in users can open the dashboard, and admins can review feature requests.</p>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-title">Feature requests</div>
+                <p>Use the toolbar request form to send feature ideas with optional screenshots or images.</p>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-title">Miew 3D viewer and cleaner UI</div>
+                <p>The 3D viewer uses Miew, navigation is cleaner, molecule detail boxes are smaller, and the MolDraw logo has the falling molecule surprise.</p>
+              </article>
             </div>
           </div>
         </div>
