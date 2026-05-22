@@ -180,28 +180,6 @@ function isAlkaliElementSymbol(sym) {
   return /^(Li|Na|K|Rb|Cs|Fr)$/i.test(s);
 }
 
-function getMolfileHeavyAtomCount(block) {
-  const lines = String(block || '').split(/\r?\n/);
-  if (lines.length < 4) return 0;
-  const parts = lines[3].trim().split(/\s+/);
-  const natoms = parseInt(parts[0], 10);
-  if (Number.isNaN(natoms) || natoms <= 0) return 0;
-  let heavy = 0;
-  for (let i = 0; i < natoms && 4 + i < lines.length; i++) {
-    const ap = lines[4 + i].trim().split(/\s+/);
-    const raw = (ap[3] || '').trim();
-    if (!raw) continue;
-    if (/^H$/i.test(raw) || /^D$/i.test(raw) || /^T$/i.test(raw)) continue;
-    heavy++;
-  }
-  return heavy;
-}
-
-function getSdfFirstRecordBlock(sdf) {
-  const t = String(sdf || '').split(/\$+\$/)[0];
-  return t.trim();
-}
-
 /** PubChem conformer (often keeps metals + H better than raw Ketcher 2D mol in 3Dmol). */
 async function convertSmilesTo3DPubChem(smiles) {
   if (!smiles || !String(smiles).trim()) return null;
@@ -1931,7 +1909,11 @@ ${scientificGuardrails}`;
     await fetchControlledAiEnrichment(smiles, fields);
   };
 
-  // Convert SMILES to 3D structure
+  // Convert SMILES to 3D structure without browser-side Cactus calls.
+  // NCI Cactus does not consistently send CORS headers, so direct fetches from
+  // localhost/deployed browsers fail. PubChem's 3D SDF endpoint is the safe
+  // browser-side source; if it cannot resolve a structure, we fall back to the
+  // Ketcher molfile rendering path below.
   const convertSmilesTo3D = async (smiles) => {
     if (!smiles || smiles.trim() === '') {
       return null;
@@ -1939,24 +1921,12 @@ ${scientificGuardrails}`;
 
     try {
       setIsConverting(true);
-
-      const encodedSmiles = encodeURIComponent(smiles);
-      const apiUrl = `https://cactus.nci.nih.gov/chemical/structure/${encodedSmiles}/file?format=sdf&get3d=true`;
-
-      const response = await fetch(apiUrl);
-
-      if (!response.ok) {
-        throw new Error('Failed to convert to 3D structure');
-      }
-
-      const sdf3D = await response.text();
-      setIsConverting(false);
-
-      return sdf3D;
+      return await convertSmilesTo3DPubChem(smiles);
     } catch (error) {
       console.error('Error converting to 3D:', error);
-      setIsConverting(false);
       return null;
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -2440,7 +2410,8 @@ ${scientificGuardrails}`;
         getMoleculeName(renderSmiles);
       }
 
-      // 3D source: PubChem first for alkali (keeps Li + H better); else Cactus; else molfile + geometry fix
+      // 3D source: PubChem first; else molfile fallback. Avoid direct Cactus
+      // fetches because they are blocked by browser CORS on localhost/deploys.
       const alkaliSmiles = !!(renderSmiles && smilesContainsAlkaliMetal(renderSmiles));
       let structure3D = null;
       if (renderSmiles && alkaliSmiles) {
@@ -2450,15 +2421,6 @@ ${scientificGuardrails}`;
       if (!structure3D && renderSmiles && !alkaliSmiles) {
         structure3D = await convertSmilesTo3D(renderSmiles);
         if (updateSeq !== moleculeUpdateSeqRef.current) return;
-      }
-      if (!structure3D && renderSmiles && alkaliSmiles) {
-        const cactusSdf = await convertSmilesTo3D(renderSmiles);
-        if (updateSeq !== moleculeUpdateSeqRef.current) return;
-        const hm = getMolfileHeavyAtomCount(normalizedMolfile);
-        const hs = cactusSdf ? getMolfileHeavyAtomCount(getSdfFirstRecordBlock(cactusSdf)) : 0;
-        if (cactusSdf && hm > 0 && hs >= hm) {
-          structure3D = cactusSdf;
-        }
       }
       // Ignore stale async result if a newer update started.
       if (updateSeq !== moleculeUpdateSeqRef.current) return;
@@ -3838,15 +3800,11 @@ ${scientificGuardrails}`;
     );
   };
 
-  const getQuantumCoordinates = () => extractAtomsForQuantumExport(currentMolecule?.data)
-    .map((atom) => `${atom.elem.padEnd(3)} ${atom.x.toFixed(6).padStart(12)} ${atom.y.toFixed(6).padStart(12)} ${atom.z.toFixed(6).padStart(12)}`)
-    .join('\n');
-
   const getQcJobKeyword = (software, jobType) => {
     if (software === 'qchem') {
       if (jobType === 'opt') return 'OPT';
       if (jobType === 'freq') return 'FREQ';
-      if (jobType === 'optfreq') return 'FREQ';
+      if (jobType === 'optfreq') return 'OPT';
       return 'SP';
     }
     if (jobType === 'opt') return 'Opt';
@@ -3887,7 +3845,29 @@ ${scientificGuardrails}`;
     }
 
     if (options.software === 'qchem') {
-      const remLines = [
+      const buildQchemRem = (qchemJobType) => {
+        const remLines = [
+          '$rem',
+          `JOBTYPE ${qchemJobType}`,
+          `METHOD ${method}`,
+          `BASIS ${basis}`,
+          `MEM_TOTAL ${memoryGb * 1000}`,
+          `NTHREADS ${cores}`,
+        ];
+        if (extraKeywords) remLines.push(extraKeywords);
+        remLines.push('$end');
+        return remLines.join('\n');
+      };
+
+      if (options.jobType === 'optfreq') {
+        return {
+          filename: 'moldraw_qchem_opt_freq.in',
+          mimeType: 'chemical/x-qchem-input',
+          text: `$molecule\n${safeCharge} ${safeMultiplicity}\n${coordinates}\n$end\n\n${buildQchemRem('OPT')}\n\n@@@\n\n$molecule\nread\n$end\n\n${buildQchemRem('FREQ')}\n`,
+        };
+      }
+
+      const remBlock = [
         '$rem',
         `JOBTYPE ${jobKeyword}`,
         `METHOD ${method}`,
@@ -3895,12 +3875,12 @@ ${scientificGuardrails}`;
         `MEM_TOTAL ${memoryGb * 1000}`,
         `NTHREADS ${cores}`,
       ];
-      if (extraKeywords) remLines.push(extraKeywords);
-      remLines.push('$end');
+      if (extraKeywords) remBlock.push(extraKeywords);
+      remBlock.push('$end');
       return {
         filename: 'moldraw_qchem.in',
         mimeType: 'chemical/x-qchem-input',
-        text: `$molecule\n${safeCharge} ${safeMultiplicity}\n${coordinates}\n$end\n\n${remLines.join('\n')}\n`,
+        text: `$molecule\n${safeCharge} ${safeMultiplicity}\n${coordinates}\n$end\n\n${remBlock.join('\n')}\n`,
       };
     }
 
@@ -3920,6 +3900,14 @@ ${scientificGuardrails}`;
       mimeType: 'chemical/x-orca-input',
       text: orcaLines.join('\n'),
     };
+  };
+
+  const getQuantumInputPreview = () => {
+    try {
+      return buildQuantumInputFile().text;
+    } catch {
+      return 'No coordinates available yet. Draw or search a molecule, then let the 3D view load before using advanced export.';
+    }
   };
 
   const downloadAdvancedQuantumInput = () => {
@@ -6068,8 +6056,8 @@ ${scientificGuardrails}`;
             </label>
 
             <div className="qc-export-preview">
-              <div className="qc-export-preview-title">Coordinate preview</div>
-              <pre>{getQuantumCoordinates() || 'No coordinates available yet.'}</pre>
+              <div className="qc-export-preview-title">Live file preview</div>
+              <pre>{getQuantumInputPreview()}</pre>
             </div>
 
             <div className="qc-export-note">
