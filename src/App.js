@@ -5,6 +5,90 @@ import ReactionsModal from './microapps/reactions/ReactionsModal';
 import * as $3Dmol from '3dmol';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
+const DEFAULT_AI_MODEL = 'gemini-3.1-flash-lite';
+const AI_MODEL_OPTIONS = [
+  { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash (latest stable)' },
+  { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview (highest accuracy)' },
+  { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview (frontier)' },
+  { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash-Lite (fast default)' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (stable reasoning)' },
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (stable balanced)' },
+  { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite (low cost)' },
+  { value: 'gemini-flash-latest', label: 'Gemini Flash Latest (auto-updating)' },
+];
+
+const normalizeAiModel = (model) => {
+  const legacyMap = {
+    'gemini-3.0-flash': 'gemini-3-flash-preview',
+    'gemini-3-pro': 'gemini-3.1-pro-preview',
+  };
+  const normalized = legacyMap[model] || model;
+  return AI_MODEL_OPTIONS.some((option) => option.value === normalized) ? normalized : DEFAULT_AI_MODEL;
+};
+
+const AI_REQUEST_CONTROL_DEFAULTS = {
+  iupacName: false,
+  commonName: false,
+  molecularProperties: true,
+  meltingPoint: false,
+  boilingPoint: false,
+  summary: false,
+  spectrum1H: true,
+  spectrum13C: true,
+  spectrumIR: true,
+  spectrumUV: true,
+};
+
+const AI_AUTO_ENRICHMENT_KEYS = ['iupacName', 'commonName', 'meltingPoint', 'boilingPoint', 'summary'];
+const AI_SPECTRUM_CONTROL_KEYS = ['spectrum1H', 'spectrum13C', 'spectrumIR', 'spectrumUV'];
+
+const AI_REQUEST_CONTROL_LABELS = {
+  iupacName: 'IUPAC name',
+  commonName: 'Common name',
+  molecularProperties: 'Local molecular properties',
+  meltingPoint: 'Melting point',
+  boilingPoint: 'Boiling point',
+  summary: 'Explanation/summary',
+  spectrum1H: '1H NMR',
+  spectrum13C: '13C NMR',
+  spectrumIR: 'IR',
+  spectrumUV: 'UV spectrum',
+};
+
+const normalizeAiRequestControls = (value) => ({
+  ...AI_REQUEST_CONTROL_DEFAULTS,
+  ...(value && typeof value === 'object' ? value : {}),
+});
+
+const DEFAULT_QC_EXPORT_OPTIONS = {
+  software: 'orca',
+  jobType: 'opt',
+  method: 'B3LYP',
+  basis: 'def2-SVP',
+  charge: '0',
+  multiplicity: '1',
+  memoryGb: '8',
+  cores: '8',
+  title: 'MolDraw generated input',
+  extraKeywords: '',
+};
+
+const QC_SOFTWARE_OPTIONS = [
+  { value: 'gaussian', label: 'Gaussian (.gjf)' },
+  { value: 'orca', label: 'ORCA (.inp)' },
+  { value: 'qchem', label: 'Q-Chem (.in)' },
+];
+
+const QC_JOB_TYPE_OPTIONS = [
+  { value: 'sp', label: 'Single point' },
+  { value: 'opt', label: 'Optimization' },
+  { value: 'freq', label: 'Frequency' },
+  { value: 'optfreq', label: 'Optimization + frequency' },
+];
+
+const QC_METHOD_OPTIONS = ['B3LYP', 'PBE0', 'M06-2X', 'wB97X-D', 'HF', 'MP2'];
+const QC_BASIS_OPTIONS = ['6-31G(d)', '6-31+G(d,p)', 'def2-SVP', 'def2-TZVP', 'cc-pVDZ', 'cc-pVTZ'];
+
 const LUCKY_SHOWER_COLORS = [
   '#f97316',
   '#facc15',
@@ -219,6 +303,7 @@ function App() {
   const lastMoleculeRef = useRef(null);
   const [moleculeName, setMoleculeName] = useState('');
   const [iupacName, setIupacName] = useState('');
+  const [moleculeSummary, setMoleculeSummary] = useState('');
   const [boilingPoint, setBoilingPoint] = useState(null);
   const [meltingPoint, setMeltingPoint] = useState(null);
   const [isNaming, setIsNaming] = useState(false);
@@ -253,8 +338,16 @@ function App() {
     try { return localStorage.getItem('moldraw_gemini_key') || ''; } catch { return ''; }
   });
   const [aiModel, setAiModel] = useState(() => {
-    try { return localStorage.getItem('moldraw_ai_model') || 'gemini-2.5-flash'; } catch { return 'gemini-2.5-flash'; }
+    try { return normalizeAiModel(localStorage.getItem('moldraw_ai_model')); } catch { return DEFAULT_AI_MODEL; }
   });
+  const [aiRequestControls, setAiRequestControls] = useState(() => {
+    try {
+      return normalizeAiRequestControls(JSON.parse(localStorage.getItem('moldraw_ai_request_controls') || 'null'));
+    } catch {
+      return AI_REQUEST_CONTROL_DEFAULTS;
+    }
+  });
+  const [aiRequestNotice, setAiRequestNotice] = useState('');
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const lastSmilesForAIRef = useRef(null);
   const lastMolfileForAIRef = useRef(null);
@@ -305,6 +398,8 @@ function App() {
   const [miewClipPlane] = useState(false);
   const [miewOutline, setMiewOutline] = useState(true);
   const [exportTransparentBg, setExportTransparentBg] = useState(true);
+  const [showAdvancedExportModal, setShowAdvancedExportModal] = useState(false);
+  const [qcExportOptions, setQcExportOptions] = useState(DEFAULT_QC_EXPORT_OPTIONS);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showSpectrumMenu, setShowSpectrumMenu] = useState(false);
@@ -349,11 +444,6 @@ function App() {
   const AI_CHAT_ENDPOINT = isLocalDevHost
     ? `http://${host === 'localhost' || host === '127.0.0.1' ? 'localhost' : host}:3001/api/gemini-chat`
     : '/api/gemini-chat';
-  const AI_MODEL_OPTIONS = [
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (balanced)' },
-    { value: 'gemini-3.0-flash', label: 'Gemini 3 Flash (fast)' },
-    { value: 'gemini-3-pro', label: 'Gemini 3 Pro (high accuracy)' },
-  ];
   const authDisplayName =
     userProfile?.name ||
     authSession?.user?.user_metadata?.name ||
@@ -372,6 +462,23 @@ function App() {
     setIsChatOpen(true);
     setShowApiKeyInput(true);
   };
+
+  useEffect(() => {
+    try { localStorage.setItem('moldraw_ai_model', aiModel); } catch {}
+  }, [aiModel]);
+
+  useEffect(() => {
+    try { localStorage.setItem('moldraw_ai_request_controls', JSON.stringify(aiRequestControls)); } catch {}
+  }, [aiRequestControls]);
+
+  const updateAiRequestControl = (key, value) => {
+    setAiRequestControls((controls) => normalizeAiRequestControls({ ...controls, [key]: value }));
+  };
+
+  const getEnabledAutoAiFields = () => AI_AUTO_ENRICHMENT_KEYS
+    .filter((key) => aiRequestControls[key]);
+
+  const getAiRequestFieldLabel = (field) => AI_REQUEST_CONTROL_LABELS[field] || field;
 
   const fetchUserProfile = useCallback(async (userId) => {
     if (!supabase || !userId) return;
@@ -871,6 +978,7 @@ function App() {
   const clearMoleculeProps = () => {
     setMoleculeName('');
     setIupacName('');
+    setMoleculeSummary('');
     setBoilingPoint(null);
     setMeltingPoint(null);
     setCurrentSmiles('');
@@ -984,7 +1092,65 @@ function App() {
       .trim();
   };
 
-  // Get molecule name + physical properties from PubChem
+  const formatPredictedValue = (value) => {
+    const text = String(value || '').trim();
+    if (!text || text.toLowerCase() === 'null') return null;
+    return /\bpredicted\b/i.test(text) ? text : `${text} (predicted)`;
+  };
+
+  const fetchControlledAiEnrichment = async (smiles, requestedFields = []) => {
+    const fields = Array.from(new Set(requestedFields)).filter(Boolean);
+    if (!geminiApiKey || !smiles || !fields.length) return;
+
+    const schemaParts = fields.map((field) => {
+      if (field === 'iupacName') return '"iupac":"IUPAC name or null"';
+      if (field === 'commonName') return '"common":"common name or null"';
+      if (field === 'meltingPoint') return '"mp":"melting point °C or null"';
+      if (field === 'boilingPoint') return '"bp":"boiling point °C or null"';
+      if (field === 'summary') return '"summary":"brief useful chemistry summary or null"';
+      return null;
+    }).filter(Boolean);
+
+    if (!schemaParts.length) return;
+
+    const taskList = fields.map(getAiRequestFieldLabel).join(', ');
+    setAiRequestNotice(`This will run 1 AI request: ${taskList}.`);
+
+    try {
+      const resp = await fetch(AI_CHAT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `For this molecule (SMILES: ${smiles}), return ONLY these requested fields: ${taskList}.
+Reply as JSON only:
+{"assistant_message":"done","canvas_action":"none","smiles":null,${schemaParts.join(',')}}
+Do not include unrequested properties. Use null when uncertain.`,
+          smiles,
+          apiKey: geminiApiKey,
+          model: aiModel,
+        }),
+      });
+      const data = await parseApiJsonSafe(resp);
+      const obj = extractJsonFromReply(data?.reply);
+      if (!resp.ok || !obj) return;
+
+      if (fields.includes('iupacName') && obj?.iupac) setIupacName(obj.iupac);
+      if (fields.includes('commonName') && obj?.common) setMoleculeName(obj.common);
+      if (fields.includes('meltingPoint')) {
+        const mp = formatPredictedValue(obj?.mp);
+        if (mp) setMeltingPoint(mp);
+      }
+      if (fields.includes('boilingPoint')) {
+        const bp = formatPredictedValue(obj?.bp);
+        if (bp) setBoilingPoint(bp);
+      }
+      if (fields.includes('summary') && obj?.summary) setMoleculeSummary(obj.summary);
+    } catch (error) {
+      console.error('Controlled AI enrichment failed:', error);
+    }
+  };
+
+  // Get molecule name and only the enabled side-panel properties.
   const getMoleculeName = async (smiles) => {
     if (!smiles || smiles.trim() === '') {
       clearMoleculeProps();
@@ -1003,26 +1169,32 @@ function App() {
         const data = await propsRes.json();
         const props = data?.PropertyTable?.Properties?.[0];
         if (props) {
-          setMoleculeName(props.Title || props.IUPACName || 'Unknown compound');
+          const title = props.Title || props.IUPACName || 'Unknown compound';
+          setMoleculeName(title);
           setIupacName(props.IUPACName || '');
+          setMoleculeSummary('');
+
+          const extraAiFields = [];
+          if (aiRequestControls.iupacName && !props.IUPACName) extraAiFields.push('iupacName');
+          if (aiRequestControls.commonName && !props.Title) extraAiFields.push('commonName');
+          if (aiRequestControls.summary) extraAiFields.push('summary');
 
           const cid = props.CID;
-          if (cid) {
-            fetchPhysicalProperties(cid, smiles);
+          if (cid && (aiRequestControls.meltingPoint || aiRequestControls.boilingPoint)) {
+            await fetchPhysicalProperties(cid, smiles, extraAiFields);
           } else {
             setBoilingPoint(null);
             setMeltingPoint(null);
-          }
-
-          // If PubChem didn't return an IUPAC name, try Gemini
-          if (!props.IUPACName && geminiApiKey) {
-            fetchIupacFromGemini(smiles);
+            const directFields = [...extraAiFields];
+            if (!cid && aiRequestControls.meltingPoint) directFields.push('meltingPoint');
+            if (!cid && aiRequestControls.boilingPoint) directFields.push('boilingPoint');
+            await fetchControlledAiEnrichment(smiles, directFields);
           }
         } else {
-          fallbackNameFromGemini(smiles);
+          await fallbackNameFromGemini(smiles);
         }
       } else {
-        fallbackNameFromGemini(smiles);
+        await fallbackNameFromGemini(smiles);
       }
 
       setIsNaming(false);
@@ -1033,7 +1205,7 @@ function App() {
     }
   };
 
-  const fetchPhysicalProperties = async (cid, smiles) => {
+  const fetchPhysicalProperties = async (cid, smiles, extraAiFields = []) => {
     let bp = null;
     let mp = null;
     try {
@@ -1071,35 +1243,13 @@ function App() {
       console.error('Error fetching physical properties:', err);
     }
 
-    setBoilingPoint(bp);
-    setMeltingPoint(mp);
+    setBoilingPoint(aiRequestControls.boilingPoint ? bp : null);
+    setMeltingPoint(aiRequestControls.meltingPoint ? mp : null);
 
-    // If PubChem didn't have MP/BP, try Gemini prediction
-    if ((!bp || !mp) && geminiApiKey && smiles) {
-      fetchMpBpFromGemini(smiles, bp, mp);
-    }
-  };
-
-  const fetchMpBpFromGemini = async (smiles, existingBp, existingMp) => {
-    try {
-      const resp = await fetch(AI_CHAT_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Predict the melting point and boiling point of this molecule (SMILES: ${smiles}). Reply as JSON only: {"assistant_message":"...","canvas_action":"none","smiles":null,"mp":"melting point °C or null","bp":"boiling point °C or null"}. Use approximate values with ~ if needed. Include °C unit.`,
-          smiles,
-          apiKey: geminiApiKey,
-          model: aiModel,
-        }),
-      });
-      const data = await resp.json();
-      let raw = data?.reply || '';
-      const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (fenceMatch) raw = fenceMatch[1].trim();
-      const obj = JSON.parse(raw);
-      if (!existingMp && obj?.mp && obj.mp !== 'null') setMeltingPoint(obj.mp + ' (predicted)');
-      if (!existingBp && obj?.bp && obj.bp !== 'null') setBoilingPoint(obj.bp + ' (predicted)');
-    } catch { /* silent */ }
+    const missingAiFields = [...extraAiFields];
+    if (aiRequestControls.meltingPoint && !mp) missingAiFields.push('meltingPoint');
+    if (aiRequestControls.boilingPoint && !bp) missingAiFields.push('boilingPoint');
+    await fetchControlledAiEnrichment(smiles, missingAiFields);
   };
 
   const parseApiJsonSafe = async (resp) => {
@@ -1406,9 +1556,20 @@ Rules:
       ir: 'IR',
       uv: 'UV-Vis',
     };
+    const controlMap = {
+      proton: 'spectrum1H',
+      carbon: 'spectrum13C',
+      ir: 'spectrumIR',
+      uv: 'spectrumUV',
+    };
+    if (!aiRequestControls[controlMap[type] || 'spectrum1H']) {
+      setAiRequestNotice(`${typeMap[type] || '1H'} spectrum requests are disabled in AI request controls.`);
+      return;
+    }
     setActiveSpectrumType(typeMap[type] || '1H');
     setIsNmrLoading(true);
     setShowNmrModal(true);
+    setAiRequestNotice(`This will run 1 AI request: ${typeMap[type] || '1H'} spectrum.`);
 
     const isCarbon = type === 'carbon';
     const isIR = type === 'ir';
@@ -1755,65 +1916,19 @@ ${scientificGuardrails}`;
     URL.revokeObjectURL(url);
   };
 
-  // Fetch only IUPAC name from Gemini (supplements PubChem data)
-  const fetchIupacFromGemini = async (smiles) => {
-    if (!geminiApiKey || !smiles) return;
-    try {
-      const resp = await fetch(AI_CHAT_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Give me ONLY the IUPAC name of this SMILES: ${smiles}. Reply as JSON: {"assistant_message":"...","canvas_action":"none","smiles":null,"iupac":"IUPAC name here"}`,
-          smiles,
-          apiKey: geminiApiKey,
-          model: aiModel,
-        }),
-      });
-      const data = await resp.json();
-      let raw = data?.reply || '';
-      const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (fenceMatch) raw = fenceMatch[1].trim();
-      const obj = JSON.parse(raw);
-      if (obj?.iupac) setIupacName(obj.iupac);
-    } catch { /* silent */ }
-  };
-
   const fallbackNameFromGemini = async (smiles) => {
-    if (!geminiApiKey || !smiles) {
-      setMoleculeName('');
-      setIupacName('');
-      setBoilingPoint(null);
-      setMeltingPoint(null);
+    const fields = getEnabledAutoAiFields();
+    setMoleculeName('Not found in PubChem');
+    setIupacName('');
+    setMoleculeSummary('');
+    setBoilingPoint(null);
+    setMeltingPoint(null);
+
+    if (!fields.length) {
+      setAiRequestNotice('AI enrichment is off. Enable specific AI requests to fetch names or properties.');
       return;
     }
-    try {
-      const resp = await fetch(AI_CHAT_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Give me the IUPAC name, common name, melting point, and boiling point of this SMILES: ${smiles}. Reply as JSON only: {"assistant_message":"...","canvas_action":"none","smiles":null,"iupac":"IUPAC name","common":"common name or null","mp":"melting point °C or null","bp":"boiling point °C or null"}`,
-          smiles,
-          apiKey: geminiApiKey,
-          model: aiModel,
-        }),
-      });
-      const data = await resp.json();
-      let raw = data?.reply || '';
-      const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (fenceMatch) raw = fenceMatch[1].trim();
-      const obj = JSON.parse(raw);
-      const iupac = obj?.iupac || '';
-      const common = obj?.common || '';
-      setMoleculeName(common || iupac || 'AI-derived name');
-      setIupacName(iupac);
-      setMeltingPoint(obj?.mp && obj.mp !== 'null' ? obj.mp + ' (predicted)' : null);
-      setBoilingPoint(obj?.bp && obj.bp !== 'null' ? obj.bp + ' (predicted)' : null);
-    } catch {
-      setMoleculeName('');
-      setIupacName('');
-      setBoilingPoint(null);
-      setMeltingPoint(null);
-    }
+    await fetchControlledAiEnrichment(smiles, fields);
   };
 
   // Convert SMILES to 3D structure
@@ -2168,6 +2283,7 @@ ${scientificGuardrails}`;
       setCurrentMolecule({ data: cleanText, format: 'pdb', has3D: true, smiles: '' });
       setProteinMeta(parseProteinMetadata(cleanText, label));
       setMolecularMass(null);
+      setMoleculeSummary('');
       setCurrentSmiles('');
       setMultiStructure(false);
       setProteinStatus(`Loaded ${label}.`);
@@ -2211,6 +2327,7 @@ ${scientificGuardrails}`;
       setMolecularMass(cached.molecularMass ?? null);
       setMoleculeName(cached.moleculeName || '');
       setIupacName(cached.iupacName || '');
+      setMoleculeSummary(cached.moleculeSummary || '');
       setBoilingPoint(cached.boilingPoint ?? null);
       setMeltingPoint(cached.meltingPoint ?? null);
       setCurrentSmiles(cached.currentSmiles || '');
@@ -2463,6 +2580,7 @@ ${scientificGuardrails}`;
       molecularMass,
       moleculeName,
       iupacName,
+      moleculeSummary,
       boilingPoint,
       meltingPoint,
       currentSmiles,
@@ -2475,6 +2593,7 @@ ${scientificGuardrails}`;
     molecularMass,
     moleculeName,
     iupacName,
+    moleculeSummary,
     boilingPoint,
     meltingPoint,
     currentSmiles,
@@ -2824,7 +2943,7 @@ ${scientificGuardrails}`;
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isKetcherReady, updateMolecule3D, requestMoleculeUpdate, isProtein, isReactionSearchLoading, viewerMode]);
+  }, [isKetcherReady, updateMolecule3D, requestMoleculeUpdate, isProtein, isReactionSearchLoading, viewerMode, aiRequestControls, geminiApiKey, aiModel]);
 
   // Debounce timeout ref for 3D updates
   const debounceTimeoutRef = useRef(null);
@@ -3678,7 +3797,17 @@ ${scientificGuardrails}`;
 
   // Helper: Convert to XYZ format
   const convertToXYZ = (sdfData) => {
-    const lines = sdfData.split('\n');
+    const atoms = extractAtomsForQuantumExport(sdfData);
+
+    let xyz = `${atoms.length}\nMolecule exported from MolDraw\n`;
+    atoms.forEach(atom => {
+      xyz += `${atom.elem} ${atom.x} ${atom.y} ${atom.z}\n`;
+    });
+    return xyz;
+  };
+
+  const extractAtomsForQuantumExport = (structureData) => {
+    const lines = String(structureData || '').split('\n');
     const atoms = [];
     let inAtomBlock = false;
 
@@ -3701,11 +3830,116 @@ ${scientificGuardrails}`;
       if (line.includes('M  END')) break;
     }
 
-    let xyz = `${atoms.length}\nMolecule exported from Ketcher\n`;
-    atoms.forEach(atom => {
-      xyz += `${atom.elem} ${atom.x} ${atom.y} ${atom.z}\n`;
-    });
-    return xyz;
+    return atoms.filter((atom) =>
+      atom.elem &&
+      Number.isFinite(atom.x) &&
+      Number.isFinite(atom.y) &&
+      Number.isFinite(atom.z)
+    );
+  };
+
+  const getQuantumCoordinates = () => extractAtomsForQuantumExport(currentMolecule?.data)
+    .map((atom) => `${atom.elem.padEnd(3)} ${atom.x.toFixed(6).padStart(12)} ${atom.y.toFixed(6).padStart(12)} ${atom.z.toFixed(6).padStart(12)}`)
+    .join('\n');
+
+  const getQcJobKeyword = (software, jobType) => {
+    if (software === 'qchem') {
+      if (jobType === 'opt') return 'OPT';
+      if (jobType === 'freq') return 'FREQ';
+      if (jobType === 'optfreq') return 'FREQ';
+      return 'SP';
+    }
+    if (jobType === 'opt') return 'Opt';
+    if (jobType === 'freq') return 'Freq';
+    if (jobType === 'optfreq') return 'Opt Freq';
+    return 'SP';
+  };
+
+  const buildQuantumInputFile = () => {
+    const atoms = extractAtomsForQuantumExport(currentMolecule?.data);
+    if (!atoms.length) {
+      throw new Error('No 3D coordinates available. Generate or load a 3D molecule first.');
+    }
+
+    const options = { ...DEFAULT_QC_EXPORT_OPTIONS, ...qcExportOptions };
+    const coordinates = atoms
+      .map((atom) => `${atom.elem.padEnd(3)} ${atom.x.toFixed(6).padStart(12)} ${atom.y.toFixed(6).padStart(12)} ${atom.z.toFixed(6).padStart(12)}`)
+      .join('\n');
+    const charge = Number.parseInt(options.charge, 10);
+    const multiplicity = Number.parseInt(options.multiplicity, 10);
+    const safeCharge = Number.isFinite(charge) ? charge : 0;
+    const safeMultiplicity = Number.isFinite(multiplicity) && multiplicity > 0 ? multiplicity : 1;
+    const cores = Math.max(1, Number.parseInt(options.cores, 10) || 1);
+    const memoryGb = Math.max(1, Number.parseInt(options.memoryGb, 10) || 1);
+    const title = String(options.title || 'MolDraw generated input').trim();
+    const method = String(options.method || DEFAULT_QC_EXPORT_OPTIONS.method).trim();
+    const basis = String(options.basis || DEFAULT_QC_EXPORT_OPTIONS.basis).trim();
+    const extraKeywords = String(options.extraKeywords || '').trim();
+    const jobKeyword = getQcJobKeyword(options.software, options.jobType);
+
+    if (options.software === 'gaussian') {
+      const route = [`#p ${method}/${basis}`, jobKeyword, extraKeywords].filter(Boolean).join(' ');
+      return {
+        filename: 'moldraw_gaussian.gjf',
+        mimeType: 'chemical/x-gaussian-input',
+        text: `%chk=moldraw.chk\n%nprocshared=${cores}\n%mem=${memoryGb}GB\n${route}\n\n${title}\n\n${safeCharge} ${safeMultiplicity}\n${coordinates}\n\n`,
+      };
+    }
+
+    if (options.software === 'qchem') {
+      const remLines = [
+        '$rem',
+        `JOBTYPE ${jobKeyword}`,
+        `METHOD ${method}`,
+        `BASIS ${basis}`,
+        `MEM_TOTAL ${memoryGb * 1000}`,
+        `NTHREADS ${cores}`,
+      ];
+      if (extraKeywords) remLines.push(extraKeywords);
+      remLines.push('$end');
+      return {
+        filename: 'moldraw_qchem.in',
+        mimeType: 'chemical/x-qchem-input',
+        text: `$molecule\n${safeCharge} ${safeMultiplicity}\n${coordinates}\n$end\n\n${remLines.join('\n')}\n`,
+      };
+    }
+
+    const orcaLines = [
+      `! ${method} ${basis} ${jobKeyword}${extraKeywords ? ` ${extraKeywords}` : ''}`,
+      '',
+      `%pal nprocs ${cores} end`,
+      `%maxcore ${Math.round((memoryGb * 1024) / cores)}`,
+      '',
+      `* xyz ${safeCharge} ${safeMultiplicity}`,
+      coordinates,
+      '*',
+      '',
+    ];
+    return {
+      filename: 'moldraw_orca.inp',
+      mimeType: 'chemical/x-orca-input',
+      text: orcaLines.join('\n'),
+    };
+  };
+
+  const downloadAdvancedQuantumInput = () => {
+    try {
+      if (isProtein) {
+        alert('Quantum chemistry input export is for small molecules, not proteins.');
+        return;
+      }
+      const file = buildQuantumInputFile();
+      const blob = new Blob([file.text], { type: file.mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      setShowAdvancedExportModal(false);
+    } catch (error) {
+      alert(error?.message || 'Could not create the quantum chemistry input file.');
+    }
   };
 
   // Helper: Convert to OBJ format with properties and geometry
@@ -4284,6 +4518,10 @@ ${scientificGuardrails}`;
   const showMolDetailsPanel = viewerMode === 'protein'
     ? Boolean(proteinMeta)
     : Boolean(moleculeName || molecularMass || proteinMeta || currentSmiles);
+  const enabledAutoAiRequestLabels = getEnabledAutoAiFields().map(getAiRequestFieldLabel);
+  const enabledSpectrumRequestLabels = AI_SPECTRUM_CONTROL_KEYS
+    .filter((key) => aiRequestControls[key])
+    .map(getAiRequestFieldLabel);
   const aiChatSuggestions = (() => {
     const input = chatInput.trim().toLowerCase();
     const hasMolecule = Boolean(currentSmiles || lastSmilesForAIRef.current || currentMolecule);
@@ -4398,7 +4636,7 @@ ${scientificGuardrails}`;
                 <div>
                   <div className="ai-chat-header-title">MolDraw AI</div>
                   <div className="ai-chat-header-sub">
-                    {(AI_MODEL_OPTIONS.find((m) => m.value === aiModel)?.label || 'Gemini Flash')} · Draw, name &amp; explore
+                    {(AI_MODEL_OPTIONS.find((m) => m.value === aiModel)?.label || 'Gemini 3.1 Flash-Lite')} · Draw, name &amp; explore
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
@@ -4431,40 +4669,80 @@ ${scientificGuardrails}`;
               </div>
 
               {showApiKeyInput && (
-                <div className="ai-key-row">
-                  <select
-                    className="ai-model-select"
-                    value={aiModel}
-                    onChange={(e) => setAiModel(e.target.value)}
-                    title="Choose chat model"
-                  >
-                    {AI_MODEL_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="password"
-                    className="ai-key-input"
-                    value={geminiApiKey}
-                    onChange={(e) => setGeminiApiKey(e.target.value)}
-                    placeholder="Paste Gemini API key..."
-                    onBlur={() => {
-                      try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
-                    }}
-                  />
-                  <button
-                    className="ai-key-save"
-                    onClick={() => {
-                      try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
-                      setShowApiKeyInput(false);
-                      if (geminiApiKey) {
-                        setChatMessages((msgs) => [...msgs, { role: 'assistant', text: 'API key saved. You can now ask me anything!' }]);
-                      }
-                    }}
-                  >
-                    {geminiApiKey ? '✓ Save' : 'Save'}
-                  </button>
-                </div>
+                <>
+                  <div className="ai-key-row">
+                    <select
+                      className="ai-model-select"
+                      value={aiModel}
+                      onChange={(e) => setAiModel(normalizeAiModel(e.target.value))}
+                      title="Choose chat model"
+                    >
+                      {AI_MODEL_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="password"
+                      className="ai-key-input"
+                      value={geminiApiKey}
+                      onChange={(e) => setGeminiApiKey(e.target.value)}
+                      placeholder="Paste Gemini API key..."
+                      onBlur={() => {
+                        try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
+                      }}
+                    />
+                    <button
+                      className="ai-key-save"
+                      onClick={() => {
+                        try { localStorage.setItem('moldraw_gemini_key', geminiApiKey); } catch {}
+                        setShowApiKeyInput(false);
+                        if (geminiApiKey) {
+                          setChatMessages((msgs) => [...msgs, { role: 'assistant', text: 'API key saved. You can now ask me anything!' }]);
+                        }
+                      }}
+                    >
+                      {geminiApiKey ? '✓ Save' : 'Save'}
+                    </button>
+                  </div>
+                  <div className="ai-request-controls">
+                    <div className="ai-request-controls-head">
+                      <span>AI requests</span>
+                      <small>{enabledAutoAiRequestLabels.length ? `${enabledAutoAiRequestLabels.length} auto enrichment` : 'Auto enrichment off'}</small>
+                    </div>
+                    <div className="ai-request-controls-note">
+                      Choose exactly what Gemini may fetch automatically. Chat questions still run only when you send them.
+                    </div>
+                    <div className="ai-request-control-group">
+                      <span className="ai-request-control-group-title">Auto enrichment</span>
+                      {[...AI_AUTO_ENRICHMENT_KEYS, 'molecularProperties'].map((key) => (
+                        <label key={key} className="ai-request-control-chip">
+                          <input
+                            type="checkbox"
+                            checked={!!aiRequestControls[key]}
+                            onChange={(e) => updateAiRequestControl(key, e.target.checked)}
+                          />
+                          <span>{getAiRequestFieldLabel(key)}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="ai-request-control-group">
+                      <span className="ai-request-control-group-title">Spectrum buttons</span>
+                      {AI_SPECTRUM_CONTROL_KEYS.map((key) => (
+                        <label key={key} className="ai-request-control-chip">
+                          <input
+                            type="checkbox"
+                            checked={!!aiRequestControls[key]}
+                            onChange={(e) => updateAiRequestControl(key, e.target.checked)}
+                          />
+                          <span>{getAiRequestFieldLabel(key)}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="ai-request-status">
+                      {aiRequestNotice || `${enabledSpectrumRequestLabels.length} spectrum request types enabled.`}
+                    </div>
+                  </div>
+                </>
               )}
 
               <div className="ai-chat-messages">
@@ -4682,12 +4960,12 @@ ${scientificGuardrails}`;
                 </button>
                 {showSpectrumMenu && (
                   <div className="tb-menu-dropdown-list tb-spectrum-menu-list" role="menu" aria-label="Predict spectrum">
-                    <div className="tb-spectrum-note">Prediction only. May not be accurate.</div>
+                    <div className="tb-spectrum-note">Prediction only. Each enabled option runs one AI request.</div>
                     <button
                       type="button"
                       className="tb-menu-item"
                       role="menuitem"
-                      disabled={isNmrLoading}
+                      disabled={isNmrLoading || !aiRequestControls.spectrum1H}
                       onClick={() => {
                         setShowSpectrumMenu(false);
                         predictNMR('proton');
@@ -4699,7 +4977,7 @@ ${scientificGuardrails}`;
                       type="button"
                       className="tb-menu-item"
                       role="menuitem"
-                      disabled={isNmrLoading}
+                      disabled={isNmrLoading || !aiRequestControls.spectrum13C}
                       onClick={() => {
                         setShowSpectrumMenu(false);
                         predictNMR('carbon');
@@ -4711,7 +4989,7 @@ ${scientificGuardrails}`;
                       type="button"
                       className="tb-menu-item"
                       role="menuitem"
-                      disabled={isNmrLoading}
+                      disabled={isNmrLoading || !aiRequestControls.spectrumIR}
                       onClick={() => {
                         setShowSpectrumMenu(false);
                         predictNMR('ir');
@@ -4723,7 +5001,7 @@ ${scientificGuardrails}`;
                       type="button"
                       className="tb-menu-item"
                       role="menuitem"
-                      disabled={isNmrLoading}
+                      disabled={isNmrLoading || !aiRequestControls.spectrumUV}
                       onClick={() => {
                         setShowSpectrumMenu(false);
                         predictNMR('uv');
@@ -4964,6 +5242,7 @@ ${scientificGuardrails}`;
                       molecularMass,
                       moleculeName,
                       iupacName,
+                      moleculeSummary,
                       boilingPoint,
                       meltingPoint,
                       currentSmiles,
@@ -5433,7 +5712,13 @@ ${scientificGuardrails}`;
                         </button>
                       </div>
                     )}
-                    {!isProtein && molecularMass && (
+                    {!isProtein && moleculeSummary && (
+                      <div className="mol-props-row mol-props-multiline-row">
+                        <span className="mol-props-label">Summary</span>
+                        <span className="mol-props-value mol-props-summary">{moleculeSummary}</span>
+                      </div>
+                    )}
+                    {!isProtein && aiRequestControls.molecularProperties && molecularMass && (
                       <div className="mol-props-row">
                         <span className="mol-props-label">Mass</span>
                         <span className="mol-props-value">{molecularMass.toFixed(2)} g/mol</span>
@@ -5458,7 +5743,7 @@ ${scientificGuardrails}`;
                           <select
                             className="mol-props-model-select"
                             value={aiModel}
-                            onChange={(e) => setAiModel(e.target.value)}
+                            onChange={(e) => setAiModel(normalizeAiModel(e.target.value))}
                             title="Model for spectrum predictions"
                           >
                             {AI_MODEL_OPTIONS.map((opt) => (
@@ -5466,11 +5751,15 @@ ${scientificGuardrails}`;
                             ))}
                           </select>
                         </div>
+                        <div className="mol-props-ai-request-summary">
+                          <span>Auto AI: {enabledAutoAiRequestLabels.length ? enabledAutoAiRequestLabels.join(', ') : 'off'}</span>
+                          <span>Spectra: {enabledSpectrumRequestLabels.length ? enabledSpectrumRequestLabels.join(', ') : 'off'}</span>
+                        </div>
                         <div className="mol-props-nmr-row">
                           <button
                             className="mol-props-nmr-btn"
                             onClick={() => predictNMR('proton')}
-                            disabled={isNmrLoading}
+                            disabled={isNmrLoading || !aiRequestControls.spectrum1H}
                             title="Predict 1H NMR spectrum (AI)"
                           >
                             {isNmrLoading ? '...' : '¹H NMR'}
@@ -5478,7 +5767,7 @@ ${scientificGuardrails}`;
                           <button
                             className="mol-props-nmr-btn mol-props-nmr-btn-c13"
                             onClick={() => predictNMR('carbon')}
-                            disabled={isNmrLoading}
+                            disabled={isNmrLoading || !aiRequestControls.spectrum13C}
                             title="Predict 13C NMR spectrum (AI)"
                           >
                             {isNmrLoading ? '...' : '¹³C NMR'}
@@ -5486,7 +5775,7 @@ ${scientificGuardrails}`;
                           <button
                             className="mol-props-nmr-btn mol-props-nmr-btn-ir"
                             onClick={() => predictNMR('ir')}
-                            disabled={isNmrLoading}
+                            disabled={isNmrLoading || !aiRequestControls.spectrumIR}
                             title="Predict IR spectrum (AI)"
                           >
                             {isNmrLoading ? '...' : 'IR'}
@@ -5494,7 +5783,7 @@ ${scientificGuardrails}`;
                           <button
                             className="mol-props-nmr-btn mol-props-nmr-btn-uv"
                             onClick={() => predictNMR('uv')}
-                            disabled={isNmrLoading}
+                            disabled={isNmrLoading || !aiRequestControls.spectrumUV}
                             title="Predict UV-Vis spectrum (AI)"
                           >
                             {isNmrLoading ? '...' : 'UV-Vis'}
@@ -5568,6 +5857,7 @@ ${scientificGuardrails}`;
                     <button onClick={() => exportModel('jpeg')} className="compact-export-btn" title="JPEG with white background">JPG</button>
                     <button onClick={() => exportModel('sdf')} className="compact-export-btn" title="SDF format">SDF</button>
                     <button onClick={() => exportModel('xyz')} className="compact-export-btn" title="XYZ format">XYZ</button>
+                    {!isProtein && <button onClick={() => setShowAdvancedExportModal(true)} className="compact-export-btn compact-export-btn-advanced" title="Gaussian, ORCA, and Q-Chem input files">Advanced</button>}
                     {!isMiewEngine && <button onClick={() => exportModel('x3d')} className="compact-export-btn" title="X3D with bonds">X3D</button>}
                     {!isMiewEngine && <button onClick={() => exportModel('obj')} className="compact-export-btn" title="OBJ for Blender">OBJ</button>}
                   </div>
@@ -5655,6 +5945,144 @@ ${scientificGuardrails}`;
                 Open AI settings
               </button>
               <button className="ai-setup-modal-close" onClick={() => setShowAiSetupModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAdvancedExportModal && (
+        <div className="qc-export-backdrop" onClick={() => setShowAdvancedExportModal(false)}>
+          <div className="qc-export-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="qc-export-header">
+              <div>
+                <div className="qc-export-eyebrow">Advanced export</div>
+                <div className="qc-export-title">Quantum chemistry input file</div>
+                <div className="qc-export-subtitle">Generate Gaussian, ORCA, or Q-Chem files from the current 3D coordinates.</div>
+              </div>
+              <button type="button" className="qc-export-close" onClick={() => setShowAdvancedExportModal(false)} aria-label="Close advanced export modal">×</button>
+            </div>
+
+            <div className="qc-export-grid">
+              <label className="qc-export-field">
+                <span>Software</span>
+                <select
+                  value={qcExportOptions.software}
+                  onChange={(e) => setQcExportOptions((opts) => ({ ...opts, software: e.target.value }))}
+                >
+                  {QC_SOFTWARE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="qc-export-field">
+                <span>Job type</span>
+                <select
+                  value={qcExportOptions.jobType}
+                  onChange={(e) => setQcExportOptions((opts) => ({ ...opts, jobType: e.target.value }))}
+                >
+                  {QC_JOB_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="qc-export-field">
+                <span>Method</span>
+                <select
+                  value={qcExportOptions.method}
+                  onChange={(e) => setQcExportOptions((opts) => ({ ...opts, method: e.target.value }))}
+                >
+                  {QC_METHOD_OPTIONS.map((method) => (
+                    <option key={method} value={method}>{method}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="qc-export-field">
+                <span>Basis set</span>
+                <select
+                  value={qcExportOptions.basis}
+                  onChange={(e) => setQcExportOptions((opts) => ({ ...opts, basis: e.target.value }))}
+                >
+                  {QC_BASIS_OPTIONS.map((basis) => (
+                    <option key={basis} value={basis}>{basis}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="qc-export-field">
+                <span>Charge</span>
+                <input
+                  type="number"
+                  step="1"
+                  value={qcExportOptions.charge}
+                  onChange={(e) => setQcExportOptions((opts) => ({ ...opts, charge: e.target.value }))}
+                />
+              </label>
+              <label className="qc-export-field">
+                <span>Multiplicity</span>
+                <input
+                  type="number"
+                  step="1"
+                  min="1"
+                  value={qcExportOptions.multiplicity}
+                  onChange={(e) => setQcExportOptions((opts) => ({ ...opts, multiplicity: e.target.value }))}
+                />
+              </label>
+              <label className="qc-export-field">
+                <span>Memory (GB)</span>
+                <input
+                  type="number"
+                  step="1"
+                  min="1"
+                  value={qcExportOptions.memoryGb}
+                  onChange={(e) => setQcExportOptions((opts) => ({ ...opts, memoryGb: e.target.value }))}
+                />
+              </label>
+              <label className="qc-export-field">
+                <span>CPU cores</span>
+                <input
+                  type="number"
+                  step="1"
+                  min="1"
+                  value={qcExportOptions.cores}
+                  onChange={(e) => setQcExportOptions((opts) => ({ ...opts, cores: e.target.value }))}
+                />
+              </label>
+            </div>
+
+            <label className="qc-export-field qc-export-wide">
+              <span>Title/comment</span>
+              <input
+                type="text"
+                value={qcExportOptions.title}
+                onChange={(e) => setQcExportOptions((opts) => ({ ...opts, title: e.target.value }))}
+              />
+            </label>
+
+            <label className="qc-export-field qc-export-wide">
+              <span>Extra keywords or blocks</span>
+              <textarea
+                rows={2}
+                value={qcExportOptions.extraKeywords}
+                onChange={(e) => setQcExportOptions((opts) => ({ ...opts, extraKeywords: e.target.value }))}
+                placeholder="Optional: dispersion, solvent, SCF settings..."
+              />
+            </label>
+
+            <div className="qc-export-preview">
+              <div className="qc-export-preview-title">Coordinate preview</div>
+              <pre>{getQuantumCoordinates() || 'No coordinates available yet.'}</pre>
+            </div>
+
+            <div className="qc-export-note">
+              Coordinates come from the current 3D molecule. For production calculations, check charge, multiplicity, conformer quality, and method/basis choices before submitting.
+            </div>
+
+            <div className="qc-export-actions">
+              <button type="button" className="qc-export-primary" onClick={downloadAdvancedQuantumInput}>
+                Download input file
+              </button>
+              <button type="button" className="qc-export-secondary" onClick={() => setShowAdvancedExportModal(false)}>
+                Cancel
+              </button>
             </div>
           </div>
         </div>

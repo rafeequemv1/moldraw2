@@ -4,9 +4,26 @@ const fetch = require('node-fetch');
 
 const PORT = process.env.PORT || 3001;
 
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
-const ALLOWED_GEMINI_MODELS = new Set(['gemini-2.5-flash', 'gemini-3.0-flash', 'gemini-3-pro']);
-const selectModel = (requested) => (ALLOWED_GEMINI_MODELS.has(requested) ? requested : DEFAULT_GEMINI_MODEL);
+const DEFAULT_GEMINI_MODEL = 'gemini-3.1-flash-lite';
+const LEGACY_GEMINI_MODEL_ALIASES = {
+  'gemini-3.0-flash': 'gemini-3-flash-preview',
+  'gemini-3-pro': 'gemini-3.1-pro-preview',
+};
+const ALLOWED_GEMINI_MODELS = new Set([
+  'gemini-3.5-flash',
+  'gemini-3.1-pro-preview',
+  'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-flash-latest',
+]);
+const selectModel = (requested) => {
+  const normalized = LEGACY_GEMINI_MODEL_ALIASES[requested] || requested;
+  return ALLOWED_GEMINI_MODELS.has(normalized) ? normalized : DEFAULT_GEMINI_MODEL;
+};
 const MAX_RATE_LIMIT_RETRIES = 2;
 const BASE_RETRY_MS = 700;
 const MAX_RETRY_MS = 6000;
@@ -166,8 +183,8 @@ app.post('/api/gemini-chat', async (req, res) => {
     let retryAfterSeconds = primary.retryAfterSeconds;
     let totalAttempts = primary.attempts;
 
-    // Graceful fallback when the selected preview model is unavailable for the key/account.
-    if (!resp.ok && usedModel !== DEFAULT_GEMINI_MODEL && (resp.status === 400 || resp.status === 404 || resp.status === 429)) {
+    // Graceful fallback only when the selected model endpoint no longer exists.
+    if (!resp.ok && usedModel !== DEFAULT_GEMINI_MODEL && (resp.status === 404)) {
       triedModels.push(DEFAULT_GEMINI_MODEL);
       const fallback = await callGeminiWith429Retry(DEFAULT_GEMINI_MODEL);
       totalAttempts += fallback.attempts;
@@ -199,7 +216,7 @@ app.post('/api/gemini-chat', async (req, res) => {
       }
       if (resp.status === 429) {
         return res.status(429).json({
-          error: 'Gemini rate limit reached. Please retry shortly or switch to Gemini 2.5 Flash.',
+          error: 'Gemini rate limit reached. Please retry shortly or switch to Gemini 3.1 Flash-Lite.',
           code: 'RATE_LIMITED',
           retryAfterSeconds: retryAfterSeconds ?? null,
           modelTried: usedModel,
