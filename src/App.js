@@ -4863,6 +4863,19 @@ ${scientificGuardrails}`;
                     )}
                   </button>
                 </div>
+                <a
+                  className="tb-btn tb-btn-windows-app"
+                  href="https://hi.switchy.io/sYek"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Download MolDraw for Windows"
+                >
+                  <img src="/windows-install-logo.png" alt="" aria-hidden="true" className="tb-windows-logo" />
+                  <span className="tb-windows-copy">
+                    <span className="tb-btn-windows-text">Install Windows</span>
+                    <span className="tb-platform-note">Mac/Linux soon</span>
+                  </span>
+                </a>
                 {searchError && (
                   <div className="search-error">{searchError}</div>
                 )}
@@ -4870,6 +4883,16 @@ ${scientificGuardrails}`;
             </div>
 
             <nav className="header-links" aria-label="Primary navigation">
+              <a
+                className="tb-btn"
+                href="/tools/index.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Calculators, converters, and chemistry tools"
+              >
+                Tools
+              </a>
+
               <button
                 className={`tb-btn${smilesCopied ? ' tb-copied' : ''}`}
                 onClick={() => {
@@ -4930,77 +4953,6 @@ ${scientificGuardrails}`;
                 Paste SMILES
               </button>
 
-              <div className="tb-menu-dropdown" ref={spectrumMenuRef}>
-                <button
-                  type="button"
-                  className="tb-btn tb-btn-spectrum"
-                  onClick={() => {
-                    setShowSpectrumMenu((v) => !v);
-                    setShowDownloadMenu(false);
-                  }}
-                  title="Predict spectra for the current molecule"
-                >
-                  <span>Predict NMR</span>
-                  <span className="tb-beta-tag">BETA</span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" style={{ marginLeft: 2, opacity: 0.75 }}>
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
-                {showSpectrumMenu && (
-                  <div className="tb-menu-dropdown-list tb-spectrum-menu-list" role="menu" aria-label="Predict spectrum">
-                    <div className="tb-spectrum-note">Prediction only. Each enabled option runs one AI request.</div>
-                    <button
-                      type="button"
-                      className="tb-menu-item"
-                      role="menuitem"
-                      disabled={isNmrLoading || !aiRequestControls.spectrum1H}
-                      onClick={() => {
-                        setShowSpectrumMenu(false);
-                        predictNMR('proton');
-                      }}
-                    >
-                      ¹H NMR
-                    </button>
-                    <button
-                      type="button"
-                      className="tb-menu-item"
-                      role="menuitem"
-                      disabled={isNmrLoading || !aiRequestControls.spectrum13C}
-                      onClick={() => {
-                        setShowSpectrumMenu(false);
-                        predictNMR('carbon');
-                      }}
-                    >
-                      ¹³C NMR
-                    </button>
-                    <button
-                      type="button"
-                      className="tb-menu-item"
-                      role="menuitem"
-                      disabled={isNmrLoading || !aiRequestControls.spectrumIR}
-                      onClick={() => {
-                        setShowSpectrumMenu(false);
-                        predictNMR('ir');
-                      }}
-                    >
-                      IR
-                    </button>
-                    <button
-                      type="button"
-                      className="tb-menu-item"
-                      role="menuitem"
-                      disabled={isNmrLoading || !aiRequestControls.spectrumUV}
-                      onClick={() => {
-                        setShowSpectrumMenu(false);
-                        predictNMR('uv');
-                      }}
-                    >
-                      UV-Vis
-                    </button>
-                  </div>
-                )}
-              </div>
-
               <button
                 type="button"
                 className={`tb-btn tb-btn-ai ${isChatOpen ? 'tb-btn-ai-active' : ''}`}
@@ -5013,31 +4965,12 @@ ${scientificGuardrails}`;
 
               <button
                 type="button"
-                className="tb-btn tb-btn-updates"
-                onClick={() => setShowUpdatesModal(true)}
-                title="See recent MolDraw updates"
-              >
-                Updates
-              </button>
-
-              <button
-                type="button"
                 className="tb-btn tb-btn-feature-request"
                 onClick={openFeatureRequestModal}
                 title="Request a MolDraw feature"
               >
                 Request feature
               </button>
-
-              <a
-                className="tb-btn"
-                href="/pages/contact.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Contact MolDraw"
-              >
-                Contact
-              </a>
 
               {(structureCopied || structureCopyError) && (
                 <span className={`tb-copy-structure-note${structureCopyError ? ' tb-copy-structure-note-error' : ''}`}>
@@ -5104,17 +5037,6 @@ ${scientificGuardrails}`;
                 )}
               </div>
 
-              <a
-                className="tb-btn tb-btn-windows-app"
-                href="https://hi.switchy.io/sYek"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Download MolDraw for Windows"
-              >
-                <img src="/windows-install-logo.png" alt="" aria-hidden="true" className="tb-windows-logo" />
-                <span className="tb-btn-windows-text">Install Windows</span>
-              </a>
-              <span className="tb-platform-note">MacOS and Linux coming soon</span>
             </nav>
           </header>
 
@@ -5258,16 +5180,7 @@ ${scientificGuardrails}`;
             </div>
             <nav className="viewer-toolbar-extras" aria-label="Viewer resources">
               <a
-                className="viewer-toolbar-extra"
-                href="/tools/index.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Calculators, converters, and chemistry tools"
-              >
-                Tools
-              </a>
-              <a
-                className="viewer-toolbar-extra"
+                className="viewer-toolbar-extra viewer-toolbar-course"
                 href="/course/index.html"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -5277,13 +5190,21 @@ ${scientificGuardrails}`;
               </a>
               <a
                 className="viewer-toolbar-extra"
-                href="/pages/about.html"
+                href="/pages/contact.html"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="About MolDraw"
+                title="Contact MolDraw"
               >
-                About
+                Contact
               </a>
+              <button
+                type="button"
+                className="viewer-toolbar-extra viewer-toolbar-updates"
+                onClick={() => setShowUpdatesModal(true)}
+                title="See recent MolDraw updates"
+              >
+                Updates
+              </button>
               {authSession?.user ? (
                 <>
                   <button
@@ -5352,11 +5273,11 @@ ${scientificGuardrails}`;
                     >
                       Reactions
                     </button>
+                    <a className="tb-menu-item" href="/pages/about.html" target="_blank" rel="noopener noreferrer" title="About MolDraw">About</a>
                     <a className="tb-menu-item" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">Course</a>
                     <a className="tb-menu-item" href="/pages/faq.html" target="_blank" rel="noopener noreferrer" title="Frequently asked questions">FAQ</a>
                     <a className="tb-menu-item" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">AI Setup</a>
                     <a className="tb-menu-item" href="/blog/index.html" target="_blank" rel="noopener noreferrer" title="Blog">Blog</a>
-                    <a className="tb-menu-item" href="/pages/updates.html" target="_blank" rel="noopener noreferrer" title="Updates">Updates</a>
                   </div>
                 )}
               </div>
@@ -5743,39 +5664,75 @@ ${scientificGuardrails}`;
                           <span>Auto AI: {enabledAutoAiRequestLabels.length ? enabledAutoAiRequestLabels.join(', ') : 'off'}</span>
                           <span>Spectra: {enabledSpectrumRequestLabels.length ? enabledSpectrumRequestLabels.join(', ') : 'off'}</span>
                         </div>
-                        <div className="mol-props-nmr-row">
+                        <div className="mol-props-nmr-row" ref={spectrumMenuRef}>
                           <button
-                            className="mol-props-nmr-btn"
-                            onClick={() => predictNMR('proton')}
-                            disabled={isNmrLoading || !aiRequestControls.spectrum1H}
-                            title="Predict 1H NMR spectrum (AI)"
+                            type="button"
+                            className="mol-props-spectrum-trigger"
+                            onClick={() => {
+                              setShowSpectrumMenu((v) => !v);
+                              setShowDownloadMenu(false);
+                            }}
+                            title="Predict spectra for the current molecule"
                           >
-                            {isNmrLoading ? '...' : '¹H NMR'}
+                            <span>{isNmrLoading ? 'Predicting...' : 'Predict spectrum'}</span>
+                            <span className="tb-beta-tag">BETA</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
                           </button>
-                          <button
-                            className="mol-props-nmr-btn mol-props-nmr-btn-c13"
-                            onClick={() => predictNMR('carbon')}
-                            disabled={isNmrLoading || !aiRequestControls.spectrum13C}
-                            title="Predict 13C NMR spectrum (AI)"
-                          >
-                            {isNmrLoading ? '...' : '¹³C NMR'}
-                          </button>
-                          <button
-                            className="mol-props-nmr-btn mol-props-nmr-btn-ir"
-                            onClick={() => predictNMR('ir')}
-                            disabled={isNmrLoading || !aiRequestControls.spectrumIR}
-                            title="Predict IR spectrum (AI)"
-                          >
-                            {isNmrLoading ? '...' : 'IR'}
-                          </button>
-                          <button
-                            className="mol-props-nmr-btn mol-props-nmr-btn-uv"
-                            onClick={() => predictNMR('uv')}
-                            disabled={isNmrLoading || !aiRequestControls.spectrumUV}
-                            title="Predict UV-Vis spectrum (AI)"
-                          >
-                            {isNmrLoading ? '...' : 'UV-Vis'}
-                          </button>
+                          {showSpectrumMenu && (
+                            <div className="tb-menu-dropdown-list tb-spectrum-menu-list mol-props-spectrum-menu" role="menu" aria-label="Predict spectrum">
+                              <div className="tb-spectrum-note">Prediction only. Each enabled option runs one AI request.</div>
+                              <button
+                                type="button"
+                                className="tb-menu-item"
+                                role="menuitem"
+                                disabled={isNmrLoading || !aiRequestControls.spectrum1H}
+                                onClick={() => {
+                                  setShowSpectrumMenu(false);
+                                  predictNMR('proton');
+                                }}
+                              >
+                                ¹H NMR
+                              </button>
+                              <button
+                                type="button"
+                                className="tb-menu-item"
+                                role="menuitem"
+                                disabled={isNmrLoading || !aiRequestControls.spectrum13C}
+                                onClick={() => {
+                                  setShowSpectrumMenu(false);
+                                  predictNMR('carbon');
+                                }}
+                              >
+                                ¹³C NMR
+                              </button>
+                              <button
+                                type="button"
+                                className="tb-menu-item"
+                                role="menuitem"
+                                disabled={isNmrLoading || !aiRequestControls.spectrumIR}
+                                onClick={() => {
+                                  setShowSpectrumMenu(false);
+                                  predictNMR('ir');
+                                }}
+                              >
+                                IR
+                              </button>
+                              <button
+                                type="button"
+                                className="tb-menu-item"
+                                role="menuitem"
+                                disabled={isNmrLoading || !aiRequestControls.spectrumUV}
+                                onClick={() => {
+                                  setShowSpectrumMenu(false);
+                                  predictNMR('uv');
+                                }}
+                              >
+                                UV-Vis
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}

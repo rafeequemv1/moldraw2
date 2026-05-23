@@ -122,6 +122,14 @@
   overflow: hidden;
 }
 
+.split-container--chat-open .ketcher-panel {
+  flex: 1.45 1 0;
+}
+
+.split-container--chat-open .viewer-panel:not(.minimized) {
+  flex: 0.55 1 0;
+}
+
 .panel {
   flex: 1 1 0;
   min-width: 0;
@@ -287,6 +295,7 @@
   gap: 8px;
   min-width: 0;
   max-width: 100%;
+  flex-wrap: nowrap;
 }
 
 .brand-name {
@@ -296,7 +305,7 @@
   letter-spacing: 0.3px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
   white-space: nowrap;
   flex-shrink: 0;
   min-width: 0;
@@ -313,7 +322,7 @@
   display: inline-flex;
   align-items: center;
   min-height: 22px;
-  padding: 0 5px;
+  padding: 0 3px;
   border-radius: 999px;
   color: #64748b;
   text-decoration: none;
@@ -361,7 +370,7 @@
 .header-links {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 2px;
   justify-content: flex-start;
   min-width: 0;
@@ -374,10 +383,12 @@
   .brand-header {
     gap: 3px;
   }
-  .brand-top-row {
-    flex-wrap: wrap;
+  .molecule-search-bar {
+    width: 50%;
+    max-width: 390px;
+    min-width: 220px;
+    flex: 1 1 360px;
   }
-  .molecule-search-bar { max-width: 100%; }
 }
 
 /* Short viewports: keep logo + 3D toolbar readable */
@@ -542,6 +553,7 @@
   color: #334155;
   border: 1px solid transparent;
   border-radius: 6px;
+  height: 28px;
 }
 
 .tb-btn-windows-app:hover {
@@ -558,16 +570,24 @@
 }
 
 .tb-btn-windows-text {
-  font-size: 11px;
+  display: block;
+  font-size: 10px;
   font-weight: 600;
+  line-height: 1;
+}
+
+.tb-windows-copy {
+  display: grid;
+  gap: 2px;
+  line-height: 1;
 }
 
 .tb-platform-note {
-  color: #a6b0bf;
-  font-size: 10px;
+  display: block;
+  color: #94a3b8;
+  font-size: 7px;
   font-weight: 500;
   line-height: 1;
-  margin-left: 3px;
   white-space: nowrap;
 }
 
@@ -762,11 +782,12 @@ button.tb-menu-item:disabled:hover {
 .molecule-search-bar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  width: 100%;
-  max-width: 620px;
+  gap: 4px;
+  width: 50%;
+  max-width: 430px;
+  min-width: 240px;
   margin: 0;
-  flex: 1;
+  flex: 0 1 430px;
   position: relative;
 }
 
@@ -774,7 +795,8 @@ button.tb-menu-item:disabled:hover {
   display: flex;
   gap: 4px;
   align-items: center;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .search-input {
@@ -1038,6 +1060,17 @@ button.tb-menu-item:disabled:hover {
   border-radius: 6px;
 }
 
+.viewer-toolbar-updates {
+  color: #9a3412;
+  background: #fff7ed;
+}
+
+.viewer-toolbar-course {
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-weight: 800;
+}
+
 .viewer-toolbar-extra.active {
   background: #eef6f6;
   color: #1a5a5b;
@@ -1112,6 +1145,11 @@ a.viewer-toolbar-extra:hover,
 button.viewer-toolbar-extra:hover {
   color: #0f172a;
   background: rgba(15, 23, 42, 0.05);
+}
+
+a.viewer-toolbar-course:hover {
+  color: #1e40af;
+  background: #dbeafe;
 }
 
 .viewer-toolbar-extra:focus-visible {
@@ -1481,7 +1519,7 @@ button.viewer-toolbar-extra:hover {
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: 60;
+  z-index: 120;
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(8px);
   border: 1px solid #e0e0e0;
@@ -1490,7 +1528,7 @@ button.viewer-toolbar-extra:hover {
   min-width: 160px;
   max-width: min(220px, calc(100% - 20px));
   max-height: min(46vh, calc(100% - 18px));
-  overflow: auto;
+  overflow: visible;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   animation: propsFadeIn 0.22s ease;
 }
@@ -1716,7 +1754,8 @@ button.viewer-toolbar-extra:hover {
   display: flex;
   gap: 4px;
   margin-top: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  position: relative;
 }
 
 .mol-props-model-row {
@@ -1759,46 +1798,35 @@ button.viewer-toolbar-extra:hover {
   line-height: 1.4;
 }
 
-.mol-props-nmr-btn {
-  flex: 1;
-  padding: 5px 0;
-  border: 1px solid #2C7A7B;
-  border-radius: 6px;
-  background: #2C7A7B;
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
+.mol-props-spectrum-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid rgba(44, 122, 123, 0.28);
+  border-radius: 8px;
+  background: #eefafa;
+  color: #1a5a5b;
   font-family: 'Libre Franklin', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
   cursor: pointer;
-  transition: background 0.15s;
 }
-.mol-props-nmr-btn:hover {
-  background: #1a5a5b;
+
+.mol-props-spectrum-trigger:hover {
+  background: #dff5f5;
 }
-.mol-props-nmr-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-.mol-props-nmr-btn-c13 {
-  background: #4a5568;
-  border-color: #4a5568;
-}
-.mol-props-nmr-btn-c13:hover {
-  background: #2d3748;
-}
-.mol-props-nmr-btn-ir {
-  background: #374151;
-  border-color: #374151;
-}
-.mol-props-nmr-btn-ir:hover {
-  background: #1f2937;
-}
-.mol-props-nmr-btn-uv {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-}
-.mol-props-nmr-btn-uv:hover {
-  background: #1e40af;
+
+.mol-props-spectrum-menu {
+  right: 0;
+  left: auto;
+  top: calc(100% + 5px);
+  width: 100%;
+  min-width: 148px;
+  z-index: 5200;
 }
 
 /* NMR Modal */
