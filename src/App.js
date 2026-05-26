@@ -420,6 +420,7 @@ function App() {
   const [hasUnreadUpdates, setHasUnreadUpdates] = useState(() => {
     try { return localStorage.getItem(UPDATES_SEEN_STORAGE_KEY) !== CURRENT_UPDATES_VERSION; } catch { return true; }
   });
+  const [showNewDesignConfirm, setShowNewDesignConfirm] = useState(false);
   const [showFeatureRequestModal, setShowFeatureRequestModal] = useState(false);
   const [featureRequestForm, setFeatureRequestForm] = useState({
     name: '',
@@ -1963,6 +1964,68 @@ ${scientificGuardrails}`;
     }
   };
 
+  const loadInto3Dmol = useCallback((primaryText, primaryFormat, fallbackMolfile, primaryHas3D = false) => {
+    const viewer = viewerInstanceRef.current;
+    if (!viewer || viewer.__isMiew || typeof viewer.addModel !== 'function') return null;
+
+    const getLoadedAtomCount = (model) => {
+      try {
+        const atoms = typeof model?.selectedAtoms === 'function'
+          ? model.selectedAtoms({})
+          : model?.atoms;
+        return Array.isArray(atoms) ? atoms.length : 0;
+      } catch {
+        return 0;
+      }
+    };
+
+    const attempts = [];
+    const addAttempt = (data, format, has3D) => {
+      const cleanData = String(data || '').trim();
+      if (!cleanData) return;
+      const key = `${format}:${cleanData}`;
+      if (attempts.some((attempt) => attempt.key === key)) return;
+      attempts.push({ key, data: cleanData, format, has3D });
+    };
+
+    addAttempt(primaryText, primaryFormat, primaryHas3D);
+    if (primaryFormat === 'sdf' && primaryText && !String(primaryText).includes('$$$$')) {
+      addAttempt(`${String(primaryText).trimEnd()}\n$$$$`, 'sdf', primaryHas3D);
+    }
+
+    // Always keep a local molfile fallback. Some valid drawn structures either
+    // fail PubChem 3D lookup or load as an empty 3Dmol model from returned SDF.
+    if (fallbackMolfile) {
+      addAttempt(fallbackMolfile, 'mol', false);
+      addAttempt(`${String(fallbackMolfile).trimEnd()}\n$$$$`, 'sdf', false);
+    }
+
+    for (const attempt of attempts) {
+      try {
+        viewer.removeAllLabels();
+        viewer.clear();
+        const model = viewer.addModel(attempt.data, attempt.format);
+        if (getLoadedAtomCount(model) > 0) {
+          lastModelRef.current = model;
+          return {
+            model,
+            data: attempt.data,
+            format: attempt.format,
+            has3D: attempt.has3D,
+          };
+        }
+      } catch (error) {
+        console.warn(`3Dmol failed to load ${attempt.format}; trying fallback`, error);
+      }
+    }
+
+    try {
+      viewer.removeAllLabels();
+      viewer.clear();
+    } catch {}
+    return null;
+  }, []);
+
   const loadIntoMiew = useCallback(async (sourceText, fileType, smiles) => {
     const viewer = viewerInstanceRef.current;
     if (!viewer || !viewer.__isMiew || typeof viewer.load !== 'function') return false;
@@ -2472,6 +2535,7 @@ ${scientificGuardrails}`;
 
       if (structureData && String(structureData).trim() !== '') {
         let model = null;
+        let loaded3Dmol = null;
         if (isMiew) {
           const miewFormat = structure3D ? 'sdf' : 'mol';
           const loaded = await loadIntoMiew(structure3D ? structureData : molFor3d, miewFormat, renderSmiles);
@@ -2480,24 +2544,26 @@ ${scientificGuardrails}`;
           applyMiewViewerSettings(viewer);
           applyMiewDisplayMode(miewMode, viewer, miewColorer);
         } else {
-          viewer.removeAllLabels();
-          viewer.clear();
-          model = viewer.addModel(structureData, format);
-          lastModelRef.current = model;
+          loaded3Dmol = loadInto3Dmol(structureData, format, molFor3d, !!structure3D);
+          if (!loaded3Dmol) throw new Error('Failed to load molecule in 3D viewer');
+          model = loaded3Dmol.model;
         }
 
           // Store current molecule for export - prefer 3D structure for accurate bond lengths
           // If we have 3D structure, use it; otherwise use molfile
-          setCurrentMolecule({ 
-            data: structure3D || molFor3d, 
-            format: structure3D ? 'sdf' : 'mol',
-            has3D: !!structure3D,
+          const effectiveMoleculeData = loaded3Dmol?.data || structure3D || molFor3d;
+          const effectiveMoleculeFormat = loaded3Dmol?.format || (structure3D ? 'sdf' : 'mol');
+          const effectiveMoleculeHas3D = loaded3Dmol ? loaded3Dmol.has3D : !!structure3D;
+          setCurrentMolecule({
+            data: effectiveMoleculeData,
+            format: effectiveMoleculeFormat,
+            has3D: effectiveMoleculeHas3D,
             smiles: renderSmiles
           });
 
           // Cache molecule
           if (renderSmiles) {
-            cacheMolecule(structureData, renderSmiles);
+            cacheMolecule(effectiveMoleculeData, renderSmiles);
           }
           lastRenderedSignatureRef.current = structureSignature;
 
@@ -2518,11 +2584,11 @@ ${scientificGuardrails}`;
               const atoms = model.selectedAtoms({});
               mass = calculateMolecularMass(atoms, effectiveShowHydrogens);
             }
-            if (!mass) mass = calculateMassFromMolfile(structureData);
+            if (!mass) mass = calculateMassFromMolfile(effectiveMoleculeData);
             setMolecularMass(mass);
           } catch (err) {
             console.error('Error updating molecular mass after 3D update:', err);
-            setMolecularMass(calculateMassFromMolfile(structureData));
+            setMolecularMass(calculateMassFromMolfile(effectiveMoleculeData));
           }
       } else {
         if (!isMiew) {
@@ -2547,7 +2613,7 @@ ${scientificGuardrails}`;
       console.error('Error updating 3D molecule:', error);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [renderStyle, applyRenderStyle, cacheMolecule, loadIntoMiew, applyMiewViewerSettings, applyMiewDisplayMode, miewMode, miewColorer, getSmilesComponents, selected3DComponentIdx]);
+  }, [renderStyle, applyRenderStyle, cacheMolecule, loadInto3Dmol, loadIntoMiew, applyMiewViewerSettings, applyMiewDisplayMode, miewMode, miewColorer, getSmilesComponents, selected3DComponentIdx]);
 
   // Re-apply style when it changes
   useEffect(() => {
@@ -2673,6 +2739,15 @@ ${scientificGuardrails}`;
         if (molfile) {
           lastMolfileForAIRef.current = molfile;
           lastMoleculeRef.current = getMolfileFingerprint(molfile);
+        }
+
+        if (normalizedSmiles && molfile && getMolfileAtomCount(molfile) > 0) {
+          upsertLocalProjectSnapshot({
+            molfile,
+            smiles,
+            ket: event.data.ket || null,
+            svg: event.data.svg || '',
+          });
         }
 
         if (!isProtein && molfile && !isReactionSearchLoading) {
@@ -3458,26 +3533,12 @@ ${scientificGuardrails}`;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isKetcherReady, lonePairs]);
 
-  const saveCurrentDesignLocally = async () => {
-    if (!iframeRef.current || !isKetcherReady) return { saved: false, bridgeWindow: null };
-    const bridgeWindow = iframeRef.current.contentWindow;
-    let snapshot = null;
-    try {
-      if (typeof bridgeWindow.moldrawGetCurrentStructure === 'function') {
-        snapshot = await bridgeWindow.moldrawGetCurrentStructure();
-      }
-    } catch (error) {
-      console.warn('Could not read current design from editor:', error);
-    }
-
-    const molfile = String(snapshot?.molfile || lastMolfileForAIRef.current || '').trim();
-    const smiles = sanitizeSmilesText(snapshot?.smiles || currentSmiles || lastSmilesForAIRef.current || '');
+  const upsertLocalProjectSnapshot = (snapshot, options = {}) => {
+    const molfile = String(snapshot?.molfile || '').trim();
     const atomCount = getMolfileAtomCount(molfile);
+    if (atomCount <= 0) return { saved: false, projectId: '' };
 
-    if (atomCount <= 0) {
-      return { saved: false, bridgeWindow };
-    }
-
+    const smiles = sanitizeSmilesText(snapshot?.smiles || '');
     const now = Date.now();
     const svg = snapshot?.svg
       ? makeSvgBackgroundTransparent(composeSvgWithLonePairs(snapshot.svg))
@@ -3504,7 +3565,7 @@ ${scientificGuardrails}`;
       };
     });
 
-    if (!savedExistingProject) {
+    if (!savedExistingProject && options.create !== false) {
       savedProjectId = createLocalProjectId();
       nextProjects.unshift({
         id: savedProjectId,
@@ -3518,16 +3579,29 @@ ${scientificGuardrails}`;
       });
     }
 
+    if (!savedProjectId) return { saved: false, projectId: '' };
     nextProjects.splice(80);
     writeLocalProjects(nextProjects);
     currentLocalProjectIdRef.current = savedProjectId;
-    return { saved: true, bridgeWindow };
+    return { saved: true, projectId: savedProjectId };
   };
 
-  const handleSaveDesign = async () => {
-    const result = await saveCurrentDesignLocally();
-    setProjectNotice(result.saved ? 'Design saved locally.' : 'Draw something before saving.');
-    setTimeout(() => setProjectNotice(''), 2200);
+  const saveCurrentDesignLocally = async () => {
+    if (!iframeRef.current || !isKetcherReady) return { saved: false, bridgeWindow: null };
+    const bridgeWindow = iframeRef.current.contentWindow;
+    let snapshot = null;
+    try {
+      if (typeof bridgeWindow.moldrawGetCurrentStructure === 'function') {
+        snapshot = await bridgeWindow.moldrawGetCurrentStructure();
+      }
+    } catch (error) {
+      console.warn('Could not read current design from editor:', error);
+    }
+
+    const molfile = String(snapshot?.molfile || lastMolfileForAIRef.current || '').trim();
+    const smiles = sanitizeSmilesText(snapshot?.smiles || currentSmiles || lastSmilesForAIRef.current || '');
+    const result = upsertLocalProjectSnapshot({ ...snapshot, molfile, smiles });
+    return { saved: result.saved, bridgeWindow };
   };
 
   const handleCreateNewDesign = async () => {
@@ -5057,22 +5131,22 @@ ${scientificGuardrails}`;
                 Tools
               </a>
 
-              <button
-                type="button"
-                className="tb-btn tb-btn-save-design"
-                onClick={() => handleSaveDesign()}
-                disabled={!isKetcherReady}
-                title="Save current drawing locally"
+              <a
+                className="tb-btn tb-btn-community"
+                href="/community/"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open MolDraw community"
               >
-                Save
-              </button>
+                Community
+              </a>
 
               <button
                 type="button"
                 className="tb-btn tb-btn-new-design"
-                onClick={handleCreateNewDesign}
+                onClick={() => setShowNewDesignConfirm(true)}
                 disabled={!isKetcherReady}
-                title="Save current drawing locally and start a new blank design"
+                title="Start a new blank design. Current progress is autosaved locally."
               >
                 New design
               </button>
@@ -6238,7 +6312,7 @@ ${scientificGuardrails}`;
                 <div className="updates-card-date">May 2026</div>
                 <div className="updates-card-title">Local drawings dashboard</div>
                 <p>
-                  Save drawings locally with the new <strong>Save</strong> button, start fresh with <strong>New design</strong>,
+                  Drawings now autosave locally as you work. Start fresh with <strong>New design</strong>,
                   and view saved drawings as cards in the dashboard. Local projects stay in this browser for now; cloud saving is coming soon.
                 </p>
               </article>
@@ -6275,6 +6349,51 @@ ${scientificGuardrails}`;
                 <div className="updates-card-title">Miew 3D viewer and cleaner UI</div>
                 <p>The 3D viewer uses Miew, navigation is cleaner, molecule detail boxes are smaller, and the MolDraw logo has the falling molecule surprise.</p>
               </article>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showNewDesignConfirm && (
+        <div className="feature-request-backdrop" onClick={() => setShowNewDesignConfirm(false)}>
+          <div className="feature-request-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="feature-request-header">
+              <div>
+                <div className="feature-request-title">Start new design?</div>
+                <div className="feature-request-subtitle">
+                  Your current drawing is autosaved locally before the editor is cleared.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="feature-request-close"
+                onClick={() => setShowNewDesignConfirm(false)}
+                aria-label="Close new design confirmation"
+              >
+                ×
+              </button>
+            </div>
+            <p className="feature-request-note">
+              This will open a blank editor session. You can find previous drawings as local cards in the dashboard.
+            </p>
+            <div className="feature-request-actions">
+              <button
+                type="button"
+                className="feature-request-secondary"
+                onClick={() => setShowNewDesignConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="feature-request-submit"
+                onClick={() => {
+                  setShowNewDesignConfirm(false);
+                  handleCreateNewDesign();
+                }}
+              >
+                Start new design
+              </button>
             </div>
           </div>
         </div>

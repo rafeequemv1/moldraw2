@@ -370,13 +370,15 @@
 .header-links {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 2px;
+  row-gap: 2px;
   justify-content: flex-start;
   min-width: 0;
   max-width: 100%;
   overflow: visible;
   padding-bottom: 0;
+  align-content: flex-start;
 }
 
 @media (max-width: 1250px) {
@@ -388,6 +390,43 @@
     max-width: 390px;
     min-width: 220px;
     flex: 1 1 360px;
+  }
+}
+
+@media (max-width: 980px) {
+  .header-links {
+    gap: 1px;
+    row-gap: 2px;
+  }
+
+  .header-links .tb-btn {
+    height: 22px;
+    padding: 0 5px;
+    font-size: 9px;
+  }
+
+  .header-links .tb-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .brand-top-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .molecule-search-bar {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .header-links {
+    max-height: 72px;
+    overflow: visible;
   }
 }
 
@@ -484,25 +523,24 @@
   color: #1a5a5b;
 }
 
-.tb-btn-save-design,
+.tb-btn-community {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-weight: 800;
+}
+
+.tb-btn-community:hover {
+  background: #ffedd5;
+  color: #7c2d12;
+}
+
 .tb-btn-new-design {
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
   font-size: 9px;
   line-height: 1;
-}
-
-.tb-btn-save-design {
-  background: #f8fafc;
-  color: #334155;
-  border: 1px solid #dbe4ee;
-  font-weight: 800;
-}
-
-.tb-btn-save-design:hover {
-  background: #f1f5f9;
-  color: #0f172a;
 }
 
 .tb-btn-new-design {

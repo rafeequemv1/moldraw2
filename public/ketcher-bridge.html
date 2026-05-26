@@ -79,12 +79,23 @@
               if (fp === lastChangeFingerprint) return;
               lastChangeFingerprint = fp;
               const smiles = await ketcher.getSmiles();
+              let ket = null;
+              let svg = '';
+              try {
+                ket = await ketcher.getKet();
+                const svgBlob = await ketcher.generateImage(ket, { outputFormat: 'svg' });
+                svg = await svgBlob.text();
+                clipboardSvgCache = svg;
+              } catch (_) {
+                refreshClipboardCache();
+              }
               window.parent.postMessage({
                 type: 'editor-change',
                 molfile,
                 smiles,
+                ket,
+                svg,
               }, '*');
-              refreshClipboardCache();
             } catch (error) {
               console.warn('Bridge editor-change emit failed:', error);
             }

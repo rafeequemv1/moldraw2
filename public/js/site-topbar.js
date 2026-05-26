@@ -1,4 +1,12 @@
 (function () {
+  if (!document.querySelector('script[data-site="i9cwwugh"][src="https://piqo.app/piqo.js"]')) {
+    var piqoScript = document.createElement('script');
+    piqoScript.defer = true;
+    piqoScript.setAttribute('data-site', 'i9cwwugh');
+    piqoScript.src = 'https://piqo.app/piqo.js';
+    document.head.appendChild(piqoScript);
+  }
+
   if (document.querySelector('.site-topbar-root')) return;
 
   var topbar = document.createElement('header');
@@ -11,7 +19,9 @@
     '  </a>',
     '  <nav class="site-topbar-nav" aria-label="Main navigation">',
     '    <a class="site-topbar-link site-topbar-cta" href="/">Open App</a>',
+    '    <a class="site-topbar-link" href="/dashboard/">Dashboard</a>',
     '    <a class="site-topbar-link" href="/tools/">Tools</a>',
+    '    <a class="site-topbar-link" href="/community/">Community</a>',
     '    <a class="site-topbar-link" href="/tools/free-chem-tools/">Free Tools</a>',
     '    <a class="site-topbar-link" href="/course/index.html">Course</a>',
     '    <a class="site-topbar-link" href="/blog/">Blog</a>',

@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MolDraw Community | Chemistry Discussion Forum and Feature Requests</title>
+  <meta name="description" content="Join the MolDraw Community, a chemistry discussion forum for molecular drawing workflows, Ketcher tips, 3D molecule viewing, feature requests, comments, replies, and upvotes.">
+  <meta name="keywords" content="MolDraw community, chemistry forum, molecular drawing community, chemical structure editor discussion, Ketcher help, 3D molecule viewer, chemistry software feature requests">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="author" content="MolDraw by Scidart Academy">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MolDraw">
+  <meta property="og:title" content="MolDraw Community | Chemistry Discussion Forum">
+  <meta property="og:description" content="Ask questions, share molecular drawing workflows, vote on feature requests, and follow MolDraw updates.">
+  <meta property="og:url" content="https://www.moldraw.com/community/">
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MolDraw Community | Chemistry Discussion Forum">
+  <meta name="twitter:description" content="Community discussions and feature requests for MolDraw, the free browser-based chemistry structure editor and 3D molecule viewer.">
+  <meta name="twitter:image" content="https://www.moldraw.com/og-image.png">
+  <link rel="canonical" href="https://www.moldraw.com/community/">
+  <link rel="alternate" type="text/plain" href="https://www.moldraw.com/llms.txt" title="MolDraw LLM index">
+  <link rel="stylesheet" href="/css/site-topbar.css">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.moldraw.com/#organization",
+          "name": "MolDraw",
+          "url": "https://www.moldraw.com/",
+          "logo": "https://www.moldraw.com/logo.png",
+          "sameAs": [
+            "https://www.youtube.com/@MolDraw",
+            "https://x.com/DrawMol35803",
+            "https://www.linkedin.com/company/moldraw"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.moldraw.com/#website",
+          "url": "https://www.moldraw.com/",
+          "name": "MolDraw",
+          "publisher": { "@id": "https://www.moldraw.com/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://www.moldraw.com/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "CollectionPage",
+          "@id": "https://www.moldraw.com/community/#webpage",
+          "url": "https://www.moldraw.com/community/",
+          "name": "MolDraw Community",
+          "headline": "MolDraw Community: Chemistry Discussion Forum and Feature Requests",
+          "description": "A community page for MolDraw users to discuss molecular drawing workflows, ask questions, share Ketcher and 3D molecule viewer tips, comment on posts, and upvote feature requests.",
+          "isPartOf": { "@id": "https://www.moldraw.com/#website" },
+          "about": [
+            "chemical structure drawing",
+            "molecular drawing software",
+            "chemistry education",
+            "3D molecule viewing",
+            "feature requests"
+          ],
+          "publisher": { "@id": "https://www.moldraw.com/#organization" }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://www.moldraw.com/community/#breadcrumbs",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "MolDraw", "item": "https://www.moldraw.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Community", "item": "https://www.moldraw.com/community/" }
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://www.moldraw.com/community/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is the MolDraw Community?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The MolDraw Community is a chemistry-focused discussion page for MolDraw users to ask molecular drawing questions, share workflows, comment on posts, and vote on feature requests."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Who can post, reply, or upvote in the MolDraw Community?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Everyone can read the community page. Signed-in MolDraw users can create posts, reply to threads, upload images, and upvote discussions or feature requests."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What topics belong in the MolDraw Community?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Relevant topics include chemical structure drawing, Ketcher editing tips, 3D molecule visualization, spectroscopy and export workflows, classroom usage, bug reports, and product feature requests."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f3f6f8;
+      color: #0f172a;
+      font-family: 'Libre Franklin', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .community-shell {
+      width: min(1180px, 94vw);
+      margin: 0 auto;
+      padding: 24px 0 56px;
+      display: grid;
+      grid-template-columns: 220px minmax(0, 620px) 280px;
+      gap: 18px;
+      justify-content: center;
+    }
+    .community-sidebar,
+    .community-right-rail,
+    .community-card,
+    .composer,
+    .auth-panel,
+    .cta-card {
+      border: 1px solid #dfe6ee;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+    }
+    .community-sidebar {
+      height: fit-content;
+      padding: 16px;
+      position: sticky;
+      top: 64px;
+    }
+    .community-main {
+      min-width: 0;
+    }
+    .community-right-rail {
+      height: fit-content;
+      padding: 14px;
+      position: sticky;
+      top: 64px;
+    }
+    .sidebar-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+    .sidebar-text {
+      margin: 0 0 14px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .tabs {
+      display: grid;
+      gap: 8px;
+    }
+    .tab-btn {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: #fff;
+      color: #334155;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: left;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      border-color: #2C7A7B;
+      background: #eefafa;
+      color: #1a5a5b;
+    }
+    .auth-panel {
+      margin-top: 12px;
+      padding: 12px;
+    }
+    .community-right-rail .auth-panel {
+      margin-top: 0;
+      box-shadow: none;
+    }
+    .auth-panel strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .auth-panel p {
+      margin: 0 0 10px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .auth-row {
+      display: grid;
+      gap: 7px;
+    }
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid #d8e1ea;
+      border-radius: 10px;
+      background: #fff;
+      color: #0f172a;
+      font: inherit;
+      font-size: 13px;
+      padding: 9px 10px;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 86px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      border: 1px solid #d8e1ea;
+      border-radius: 999px;
+      background: #fff;
+      color: #334155;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0 12px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-primary {
+      border-color: #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #1a5a5b; }
+    .btn-light:hover { background: #f1f5f9; }
+    .cta-card {
+      margin-top: 12px;
+      padding: 14px;
+      box-shadow: none;
+      background: linear-gradient(180deg, #eefafa 0%, #ffffff 72%);
+    }
+    .cta-card h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+    .cta-card p,
+    .stat-list {
+      margin: 0;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .stat-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 0;
+      list-style: none;
+    }
+    .stat-list strong {
+      display: block;
+      color: #0f172a;
+      font-size: 13px;
+    }
+    .seo-summary {
+      margin-top: 12px;
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      background: #f8fafc;
+      color: #334155;
+    }
+    .seo-summary h2 {
+      margin: 0 0 5px;
+      color: #0f172a;
+      font-size: 12px;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+    }
+    .seo-summary p {
+      margin: 0;
+      font-size: 10.5px;
+      line-height: 1.45;
+    }
+    .seo-summary dl {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 0;
+    }
+    .seo-summary dt {
+      color: #0f172a;
+      font-size: 10.5px;
+      font-weight: 900;
+    }
+    .seo-summary dd {
+      margin: 1px 0 0;
+      color: #475569;
+      font-size: 10.5px;
+      line-height: 1.4;
+    }
+    .composer {
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .post-launcher {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding: 12px;
+    }
+    .post-launcher-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .post-trigger {
+      flex: 1;
+      min-height: 42px;
+      border: 1px solid #d7dce2;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: #64748b;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: left;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+    .post-trigger:hover {
+      background: #eef2f7;
+      color: #334155;
+    }
+    .post-launcher-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding-top: 10px;
+      border-top: 1px solid #edf1f5;
+    }
+    .post-action-chip {
+      min-height: 34px;
+      border: 0;
+      border-radius: 10px;
+      background: #fff;
+      color: #334155;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .post-action-chip:hover {
+      background: #f1f5f9;
+    }
+    .post-action-chip span {
+      margin-right: 6px;
+    }
+    .composer-title {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-weight: 900;
+    }
+    .composer-grid {
+      display: grid;
+      gap: 9px;
+    }
+    .composer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .file-note {
+      color: #64748b;
+      font-size: 11px;
+    }
+    .feed {
+      display: grid;
+      gap: 12px;
+    }
+    .community-card {
+      padding: 16px;
+    }
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .author {
+      display: flex;
+      gap: 9px;
+      min-width: 0;
+    }
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2C7A7B, #60a5fa);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+    .avatar-teal { background: linear-gradient(135deg, #2C7A7B, #67e8f9); }
+    .avatar-blue { background: linear-gradient(135deg, #2563eb, #93c5fd); }
+    .avatar-purple { background: linear-gradient(135deg, #7c3aed, #c4b5fd); }
+    .avatar-amber { background: linear-gradient(135deg, #d97706, #fde68a); }
+    .author-name {
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .author-meta,
+    .card-meta {
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .card-title {
+      margin: 8px 0 6px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+    .card-body {
+      margin: 0;
+      color: #334155;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .card-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .card-images a {
+      display: block;
+      border: 1px solid #dbe4ee;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+    .card-images img {
+      width: 100%;
+      height: 120px;
+      display: block;
+      object-fit: cover;
+    }
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 13px;
+      padding-top: 10px;
+      border-top: 1px solid #edf1f5;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-height: 28px;
+      border: 1px solid #d8e1ea;
+      border-radius: 999px;
+      background: #fff;
+      color: #334155;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0 10px;
+      cursor: pointer;
+    }
+    .pill.active {
+      border-color: #2C7A7B;
+      background: #eefafa;
+      color: #1a5a5b;
+    }
+    .comments {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+      padding-top: 8px;
+      border-top: 1px solid #edf1f5;
+    }
+    .comments.visible {
+      display: grid;
+    }
+    .comment {
+      border-left: 2px solid #e2e8f0;
+      padding: 5px 0 5px 8px;
+      color: #334155;
+      font-size: 12px;
+      line-height: 1.42;
+    }
+    .comment strong {
+      color: #0f172a;
+      font-size: 12px;
+    }
+    .comment-form {
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+    }
+    .comment-edit-form {
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .comment-form textarea,
+    .comment-edit-form textarea {
+      min-height: 30px;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .comment-form .btn,
+    .comment-edit-form .btn {
+      min-height: 30px;
+      padding: 0 10px;
+      flex-shrink: 0;
+    }
+    .comment-tools {
+      display: flex;
+      gap: 8px;
+      margin-top: 3px;
+    }
+    .comment-tool {
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 0;
+      cursor: pointer;
+    }
+    .comment-tool:hover {
+      color: #2C7A7B;
+    }
+    .comment-replies {
+      display: grid;
+      gap: 5px;
+      margin-top: 5px;
+      margin-left: 18px;
+    }
+    .comment-reply {
+      border-left-color: #dbeafe;
+      background: #fbfdff;
+      border-radius: 0 10px 10px 0;
+    }
+    .reply-form,
+    .comment-edit-form {
+      margin-top: 6px;
+    }
+    .more-thread {
+      width: fit-content;
+      border: 0;
+      background: transparent;
+      color: #2C7A7B;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 2px 0;
+      cursor: pointer;
+    }
+    .status-select {
+      min-height: 28px;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 0 8px;
+    }
+    .status {
+      margin: 12px 0;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 6000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, 0.46);
+    }
+    .modal-backdrop.visible { display: flex; }
+    .modal {
+      width: min(420px, 94vw);
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 22px 64px rgba(15, 23, 42, 0.24);
+      padding: 18px;
+    }
+    .post-modal {
+      width: min(540px, 94vw);
+      padding: 0;
+      overflow: hidden;
+    }
+    .post-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid #edf1f5;
+    }
+    .post-modal-head h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+    .modal-close-btn {
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 50%;
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .post-modal-body {
+      padding: 14px 16px 16px;
+    }
+    .post-modal-author {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+    .post-modal-author strong {
+      display: block;
+      font-size: 13px;
+    }
+    .post-modal-author span {
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .post-modal textarea {
+      min-height: 150px;
+      border: 0;
+      border-radius: 0;
+      padding: 8px 0;
+      font-size: 18px;
+      line-height: 1.45;
+      box-shadow: none;
+    }
+    .post-modal textarea:focus,
+    .post-modal input:focus {
+      outline: none;
+    }
+    .post-modal input[type="text"] {
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .post-add-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid #d8e1ea;
+      border-radius: 12px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .post-add-icons {
+      display: inline-flex;
+      gap: 12px;
+      color: #2C7A7B;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .post-modal-submit {
+      width: 100%;
+      min-height: 40px;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 10px;
+      background: #2C7A7B;
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .post-modal-submit:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .modal h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+    .modal p {
+      margin: 0 0 14px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    @media (max-width: 820px) {
+      .community-shell {
+        grid-template-columns: 1fr;
+      }
+      .community-sidebar,
+      .community-right-rail {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="community-shell">
+    <aside class="community-sidebar">
+      <h2 class="sidebar-title">MolDraw Community</h2>
+      <p class="sidebar-text">Share chemistry workflows, ask questions, vote on ideas, and follow feature requests.</p>
+      <div class="tabs" role="tablist">
+        <button id="tab-discussions" class="tab-btn active" type="button">Discussions</button>
+        <button id="tab-features" class="tab-btn" type="button">Feature requests</button>
+      </div>
+      <section class="seo-summary" aria-labelledby="community-summary-title">
+        <h2 id="community-summary-title">Ask chemistry drawing questions and shape MolDraw features</h2>
+        <p>
+          The MolDraw Community helps students, researchers, educators, and computational chemists discuss
+          chemical structure drawing, Ketcher editing workflows, molecule export, 3D visualization, spectra tools,
+          and requested improvements to the free MolDraw web app.
+        </p>
+        <dl>
+          <div>
+            <dt>What can I do here?</dt>
+            <dd>Read public discussions, post workflow questions, reply to threads, upload images, and upvote ideas after signing in.</dd>
+          </div>
+          <div>
+            <dt>How are feature requests handled?</dt>
+            <dd>Users can upvote requests. Admins can mark requests as new, under review, under progress, or done.</dd>
+          </div>
+        </dl>
+      </section>
+    </aside>
+
+    <section class="community-main">
+      <h1 class="sr-only">MolDraw Community</h1>
+
+      <div id="composer" class="composer post-launcher">
+        <div class="post-launcher-top">
+          <span id="composer-avatar" class="avatar avatar-teal">M</span>
+          <button id="open-post-modal" class="post-trigger" type="button">Start a post</button>
+        </div>
+        <div class="post-launcher-actions" aria-label="Post options">
+          <button class="post-action-chip" type="button" data-open-post-option="question"><span>Q</span>Question</button>
+          <button class="post-action-chip" type="button" data-open-post-option="photo"><span>+</span>Photo</button>
+          <button class="post-action-chip" type="button" data-open-post-option="idea"><span>*</span>Idea</button>
+        </div>
+      </div>
+
+      <div id="status" class="status">Loading community...</div>
+      <div id="feed" class="feed"></div>
+    </section>
+
+    <aside class="community-right-rail" aria-label="Community signup">
+      <div class="auth-panel">
+        <strong id="auth-title">Join the community</strong>
+        <p id="auth-copy">Read freely. Sign in to post, comment, upload images, or upvote.</p>
+        <div id="auth-actions" class="auth-row">
+          <button class="btn btn-primary" type="button" data-auth-open>Sign in / Sign up</button>
+        </div>
+      </div>
+      <div class="cta-card">
+        <h2>Build MolDraw together</h2>
+        <p>Vote on feature requests, share workflows, and help prioritize the chemistry tools researchers need next.</p>
+        <ul class="stat-list">
+          <li><strong>Discussions</strong>Ask and answer workflow questions.</li>
+          <li><strong>Feature requests</strong>Support ideas and track progress.</li>
+          <li><strong>Admin updates</strong>Request status changes appear here.</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+
+  <div id="auth-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <h2 id="auth-modal-title">Sign in to continue</h2>
+      <p>Posting, comments, upvotes, and image uploads are available for signed-in MolDraw users.</p>
+      <div class="auth-row">
+        <input id="auth-name" type="text" placeholder="Name for sign up">
+        <input id="auth-email" type="email" placeholder="Email">
+        <input id="auth-password" type="password" placeholder="Password">
+      </div>
+      <div class="modal-actions">
+        <button id="auth-cancel" class="btn btn-light" type="button">Cancel</button>
+        <button id="auth-signin" class="btn btn-light" type="button">Sign in</button>
+        <button id="auth-signup" class="btn btn-primary" type="button">Sign up</button>
+      </div>
+      <p id="auth-message" class="status"></p>
+    </div>
+  </div>
+
+  <div id="post-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal post-modal" role="dialog" aria-modal="true" aria-labelledby="post-modal-title">
+      <div class="post-modal-head">
+        <h2 id="post-modal-title">Create post</h2>
+        <button id="post-modal-close" class="modal-close-btn" type="button" aria-label="Close post modal">×</button>
+      </div>
+      <div class="post-modal-body">
+        <div class="post-modal-author">
+          <span id="post-modal-avatar" class="avatar avatar-teal">M</span>
+          <div>
+            <strong id="post-modal-name">MolDraw user</strong>
+            <span id="post-modal-meta">Public community post</span>
+          </div>
+        </div>
+        <input id="post-title" type="text" maxlength="160" placeholder="Add a short title">
+        <textarea id="post-body" maxlength="4000" placeholder="Write something useful for chemists..."></textarea>
+        <div class="post-add-box">
+          <span>Add to your post</span>
+          <span class="post-add-icons" aria-hidden="true">Image People Idea</span>
+        </div>
+        <label class="file-note" style="display:block;margin-top:8px;">
+          Optional images, max 6
+          <input id="post-images" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+        </label>
+        <button id="submit-post" class="post-modal-submit" type="button">Post</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/site-topbar.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://wwehouchqznsvnrosaeb.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_lP5X_egPBmD__qqKPjyoyg_M4iNUj_C';
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const feed = document.getElementById('feed');
+    const statusEl = document.getElementById('status');
+    const composer = document.getElementById('composer');
+    const tabDiscussions = document.getElementById('tab-discussions');
+    const tabFeatures = document.getElementById('tab-features');
+    const authModal = document.getElementById('auth-modal');
+    const authMessage = document.getElementById('auth-message');
+    const postModal = document.getElementById('post-modal');
+    let session = null;
+    let profile = null;
+    let activeTab = 'discussions';
+    let editingPostId = null;
+    const expandedCommentThreads = new Set();
+    const expandedReplyThreads = new Set();
+    const commentCache = new Map();
+    const commentTotalCache = new Map();
+    const statusLabels = {
+      new: 'New',
+      under_review: 'Under review',
+      under_progress: 'Under progress',
+      done: 'Done'
+    };
+
+    const escapeHtml = (value) => String(value || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    const timeText = (value) => value ? new Date(value).toLocaleString() : '';
+    const initials = (name) => String(name || 'M').trim().slice(0, 1).toUpperCase() || 'M';
+    const safeAvatarKey = (key) => ['avatar-teal', 'avatar-blue', 'avatar-purple', 'avatar-amber'].includes(key) ? key : 'avatar-teal';
+    const isAdmin = () => Boolean(profile && (profile.is_admin || profile.role === 'admin'));
+
+    function requireAuth() {
+      if (session?.user) return true;
+      openAuthModal('Sign in to continue');
+      return false;
+    }
+
+    function openAuthModal(title) {
+      document.getElementById('auth-modal-title').textContent = title || 'Sign in to continue';
+      authMessage.textContent = '';
+      authModal.classList.add('visible');
+      authModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeAuthModal() {
+      authModal.classList.remove('visible');
+      authModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function updatePostIdentity() {
+      const name = profile?.name || session?.user?.email || 'MolDraw user';
+      const avatarKey = safeAvatarKey(profile?.avatar_key);
+      const initial = initials(name);
+      document.getElementById('composer-avatar').className = `avatar ${avatarKey}`;
+      document.getElementById('composer-avatar').textContent = initial;
+      document.getElementById('post-modal-avatar').className = `avatar ${avatarKey}`;
+      document.getElementById('post-modal-avatar').textContent = initial;
+      document.getElementById('post-modal-name').textContent = name;
+      document.getElementById('post-modal-meta').textContent = profile?.designation ? `${profile.designation} · Public community post` : 'Public community post';
+    }
+
+    function openPostModal(option, post = null) {
+      if (!requireAuth()) return;
+      updatePostIdentity();
+      const title = document.getElementById('post-title');
+      const body = document.getElementById('post-body');
+      editingPostId = post?.id || null;
+      document.getElementById('post-modal-title').textContent = editingPostId ? 'Edit post' : 'Create post';
+      document.getElementById('submit-post').textContent = editingPostId ? 'Save changes' : 'Post';
+      title.value = post?.title || '';
+      body.value = post?.body || '';
+      if (!editingPostId && option === 'question' && !title.value) title.value = 'Question: ';
+      if (!editingPostId && option === 'idea' && !title.value) title.value = 'Idea: ';
+      document.getElementById('post-images').disabled = Boolean(editingPostId);
+      postModal.classList.add('visible');
+      postModal.setAttribute('aria-hidden', 'false');
+      setTimeout(() => (title.value && title.value.length > 6 ? body : title).focus(), 0);
+    }
+
+    function closePostModal() {
+      postModal.classList.remove('visible');
+      postModal.setAttribute('aria-hidden', 'true');
+      editingPostId = null;
+      document.getElementById('post-modal-title').textContent = 'Create post';
+      document.getElementById('submit-post').textContent = 'Post';
+      document.getElementById('post-images').disabled = false;
+    }
+
+    async function refreshSession() {
+      const { data } = await client.auth.getSession();
+      session = data?.session || null;
+      profile = null;
+      if (session?.user) {
+        const { data: userProfile } = await client
+          .from('users')
+          .select('id,name,email,designation,avatar_key,role,is_admin')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        profile = userProfile || {
+          name: session.user.user_metadata?.name || session.user.email,
+          email: session.user.email,
+          designation: 'Other',
+          avatar_key: 'avatar-teal'
+        };
+      }
+      document.getElementById('auth-title').textContent = session?.user ? (profile?.name || session.user.email) : 'Join the community';
+      document.getElementById('auth-copy').textContent = session?.user
+        ? (isAdmin() ? 'Admin account. You can post, comment, upvote, and update request status.' : 'You can post, comment, upload, and upvote.')
+        : 'Read freely. Sign in to post, comment, upload images, or upvote.';
+      document.getElementById('auth-actions').innerHTML = session?.user
+        ? '<button class="btn btn-light" type="button" id="signout">Sign out</button>'
+        : '<button class="btn btn-primary" type="button" data-auth-open>Sign in / Sign up</button>';
+      updatePostIdentity();
+      document.querySelectorAll('[data-auth-open]').forEach((btn) => btn.addEventListener('click', () => openAuthModal('Sign in to continue')));
+      document.getElementById('signout')?.addEventListener('click', async () => {
+        await client.auth.signOut();
+        await refreshSession();
+        await loadActiveTab();
+      });
+    }
+
+    async function uploadImages(files) {
+      if (!files?.length) return [];
+      if (!requireAuth()) return [];
+      const selected = Array.from(files).slice(0, 6);
+      const urls = [];
+      for (const file of selected) {
+        const safeName = file.name.replace(/[^a-z0-9._-]/gi, '-').toLowerCase();
+        const path = `${session.user.id}/${Date.now()}-${safeName}`;
+        const { error } = await client.storage.from('community-images').upload(path, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+        if (error) throw error;
+        const { data } = client.storage.from('community-images').getPublicUrl(path);
+        if (data?.publicUrl) urls.push(data.publicUrl);
+      }
+      return urls;
+    }
+
+    async function submitPost() {
+      if (!requireAuth()) return;
+      const title = document.getElementById('post-title').value.trim();
+      const body = document.getElementById('post-body').value.trim();
+      if (!title || !body) {
+        statusEl.textContent = 'Add a title and message first.';
+        return;
+      }
+      statusEl.textContent = 'Posting...';
+      try {
+        let error;
+        if (editingPostId) {
+          const result = await client
+            .from('community_posts')
+            .update({ title, body })
+            .eq('id', editingPostId)
+            .eq('user_id', session.user.id);
+          error = result.error;
+        } else {
+          const imageUrls = await uploadImages(document.getElementById('post-images').files);
+          const result = await client.from('community_posts').insert({
+            user_id: session.user.id,
+            author_name: profile?.name || session.user.email,
+            author_designation: profile?.designation || null,
+            author_avatar_key: safeAvatarKey(profile?.avatar_key),
+            title,
+            body,
+            image_urls: imageUrls
+          });
+          error = result.error;
+        }
+        if (error) throw error;
+        document.getElementById('post-title').value = '';
+        document.getElementById('post-body').value = '';
+        document.getElementById('post-images').value = '';
+        closePostModal();
+        await loadDiscussions();
+      } catch (error) {
+        statusEl.textContent = error.message || 'Could not post.';
+      }
+    }
+
+    async function togglePostVote(postId, active) {
+      if (!requireAuth()) return;
+      if (active) {
+        await client.from('community_post_votes').delete().eq('post_id', postId).eq('user_id', session.user.id);
+      } else {
+        await client.from('community_post_votes').insert({ post_id: postId, user_id: session.user.id });
+      }
+      await loadDiscussions();
+    }
+
+    async function submitComment(postId, input, parentCommentId = null) {
+      if (!requireAuth()) return;
+      const body = input.value.trim();
+      if (!body) return;
+      const { error } = await client.from('community_comments').insert({
+        post_id: postId,
+        user_id: session.user.id,
+        author_name: profile?.name || session.user.email,
+        author_designation: profile?.designation || null,
+        author_avatar_key: safeAvatarKey(profile?.avatar_key),
+        parent_comment_id: parentCommentId,
+        body
+      });
+      if (!error) input.value = '';
+      await openComments(postId);
+      await loadDiscussions(false);
+    }
+
+    const isOwn = (userId) => Boolean(session?.user?.id && userId === session.user.id);
+
+    async function updateComment(commentId, postId, body) {
+      const cleanBody = String(body || '').trim();
+      if (!cleanBody) return;
+      const { error } = await client
+        .from('community_comments')
+        .update({ body: cleanBody })
+        .eq('id', commentId)
+        .eq('user_id', session.user.id);
+      if (error) {
+        statusEl.textContent = error.message || 'Could not update reply.';
+        return;
+      }
+      await openComments(postId);
+      await loadDiscussions(false);
+    }
+
+    function buildCommentTree(comments) {
+      const byId = new Map();
+      const roots = [];
+      comments.forEach((comment) => byId.set(comment.id, { ...comment, replies: [] }));
+      byId.forEach((comment) => {
+        if (comment.parent_comment_id && byId.has(comment.parent_comment_id)) {
+          let root = byId.get(comment.parent_comment_id);
+          while (root?.parent_comment_id && byId.has(root.parent_comment_id)) {
+            root = byId.get(root.parent_comment_id);
+          }
+          root.replies.push(comment);
+        } else {
+          roots.push(comment);
+        }
+      });
+      return roots;
+    }
+
+    function renderSingleComment(comment, postId, isReply = false, rootCommentId = comment.id) {
+      const ownerTools = isOwn(comment.user_id)
+        ? `<button class="comment-tool" type="button" data-edit-comment="${escapeHtml(comment.id)}">Edit</button>`
+        : '';
+      const allReplies = comment.replies || [];
+      const repliesExpanded = expandedReplyThreads.has(comment.id);
+      const visibleReplies = repliesExpanded ? allReplies : allReplies.slice(0, 2);
+      const replies = visibleReplies.map((reply) => renderSingleComment(reply, postId, true, comment.id)).join('');
+      const hiddenReplies = Math.max(allReplies.length - visibleReplies.length, 0);
+      return `
+        <div class="comment ${isReply ? 'comment-reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
+          <div class="author" style="margin-bottom:3px;">
+            <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}" style="width:24px;height:24px;font-size:10px;">${escapeHtml(initials(comment.author_name))}</span>
+            <div>
+              <strong>${escapeHtml(comment.author_name || 'Community member')}</strong>
+              <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(comment.created_at))}</div>
+            </div>
+          </div>
+          <div class="comment-body">${escapeHtml(comment.body)}</div>
+          <div class="comment-tools">
+            <button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(rootCommentId)}">Reply</button>
+            ${ownerTools}
+          </div>
+          <div class="comment-inline-slot" data-comment-slot="${escapeHtml(comment.id)}"></div>
+          ${replies || hiddenReplies ? `
+            <div class="comment-replies">
+              ${replies}
+              ${hiddenReplies > 0 ? `<button class="more-thread" type="button" data-more-replies="${escapeHtml(comment.id)}">View ${hiddenReplies} more repl${hiddenReplies === 1 ? 'y' : 'ies'}</button>` : ''}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderCommentThread(postId, comments, totalCount) {
+      const expanded = expandedCommentThreads.has(postId);
+      const roots = buildCommentTree(comments);
+      const visibleComments = expanded ? roots : roots.slice(0, 3);
+      const rendered = visibleComments.map((comment) => renderSingleComment(comment, postId, false, comment.id)).join('');
+      const hiddenCount = Math.max(roots.length - visibleComments.length, 0);
+
+      return `
+        ${rendered || '<p class="author-meta">No replies yet. Be the first to reply.</p>'}
+        ${hiddenCount > 0 ? `<button class="more-thread" type="button" data-more-comments="${escapeHtml(postId)}">View ${hiddenCount} more thread${hiddenCount === 1 ? '' : 's'}</button>` : ''}
+        <div class="comment-form">
+          <textarea placeholder="Write a reply..."></textarea>
+          <button class="btn btn-primary" type="button">Reply</button>
+        </div>
+      `;
+    }
+
+    function bindCommentThread(wrap, postId) {
+      const input = wrap.querySelector('textarea');
+      const button = wrap.querySelector('.comment-form .btn');
+      if (input) input.addEventListener('focus', requireAuth);
+      if (button && input) button.addEventListener('click', () => submitComment(postId, input));
+      wrap.querySelectorAll('[data-reply-comment]').forEach((replyButton) => {
+        replyButton.addEventListener('click', () => {
+          if (!requireAuth()) return;
+          const commentId = replyButton.getAttribute('data-reply-comment');
+          const parentCommentId = replyButton.getAttribute('data-reply-parent') || commentId;
+          const slot = wrap.querySelector(`[data-comment-slot="${commentId}"]`);
+          if (!slot) return;
+          slot.innerHTML = `
+            <div class="comment-form reply-form">
+              <textarea placeholder="Reply to this comment..."></textarea>
+              <button class="btn btn-primary" type="button">Reply</button>
+            </div>
+          `;
+          const replyInput = slot.querySelector('textarea');
+          const replySubmit = slot.querySelector('button');
+          replySubmit.addEventListener('click', () => submitComment(postId, replyInput, parentCommentId));
+          replyInput.focus();
+        });
+      });
+      wrap.querySelectorAll('[data-more-replies]').forEach((moreRepliesButton) => {
+        moreRepliesButton.addEventListener('click', () => {
+          expandedReplyThreads.add(moreRepliesButton.getAttribute('data-more-replies'));
+          const comments = commentCache.get(postId) || [];
+          wrap.innerHTML = renderCommentThread(postId, comments, commentTotalCache.get(postId) || comments.length);
+          bindCommentThread(wrap, postId);
+        });
+      });
+      wrap.querySelectorAll('[data-edit-comment]').forEach((editButton) => {
+        editButton.addEventListener('click', () => {
+          if (!requireAuth()) return;
+          const commentId = editButton.getAttribute('data-edit-comment');
+          const comments = commentCache.get(postId) || [];
+          const comment = comments.find((item) => item.id === commentId);
+          const slot = wrap.querySelector(`[data-comment-slot="${commentId}"]`);
+          if (!slot || !comment) return;
+          slot.innerHTML = `
+            <div class="comment-edit-form">
+              <textarea>${escapeHtml(comment.body)}</textarea>
+              <button class="btn btn-primary" type="button">Save</button>
+              <button class="btn btn-light" type="button" data-cancel-edit>Cancel</button>
+            </div>
+          `;
+          const editInput = slot.querySelector('textarea');
+          slot.querySelector('.btn-primary').addEventListener('click', () => updateComment(commentId, postId, editInput.value));
+          slot.querySelector('[data-cancel-edit]').addEventListener('click', () => { slot.innerHTML = ''; });
+          editInput.focus();
+        });
+      });
+      wrap.querySelector('[data-more-comments]')?.addEventListener('click', () => {
+        expandedCommentThreads.add(postId);
+        const comments = commentCache.get(postId) || [];
+        wrap.innerHTML = renderCommentThread(postId, comments, commentTotalCache.get(postId) || comments.length);
+        bindCommentThread(wrap, postId);
+      });
+    }
+
+    async function openComments(postId) {
+      const wrap = document.querySelector(`[data-comments="${postId}"]`);
+      if (!wrap) return;
+      const { data } = await client
+        .from('community_comments')
+        .select('id,post_id,parent_comment_id,user_id,body,author_name,author_designation,author_avatar_key,created_at')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true })
+        .limit(100);
+      commentCache.set(postId, data || []);
+      commentTotalCache.set(postId, (data || []).length);
+      wrap.innerHTML = renderCommentThread(postId, data || [], (data || []).length);
+      bindCommentThread(wrap, postId);
+    }
+
+    async function loadDiscussions(setLoading = true) {
+      activeTab = 'discussions';
+      tabDiscussions.classList.add('active');
+      tabFeatures.classList.remove('active');
+      composer.style.display = 'block';
+      if (setLoading) statusEl.textContent = 'Loading discussions...';
+      const { data, error } = await client
+        .from('community_posts')
+        .select('id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,upvote_count,comment_count,created_at')
+        .order('created_at', { ascending: false })
+        .limit(40);
+      if (error) {
+        statusEl.textContent = error.message;
+        return;
+      }
+      const postIds = (data || []).map((post) => post.id);
+      let myVotes = new Set();
+      if (session?.user && postIds.length) {
+        const { data: votes } = await client.from('community_post_votes').select('post_id').eq('user_id', session.user.id).in('post_id', postIds);
+        myVotes = new Set((votes || []).map((vote) => vote.post_id));
+      }
+      let commentsByPost = new Map();
+      if (postIds.length) {
+        const { data: comments } = await client
+          .from('community_comments')
+          .select('id,post_id,parent_comment_id,user_id,body,author_name,author_designation,author_avatar_key,created_at')
+          .in('post_id', postIds)
+          .order('created_at', { ascending: true })
+          .limit(240);
+        (comments || []).forEach((comment) => {
+          if (!commentsByPost.has(comment.post_id)) commentsByPost.set(comment.post_id, []);
+          commentsByPost.get(comment.post_id).push(comment);
+        });
+        commentsByPost.forEach((comments, postId) => commentCache.set(postId, comments));
+      }
+      statusEl.textContent = data?.length ? '' : 'No discussions yet. Start the first one.';
+      feed.innerHTML = (data || []).map((post) => {
+        const images = Array.isArray(post.image_urls) ? post.image_urls : [];
+        const voted = myVotes.has(post.id);
+        const comments = commentsByPost.get(post.id) || [];
+        commentTotalCache.set(post.id, post.comment_count || comments.length);
+        const editAction = isOwn(post.user_id)
+          ? `<button class="pill" type="button" data-edit-post="${escapeHtml(post.id)}">Edit post</button>`
+          : '';
+        return `
+          <article class="community-card">
+            <div class="card-top">
+              <div class="author">
+                <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
+                <div>
+                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')}</div>
+                  <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(post.created_at))}</div>
+                </div>
+              </div>
+            </div>
+            <h2 class="card-title">${escapeHtml(post.title)}</h2>
+            <p class="card-body">${escapeHtml(post.body)}</p>
+            ${images.length ? `<div class="card-images">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="Community attachment"></a>`).join('')}</div>` : ''}
+            <div class="card-actions">
+              <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-post="${escapeHtml(post.id)}" data-voted="${voted ? '1' : '0'}">▲ ${post.upvote_count || 0}</button>
+              <button class="pill" type="button" data-open-comments="${escapeHtml(post.id)}">Reply ${post.comment_count || 0}</button>
+              ${editAction}
+            </div>
+            <div class="comments visible" data-comments="${escapeHtml(post.id)}">${renderCommentThread(post.id, comments, post.comment_count || comments.length)}</div>
+          </article>
+        `;
+      }).join('');
+      feed.querySelectorAll('[data-vote-post]').forEach((btn) => {
+        btn.addEventListener('click', () => togglePostVote(btn.getAttribute('data-vote-post'), btn.getAttribute('data-voted') === '1'));
+      });
+      feed.querySelectorAll('[data-open-comments]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (!session?.user) {
+            openAuthModal('Sign in to reply');
+            return;
+          }
+          const wrap = document.querySelector(`[data-comments="${btn.getAttribute('data-open-comments')}"]`);
+          const input = wrap?.querySelector('textarea');
+          if (input) input.focus();
+        });
+      });
+      feed.querySelectorAll('[data-edit-post]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const post = (data || []).find((item) => item.id === btn.getAttribute('data-edit-post'));
+          if (post) openPostModal(null, post);
+        });
+      });
+      feed.querySelectorAll('[data-comments]').forEach((wrap) => bindCommentThread(wrap, wrap.getAttribute('data-comments')));
+    }
+
+    async function toggleFeatureVote(featureRequestId, active) {
+      if (!requireAuth()) return;
+      if (active) {
+        await client.from('feature_request_votes').delete().eq('feature_request_id', featureRequestId).eq('user_id', session.user.id);
+      } else {
+        await client.from('feature_request_votes').insert({ feature_request_id: featureRequestId, user_id: session.user.id });
+      }
+      await loadFeatureRequests();
+    }
+
+    async function updateFeatureStatus(featureRequestId, status) {
+      if (!isAdmin()) {
+        openAuthModal('Admin access required');
+        return;
+      }
+      statusEl.textContent = 'Updating request status...';
+      const { error } = await client
+        .from('feature_requests')
+        .update({ status })
+        .eq('id', featureRequestId);
+      if (error) {
+        statusEl.textContent = error.message || 'Could not update status.';
+        return;
+      }
+      await loadFeatureRequests();
+    }
+
+    async function loadFeatureRequests() {
+      activeTab = 'features';
+      tabFeatures.classList.add('active');
+      tabDiscussions.classList.remove('active');
+      composer.style.display = 'none';
+      statusEl.textContent = 'Loading feature requests...';
+      const { data, error } = await client
+        .from('community_feature_requests')
+        .select('id,name,title,description,image_urls,status,upvote_count,created_at')
+        .order('upvote_count', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(60);
+      if (error) {
+        statusEl.textContent = error.message;
+        return;
+      }
+      const requestIds = (data || []).map((request) => request.id);
+      let myVotes = new Set();
+      if (session?.user && requestIds.length) {
+        const { data: votes } = await client.from('feature_request_votes').select('feature_request_id').eq('user_id', session.user.id).in('feature_request_id', requestIds);
+        myVotes = new Set((votes || []).map((vote) => vote.feature_request_id));
+      }
+      statusEl.textContent = data?.length ? '' : 'No feature requests yet.';
+      feed.innerHTML = (data || []).map((request) => {
+        const images = Array.isArray(request.image_urls) ? request.image_urls : [];
+        const voted = myVotes.has(request.id);
+        const currentStatus = request.status || 'new';
+        const statusControl = isAdmin()
+          ? `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="Change request status">
+              ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === currentStatus ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
+            </select>`
+          : `<span class="pill">${escapeHtml(statusLabels[currentStatus] || currentStatus)}</span>`;
+        return `
+          <article class="community-card">
+            <div class="card-top">
+              <div class="author">
+                <span class="avatar">${escapeHtml(initials(request.name))}</span>
+                <div>
+                  <div class="author-name">${escapeHtml(request.name || 'MolDraw user')}</div>
+                  <div class="author-meta">Feature request · ${escapeHtml(timeText(request.created_at))}</div>
+                </div>
+              </div>
+              ${statusControl}
+            </div>
+            <h2 class="card-title">${escapeHtml(request.title)}</h2>
+            <p class="card-body">${escapeHtml(request.description)}</p>
+            ${images.length ? `<div class="card-images">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="Feature request attachment"></a>`).join('')}</div>` : ''}
+            <div class="card-actions">
+              <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-feature="${escapeHtml(request.id)}" data-voted="${voted ? '1' : '0'}">▲ ${request.upvote_count || 0}</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+      feed.querySelectorAll('[data-vote-feature]').forEach((btn) => {
+        btn.addEventListener('click', () => toggleFeatureVote(btn.getAttribute('data-vote-feature'), btn.getAttribute('data-voted') === '1'));
+      });
+      feed.querySelectorAll('[data-feature-status]').forEach((select) => {
+        select.addEventListener('change', () => updateFeatureStatus(select.getAttribute('data-feature-status'), select.value));
+      });
+    }
+
+    async function loadActiveTab() {
+      return activeTab === 'features' ? loadFeatureRequests() : loadDiscussions();
+    }
+
+    document.getElementById('open-post-modal').addEventListener('click', () => openPostModal());
+    document.querySelectorAll('[data-open-post-option]').forEach((button) => {
+      button.addEventListener('click', () => openPostModal(button.getAttribute('data-open-post-option')));
+    });
+    document.getElementById('post-modal-close').addEventListener('click', closePostModal);
+    postModal.addEventListener('click', (event) => { if (event.target === postModal) closePostModal(); });
+    document.getElementById('submit-post').addEventListener('click', submitPost);
+    tabDiscussions.addEventListener('click', loadDiscussions);
+    tabFeatures.addEventListener('click', loadFeatureRequests);
+    document.querySelectorAll('[data-auth-open]').forEach((btn) => btn.addEventListener('click', () => openAuthModal('Sign in to continue')));
+    document.getElementById('auth-cancel').addEventListener('click', closeAuthModal);
+    authModal.addEventListener('click', (event) => { if (event.target === authModal) closeAuthModal(); });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && authModal.classList.contains('visible')) closeAuthModal();
+      if (event.key === 'Escape' && postModal.classList.contains('visible')) closePostModal();
+    });
+    document.getElementById('auth-signin').addEventListener('click', async () => {
+      authMessage.textContent = 'Signing in...';
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+      const { error } = await client.auth.signInWithPassword({ email, password });
+      if (error) {
+        authMessage.textContent = error.message;
+        return;
+      }
+      closeAuthModal();
+      await refreshSession();
+      await loadActiveTab();
+    });
+    document.getElementById('auth-signup').addEventListener('click', async () => {
+      authMessage.textContent = 'Creating account...';
+      const name = document.getElementById('auth-name').value.trim() || 'Community member';
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+      const { data, error } = await client.auth.signUp({ email, password, options: { data: { name } } });
+      if (error) {
+        authMessage.textContent = error.message;
+        return;
+      }
+      if (data?.user) {
+        await client.from('users').upsert({
+          id: data.user.id,
+          name,
+          email,
+          designation: 'Other',
+          avatar_key: 'avatar-teal'
+        });
+      }
+      authMessage.textContent = 'Account created. Check your email if confirmation is required, then sign in.';
+      await refreshSession();
+      await loadActiveTab();
+    });
+
+    refreshSession().then(loadDiscussions);
+  </script>
+</body>
+</html>

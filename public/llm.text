@@ -10,6 +10,8 @@ Primary pages:
 - Blog home: /blog/
 - Blog article: /blog/chemical-structure-drawing-app-seo-optimized.html
 - Tools: /tools/
+- Community: /community/
+- Dashboard: /dashboard/
 - AI help: /pages/ai-help.html
 
 Important capabilities:
@@ -19,6 +21,7 @@ Important capabilities:
 - AI-assisted chat and spectra prediction
 - TLC and Calculator microapps
 - Public tools hub with molarity/molality calculators
+- Community discussions, replies, upvotes, feature-request voting, and admin request statuses
 
 For integrations:
 - Prefer canonical SMILES when available.

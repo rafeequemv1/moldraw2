@@ -238,6 +238,89 @@
       background: #ecfdf5;
       color: #047857;
     }
+    .profile-card {
+      display: grid;
+      gap: 16px;
+      max-width: 680px;
+    }
+    .profile-form {
+      display: grid;
+      gap: 14px;
+    }
+    .profile-field {
+      display: grid;
+      gap: 6px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .profile-field input,
+    .profile-field select {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid #d8e1ea;
+      border-radius: 10px;
+      background: #fff;
+      color: #0f172a;
+      font: inherit;
+      font-size: 13px;
+      padding: 8px 10px;
+    }
+    .avatar-picker {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(92px, 1fr));
+      gap: 10px;
+    }
+    .avatar-option {
+      display: grid;
+      place-items: center;
+      gap: 8px;
+      border: 1px solid #d8e1ea;
+      border-radius: 14px;
+      background: #fff;
+      padding: 12px 8px;
+      cursor: pointer;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .avatar-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .avatar-option:has(input:checked) {
+      border-color: #2C7A7B;
+      background: #eefafa;
+      color: #1a5a5b;
+    }
+    .profile-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35);
+    }
+    .avatar-teal { background: linear-gradient(135deg, #2C7A7B, #67e8f9); }
+    .avatar-blue { background: linear-gradient(135deg, #2563eb, #93c5fd); }
+    .avatar-purple { background: linear-gradient(135deg, #7c3aed, #c4b5fd); }
+    .avatar-amber { background: linear-gradient(135deg, #d97706, #fde68a); color: #7c2d12; }
+    .profile-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .profile-notice {
+      color: #047857;
+      font-size: 12px;
+      font-weight: 800;
+    }
     .dashboard-modal-backdrop {
       position: fixed;
       inset: 0;
@@ -418,6 +501,7 @@
   <main class="dashboard-layout">
     <aside id="dashboard-sidebar" class="dashboard-sidebar" aria-label="Dashboard sections">
       <button id="drawings-nav" class="dashboard-nav-item active" type="button">Drawings</button>
+      <button id="profile-nav" class="dashboard-nav-item" type="button" hidden>Profile</button>
       <button id="requests-nav" class="dashboard-nav-item" type="button" hidden>Feature requests</button>
       <button id="users-nav" class="dashboard-nav-item" type="button" hidden>Users</button>
     </aside>
@@ -437,6 +521,11 @@
       <div id="request-modal-root"></div>
     </div>
   </div>
+  <div id="confirm-modal-backdrop" class="dashboard-modal-backdrop" aria-hidden="true">
+    <div class="dashboard-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+      <div id="confirm-modal-root"></div>
+    </div>
+  </div>
   <script src="/js/site-topbar.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -446,12 +535,30 @@
     const root = document.getElementById('dashboard-root');
     const sidebar = document.getElementById('dashboard-sidebar');
     const drawingsNav = document.getElementById('drawings-nav');
+    const profileNav = document.getElementById('profile-nav');
     const requestsNav = document.getElementById('requests-nav');
     const usersNav = document.getElementById('users-nav');
     const requestModalBackdrop = document.getElementById('request-modal-backdrop');
     const requestModalRoot = document.getElementById('request-modal-root');
+    const confirmModalBackdrop = document.getElementById('confirm-modal-backdrop');
+    const confirmModalRoot = document.getElementById('confirm-modal-root');
     const LOCAL_PROJECTS_STORAGE_KEY = 'moldraw_local_projects';
     let latestFeatureRequests = [];
+    let currentUser = null;
+    let currentProfile = null;
+    const avatarOptions = [
+      { key: 'avatar-teal', label: 'Teal' },
+      { key: 'avatar-blue', label: 'Blue' },
+      { key: 'avatar-purple', label: 'Purple' },
+      { key: 'avatar-amber', label: 'Amber' },
+    ];
+    const designationOptions = ['Student', 'Researcher', 'Scientist', 'Faculty', 'Artist', 'Educator', 'Pharma', 'Other'];
+    const requestStatusLabels = {
+      new: 'New',
+      under_review: 'Under review',
+      under_progress: 'Under progress',
+      done: 'Done'
+    };
 
     const escapeHtml = (value) => String(value || '')
       .replace(/&/g, '&amp;')
@@ -475,6 +582,7 @@
 
     function setActiveNav(active) {
       drawingsNav.classList.toggle('active', active === 'drawings');
+      profileNav.classList.toggle('active', active === 'profile');
       requestsNav.classList.toggle('active', active === 'requests');
       usersNav.classList.toggle('active', active === 'users');
     }
@@ -541,10 +649,174 @@
       root.querySelectorAll('[data-delete-project]').forEach((button) => {
         button.addEventListener('click', () => {
           const id = button.getAttribute('data-delete-project');
-          writeLocalProjects(readLocalProjects().filter((project) => project.id !== id));
-          renderProjects();
+          const project = readLocalProjects().find((item) => item.id === id);
+          openDeleteProjectModal(project);
         });
       });
+    }
+
+    function closeConfirmModal() {
+      confirmModalBackdrop.classList.remove('visible');
+      confirmModalBackdrop.setAttribute('aria-hidden', 'true');
+      confirmModalRoot.innerHTML = '';
+    }
+
+    function openDeleteProjectModal(project) {
+      if (!project) return;
+      confirmModalRoot.innerHTML = `
+        <div class="dashboard-modal-head">
+          <div>
+            <h1 id="confirm-modal-title" class="dashboard-modal-title">Delete drawing?</h1>
+            <p class="request-meta">This local project will be removed from this browser.</p>
+          </div>
+          <button class="dashboard-modal-close" type="button" aria-label="Close delete confirmation">×</button>
+        </div>
+        <p class="modal-desc">Delete <strong>${escapeHtml(project.title || 'Untitled drawing')}</strong>? This cannot be undone.</p>
+        <div class="project-actions" style="margin-top:18px;">
+          <button id="confirm-delete-cancel" class="project-action" type="button">Cancel</button>
+          <button id="confirm-delete-action" class="project-action" type="button" style="border-color:#dc2626;background:#dc2626;color:#fff;">Delete</button>
+        </div>
+      `;
+      confirmModalBackdrop.classList.add('visible');
+      confirmModalBackdrop.setAttribute('aria-hidden', 'false');
+      confirmModalRoot.querySelector('.dashboard-modal-close').addEventListener('click', closeConfirmModal);
+      confirmModalRoot.querySelector('#confirm-delete-cancel').addEventListener('click', closeConfirmModal);
+      confirmModalRoot.querySelector('#confirm-delete-action').addEventListener('click', () => {
+        writeLocalProjects(readLocalProjects().filter((item) => item.id !== project.id));
+        closeConfirmModal();
+        renderProjects();
+      });
+    }
+
+    const safeAvatarKey = (key) => avatarOptions.some((option) => option.key === key) ? key : 'avatar-teal';
+    const initials = (name) => String(name || 'M').trim().slice(0, 1).toUpperCase() || 'M';
+
+    function renderProfile(profile) {
+      sidebar.classList.add('visible');
+      setActiveNav('profile');
+      const avatarKey = safeAvatarKey(profile?.avatar_key);
+      const isAdmin = Boolean(profile?.is_admin || profile?.role === 'admin');
+      root.innerHTML = `
+        <div class="requests-head">
+          <div>
+            <h1>Profile</h1>
+            <p class="dashboard-subtitle">Update your MolDraw community identity.</p>
+          </div>
+          <span class="role-pill${isAdmin ? ' role-pill-admin' : ''}">${isAdmin ? 'Admin' : 'User'}</span>
+        </div>
+        <div class="profile-card">
+          <form id="profile-form" class="profile-form">
+            <label class="profile-field">
+              Name
+              <input id="profile-name" type="text" value="${escapeHtml(profile?.name || '')}" maxlength="120" required>
+            </label>
+            <label class="profile-field">
+              Email
+              <input type="email" value="${escapeHtml(profile?.email || currentUser?.email || '')}" disabled>
+            </label>
+            <label class="profile-field">
+              Designation
+              <select id="profile-designation">
+                ${designationOptions.map((option) => `<option value="${escapeHtml(option)}"${String(profile?.designation || '').toLowerCase() === option.toLowerCase() ? ' selected' : ''}>${escapeHtml(option)}</option>`).join('')}
+              </select>
+            </label>
+            <div class="profile-field">
+              Avatar picture
+              <div class="avatar-picker">
+                ${avatarOptions.map((option) => `
+                  <label class="avatar-option">
+                    <input type="radio" name="avatar_key" value="${escapeHtml(option.key)}"${avatarKey === option.key ? ' checked' : ''}>
+                    <span class="profile-avatar ${escapeHtml(option.key)}">${escapeHtml(initials(profile?.name || currentUser?.email))}</span>
+                    ${escapeHtml(option.label)}
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+            <div class="profile-actions">
+              <button class="project-action project-action-primary" type="submit" style="flex:0 0 auto;padding:0 16px;">Save profile</button>
+              <span id="profile-notice" class="profile-notice"></span>
+            </div>
+          </form>
+        </div>
+      `;
+
+      root.querySelector('#profile-form').addEventListener('submit', saveProfile);
+    }
+
+    async function loadProfile() {
+      if (!currentUser) {
+        renderBlank('Sign in to edit your profile.');
+        return;
+      }
+      root.innerHTML = '<p class="dashboard-subtitle">Loading profile...</p>';
+      const { data: profile, error } = await client
+        .from('users')
+        .select('id,name,email,designation,avatar_key,is_admin,role')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+      if (error) {
+        renderBlank(error.message || 'Could not load profile.');
+        return;
+      }
+
+      currentProfile = profile || {
+        id: currentUser.id,
+        name: currentUser.user_metadata?.name || currentUser.email,
+        email: currentUser.email,
+        designation: 'Other',
+        avatar_key: 'avatar-teal',
+        role: 'user',
+        is_admin: false
+      };
+      renderProfile(currentProfile);
+    }
+
+    async function saveProfile(event) {
+      event.preventDefault();
+      if (!currentUser) return;
+      const notice = root.querySelector('#profile-notice');
+      const name = root.querySelector('#profile-name').value.trim();
+      const designation = root.querySelector('#profile-designation').value;
+      const avatarKey = root.querySelector('input[name="avatar_key"]:checked')?.value || 'avatar-teal';
+      if (!name) {
+        notice.textContent = 'Add your name.';
+        return;
+      }
+      notice.textContent = 'Saving...';
+      let { data, error } = await client
+        .from('users')
+        .update({ name, designation, avatar_key: safeAvatarKey(avatarKey) })
+        .eq('id', currentUser.id)
+        .select('id,name,email,designation,avatar_key,is_admin,role')
+        .maybeSingle();
+
+      if (!error && !data) {
+        const insertResult = await client
+          .from('users')
+          .insert({
+            id: currentUser.id,
+            name,
+            email: currentUser.email,
+            designation,
+            avatar_key: safeAvatarKey(avatarKey)
+          })
+          .select('id,name,email,designation,avatar_key,is_admin,role')
+          .maybeSingle();
+        data = insertResult.data;
+        error = insertResult.error;
+      }
+
+      if (error) {
+        notice.textContent = error.message || 'Could not save profile.';
+        return;
+      }
+
+      currentProfile = data;
+      notice.textContent = 'Profile updated.';
+      renderProfile(currentProfile);
+      const updatedNotice = root.querySelector('#profile-notice');
+      if (updatedNotice) updatedNotice.textContent = 'Profile updated.';
     }
 
     function renderRequests(requests) {
@@ -557,7 +829,7 @@
           <button class="request-list-item" type="button" data-request-id="${escapeHtml(request.id)}">
             <span class="request-list-title">${escapeHtml(request.title)}</span>
             <span class="request-list-meta">${escapeHtml(request.name)} · ${escapeHtml(request.email)}</span>
-            <span class="request-status-pill">${escapeHtml(request.status || 'new')}</span>
+            <span class="request-status-pill">${escapeHtml(requestStatusLabels[request.status] || request.status || 'New')}</span>
             <span class="request-list-meta">${images.length} image${images.length === 1 ? '' : 's'}</span>
           </button>
         `;
@@ -585,8 +857,26 @@
       requestModalRoot.innerHTML = '';
     }
 
+    async function updateRequestStatus(requestId, status) {
+      const { error } = await client
+        .from('feature_requests')
+        .update({ status })
+        .eq('id', requestId);
+
+      if (error) {
+        alert(error.message || 'Could not update request status.');
+        return;
+      }
+
+      const request = latestFeatureRequests.find((item) => item.id === requestId);
+      if (request) request.status = status;
+      closeRequestModal();
+      renderRequests(latestFeatureRequests);
+    }
+
     function openRequestModal(request) {
       const images = Array.isArray(request.image_urls) ? request.image_urls : [];
+      const currentStatus = request.status || 'new';
       requestModalRoot.innerHTML = `
         <div class="dashboard-modal-head">
           <div>
@@ -594,7 +884,12 @@
             <p class="request-meta">
               ${escapeHtml(request.name)} · ${escapeHtml(request.email)} · ${escapeHtml(new Date(request.created_at).toLocaleString())}
             </p>
-            <span class="request-status-pill">${escapeHtml(request.status || 'new')}</span>
+            <label class="profile-field" style="max-width:220px;margin-top:10px;">
+              Admin status
+              <select id="request-status-select">
+                ${Object.keys(requestStatusLabels).map((key) => `<option value="${key}"${key === currentStatus ? ' selected' : ''}>${requestStatusLabels[key]}</option>`).join('')}
+              </select>
+            </label>
           </div>
           <button class="dashboard-modal-close" type="button" aria-label="Close feature request">×</button>
         </div>
@@ -612,6 +907,7 @@
       requestModalBackdrop.classList.add('visible');
       requestModalBackdrop.setAttribute('aria-hidden', 'false');
       requestModalRoot.querySelector('.dashboard-modal-close').addEventListener('click', closeRequestModal);
+      requestModalRoot.querySelector('#request-status-select').addEventListener('change', (event) => updateRequestStatus(request.id, event.target.value));
     }
 
     async function loadFeatureRequests() {
@@ -634,7 +930,7 @@
       setActiveNav('users');
       const rows = users.length ? users.map((user) => `
         <tr>
-          <td>${escapeHtml(user.name || 'Unnamed')}</td>
+          <td><span class="profile-avatar ${escapeHtml(safeAvatarKey(user.avatar_key))}" style="width:30px;height:30px;font-size:12px;margin-right:8px;vertical-align:middle;">${escapeHtml(initials(user.name || user.email))}</span>${escapeHtml(user.name || 'Unnamed')}</td>
           <td>${escapeHtml(user.email || '')}</td>
           <td>${escapeHtml(user.designation || '')}</td>
           <td><span class="role-pill${user.is_admin || user.role === 'admin' ? ' role-pill-admin' : ''}">${escapeHtml(user.role || (user.is_admin ? 'admin' : 'user'))}</span></td>
@@ -668,7 +964,7 @@
       root.innerHTML = '<p class="dashboard-subtitle">Loading users...</p>';
       const { data: users, error: usersError } = await client
         .from('users')
-        .select('id,name,email,designation,is_admin,role,created_at,updated_at')
+        .select('id,name,email,designation,avatar_key,is_admin,role,created_at,updated_at')
         .order('created_at', { ascending: false });
 
       if (usersError) {
@@ -687,12 +983,15 @@
       if (!user) {
         return;
       }
+      currentUser = user;
+      profileNav.hidden = false;
 
       const { data: profile, error: profileError } = await client
         .from('users')
-        .select('name,email,is_admin,role')
+        .select('id,name,email,designation,avatar_key,is_admin,role')
         .eq('id', user.id)
         .maybeSingle();
+      currentProfile = profile || null;
 
       if (profileError || !profile || !(profile.is_admin || profile.role === 'admin')) {
         return;
@@ -703,14 +1002,21 @@
     }
 
     drawingsNav.addEventListener('click', renderProjects);
+    profileNav.addEventListener('click', loadProfile);
     requestsNav.addEventListener('click', loadFeatureRequests);
     usersNav.addEventListener('click', loadUsers);
     requestModalBackdrop.addEventListener('click', (event) => {
       if (event.target === requestModalBackdrop) closeRequestModal();
     });
+    confirmModalBackdrop.addEventListener('click', (event) => {
+      if (event.target === confirmModalBackdrop) closeConfirmModal();
+    });
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && requestModalBackdrop.classList.contains('visible')) {
         closeRequestModal();
+      }
+      if (event.key === 'Escape' && confirmModalBackdrop.classList.contains('visible')) {
+        closeConfirmModal();
       }
     });
     loadDashboard();

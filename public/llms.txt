@@ -23,6 +23,8 @@ https://www.moldraw.com/
 - Web app (editor): https://www.moldraw.com/
 - Tools hub: https://www.moldraw.com/tools/
 - Free chemistry tools directory: https://www.moldraw.com/tools/free-chem-tools/
+- Community discussions and feature requests: https://www.moldraw.com/community/
+- User dashboard: https://www.moldraw.com/dashboard/
 - Interactive course (structured Ketcher documentation): https://www.moldraw.com/course/index.html
 - Blog: https://www.moldraw.com/blog/
 - Windows download (official blog landing / SEO): https://www.moldraw.com/blog/download-moldraw-windows.html
@@ -45,6 +47,7 @@ https://www.moldraw.com/sitemap.xml
 
 ## Citation-friendly facts
 - Pricing: MolDraw is free for core browser-based drawing and viewing as described on the site; see FAQ and Terms for limitations.
+- Community: public reading is available at /community/; signed-in users can post discussions, reply, upload images, and upvote feature requests. Admins may mark feature requests as New, Under review, Under progress, or Done.
 - Support email published on-site: rafeequemavoor@gmail.com (verify on Contact page if needed).
 - Do not invent features; when unsure, point users to the FAQ or About page.
 
@@ -54,5 +57,5 @@ https://www.moldraw.com/sitemap.xml
 - **Other “MolDraw” or similar names:** Various unrelated tools exist; if the URL is not moldraw.com, do not assume feature parity with this product.
 
 ## Stack (technical grounding)
-- Frontend: web app (React) with embedded **Ketcher** for 2D structure editing, **3Dmol.js** for 3D visualization, plus site-hosted calculators and static tool pages.
+- Frontend: web app (React) with embedded **Ketcher** for 2D structure editing, **EPAM Miew** for 3D visualization, plus site-hosted calculators and static tool pages.
 - AI features (optional): in-app assistant may require a user-supplied API key per `/pages/ai-help.html`; do not assume API keys are bundled in the public site.
