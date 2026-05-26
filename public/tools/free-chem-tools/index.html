@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Free chemist tools hub by MolDraw with dedicated converters for SMILES, InChI, InChIKey, PDB, PDBQT, MOL, SDF, MOL2, CID, plus interactive periodic table, protein viewing, and calculators.">
+  <meta name="description" content="MolDraw Tools Hub compatibility page. Existing free chemistry tool URLs stay active while converters, calculators, viewers, and lab utilities are centralized at /tools/.">
   <meta name="keywords" content="free chemistry tools, interactive periodic table, smiles converter, inchi converter, inchikey converter, pdb converter, mol sdf converter, cid to smiles, MolDraw">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/">
   <link rel="stylesheet" href="/css/site-footer.css" />
   <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index" />
-  <title>Free Chemist Tools Hub | MolDraw</title>
-  <meta property="og:title" content="Free Chemist Tools Hub | MolDraw" />
-  <meta property="og:description" content="Free chemist tools hub by MolDraw with dedicated converters for SMILES, InChI, InChIKey, PDB, PDBQT, MOL, SDF, MOL2, CID, plus interactive periodic table, protein viewing, and calculators." />
+  <title>MolDraw Tools Hub | Free Chemistry Tools</title>
+  <meta property="og:title" content="MolDraw Tools Hub | Free Chemistry Tools" />
+  <meta property="og:description" content="MolDraw Tools Hub compatibility page. Existing free chemistry tool URLs stay active while tools are centralized at /tools/." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/" />
   <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
@@ -67,9 +67,41 @@
       max-width: 900px;
     }
     .grid {
-      display: grid;
+      display: none;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 14px;
+    }
+    .hub-redirect {
+      background: #fff;
+      border: 1px solid #dbe4ee;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+    .hub-redirect h2 {
+      margin-bottom: 6px;
+      color: #0f172a;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+    .hub-redirect p {
+      max-width: 760px;
+      margin-bottom: 14px;
+      color: #475569;
+      font-size: 14px;
+    }
+    .hub-redirect a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: #2C7A7B;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
     }
     .card {
       background: #fff;
@@ -117,8 +149,14 @@
     </nav>
 
     <section class="hero">
-      <h1>Free Chemist Tools Hub</h1>
-      <p>This folder hosts free, dedicated chemistry tools. Each tool has its own page for direct sharing, SEO discoverability, and focused usage.</p>
+      <h1>MolDraw Tools</h1>
+      <p>All free chemistry tools now live in one central Tools Hub. Existing indexed tool URLs stay unchanged, so old bookmarks and Google results continue to work.</p>
+    </section>
+
+    <section class="hub-redirect" aria-label="Central tools hub">
+      <h2>Use the central Tools Hub</h2>
+      <p>The old free tools directory is kept for URL compatibility. Browse converters, calculators, 3D viewers, TLC, and the periodic table from the main MolDraw Tools Hub.</p>
+      <a href="/tools/">Open MolDraw Tools Hub</a>
     </section>
 
     <section class="grid" aria-label="Chem tool list">

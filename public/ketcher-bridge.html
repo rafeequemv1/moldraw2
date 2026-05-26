@@ -33,6 +33,63 @@
           const ketcher = ketcherFrame.contentWindow.ketcher;
           console.log('Ketcher instance found:', ketcher);
 
+          const applyDefaultCanvasZoom = () => {
+            const editor = ketcher.editor || ketcherFrame.contentWindow.editor || null;
+            const candidates = [
+              () => {
+                if (editor && typeof editor.setZoom === 'function') {
+                  editor.setZoom(2);
+                  return true;
+                }
+                return false;
+              },
+              () => {
+                if (editor && typeof editor.zoom === 'function') {
+                  editor.zoom(2);
+                  return true;
+                }
+                return false;
+              },
+              () => {
+                if (editor && typeof editor.zoomTo === 'function') {
+                  editor.zoomTo(2);
+                  return true;
+                }
+                return false;
+              },
+              () => {
+                if (ketcher && typeof ketcher.setZoom === 'function') {
+                  ketcher.setZoom(2);
+                  return true;
+                }
+                return false;
+              },
+            ];
+
+            for (const candidate of candidates) {
+              try {
+                if (candidate()) return;
+              } catch (_) { /* try next zoom API */ }
+            }
+
+            try {
+              const frameDoc = ketcherFrame.contentWindow.document;
+              const zoomButtons = [
+                '[data-testid*="zoom-in" i]',
+                '[title*="Zoom in" i]',
+                '[aria-label*="Zoom in" i]',
+                'button[class*="zoom"][class*="in"]',
+              ];
+              const zoomInButton = zoomButtons
+                .map((selector) => frameDoc.querySelector(selector))
+                .find(Boolean);
+              if (zoomInButton) {
+                zoomInButton.click();
+                zoomInButton.click();
+              }
+            } catch (_) { /* best effort only */ }
+          };
+
           const tryAddTextLabel = async (editor, text, x, y) => {
             if (!editor || !text) return false;
             const clean = String(text).trim();
@@ -57,6 +114,7 @@
 
           // Notify parent that Ketcher is ready
           window.parent.postMessage({ type: 'ketcher-ready' }, '*');
+          setTimeout(applyDefaultCanvasZoom, 250);
 
           const getMolfileFingerprint = (molfile) => {
             const text = String(molfile || '');

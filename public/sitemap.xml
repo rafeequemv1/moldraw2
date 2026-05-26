@@ -445,14 +445,20 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.moldraw.com/pages/community-guidelines.html</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://www.moldraw.com/pages/privacy-policy.html</loc>
-    <lastmod>2026-03-11</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.moldraw.com/pages/terms-of-service.html</loc>
-    <lastmod>2026-03-11</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>

@@ -35,6 +35,7 @@ https://www.moldraw.com/
 - Contact: https://www.moldraw.com/pages/contact.html
 - Authors / team: https://www.moldraw.com/pages/authors.html
 - Editorial guidelines: https://www.moldraw.com/pages/editorial-guidelines.html
+- Community guidelines: https://www.moldraw.com/pages/community-guidelines.html
 - Privacy policy: https://www.moldraw.com/pages/privacy-policy.html
 - Terms of service: https://www.moldraw.com/pages/terms-of-service.html
 - HTML sitemap (humans): https://www.moldraw.com/pages/sitemap.html

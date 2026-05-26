@@ -65,6 +65,21 @@
       .control-grid { grid-template-columns: 1fr; }
       .sequence-layout { grid-template-columns: 1fr; }
     }
+    @media (max-width: 560px) {
+      .container { width: 100%; padding: 14px 10px 34px; }
+      .panel { padding: 14px; border-radius: 12px; }
+      h1 { font-size: 24px; line-height: 1.15; }
+      .tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tab-link { flex: 0 0 auto; min-height: 38px; }
+      .control-grid input, .control-grid select, button { min-height: 42px; font-size: 16px; }
+      .viewer-wrap { min-height: 320px; padding: 8px; }
+      #proteinViewer { height: 310px; }
+      .download-grid { grid-template-columns: 1fr 1fr; }
+      .chain-controls { grid-template-columns: 1fr; }
+      .chain-list, .sequence-board { max-height: 320px; }
+      .context-menu { width: calc(100vw - 20px); left: 10px !important; }
+    }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
@@ -73,7 +88,7 @@
     <nav class="tabs" aria-label="3D tabs">
       <a class="tab-link" href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">Molecule 3D</a>
       <a class="tab-link active" href="/tools/protein-viewer/index.html">Protein Viewer</a>
-      <a class="tab-link" href="/tools/free-chem-tools/">All Chem Tools</a>
+      <a class="tab-link" href="/tools/">All Chem Tools</a>
     </nav>
 
     <section class="panel">

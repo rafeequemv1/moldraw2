@@ -495,6 +495,78 @@
         gap: 5px;
       }
     }
+    @media (max-width: 600px) {
+      .dashboard-layout {
+        width: 100%;
+        padding: 12px 10px 36px;
+        gap: 10px;
+      }
+      .dashboard-sidebar.visible {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding: 8px;
+        border-radius: 14px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .dashboard-sidebar.visible::-webkit-scrollbar {
+        display: none;
+      }
+      .dashboard-nav-item {
+        flex: 0 0 auto;
+        margin-bottom: 0;
+        min-height: 40px;
+        padding: 8px 11px;
+        white-space: nowrap;
+      }
+      .dashboard-card {
+        min-height: auto;
+        padding: 16px;
+        border-radius: 16px;
+      }
+      .dashboard-title {
+        font-size: 28px;
+      }
+      .requests-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .request-list-title,
+      .request-list-meta {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+      }
+      .request-status-pill {
+        width: fit-content;
+      }
+      .profile-card {
+        max-width: 100%;
+      }
+      .avatar-picker {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .project-grid {
+        grid-template-columns: 1fr;
+      }
+      .project-actions {
+        grid-template-columns: 1fr;
+      }
+      .dashboard-modal-backdrop {
+        align-items: flex-end;
+        padding: 0;
+      }
+      .dashboard-modal {
+        width: 100%;
+        max-height: calc(100dvh - 18px);
+        border-radius: 18px 18px 0 0;
+        padding: 16px;
+      }
+      .modal-images {
+        grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+      }
+    }
   </style>
 </head>
 <body>
@@ -503,6 +575,7 @@
       <button id="drawings-nav" class="dashboard-nav-item active" type="button">Drawings</button>
       <button id="profile-nav" class="dashboard-nav-item" type="button" hidden>Profile</button>
       <button id="requests-nav" class="dashboard-nav-item" type="button" hidden>Feature requests</button>
+      <button id="reports-nav" class="dashboard-nav-item" type="button" hidden>Reports</button>
       <button id="users-nav" class="dashboard-nav-item" type="button" hidden>Users</button>
     </aside>
     <section class="dashboard-main">
@@ -537,6 +610,7 @@
     const drawingsNav = document.getElementById('drawings-nav');
     const profileNav = document.getElementById('profile-nav');
     const requestsNav = document.getElementById('requests-nav');
+    const reportsNav = document.getElementById('reports-nav');
     const usersNav = document.getElementById('users-nav');
     const requestModalBackdrop = document.getElementById('request-modal-backdrop');
     const requestModalRoot = document.getElementById('request-modal-root');
@@ -558,6 +632,21 @@
       under_review: 'Under review',
       under_progress: 'Under progress',
       done: 'Done'
+    };
+    const reportReasonLabels = {
+      spam: 'Spam',
+      harassment: 'Harassment or abuse',
+      unsafe_chemistry: 'Unsafe chemistry',
+      illegal_activity: 'Illegal activity',
+      medical_advice: 'Medical advice',
+      privacy: 'Privacy concern',
+      other: 'Other'
+    };
+    const reportStatusLabels = {
+      open: 'Open',
+      reviewing: 'Reviewing',
+      resolved: 'Resolved',
+      dismissed: 'Dismissed'
     };
 
     const escapeHtml = (value) => String(value || '')
@@ -584,6 +673,7 @@
       drawingsNav.classList.toggle('active', active === 'drawings');
       profileNav.classList.toggle('active', active === 'profile');
       requestsNav.classList.toggle('active', active === 'requests');
+      reportsNav.classList.toggle('active', active === 'reports');
       usersNav.classList.toggle('active', active === 'users');
     }
 
@@ -978,6 +1068,78 @@
       renderUsers(users || []);
     }
 
+    function renderReports(reports) {
+      sidebar.classList.add('visible');
+      setActiveNav('reports');
+      const rows = reports.length ? reports.map((report) => `
+        <article class="request-card" style="display:grid;gap:10px;">
+          <div class="requests-head" style="margin:0;">
+            <div>
+              <h2>${escapeHtml(reportReasonLabels[report.reason] || report.reason || 'Report')}</h2>
+              <p class="request-meta">
+                ${escapeHtml(report.target_type || 'item')} · ${escapeHtml(report.target_id || '')}<br>
+                Reported ${report.created_at ? escapeHtml(new Date(report.created_at).toLocaleString()) : ''}
+              </p>
+            </div>
+            <label class="profile-field" style="max-width:180px;">
+              Status
+              <select data-report-status="${escapeHtml(report.id)}">
+                ${Object.keys(reportStatusLabels).map((key) => `<option value="${key}"${key === report.status ? ' selected' : ''}>${reportStatusLabels[key]}</option>`).join('')}
+              </select>
+            </label>
+          </div>
+          ${report.details ? `<p class="request-desc">${escapeHtml(report.details)}</p>` : '<p class="dashboard-subtitle">No extra details.</p>'}
+          <p class="request-meta">Reporter: ${escapeHtml(report.reporter_user_id || '')}</p>
+        </article>
+      `).join('') : '<p class="dashboard-subtitle">No community reports yet.</p>';
+
+      root.innerHTML = `
+        <div class="requests-head">
+          <h1>Community reports</h1>
+          <span class="requests-status">${reports.length} total</span>
+        </div>
+        <div class="request-list">${rows}</div>
+      `;
+
+      root.querySelectorAll('[data-report-status]').forEach((select) => {
+        select.addEventListener('change', () => updateReportStatus(select.getAttribute('data-report-status'), select.value));
+      });
+    }
+
+    async function updateReportStatus(reportId, status) {
+      const { error } = await client
+        .from('community_reports')
+        .update({
+          status,
+          reviewed_by: currentUser.id,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', reportId);
+
+      if (error) {
+        alert(error.message || 'Could not update report status.');
+        return;
+      }
+
+      await loadReports();
+    }
+
+    async function loadReports() {
+      root.innerHTML = '<p class="dashboard-subtitle">Loading community reports...</p>';
+      const { data: reports, error: reportsError } = await client
+        .from('community_reports')
+        .select('id,reporter_user_id,target_type,target_id,reason,details,status,created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (reportsError) {
+        renderBlank(reportsError.message || 'Could not load community reports.');
+        return;
+      }
+
+      renderReports(reports || []);
+    }
+
     async function loadDashboard() {
       const { data: sessionData } = await client.auth.getSession();
       const user = sessionData && sessionData.session && sessionData.session.user;
@@ -1001,12 +1163,14 @@
       }
 
       requestsNav.hidden = false;
+      reportsNav.hidden = false;
       usersNav.hidden = false;
     }
 
     drawingsNav.addEventListener('click', renderProjects);
     profileNav.addEventListener('click', loadProfile);
     requestsNav.addEventListener('click', loadFeatureRequests);
+    reportsNav.addEventListener('click', loadReports);
     usersNav.addEventListener('click', loadUsers);
     requestModalBackdrop.addEventListener('click', (event) => {
       if (event.target === requestModalBackdrop) closeRequestModal();

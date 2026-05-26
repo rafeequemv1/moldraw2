@@ -257,6 +257,71 @@
       color: #334155;
       text-align: right;
     }
+    .conversion-router {
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid #dbe4ee;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+    .conversion-router-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .conversion-router-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+    .conversion-field {
+      display: grid;
+      gap: 5px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .conversion-field select {
+      height: 36px;
+      border: 1px solid #d8e1ea;
+      border-radius: 10px;
+      background: #fff;
+      color: #0f172a;
+      font: inherit;
+      font-size: 13px;
+      padding: 0 10px;
+    }
+    .conversion-open-btn {
+      height: 36px;
+      border: 0;
+      border-radius: 999px;
+      background: #2C7A7B;
+      color: #fff;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+    .conversion-router-note {
+      margin-top: 8px;
+      min-height: 17px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tool-card.tool-card-selected {
+      border-color: #2C7A7B;
+      box-shadow: 0 0 0 3px rgba(44, 122, 123, 0.12), 0 10px 24px rgba(15, 23, 42, 0.07);
+    }
     .grid {
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -350,12 +415,92 @@
         padding: 7px 8px;
       }
       .tool-filters { grid-template-columns: 1fr; }
+      .conversion-router-grid { grid-template-columns: 1fr; }
       .tool-filter-count { text-align: left; }
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .hero h1 { font-size: 24px; }
     }
     @media (max-width: 640px) {
       .grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .container {
+        width: 100%;
+        padding: 14px 10px 36px;
+      }
+      .top-nav {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+      }
+      .top-nav::-webkit-scrollbar {
+        display: none;
+      }
+      .top-link {
+        flex: 0 0 auto;
+      }
+      .tool-filters-top,
+      .hero,
+      .conversion-router,
+      .tools-category-sidebar {
+        border-radius: 12px;
+      }
+      .hero {
+        padding: 16px;
+      }
+      .hero h1 {
+        font-size: 24px;
+        line-height: 1.15;
+      }
+      .hero p {
+        font-size: 13px;
+      }
+      .tool-filters-top {
+        padding: 10px;
+      }
+      .tool-filters-top input,
+      .conversion-field select,
+      .conversion-open-btn {
+        width: 100%;
+        min-height: 42px;
+        font-size: 16px;
+      }
+      .conversion-router {
+        padding: 12px;
+      }
+      .conversion-router-head {
+        flex-direction: column;
+        gap: 2px;
+        font-size: 11px;
+      }
+      .tools-category-sidebar {
+        padding: 10px;
+      }
+      .tools-category-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .tools-cat-btn {
+        width: 100%;
+        min-width: 0;
+        min-height: 38px;
+      }
+      .featured-tools-grid,
+      .grid {
+        gap: 10px;
+      }
+      .tool-card {
+        min-height: auto;
+        padding: 13px;
+      }
+      .tool-card h2 {
+        min-height: 0;
+        font-size: 16px;
+      }
+      .tool-card a {
+        min-height: 36px;
+      }
     }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
@@ -390,6 +535,49 @@
         </ul>
       </aside>
       <div class="tools-main">
+    <section class="conversion-router" aria-label="Conversion tool finder">
+      <div class="conversion-router-head">
+        <span>Conversion finder</span>
+        <span>Choose formats to reveal the right tool</span>
+      </div>
+      <div class="conversion-router-grid">
+        <label class="conversion-field">
+          Input file / identifier
+          <select id="conversionInput">
+            <option value="">Select input</option>
+            <option value="smiles">SMILES</option>
+            <option value="mol">MOL / SDF</option>
+            <option value="sdf">SDF</option>
+            <option value="pdb">PDB</option>
+            <option value="inchi">InChI</option>
+            <option value="inchikey">InChIKey</option>
+            <option value="mol2">MOL2</option>
+            <option value="cid">PubChem CID</option>
+            <option value="iupac">IUPAC name</option>
+          </select>
+        </label>
+        <label class="conversion-field">
+          Output file / identifier
+          <select id="conversionOutput">
+            <option value="">Select output</option>
+            <option value="structure">2D structure image</option>
+            <option value="3d">3D structure</option>
+            <option value="smiles">SMILES</option>
+            <option value="pdb">PDB</option>
+            <option value="pdbqt">PDBQT</option>
+            <option value="inchi">InChI</option>
+            <option value="inchikey">InChIKey</option>
+            <option value="mol">MOL</option>
+            <option value="sdf">SDF</option>
+            <option value="mol2">MOL2</option>
+            <option value="iupac">IUPAC name</option>
+          </select>
+        </label>
+        <button id="conversionOpenBtn" class="conversion-open-btn" type="button">Open tool</button>
+      </div>
+      <div id="conversionRouterNote" class="conversion-router-note"></div>
+    </section>
+
     <section class="featured-tools" aria-labelledby="featured-tools-heading">
       <h2 id="featured-tools-heading" class="featured-tools-heading">Featured</h2>
       <div class="featured-tools-grid">
@@ -572,18 +760,54 @@
     const countEl = document.getElementById('toolFilterCount');
     const cards = Array.from(document.querySelectorAll('.tool-card'));
     const categoryButtons = Array.from(document.querySelectorAll('.tools-cat-btn'));
+    const conversionInput = document.getElementById('conversionInput');
+    const conversionOutput = document.getElementById('conversionOutput');
+    const conversionOpenBtn = document.getElementById('conversionOpenBtn');
+    const conversionRouterNote = document.getElementById('conversionRouterNote');
+    const conversionRoutes = {
+      'smiles:structure': '/tools/free-chem-tools/smiles-to-structure.html',
+      'smiles:3d': '/tools/free-chem-tools/smiles-to-3d-structure-converter.html',
+      'smiles:pdb': '/tools/free-chem-tools/smiles-to-pdb-converter.html',
+      'smiles:pdbqt': '/tools/free-chem-tools/smiles-to-pdbqt-converter.html',
+      'smiles:inchi': '/tools/free-chem-tools/smiles-to-inchi-converter.html',
+      'smiles:inchikey': '/tools/free-chem-tools/smiles-to-inchikey-converter.html',
+      'smiles:mol': '/tools/free-chem-tools/smiles-to-mol-converter.html',
+      'smiles:sdf': '/tools/free-chem-tools/smiles-to-sdf-converter.html',
+      'smiles:mol2': '/tools/free-chem-tools/smiles-to-mol2-converter.html',
+      'smiles:iupac': '/tools/free-chem-tools/smiles-to-iupac-name-converter.html',
+      'mol:smiles': '/tools/free-chem-tools/mol-to-smiles-converter.html',
+      'mol:inchi': '/tools/free-chem-tools/mol-to-inchi-converter.html',
+      'mol:inchikey': '/tools/free-chem-tools/mol-to-inchikey-converter.html',
+      'sdf:smiles': '/tools/free-chem-tools/mol-to-smiles-converter.html',
+      'sdf:inchi': '/tools/free-chem-tools/sdf-to-inchi-converter.html',
+      'sdf:inchikey': '/tools/free-chem-tools/sdf-to-inchikey-converter.html',
+      'pdb:smiles': '/tools/free-chem-tools/pdb-to-smiles-converter.html',
+      'pdb:pdbqt': '/tools/free-chem-tools/pdb-to-pdbqt-converter.html',
+      'inchi:smiles': '/tools/free-chem-tools/inchi-to-smiles-converter.html',
+      'inchi:inchikey': '/tools/free-chem-tools/inchi-to-inchikey-converter.html',
+      'inchikey:smiles': '/tools/free-chem-tools/inchikey-to-smiles-converter.html',
+      'inchikey:inchi': '/tools/free-chem-tools/inchikey-to-inchi-converter.html',
+      'mol2:smiles': '/tools/free-chem-tools/mol2-to-smiles-converter.html',
+      'cid:smiles': '/tools/free-chem-tools/cid-to-smiles-converter.html',
+      'iupac:smiles': '/tools/free-chem-tools/iupac-name-to-smiles-converter.html'
+    };
     let selectedType = 'all';
+    let activeToolUrl = '';
 
     function applyToolFilters() {
       const query = (searchInput.value || '').trim().toLowerCase();
       let visibleCount = 0;
 
       cards.forEach((card) => {
+        const link = card.querySelector('a[href]');
+        const href = link ? link.getAttribute('href') : '';
         const type = card.getAttribute('data-tool-type') || '';
         const searchable = ((card.getAttribute('data-tool-search') || '') + ' ' + card.textContent).toLowerCase();
         const typeOk = selectedType === 'all' || type === selectedType;
         const queryOk = !query || searchable.includes(query);
-        const visible = typeOk && queryOk;
+        const routeOk = !activeToolUrl || href === activeToolUrl;
+        const visible = activeToolUrl ? routeOk : (typeOk && queryOk);
+        card.classList.toggle('tool-card-selected', Boolean(activeToolUrl && href === activeToolUrl));
         card.style.display = visible ? '' : 'none';
         if (visible) visibleCount += 1;
       });
@@ -591,10 +815,48 @@
       countEl.textContent = `Showing ${visibleCount} of ${cards.length} tools`;
     }
 
-    searchInput.addEventListener('input', applyToolFilters);
+    function updateConversionRoute() {
+      const input = conversionInput.value;
+      const output = conversionOutput.value;
+      const route = conversionRoutes[`${input}:${output}`] || '';
+      activeToolUrl = route;
+      if (!input || !output) {
+        conversionRouterNote.textContent = 'Pick an input and output format to show the matching converter.';
+      } else if (route) {
+        const card = cards.find((item) => item.querySelector(`a[href="${route}"]`));
+        const title = card?.querySelector('h2')?.textContent || 'Matching converter';
+        conversionRouterNote.textContent = `${title} is selected below.`;
+        selectedType = 'conversion';
+        categoryButtons.forEach((button) => {
+          const on = button.getAttribute('data-tool-type') === 'conversion';
+          button.classList.toggle('active', on);
+          button.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      } else {
+        conversionRouterNote.textContent = 'No dedicated converter exists for that exact pair yet.';
+      }
+      applyToolFilters();
+    }
+
+    searchInput.addEventListener('input', () => {
+      activeToolUrl = '';
+      conversionRouterNote.textContent = '';
+      applyToolFilters();
+    });
+    conversionInput.addEventListener('change', updateConversionRoute);
+    conversionOutput.addEventListener('change', updateConversionRoute);
+    conversionOpenBtn.addEventListener('click', () => {
+      if (activeToolUrl) {
+        window.location.href = activeToolUrl;
+      } else {
+        updateConversionRoute();
+      }
+    });
 
     categoryButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
+        activeToolUrl = '';
+        conversionRouterNote.textContent = '';
         selectedType = btn.getAttribute('data-tool-type') || 'all';
         categoryButtons.forEach((b) => {
           const on = b === btn;

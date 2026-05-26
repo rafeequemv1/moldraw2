@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState, useCallback } from 'react';
 import './App.css';
-import TlcModal from './microapps/tlc/TlcModal';
-import ReactionsModal from './microapps/reactions/ReactionsModal';
 import * as $3Dmol from '3dmol';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
+
+const TlcModal = lazy(() => import('./microapps/tlc/TlcModal'));
+const ReactionsModal = lazy(() => import('./microapps/reactions/ReactionsModal'));
 
 const DEFAULT_AI_MODEL = 'gemini-3.1-flash-lite';
 const AI_MODEL_OPTIONS = [
@@ -59,6 +60,15 @@ const normalizeAiRequestControls = (value) => ({
   ...AI_REQUEST_CONTROL_DEFAULTS,
   ...(value && typeof value === 'object' ? value : {}),
 });
+
+const getDisplayNameFromEmail = (email) => {
+  const local = String(email || '').split('@')[0] || 'MolDraw user';
+  return local
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase()) || 'MolDraw user';
+};
 
 const DEFAULT_QC_EXPORT_OPTIONS = {
   software: 'orca',
@@ -120,18 +130,6 @@ const LUCKY_SHOWER_COLORS = [
   '#8b5cf6',
   '#ec4899',
   '#ef4444',
-];
-
-const DESIGNATION_OPTIONS = [
-  'Student',
-  'Researcher',
-  'Scientist',
-  'Faculty',
-  'Pharma',
-  'Artist',
-  'Educator',
-  'Industry Professional',
-  'Other',
 ];
 
 function createLuckyShowerItems() {
@@ -408,10 +406,8 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('signin');
   const [authForm, setAuthForm] = useState({
-    name: '',
     email: '',
     password: '',
-    designation: 'Student',
   });
   const [authError, setAuthError] = useState('');
   const [authNotice, setAuthNotice] = useState('');
@@ -423,7 +419,6 @@ function App() {
   const [showNewDesignConfirm, setShowNewDesignConfirm] = useState(false);
   const [showFeatureRequestModal, setShowFeatureRequestModal] = useState(false);
   const [featureRequestForm, setFeatureRequestForm] = useState({
-    name: '',
     email: '',
     title: '',
     description: '',
@@ -520,9 +515,9 @@ function App() {
     if (!supabase || !userId) return;
     await supabase.from('users').upsert({
       id: userId,
-      name: form.name.trim(),
+      name: form.name?.trim() || getDisplayNameFromEmail(form.email),
       email: form.email.trim(),
-      designation: form.designation,
+      designation: form.designation || 'Other',
     }, { onConflict: 'id' });
   };
 
@@ -538,9 +533,9 @@ function App() {
 
     const email = authForm.email.trim();
     const password = authForm.password;
-    const name = authForm.name.trim();
+    const name = getDisplayNameFromEmail(email);
 
-    if (!email || !password || (authMode === 'signup' && !name)) {
+    if (!email || !password) {
       setAuthError('Please fill all required fields.');
       return;
     }
@@ -559,7 +554,6 @@ function App() {
           options: {
             data: {
               name,
-              designation: authForm.designation,
             },
             emailRedirectTo: window.location.origin,
           },
@@ -568,7 +562,7 @@ function App() {
         if (error) throw error;
 
         if (data?.session?.user) {
-          await saveUserProfile(data.session.user.id, { ...authForm, email, name });
+          await saveUserProfile(data.session.user.id, { email, name, designation: 'Other' });
           await fetchUserProfile(data.session.user.id);
           setShowAuthModal(false);
         } else {
@@ -601,7 +595,6 @@ function App() {
   const openFeatureRequestModal = () => {
     setFeatureRequestForm((form) => ({
       ...form,
-      name: form.name || userProfile?.name || authSession?.user?.user_metadata?.name || '',
       email: form.email || userProfile?.email || authSession?.user?.email || '',
     }));
     setFeatureRequestFiles([]);
@@ -636,13 +629,13 @@ function App() {
       return;
     }
 
-    const name = featureRequestForm.name.trim();
     const email = featureRequestForm.email.trim();
+    const name = userProfile?.name || authSession?.user?.user_metadata?.name || getDisplayNameFromEmail(email);
     const title = featureRequestForm.title.trim();
     const description = featureRequestForm.description.trim();
 
-    if (!name || !email || !title || !description) {
-      setFeatureRequestError('Please add your name, email, title, and request.');
+    if (!email || !title || !description) {
+      setFeatureRequestError('Please add your email, title, and request.');
       return;
     }
 
@@ -682,7 +675,6 @@ function App() {
 
       setFeatureRequestNotice('Feature request sent. Thank you.');
       setFeatureRequestForm({
-        name: userProfile?.name || authSession?.user?.user_metadata?.name || '',
         email: userProfile?.email || authSession?.user?.email || '',
         title: '',
         description: '',
@@ -6456,30 +6448,17 @@ ${scientificGuardrails}`;
               </a>
             </div>
 
-            <div className="feature-request-grid">
-              <label className="feature-request-field">
-                <span>Name</span>
-                <input
-                  type="text"
-                  value={featureRequestForm.name}
-                  onChange={(e) => updateFeatureRequestForm('name', e.target.value)}
-                  placeholder="Your name"
-                  autoComplete="name"
-                  required
-                />
-              </label>
-              <label className="feature-request-field">
-                <span>Email</span>
-                <input
-                  type="email"
-                  value={featureRequestForm.email}
-                  onChange={(e) => updateFeatureRequestForm('email', e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  required
-                />
-              </label>
-            </div>
+            <label className="feature-request-field">
+              <span>Email</span>
+              <input
+                type="email"
+                value={featureRequestForm.email}
+                onChange={(e) => updateFeatureRequestForm('email', e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+              />
+            </label>
 
             <label className="feature-request-field">
               <span>Feature title</span>
@@ -6570,34 +6549,6 @@ ${scientificGuardrails}`;
               </button>
             </div>
 
-            {authMode === 'signup' && (
-              <>
-                <label className="auth-field">
-                  <span>Name</span>
-                  <input
-                    type="text"
-                    value={authForm.name}
-                    onChange={(e) => updateAuthForm('name', e.target.value)}
-                    placeholder="Your name"
-                    autoComplete="name"
-                    required
-                  />
-                </label>
-                <label className="auth-field">
-                  <span>Designation</span>
-                  <select
-                    value={authForm.designation}
-                    onChange={(e) => updateAuthForm('designation', e.target.value)}
-                    required
-                  >
-                    {DESIGNATION_OPTIONS.map((designation) => (
-                      <option key={designation} value={designation}>{designation}</option>
-                    ))}
-                  </select>
-                </label>
-              </>
-            )}
-
             <label className="auth-field">
               <span>Email</span>
               <input
@@ -6636,32 +6587,36 @@ ${scientificGuardrails}`;
         </div>
       )}
 
-      {showTlcModal && <TlcModal onClose={() => setShowTlcModal(false)} />}
-      <ReactionsModal
-        open={showReactionsModal}
-        onClose={() => setShowReactionsModal(false)}
-        onSearch={searchReactionsWithGemini}
-        onAddReaction={addReactionToCanvas}
-        onAddAllSteps={addAllIntermediateStepsToCanvas}
-        isLoading={isReactionSearchLoading}
-        loadingSteps={REACTION_LOADING_STEPS}
-        activeLoadingStep={reactionLoadingStepIdx}
-        error={reactionSearchError}
-        reactions={reactionResults}
-        includeReactionIntermediates={includeReactionIntermediates}
-        onToggleReactionIntermediates={setIncludeReactionIntermediates}
-        includeCanvasReagentNames={includeCanvasReagentNames}
-        onToggleCanvasReagentNames={setIncludeCanvasReagentNames}
-        includeCanvasConditions={includeCanvasConditions}
-        onToggleCanvasConditions={setIncludeCanvasConditions}
-        appendReactionToCanvas={appendReactionToCanvas}
-        onToggleAppendReactionToCanvas={setAppendReactionToCanvas}
-        hasGeminiApiKey={!!geminiApiKey}
-        onOpenAiSetup={() => {
-          setShowReactionsModal(false);
-          promptAiSetupModal();
-        }}
-      />
+      <Suspense fallback={null}>
+        {showTlcModal && <TlcModal onClose={() => setShowTlcModal(false)} />}
+        {showReactionsModal && (
+          <ReactionsModal
+            open={showReactionsModal}
+            onClose={() => setShowReactionsModal(false)}
+            onSearch={searchReactionsWithGemini}
+            onAddReaction={addReactionToCanvas}
+            onAddAllSteps={addAllIntermediateStepsToCanvas}
+            isLoading={isReactionSearchLoading}
+            loadingSteps={REACTION_LOADING_STEPS}
+            activeLoadingStep={reactionLoadingStepIdx}
+            error={reactionSearchError}
+            reactions={reactionResults}
+            includeReactionIntermediates={includeReactionIntermediates}
+            onToggleReactionIntermediates={setIncludeReactionIntermediates}
+            includeCanvasReagentNames={includeCanvasReagentNames}
+            onToggleCanvasReagentNames={setIncludeCanvasReagentNames}
+            includeCanvasConditions={includeCanvasConditions}
+            onToggleCanvasConditions={setIncludeCanvasConditions}
+            appendReactionToCanvas={appendReactionToCanvas}
+            onToggleAppendReactionToCanvas={setAppendReactionToCanvas}
+            hasGeminiApiKey={!!geminiApiKey}
+            onOpenAiSetup={() => {
+              setShowReactionsModal(false);
+              promptAiSetupModal();
+            }}
+          />
+        )}
+      </Suspense>
 
       {/* NMR Spectrum Modal */}
       {showNmrModal && (
