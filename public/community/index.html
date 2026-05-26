@@ -334,26 +334,110 @@
     }
     .post-launcher-top {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
     }
-    .post-trigger {
+    .inline-post-form {
       flex: 1;
+      display: grid;
+      gap: 8px;
+    }
+    .inline-post-title {
+      min-height: 34px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .inline-post-body {
       min-height: 42px;
       border: 1px solid #d7dce2;
-      border-radius: 999px;
+      border-radius: 18px;
       background: #f8fafc;
       color: #64748b;
       font: inherit;
       font-size: 14px;
       font-weight: 700;
       text-align: left;
-      padding: 0 16px;
-      cursor: pointer;
+      padding: 12px 14px;
+      resize: vertical;
     }
-    .post-trigger:hover {
+    .inline-post-body:focus,
+    .inline-post-title:focus {
+      background: #fff;
+      color: #334155;
+      outline: none;
+      border-color: #99d6d7;
+      box-shadow: 0 0 0 3px rgba(44, 122, 123, 0.12);
+    }
+    .inline-post-body:hover {
       background: #eef2f7;
       color: #334155;
+    }
+    .inline-post-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .inline-image-chip,
+    .comment-image-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      border: 1px solid #d8e1ea;
+      border-radius: 999px;
+      background: #fff;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 0 10px;
+      cursor: pointer;
+    }
+    .inline-image-chip:hover,
+    .comment-image-chip:hover {
+      background: #f1f5f9;
+    }
+    .inline-image-chip input,
+    .comment-image-chip input {
+      display: none;
+    }
+    .inline-image-preview-grid {
+      display: none;
+      grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+      gap: 7px;
+    }
+    .inline-image-preview-grid.visible {
+      display: grid;
+    }
+    .inline-image-preview-card {
+      position: relative;
+      min-height: 74px;
+      border: 1px solid #dbe4ee;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+    .inline-image-preview-card img {
+      width: 100%;
+      height: 74px;
+      display: block;
+      object-fit: cover;
+    }
+    .inline-image-remove {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 22px;
+      height: 22px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.78);
+      color: #fff;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
     }
     .post-launcher-actions {
       display: grid;
@@ -436,11 +520,29 @@
     .avatar-purple { background: linear-gradient(135deg, #7c3aed, #c4b5fd); }
     .avatar-amber { background: linear-gradient(135deg, #d97706, #fde68a); }
     .author-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       font-size: 13px;
       font-weight: 900;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      height: 17px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      vertical-align: middle;
     }
     .author-meta,
     .card-meta {
@@ -531,7 +633,8 @@
       font-size: 12px;
     }
     .comment-form {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
       gap: 6px;
       align-items: flex-start;
     }
@@ -554,6 +657,19 @@
       min-height: 30px;
       padding: 0 10px;
       flex-shrink: 0;
+    }
+    .comment-image-chip {
+      min-height: 30px;
+      padding: 0 9px;
+    }
+    .comment-images {
+      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+      gap: 6px;
+      margin-top: 6px;
+      max-width: 360px;
+    }
+    .comment-images img {
+      height: 70px;
     }
     .comment-tools {
       display: flex;
@@ -615,6 +731,43 @@
       color: #64748b;
       font-size: 13px;
       font-weight: 700;
+    }
+    .feature-cta-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 14px;
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #eff6ff, #ffffff);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+    }
+    .feature-cta-card h2 {
+      margin: 0 0 3px;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+    .feature-cta-card p {
+      margin: 0;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .feature-request-form {
+      display: grid;
+      gap: 9px;
+    }
+    .feature-request-form label {
+      display: grid;
+      gap: 5px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .feature-request-form textarea {
+      min-height: 110px;
     }
     .modal-backdrop {
       position: fixed;
@@ -760,6 +913,9 @@
       .community-right-rail {
         position: static;
       }
+      .comment-form {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -798,12 +954,23 @@
       <div id="composer" class="composer post-launcher">
         <div class="post-launcher-top">
           <span id="composer-avatar" class="avatar avatar-teal">M</span>
-          <button id="open-post-modal" class="post-trigger" type="button">Start a post</button>
+          <div class="inline-post-form">
+            <input id="inline-post-title" class="inline-post-title" type="text" maxlength="160" placeholder="Optional title">
+            <textarea id="inline-post-body" class="inline-post-body" maxlength="4000" rows="2" placeholder="Share a question, workflow, or idea..."></textarea>
+            <div class="inline-post-actions">
+              <label class="inline-image-chip">
+                Add images
+                <input id="inline-post-images" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+              </label>
+              <button id="submit-inline-post" class="btn btn-primary" type="button">Post</button>
+            </div>
+            <div id="inline-post-image-preview" class="inline-image-preview-grid" aria-live="polite"></div>
+          </div>
         </div>
         <div class="post-launcher-actions" aria-label="Post options">
-          <button class="post-action-chip" type="button" data-open-post-option="question"><span>Q</span>Question</button>
-          <button class="post-action-chip" type="button" data-open-post-option="photo"><span>+</span>Photo</button>
-          <button class="post-action-chip" type="button" data-open-post-option="idea"><span>*</span>Idea</button>
+          <button class="post-action-chip" type="button" data-inline-post-option="question"><span>Q</span>Question</button>
+          <button class="post-action-chip" type="button" data-inline-post-option="photo"><span>+</span>Photo</button>
+          <button class="post-action-chip" type="button" data-inline-post-option="idea"><span>*</span>Idea</button>
         </div>
       </div>
 
@@ -878,6 +1045,33 @@
     </div>
   </div>
 
+  <div id="feature-request-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal post-modal" role="dialog" aria-modal="true" aria-labelledby="feature-request-modal-title">
+      <div class="post-modal-head">
+        <h2 id="feature-request-modal-title">Request a feature</h2>
+        <button id="feature-request-modal-close" class="modal-close-btn" type="button" aria-label="Close feature request modal">×</button>
+      </div>
+      <div class="post-modal-body">
+        <p>Share the MolDraw improvement you want others to vote on.</p>
+        <form id="community-feature-request-form" class="feature-request-form">
+          <label>
+            Feature title
+            <input id="feature-request-title" type="text" maxlength="160" placeholder="Example: Save molecules to cloud dashboard" required>
+          </label>
+          <label>
+            What should it do?
+            <textarea id="feature-request-description" maxlength="4000" placeholder="Describe the workflow, problem, or missing tool..." required></textarea>
+          </label>
+          <label>
+            Optional images
+            <input id="feature-request-images" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+          </label>
+          <button class="post-modal-submit" type="submit">Send request</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/site-topbar.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -892,10 +1086,13 @@
     const authModal = document.getElementById('auth-modal');
     const authMessage = document.getElementById('auth-message');
     const postModal = document.getElementById('post-modal');
+    const featureRequestModal = document.getElementById('feature-request-modal');
     let session = null;
     let profile = null;
     let activeTab = 'discussions';
     let editingPostId = null;
+    let selectedInlinePostFiles = [];
+    let inlinePostPreviewUrls = [];
     const expandedCommentThreads = new Set();
     const expandedReplyThreads = new Set();
     const commentCache = new Map();
@@ -916,6 +1113,14 @@
     const initials = (name) => String(name || 'M').trim().slice(0, 1).toUpperCase() || 'M';
     const safeAvatarKey = (key) => ['avatar-teal', 'avatar-blue', 'avatar-purple', 'avatar-amber'].includes(key) ? key : 'avatar-teal';
     const isAdmin = () => Boolean(profile && (profile.is_admin || profile.role === 'admin'));
+    const adminBadge = (value) => value ? '<span class="admin-badge">Admin</span>' : '';
+    const titleFromBody = (body) => String(body || '').split('\n').find(Boolean)?.trim().slice(0, 90) || 'Community post';
+
+    function renderImages(imageUrls, altText = 'Community attachment', className = 'card-images') {
+      const images = Array.isArray(imageUrls) ? imageUrls : [];
+      if (!images.length) return '';
+      return `<div class="${className}">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="${escapeHtml(altText)}"></a>`).join('')}</div>`;
+    }
 
     function requireAuth() {
       if (session?.user) return true;
@@ -947,8 +1152,23 @@
       document.getElementById('post-modal-meta').textContent = profile?.designation ? `${profile.designation} · Public community post` : 'Public community post';
     }
 
+    function focusInlineComposer(option) {
+      if (!requireAuth()) return;
+      const title = document.getElementById('inline-post-title');
+      const body = document.getElementById('inline-post-body');
+      const images = document.getElementById('inline-post-images');
+      if (option === 'question' && !title.value) title.value = 'Question: ';
+      if (option === 'idea' && !title.value) title.value = 'Idea: ';
+      if (option === 'photo') images.click();
+      setTimeout(() => (title.value ? body : title).focus(), 0);
+    }
+
     function openPostModal(option, post = null) {
       if (!requireAuth()) return;
+      if (!post) {
+        focusInlineComposer(option);
+        return;
+      }
       updatePostIdentity();
       const title = document.getElementById('post-title');
       const body = document.getElementById('post-body');
@@ -972,6 +1192,59 @@
       document.getElementById('post-modal-title').textContent = 'Create post';
       document.getElementById('submit-post').textContent = 'Post';
       document.getElementById('post-images').disabled = false;
+    }
+
+    function openFeatureRequestModal() {
+      if (!requireAuth()) return;
+      featureRequestModal.classList.add('visible');
+      featureRequestModal.setAttribute('aria-hidden', 'false');
+      setTimeout(() => document.getElementById('feature-request-title').focus(), 0);
+    }
+
+    function closeFeatureRequestModal() {
+      featureRequestModal.classList.remove('visible');
+      featureRequestModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function clearInlineImagePreviews() {
+      inlinePostPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+      inlinePostPreviewUrls = [];
+      selectedInlinePostFiles = [];
+      const input = document.getElementById('inline-post-images');
+      const preview = document.getElementById('inline-post-image-preview');
+      if (input) input.value = '';
+      if (preview) {
+        preview.classList.remove('visible');
+        preview.innerHTML = '';
+      }
+    }
+
+    function renderInlineImagePreviews() {
+      const preview = document.getElementById('inline-post-image-preview');
+      if (!preview) return;
+      inlinePostPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+      inlinePostPreviewUrls = selectedInlinePostFiles.map((file) => URL.createObjectURL(file));
+      preview.classList.toggle('visible', selectedInlinePostFiles.length > 0);
+      preview.innerHTML = selectedInlinePostFiles.map((file, index) => `
+        <div class="inline-image-preview-card">
+          <img src="${inlinePostPreviewUrls[index]}" alt="${escapeHtml(file.name || 'Selected image')}">
+          <button class="inline-image-remove" type="button" data-remove-inline-image="${index}" aria-label="Remove selected image">×</button>
+        </div>
+      `).join('');
+      preview.querySelectorAll('[data-remove-inline-image]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const index = Number(button.getAttribute('data-remove-inline-image'));
+          selectedInlinePostFiles.splice(index, 1);
+          renderInlineImagePreviews();
+        });
+      });
+    }
+
+    function handleInlinePostImageSelection(event) {
+      const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'));
+      selectedInlinePostFiles = selectedInlinePostFiles.concat(files).slice(0, 6);
+      event.target.value = '';
+      renderInlineImagePreviews();
     }
 
     async function refreshSession() {
@@ -1026,6 +1299,25 @@
       return urls;
     }
 
+    async function uploadFeatureRequestImages(files, requestId) {
+      if (!files?.length) return [];
+      if (!requireAuth()) return [];
+      const selected = Array.from(files).filter((file) => file.type.startsWith('image/')).slice(0, 5);
+      const urls = [];
+      for (const file of selected) {
+        const safeName = file.name.replace(/[^a-z0-9._-]/gi, '-').toLowerCase();
+        const path = `${requestId}/${Date.now()}-${safeName}`;
+        const { error } = await client.storage.from('feature-request-images').upload(path, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+        if (error) throw error;
+        const { data } = client.storage.from('feature-request-images').getPublicUrl(path);
+        if (data?.publicUrl) urls.push(data.publicUrl);
+      }
+      return urls;
+    }
+
     async function submitPost() {
       if (!requireAuth()) return;
       const title = document.getElementById('post-title').value.trim();
@@ -1051,6 +1343,7 @@
             author_name: profile?.name || session.user.email,
             author_designation: profile?.designation || null,
             author_avatar_key: safeAvatarKey(profile?.avatar_key),
+            author_is_admin: isAdmin(),
             title,
             body,
             image_urls: imageUrls
@@ -1068,6 +1361,42 @@
       }
     }
 
+    async function submitInlinePost() {
+      if (!requireAuth()) return;
+      const titleInput = document.getElementById('inline-post-title');
+      const bodyInput = document.getElementById('inline-post-body');
+      const imageInput = document.getElementById('inline-post-images');
+      const body = bodyInput.value.trim();
+      const title = titleInput.value.trim() || titleFromBody(body);
+      if (!body) {
+        statusEl.textContent = 'Write a message first.';
+        bodyInput.focus();
+        return;
+      }
+      statusEl.textContent = 'Posting...';
+      try {
+        const imageUrls = await uploadImages(selectedInlinePostFiles);
+        const { error } = await client.from('community_posts').insert({
+          user_id: session.user.id,
+          author_name: profile?.name || session.user.email,
+          author_designation: profile?.designation || null,
+          author_avatar_key: safeAvatarKey(profile?.avatar_key),
+          author_is_admin: isAdmin(),
+          title,
+          body,
+          image_urls: imageUrls
+        });
+        if (error) throw error;
+        titleInput.value = '';
+        bodyInput.value = '';
+        imageInput.value = '';
+        clearInlineImagePreviews();
+        await loadDiscussions();
+      } catch (error) {
+        statusEl.textContent = error.message || 'Could not post.';
+      }
+    }
+
     async function togglePostVote(postId, active) {
       if (!requireAuth()) return;
       if (active) {
@@ -1078,20 +1407,26 @@
       await loadDiscussions();
     }
 
-    async function submitComment(postId, input, parentCommentId = null) {
+    async function submitComment(postId, input, parentCommentId = null, imageInput = null) {
       if (!requireAuth()) return;
       const body = input.value.trim();
       if (!body) return;
+      const imageUrls = await uploadImages(imageInput?.files);
       const { error } = await client.from('community_comments').insert({
         post_id: postId,
         user_id: session.user.id,
         author_name: profile?.name || session.user.email,
         author_designation: profile?.designation || null,
         author_avatar_key: safeAvatarKey(profile?.avatar_key),
+        author_is_admin: isAdmin(),
         parent_comment_id: parentCommentId,
-        body
+        body,
+        image_urls: imageUrls
       });
-      if (!error) input.value = '';
+      if (!error) {
+        input.value = '';
+        if (imageInput) imageInput.value = '';
+      }
       await openComments(postId);
       await loadDiscussions(false);
     }
@@ -1141,16 +1476,18 @@
       const visibleReplies = repliesExpanded ? allReplies : allReplies.slice(0, 2);
       const replies = visibleReplies.map((reply) => renderSingleComment(reply, postId, true, comment.id)).join('');
       const hiddenReplies = Math.max(allReplies.length - visibleReplies.length, 0);
+      const images = renderImages(comment.image_urls, 'Reply attachment', 'card-images comment-images');
       return `
         <div class="comment ${isReply ? 'comment-reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
           <div class="author" style="margin-bottom:3px;">
             <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}" style="width:24px;height:24px;font-size:10px;">${escapeHtml(initials(comment.author_name))}</span>
             <div>
-              <strong>${escapeHtml(comment.author_name || 'Community member')}</strong>
+              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)}</strong>
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(comment.created_at))}</div>
             </div>
           </div>
           <div class="comment-body">${escapeHtml(comment.body)}</div>
+          ${images}
           <div class="comment-tools">
             <button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(rootCommentId)}">Reply</button>
             ${ownerTools}
@@ -1176,18 +1513,24 @@
       return `
         ${rendered || '<p class="author-meta">No replies yet. Be the first to reply.</p>'}
         ${hiddenCount > 0 ? `<button class="more-thread" type="button" data-more-comments="${escapeHtml(postId)}">View ${hiddenCount} more thread${hiddenCount === 1 ? '' : 's'}</button>` : ''}
-        <div class="comment-form">
+        <div class="comment-form" data-comment-form="main">
           <textarea placeholder="Write a reply..."></textarea>
+          <label class="comment-image-chip">
+            Image
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+          </label>
           <button class="btn btn-primary" type="button">Reply</button>
         </div>
       `;
     }
 
     function bindCommentThread(wrap, postId) {
-      const input = wrap.querySelector('textarea');
-      const button = wrap.querySelector('.comment-form .btn');
+      const mainForm = wrap.querySelector('[data-comment-form="main"]');
+      const input = mainForm?.querySelector('textarea');
+      const imageInput = mainForm?.querySelector('input[type="file"]');
+      const button = mainForm?.querySelector('.btn');
       if (input) input.addEventListener('focus', requireAuth);
-      if (button && input) button.addEventListener('click', () => submitComment(postId, input));
+      if (button && input) button.addEventListener('click', () => submitComment(postId, input, null, imageInput));
       wrap.querySelectorAll('[data-reply-comment]').forEach((replyButton) => {
         replyButton.addEventListener('click', () => {
           if (!requireAuth()) return;
@@ -1198,12 +1541,17 @@
           slot.innerHTML = `
             <div class="comment-form reply-form">
               <textarea placeholder="Reply to this comment..."></textarea>
+              <label class="comment-image-chip">
+                Image
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+              </label>
               <button class="btn btn-primary" type="button">Reply</button>
             </div>
           `;
           const replyInput = slot.querySelector('textarea');
+          const replyImageInput = slot.querySelector('input[type="file"]');
           const replySubmit = slot.querySelector('button');
-          replySubmit.addEventListener('click', () => submitComment(postId, replyInput, parentCommentId));
+          replySubmit.addEventListener('click', () => submitComment(postId, replyInput, parentCommentId, replyImageInput));
           replyInput.focus();
         });
       });
@@ -1249,7 +1597,7 @@
       if (!wrap) return;
       const { data } = await client
         .from('community_comments')
-        .select('id,post_id,parent_comment_id,user_id,body,author_name,author_designation,author_avatar_key,created_at')
+        .select('id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,created_at')
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
         .limit(100);
@@ -1261,13 +1609,16 @@
 
     async function loadDiscussions(setLoading = true) {
       activeTab = 'discussions';
+      if (window.location.hash === '#feature-requests') {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
       tabDiscussions.classList.add('active');
       tabFeatures.classList.remove('active');
       composer.style.display = 'block';
       if (setLoading) statusEl.textContent = 'Loading discussions...';
       const { data, error } = await client
         .from('community_posts')
-        .select('id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,upvote_count,comment_count,created_at')
+        .select('id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,upvote_count,comment_count,created_at')
         .order('created_at', { ascending: false })
         .limit(40);
       if (error) {
@@ -1284,7 +1635,7 @@
       if (postIds.length) {
         const { data: comments } = await client
           .from('community_comments')
-          .select('id,post_id,parent_comment_id,user_id,body,author_name,author_designation,author_avatar_key,created_at')
+          .select('id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,created_at')
           .in('post_id', postIds)
           .order('created_at', { ascending: true })
           .limit(240);
@@ -1296,7 +1647,6 @@
       }
       statusEl.textContent = data?.length ? '' : 'No discussions yet. Start the first one.';
       feed.innerHTML = (data || []).map((post) => {
-        const images = Array.isArray(post.image_urls) ? post.image_urls : [];
         const voted = myVotes.has(post.id);
         const comments = commentsByPost.get(post.id) || [];
         commentTotalCache.set(post.id, post.comment_count || comments.length);
@@ -1309,14 +1659,14 @@
               <div class="author">
                 <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
                 <div>
-                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')}</div>
+                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')} ${adminBadge(post.author_is_admin)}</div>
                   <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(post.created_at))}</div>
                 </div>
               </div>
             </div>
             <h2 class="card-title">${escapeHtml(post.title)}</h2>
             <p class="card-body">${escapeHtml(post.body)}</p>
-            ${images.length ? `<div class="card-images">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="Community attachment"></a>`).join('')}</div>` : ''}
+            ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
               <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-post="${escapeHtml(post.id)}" data-voted="${voted ? '1' : '0'}">▲ ${post.upvote_count || 0}</button>
               <button class="pill" type="button" data-open-comments="${escapeHtml(post.id)}">Reply ${post.comment_count || 0}</button>
@@ -1336,7 +1686,7 @@
             return;
           }
           const wrap = document.querySelector(`[data-comments="${btn.getAttribute('data-open-comments')}"]`);
-          const input = wrap?.querySelector('textarea');
+          const input = wrap?.querySelector('[data-comment-form="main"] textarea');
           if (input) input.focus();
         });
       });
@@ -1376,8 +1726,46 @@
       await loadFeatureRequests();
     }
 
+    async function submitCommunityFeatureRequest(event) {
+      event.preventDefault();
+      if (!requireAuth()) return;
+      const titleInput = document.getElementById('feature-request-title');
+      const descriptionInput = document.getElementById('feature-request-description');
+      const imageInput = document.getElementById('feature-request-images');
+      const title = titleInput.value.trim();
+      const description = descriptionInput.value.trim();
+      if (!title || !description) {
+        statusEl.textContent = 'Add a title and description first.';
+        return;
+      }
+      statusEl.textContent = 'Sending feature request...';
+      try {
+        const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const imageUrls = await uploadFeatureRequestImages(imageInput.files, requestId);
+        const { error } = await client.from('feature_requests').insert({
+          user_id: session.user.id,
+          name: profile?.name || session.user.email,
+          email: profile?.email || session.user.email,
+          title,
+          description,
+          image_urls: imageUrls
+        });
+        if (error) throw error;
+        titleInput.value = '';
+        descriptionInput.value = '';
+        imageInput.value = '';
+        closeFeatureRequestModal();
+        await loadFeatureRequests();
+      } catch (error) {
+        statusEl.textContent = error.message || 'Could not send this feature request.';
+      }
+    }
+
     async function loadFeatureRequests() {
       activeTab = 'features';
+      if (window.location.hash !== '#feature-requests') {
+        window.history.replaceState(null, '', '#feature-requests');
+      }
       tabFeatures.classList.add('active');
       tabDiscussions.classList.remove('active');
       composer.style.display = 'none';
@@ -1399,7 +1787,7 @@
         myVotes = new Set((votes || []).map((vote) => vote.feature_request_id));
       }
       statusEl.textContent = data?.length ? '' : 'No feature requests yet.';
-      feed.innerHTML = (data || []).map((request) => {
+      const requestCards = (data || []).map((request) => {
         const images = Array.isArray(request.image_urls) ? request.image_urls : [];
         const voted = myVotes.has(request.id);
         const currentStatus = request.status || 'new';
@@ -1429,6 +1817,17 @@
           </article>
         `;
       }).join('');
+      feed.innerHTML = `
+        <section class="feature-cta-card">
+          <div>
+            <h2>Have an idea for MolDraw?</h2>
+            <p>Request a feature here so the community can vote and track progress.</p>
+          </div>
+          <button id="open-community-feature-request" class="btn btn-primary" type="button">Request feature</button>
+        </section>
+        ${requestCards}
+      `;
+      document.getElementById('open-community-feature-request')?.addEventListener('click', openFeatureRequestModal);
       feed.querySelectorAll('[data-vote-feature]').forEach((btn) => {
         btn.addEventListener('click', () => toggleFeatureVote(btn.getAttribute('data-vote-feature'), btn.getAttribute('data-voted') === '1'));
       });
@@ -1441,13 +1840,19 @@
       return activeTab === 'features' ? loadFeatureRequests() : loadDiscussions();
     }
 
-    document.getElementById('open-post-modal').addEventListener('click', () => openPostModal());
-    document.querySelectorAll('[data-open-post-option]').forEach((button) => {
-      button.addEventListener('click', () => openPostModal(button.getAttribute('data-open-post-option')));
+    document.getElementById('inline-post-body').addEventListener('focus', () => requireAuth());
+    document.getElementById('inline-post-title').addEventListener('focus', () => requireAuth());
+    document.getElementById('inline-post-images').addEventListener('change', handleInlinePostImageSelection);
+    document.getElementById('submit-inline-post').addEventListener('click', submitInlinePost);
+    document.querySelectorAll('[data-inline-post-option]').forEach((button) => {
+      button.addEventListener('click', () => focusInlineComposer(button.getAttribute('data-inline-post-option')));
     });
     document.getElementById('post-modal-close').addEventListener('click', closePostModal);
     postModal.addEventListener('click', (event) => { if (event.target === postModal) closePostModal(); });
     document.getElementById('submit-post').addEventListener('click', submitPost);
+    document.getElementById('feature-request-modal-close').addEventListener('click', closeFeatureRequestModal);
+    featureRequestModal.addEventListener('click', (event) => { if (event.target === featureRequestModal) closeFeatureRequestModal(); });
+    document.getElementById('community-feature-request-form').addEventListener('submit', submitCommunityFeatureRequest);
     tabDiscussions.addEventListener('click', loadDiscussions);
     tabFeatures.addEventListener('click', loadFeatureRequests);
     document.querySelectorAll('[data-auth-open]').forEach((btn) => btn.addEventListener('click', () => openAuthModal('Sign in to continue')));
@@ -1456,6 +1861,7 @@
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && authModal.classList.contains('visible')) closeAuthModal();
       if (event.key === 'Escape' && postModal.classList.contains('visible')) closePostModal();
+      if (event.key === 'Escape' && featureRequestModal.classList.contains('visible')) closeFeatureRequestModal();
     });
     document.getElementById('auth-signin').addEventListener('click', async () => {
       authMessage.textContent = 'Signing in...';
@@ -1494,7 +1900,14 @@
       await loadActiveTab();
     });
 
-    refreshSession().then(loadDiscussions);
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash === '#feature-requests') loadFeatureRequests();
+    });
+
+    refreshSession().then(() => {
+      if (window.location.hash === '#feature-requests') return loadFeatureRequests();
+      return loadDiscussions();
+    });
   </script>
 </body>
 </html>

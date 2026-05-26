@@ -90,7 +90,7 @@ const QC_METHOD_OPTIONS = ['B3LYP', 'PBE0', 'M06-2X', 'wB97X-D', 'HF', 'MP2'];
 const QC_BASIS_OPTIONS = ['6-31G(d)', '6-31+G(d,p)', 'def2-SVP', 'def2-TZVP', 'cc-pVDZ', 'cc-pVTZ'];
 const LOCAL_PROJECTS_STORAGE_KEY = 'moldraw_local_projects';
 const UPDATES_SEEN_STORAGE_KEY = 'moldraw_updates_seen_version';
-const CURRENT_UPDATES_VERSION = '2026-05-local-projects';
+const CURRENT_UPDATES_VERSION = '2026-05-community';
 
 const readLocalProjects = () => {
   try {
@@ -595,6 +595,7 @@ function App() {
     await supabase.auth.signOut();
     setAuthSession(null);
     setUserProfile(null);
+    currentLocalProjectIdRef.current = '';
   };
 
   const openFeatureRequestModal = () => {
@@ -607,6 +608,13 @@ function App() {
     setFeatureRequestError('');
     setFeatureRequestNotice('');
     setShowFeatureRequestModal(true);
+  };
+
+  const promptSignupForLocalProjects = () => {
+    setAuthMode('signup');
+    setAuthError('');
+    setAuthNotice('Create an account to save local drawings and use the dashboard.');
+    setShowAuthModal(true);
   };
 
   const updateFeatureRequestForm = (field, value) => {
@@ -740,6 +748,16 @@ function App() {
       data?.subscription?.unsubscribe();
     };
   }, [fetchUserProfile]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authIntent = params.get('signin') || params.get('signup');
+    if (!authIntent) return;
+    setAuthMode(params.get('signup') ? 'signup' : 'signin');
+    setAuthError('');
+    setAuthNotice('Sign in to open your MolDraw dashboard and saved local drawings.');
+    setShowAuthModal(true);
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle('ai-chat-panel-open', isChatOpen);
@@ -2850,7 +2868,7 @@ ${scientificGuardrails}`;
           lastMolfileForAIRef.current = molfile;
         }
 
-        if (currentLocalProjectIdRef.current && molfile && getMolfileAtomCount(molfile) > 0) {
+        if (authSession?.user && currentLocalProjectIdRef.current && molfile && getMolfileAtomCount(molfile) > 0) {
           const activeProjectId = currentLocalProjectIdRef.current;
           const nextProjects = readLocalProjects().map((project) => (
             project.id === activeProjectId
@@ -3046,7 +3064,7 @@ ${scientificGuardrails}`;
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isKetcherReady, updateMolecule3D, requestMoleculeUpdate, isProtein, isReactionSearchLoading, viewerMode, aiRequestControls, geminiApiKey, aiModel]);
+  }, [isKetcherReady, updateMolecule3D, requestMoleculeUpdate, isProtein, isReactionSearchLoading, viewerMode, aiRequestControls, geminiApiKey, aiModel, authSession]);
 
   // Debounce timeout ref for 3D updates
   const debounceTimeoutRef = useRef(null);
@@ -3534,6 +3552,8 @@ ${scientificGuardrails}`;
   }, [isKetcherReady, lonePairs]);
 
   const upsertLocalProjectSnapshot = (snapshot, options = {}) => {
+    if (!authSession?.user) return { saved: false, projectId: '' };
+
     const molfile = String(snapshot?.molfile || '').trim();
     const atomCount = getMolfileAtomCount(molfile);
     if (atomCount <= 0) return { saved: false, projectId: '' };
@@ -3587,6 +3607,7 @@ ${scientificGuardrails}`;
   };
 
   const saveCurrentDesignLocally = async () => {
+    if (!authSession?.user) return { saved: false, bridgeWindow: iframeRef.current?.contentWindow || null };
     if (!iframeRef.current || !isKetcherReady) return { saved: false, bridgeWindow: null };
     const bridgeWindow = iframeRef.current.contentWindow;
     let snapshot = null;
@@ -3606,6 +3627,10 @@ ${scientificGuardrails}`;
 
   const handleCreateNewDesign = async () => {
     if (!iframeRef.current || !isKetcherReady) return;
+    if (!authSession?.user) {
+      promptSignupForLocalProjects();
+      return;
+    }
 
     const result = await saveCurrentDesignLocally();
     const bridgeWindow = result.bridgeWindow || iframeRef.current.contentWindow;
@@ -5144,9 +5169,15 @@ ${scientificGuardrails}`;
               <button
                 type="button"
                 className="tb-btn tb-btn-new-design"
-                onClick={() => setShowNewDesignConfirm(true)}
+                onClick={() => {
+                  if (!authSession?.user) {
+                    promptSignupForLocalProjects();
+                    return;
+                  }
+                  setShowNewDesignConfirm(true);
+                }}
                 disabled={!isKetcherReady}
-                title="Start a new blank design. Current progress is autosaved locally."
+                title={authSession?.user ? 'Start a new blank design. Current progress is autosaved locally.' : 'Sign up to save drawings and start local design sessions.'}
               >
                 New design
               </button>
@@ -6310,6 +6341,14 @@ ${scientificGuardrails}`;
             <div className="updates-list">
               <article className="updates-card updates-card-highlight">
                 <div className="updates-card-date">May 2026</div>
+                <div className="updates-card-title">New MolDraw Community</div>
+                <p>
+                  Join the new <strong>Community</strong> page to post chemistry workflow questions, reply with images,
+                  upvote ideas, and follow feature request status updates.
+                </p>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-date">May 2026</div>
                 <div className="updates-card-title">Local drawings dashboard</div>
                 <p>
                   Drawings now autosave locally as you work. Start fresh with <strong>New design</strong>,
@@ -6408,6 +6447,13 @@ ${scientificGuardrails}`;
                 <div className="feature-request-subtitle">Tell us what would make MolDraw better for your workflow.</div>
               </div>
               <button type="button" className="feature-request-close" onClick={() => setShowFeatureRequestModal(false)} aria-label="Close feature request modal">×</button>
+            </div>
+
+            <div className="feature-request-tabs" aria-label="Feature request views">
+              <button type="button" className="feature-request-tab active">Request feature</button>
+              <a className="feature-request-tab" href="/community/#feature-requests" target="_blank" rel="noopener noreferrer">
+                Requests by others
+              </a>
             </div>
 
             <div className="feature-request-grid">

@@ -588,13 +588,16 @@
     }
 
     function renderBlank(message) {
-      sidebar.classList.add('visible');
+      sidebar.classList.toggle('visible', Boolean(currentUser));
       setActiveNav('drawings');
       root.innerHTML = `
         <div class="dashboard-blank">
           <div>
             <h1 class="dashboard-title">Dashboard</h1>
             <p class="dashboard-subtitle">${escapeHtml(message)}</p>
+            ${currentUser ? '' : `<p style="margin-top:16px;">
+              <a class="project-action project-action-primary" href="/?signin=1" style="display:inline-flex;padding:0 18px;">Sign in to MolDraw</a>
+            </p>`}
           </div>
         </div>
       `;
@@ -976,15 +979,15 @@
     }
 
     async function loadDashboard() {
-      renderProjects();
-
       const { data: sessionData } = await client.auth.getSession();
       const user = sessionData && sessionData.session && sessionData.session.user;
       if (!user) {
+        renderBlank('Sign in to access your MolDraw dashboard and local drawing cards.');
         return;
       }
       currentUser = user;
       profileNav.hidden = false;
+      renderProjects();
 
       const { data: profile, error: profileError } = await client
         .from('users')
