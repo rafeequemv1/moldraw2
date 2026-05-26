@@ -549,7 +549,8 @@
   box-shadow: 0 0 0 2px #fff7ed;
 }
 
-.tb-btn-new-design {
+.tb-btn-new-design,
+.tb-btn-my-designs {
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
@@ -567,6 +568,18 @@
 .tb-btn-new-design:hover {
   background: #dbeafe;
   color: #1e40af;
+}
+
+.tb-btn-my-designs {
+  background: #f7f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+  font-weight: 800;
+}
+
+.tb-btn-my-designs:hover {
+  background: #ede9fe;
+  color: #5b21b6;
 }
 
 .tb-btn-updates {
@@ -1208,18 +1221,6 @@ button.tb-menu-item:disabled:hover {
   max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.viewer-toolbar-dashboard {
-  color: #0f172a;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  font-weight: 700;
-}
-
-.viewer-toolbar-dashboard:hover {
-  color: #1a5a5b;
-  background: #eef6f6;
 }
 
 .viewer-toolbar-more {
@@ -2263,6 +2264,27 @@ a.viewer-toolbar-course:hover {
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
   padding: 16px;
   font-family: 'Libre Franklin', sans-serif;
+}
+
+.feature-request-note {
+  margin: 0 0 14px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.new-design-local-warning {
+  padding: 10px 12px;
+  border: 1px solid #fed7aa;
+  border-left: 4px solid #f97316;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #7c2d12;
+  font-weight: 800;
+}
+
+.new-design-local-warning strong {
+  color: #9a3412;
 }
 
 .updates-modal {

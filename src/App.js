@@ -606,7 +606,7 @@ function App() {
   const promptSignupForLocalProjects = () => {
     setAuthMode('signup');
     setAuthError('');
-    setAuthNotice('Create an account to save local drawings and use the dashboard.');
+    setAuthNotice('Create an account to save local drawings and open My designs.');
     setShowAuthModal(true);
   };
 
@@ -747,7 +747,7 @@ function App() {
     if (!authIntent) return;
     setAuthMode(params.get('signup') ? 'signup' : 'signin');
     setAuthError('');
-    setAuthNotice('Sign in to open your MolDraw dashboard and saved local drawings.');
+    setAuthNotice('Sign in to open My designs and saved local drawings.');
     setShowAuthModal(true);
   }, []);
 
@@ -2699,7 +2699,7 @@ ${scientificGuardrails}`;
             const project = readLocalProjects().find((item) => item.id === projectId);
             if (project?.molfile) {
               currentLocalProjectIdRef.current = project.id;
-              setProjectNotice('Loaded local dashboard project.');
+              setProjectNotice('Loaded local design.');
               setTimeout(() => setProjectNotice(''), 2400);
               setTimeout(() => {
                 iframeRef.current.contentWindow.postMessage({
@@ -5175,6 +5175,21 @@ ${scientificGuardrails}`;
               </button>
 
               <button
+                type="button"
+                className="tb-btn tb-btn-my-designs"
+                onClick={() => {
+                  if (!authSession?.user) {
+                    promptSignupForLocalProjects();
+                    return;
+                  }
+                  window.location.href = '/dashboard/';
+                }}
+                title={authSession?.user ? 'Open your saved local drawing cards' : 'Sign up to view saved local drawing cards.'}
+              >
+                My designs
+              </button>
+
+              <button
                 className={`tb-btn${smilesCopied ? ' tb-copied' : ''}`}
                 onClick={() => {
                   if (iframeRef.current && isKetcherReady) {
@@ -5500,13 +5515,6 @@ ${scientificGuardrails}`;
                   >
                     {authDisplayName}
                   </button>
-                  <a
-                    className="viewer-toolbar-extra viewer-toolbar-dashboard"
-                    href="/dashboard/"
-                    title="Open your MolDraw dashboard"
-                  >
-                    Dashboard
-                  </a>
                   <button
                     type="button"
                     className="viewer-toolbar-extra"
@@ -6404,8 +6412,9 @@ ${scientificGuardrails}`;
                 ×
               </button>
             </div>
-            <p className="feature-request-note">
-              This will open a blank editor session. You can find previous drawings as local cards in the dashboard.
+            <p className="feature-request-note new-design-local-warning">
+              Important: designs are saved only in this browser for now. If browser data is cleared,
+              private mode is used, or you switch devices, local drawings may be lost. Use <strong>My designs</strong> to reopen saved local cards.
             </p>
             <div className="feature-request-actions">
               <button
