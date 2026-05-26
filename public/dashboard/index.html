@@ -38,14 +38,20 @@
       width: 100%;
       align-items: center;
       justify-content: flex-start;
-      border: none;
+      border: 1px solid transparent;
       border-radius: 10px;
-      background: #2C7A7B;
-      color: #fff;
+      background: #fff;
+      color: #334155;
       padding: 10px 12px;
       font-size: 13px;
       font-weight: 800;
       cursor: pointer;
+      margin-bottom: 6px;
+    }
+    .dashboard-nav-item.active {
+      border-color: #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
     }
     .dashboard-main {
       min-width: 0;
@@ -94,7 +100,55 @@
     }
     .request-list {
       display: grid;
+      gap: 8px;
+    }
+    .request-list-item {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(130px, 0.8fr) 92px 120px;
+      align-items: center;
       gap: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 12px;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .request-list-item:hover {
+      border-color: #b6d7d8;
+      background: #f7fcfc;
+    }
+    .request-list-title {
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .request-list-meta {
+      color: #64748b;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .request-status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: capitalize;
     }
     .request-card {
       border: 1px solid #e5e7eb;
@@ -140,9 +194,222 @@
       object-fit: cover;
       display: block;
     }
+    .dashboard-table-wrap {
+      overflow-x: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fff;
+    }
+    .dashboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+    .dashboard-table th,
+    .dashboard-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #edf1f5;
+      text-align: left;
+      font-size: 12px;
+      vertical-align: top;
+    }
+    .dashboard-table th {
+      color: #64748b;
+      background: #f8fafc;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .dashboard-table tr:last-child td {
+      border-bottom: none;
+    }
+    .role-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: capitalize;
+    }
+    .role-pill-admin {
+      background: #ecfdf5;
+      color: #047857;
+    }
+    .dashboard-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 5000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, 0.46);
+    }
+    .dashboard-modal-backdrop.visible {
+      display: flex;
+    }
+    .dashboard-modal {
+      width: min(720px, 96vw);
+      max-height: 90vh;
+      overflow: auto;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 22px 64px rgba(15, 23, 42, 0.28);
+      border: 1px solid #e5e7eb;
+      padding: 20px;
+    }
+    .dashboard-modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .dashboard-modal-title {
+      margin: 0 0 6px;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+    .dashboard-modal-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .modal-desc {
+      white-space: pre-wrap;
+      color: #334155;
+      line-height: 1.6;
+      font-size: 14px;
+      margin: 12px 0 0;
+    }
+    .modal-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .modal-images a {
+      display: block;
+      border: 1px solid #dbe4ee;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+    .modal-images img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+    }
+    .local-warning {
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      border: 1px solid #fed7aa;
+      border-radius: 14px;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+    .projects-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .projects-head h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 14px;
+    }
+    .project-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      background: #fbfdff;
+      overflow: hidden;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+    .project-preview {
+      height: 132px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .project-preview img {
+      max-width: 94%;
+      max-height: 112px;
+      display: block;
+    }
+    .project-preview-empty {
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .project-body {
+      padding: 12px;
+    }
+    .project-body h2 {
+      margin: 0 0 6px;
+      color: #0f172a;
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .project-meta {
+      margin: 0 0 10px;
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .project-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .project-action {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      border: 1px solid #dbe4ee;
+      border-radius: 9px;
+      background: #fff;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .project-action-primary {
+      border-color: #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
+    }
     @media (max-width: 760px) {
       .dashboard-layout {
         grid-template-columns: 1fr;
+      }
+      .request-list-item {
+        grid-template-columns: 1fr;
+        gap: 5px;
       }
     }
   </style>
@@ -150,7 +417,9 @@
 <body>
   <main class="dashboard-layout">
     <aside id="dashboard-sidebar" class="dashboard-sidebar" aria-label="Dashboard sections">
-      <button class="dashboard-nav-item" type="button">Feature requests</button>
+      <button id="drawings-nav" class="dashboard-nav-item active" type="button">Drawings</button>
+      <button id="requests-nav" class="dashboard-nav-item" type="button" hidden>Feature requests</button>
+      <button id="users-nav" class="dashboard-nav-item" type="button" hidden>Users</button>
     </aside>
     <section class="dashboard-main">
       <div id="dashboard-root" class="dashboard-card">
@@ -163,6 +432,11 @@
       </div>
     </section>
   </main>
+  <div id="request-modal-backdrop" class="dashboard-modal-backdrop" aria-hidden="true">
+    <div class="dashboard-modal" role="dialog" aria-modal="true" aria-labelledby="request-modal-title">
+      <div id="request-modal-root"></div>
+    </div>
+  </div>
   <script src="/js/site-topbar.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -171,6 +445,13 @@
     const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const root = document.getElementById('dashboard-root');
     const sidebar = document.getElementById('dashboard-sidebar');
+    const drawingsNav = document.getElementById('drawings-nav');
+    const requestsNav = document.getElementById('requests-nav');
+    const usersNav = document.getElementById('users-nav');
+    const requestModalBackdrop = document.getElementById('request-modal-backdrop');
+    const requestModalRoot = document.getElementById('request-modal-root');
+    const LOCAL_PROJECTS_STORAGE_KEY = 'moldraw_local_projects';
+    let latestFeatureRequests = [];
 
     const escapeHtml = (value) => String(value || '')
       .replace(/&/g, '&amp;')
@@ -179,8 +460,28 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
 
+    const readLocalProjects = () => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_STORAGE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed.filter((project) => project && project.id && project.molfile) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const writeLocalProjects = (projects) => {
+      localStorage.setItem(LOCAL_PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+    };
+
+    function setActiveNav(active) {
+      drawingsNav.classList.toggle('active', active === 'drawings');
+      requestsNav.classList.toggle('active', active === 'requests');
+      usersNav.classList.toggle('active', active === 'users');
+    }
+
     function renderBlank(message) {
-      sidebar.classList.remove('visible');
+      sidebar.classList.add('visible');
+      setActiveNav('drawings');
       root.innerHTML = `
         <div class="dashboard-blank">
           <div>
@@ -191,27 +492,74 @@
       `;
     }
 
+    function renderProjects() {
+      sidebar.classList.add('visible');
+      setActiveNav('drawings');
+      const projects = readLocalProjects();
+      const cards = projects.length ? projects.map((project) => {
+        const svg = String(project.svg || '');
+        const preview = svg
+          ? `<img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}" alt="${escapeHtml(project.title || 'MolDraw drawing')} preview">`
+          : '<span class="project-preview-empty">No preview</span>';
+        const updatedAt = project.updatedAt || project.createdAt;
+        return `
+          <article class="project-card">
+            <div class="project-preview">${preview}</div>
+            <div class="project-body">
+              <h2 title="${escapeHtml(project.title || 'Untitled drawing')}">${escapeHtml(project.title || 'Untitled drawing')}</h2>
+              <p class="project-meta">
+                ${escapeHtml(project.smiles || 'No SMILES saved')}<br>
+                ${updatedAt ? escapeHtml(new Date(updatedAt).toLocaleString()) : 'Saved locally'}
+              </p>
+              <div class="project-actions">
+                <a class="project-action project-action-primary" href="/?project=${encodeURIComponent(project.id)}">Open</a>
+                <button class="project-action" type="button" data-delete-project="${escapeHtml(project.id)}">Delete</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('') : `
+        <div class="dashboard-blank">
+          <div>
+            <h1 class="dashboard-title">No local drawings yet</h1>
+            <p class="dashboard-subtitle">Open MolDraw, draw a molecule, then use New design to save it as a local project card.</p>
+          </div>
+        </div>
+      `;
+
+      root.innerHTML = `
+        <p class="local-warning">
+          Projects are saved locally in this browser. They can be lost if browser data is cleared, you use private mode, or you switch devices. Cloud saving is coming soon.
+        </p>
+        <div class="projects-head">
+          <h1>Drawings</h1>
+          <span class="requests-status">${projects.length} local</span>
+        </div>
+        <div class="project-grid">${cards}</div>
+      `;
+
+      root.querySelectorAll('[data-delete-project]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const id = button.getAttribute('data-delete-project');
+          writeLocalProjects(readLocalProjects().filter((project) => project.id !== id));
+          renderProjects();
+        });
+      });
+    }
+
     function renderRequests(requests) {
       sidebar.classList.add('visible');
-      const cards = requests.length ? requests.map((request) => {
+      setActiveNav('requests');
+      latestFeatureRequests = requests;
+      const rows = requests.length ? requests.map((request) => {
         const images = Array.isArray(request.image_urls) ? request.image_urls : [];
         return `
-          <article class="request-card">
-            <h2>${escapeHtml(request.title)}</h2>
-            <p class="request-meta">
-              ${escapeHtml(request.name)} · ${escapeHtml(request.email)} · ${escapeHtml(new Date(request.created_at).toLocaleString())}
-            </p>
-            <p class="request-desc">${escapeHtml(request.description)}</p>
-            ${images.length ? `
-              <div class="request-images">
-                ${images.map((url) => `
-                  <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
-                    <img src="${escapeHtml(url)}" alt="Feature request attachment">
-                  </a>
-                `).join('')}
-              </div>
-            ` : ''}
-          </article>
+          <button class="request-list-item" type="button" data-request-id="${escapeHtml(request.id)}">
+            <span class="request-list-title">${escapeHtml(request.title)}</span>
+            <span class="request-list-meta">${escapeHtml(request.name)} · ${escapeHtml(request.email)}</span>
+            <span class="request-status-pill">${escapeHtml(request.status || 'new')}</span>
+            <span class="request-list-meta">${images.length} image${images.length === 1 ? '' : 's'}</span>
+          </button>
         `;
       }).join('') : '<p class="dashboard-subtitle">No feature requests yet.</p>';
 
@@ -220,29 +568,54 @@
           <h1>Feature requests</h1>
           <span class="requests-status">${requests.length} total</span>
         </div>
-        <div class="request-list">${cards}</div>
+        <div class="request-list">${rows}</div>
       `;
+
+      root.querySelectorAll('[data-request-id]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const request = latestFeatureRequests.find((item) => item.id === button.getAttribute('data-request-id'));
+          if (request) openRequestModal(request);
+        });
+      });
     }
 
-    async function loadDashboard() {
-      const { data: sessionData } = await client.auth.getSession();
-      const user = sessionData && sessionData.session && sessionData.session.user;
-      if (!user) {
-        renderBlank('Sign in from the MolDraw app to open dashboard tools.');
-        return;
-      }
+    function closeRequestModal() {
+      requestModalBackdrop.classList.remove('visible');
+      requestModalBackdrop.setAttribute('aria-hidden', 'true');
+      requestModalRoot.innerHTML = '';
+    }
 
-      const { data: profile, error: profileError } = await client
-        .from('users')
-        .select('name,email,is_admin,role')
-        .eq('id', user.id)
-        .maybeSingle();
+    function openRequestModal(request) {
+      const images = Array.isArray(request.image_urls) ? request.image_urls : [];
+      requestModalRoot.innerHTML = `
+        <div class="dashboard-modal-head">
+          <div>
+            <h1 id="request-modal-title" class="dashboard-modal-title">${escapeHtml(request.title)}</h1>
+            <p class="request-meta">
+              ${escapeHtml(request.name)} · ${escapeHtml(request.email)} · ${escapeHtml(new Date(request.created_at).toLocaleString())}
+            </p>
+            <span class="request-status-pill">${escapeHtml(request.status || 'new')}</span>
+          </div>
+          <button class="dashboard-modal-close" type="button" aria-label="Close feature request">×</button>
+        </div>
+        <p class="modal-desc">${escapeHtml(request.description)}</p>
+        ${images.length ? `
+          <div class="modal-images">
+            ${images.map((url) => `
+              <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
+                <img src="${escapeHtml(url)}" alt="Feature request attachment" loading="lazy">
+              </a>
+            `).join('')}
+          </div>
+        ` : '<p class="dashboard-subtitle" style="margin-top:16px;">No images attached.</p>'}
+      `;
+      requestModalBackdrop.classList.add('visible');
+      requestModalBackdrop.setAttribute('aria-hidden', 'false');
+      requestModalRoot.querySelector('.dashboard-modal-close').addEventListener('click', closeRequestModal);
+    }
 
-      if (profileError || !profile || !(profile.is_admin || profile.role === 'admin')) {
-        renderBlank('Blank for now. Saved molecules and account tools will appear here later.');
-        return;
-      }
-
+    async function loadFeatureRequests() {
+      root.innerHTML = '<p class="dashboard-subtitle">Loading feature requests...</p>';
       const { data: requests, error: requestError } = await client
         .from('feature_requests')
         .select('id,name,email,title,description,image_urls,status,created_at')
@@ -256,6 +629,90 @@
       renderRequests(requests || []);
     }
 
+    function renderUsers(users) {
+      sidebar.classList.add('visible');
+      setActiveNav('users');
+      const rows = users.length ? users.map((user) => `
+        <tr>
+          <td>${escapeHtml(user.name || 'Unnamed')}</td>
+          <td>${escapeHtml(user.email || '')}</td>
+          <td>${escapeHtml(user.designation || '')}</td>
+          <td><span class="role-pill${user.is_admin || user.role === 'admin' ? ' role-pill-admin' : ''}">${escapeHtml(user.role || (user.is_admin ? 'admin' : 'user'))}</span></td>
+          <td>${user.created_at ? escapeHtml(new Date(user.created_at).toLocaleString()) : ''}</td>
+        </tr>
+      `).join('') : '<tr><td colspan="5">No users found.</td></tr>';
+
+      root.innerHTML = `
+        <div class="requests-head">
+          <h1>Users</h1>
+          <span class="requests-status">${users.length} total</span>
+        </div>
+        <div class="dashboard-table-wrap">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Designation</th>
+                <th>Role</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function loadUsers() {
+      root.innerHTML = '<p class="dashboard-subtitle">Loading users...</p>';
+      const { data: users, error: usersError } = await client
+        .from('users')
+        .select('id,name,email,designation,is_admin,role,created_at,updated_at')
+        .order('created_at', { ascending: false });
+
+      if (usersError) {
+        renderBlank(usersError.message || 'Could not load users.');
+        return;
+      }
+
+      renderUsers(users || []);
+    }
+
+    async function loadDashboard() {
+      renderProjects();
+
+      const { data: sessionData } = await client.auth.getSession();
+      const user = sessionData && sessionData.session && sessionData.session.user;
+      if (!user) {
+        return;
+      }
+
+      const { data: profile, error: profileError } = await client
+        .from('users')
+        .select('name,email,is_admin,role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError || !profile || !(profile.is_admin || profile.role === 'admin')) {
+        return;
+      }
+
+      requestsNav.hidden = false;
+      usersNav.hidden = false;
+    }
+
+    drawingsNav.addEventListener('click', renderProjects);
+    requestsNav.addEventListener('click', loadFeatureRequests);
+    usersNav.addEventListener('click', loadUsers);
+    requestModalBackdrop.addEventListener('click', (event) => {
+      if (event.target === requestModalBackdrop) closeRequestModal();
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && requestModalBackdrop.classList.contains('visible')) {
+        closeRequestModal();
+      }
+    });
     loadDashboard();
   </script>
 </body>

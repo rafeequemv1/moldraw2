@@ -88,6 +88,28 @@ const QC_JOB_TYPE_OPTIONS = [
 
 const QC_METHOD_OPTIONS = ['B3LYP', 'PBE0', 'M06-2X', 'wB97X-D', 'HF', 'MP2'];
 const QC_BASIS_OPTIONS = ['6-31G(d)', '6-31+G(d,p)', 'def2-SVP', 'def2-TZVP', 'cc-pVDZ', 'cc-pVTZ'];
+const LOCAL_PROJECTS_STORAGE_KEY = 'moldraw_local_projects';
+const UPDATES_SEEN_STORAGE_KEY = 'moldraw_updates_seen_version';
+const CURRENT_UPDATES_VERSION = '2026-05-local-projects';
+
+const readLocalProjects = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_STORAGE_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter((item) => item && item.id && item.molfile) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeLocalProjects = (projects) => {
+  try {
+    localStorage.setItem(LOCAL_PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+  } catch (error) {
+    console.warn('Failed to save local MolDraw projects:', error);
+  }
+};
+
+const createLocalProjectId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const LUCKY_SHOWER_COLORS = [
   '#f97316',
@@ -395,6 +417,9 @@ function App() {
   const [authNotice, setAuthNotice] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [showUpdatesModal, setShowUpdatesModal] = useState(false);
+  const [hasUnreadUpdates, setHasUnreadUpdates] = useState(() => {
+    try { return localStorage.getItem(UPDATES_SEEN_STORAGE_KEY) !== CURRENT_UPDATES_VERSION; } catch { return true; }
+  });
   const [showFeatureRequestModal, setShowFeatureRequestModal] = useState(false);
   const [featureRequestForm, setFeatureRequestForm] = useState({
     name: '',
@@ -406,12 +431,14 @@ function App() {
   const [featureRequestError, setFeatureRequestError] = useState('');
   const [featureRequestNotice, setFeatureRequestNotice] = useState('');
   const [isFeatureRequestSubmitting, setIsFeatureRequestSubmitting] = useState(false);
+  const [projectNotice, setProjectNotice] = useState('');
   const [lonePairs, setLonePairs] = useState([]);
   const lastSmilesSelectionBaseRef = useRef('');
   const lonePairDragRef = useRef(null);
   const moreMenuRef = useRef(null);
   const downloadMenuRef = useRef(null);
   const spectrumMenuRef = useRef(null);
+  const currentLocalProjectIdRef = useRef('');
   const host = window.location.hostname;
   const isLocalDevHost =
     host === 'localhost' ||
@@ -439,6 +466,12 @@ function App() {
     setShowAiSetupModal(true);
     setIsChatOpen(true);
     setShowApiKeyInput(true);
+  };
+
+  const openUpdatesModal = () => {
+    setShowUpdatesModal(true);
+    setHasUnreadUpdates(false);
+    try { localStorage.setItem(UPDATES_SEEN_STORAGE_KEY, CURRENT_UPDATES_VERSION); } catch {}
   };
 
   useEffect(() => {
@@ -2583,14 +2616,37 @@ ${scientificGuardrails}`;
         setIsKetcherReady(true);
         console.log('Ketcher 3.7.0 is ready');
 
-        // Restore saved canvas from localStorage
+        // Restore a dashboard project first, otherwise restore the last local canvas.
         try {
+          const projectId = new URLSearchParams(window.location.search).get('project');
+          if (projectId && iframeRef.current) {
+            const project = readLocalProjects().find((item) => item.id === projectId);
+            if (project?.molfile) {
+              currentLocalProjectIdRef.current = project.id;
+              setProjectNotice('Loaded local dashboard project.');
+              setTimeout(() => setProjectNotice(''), 2400);
+              setTimeout(() => {
+                iframeRef.current.contentWindow.postMessage({
+                  type: 'set-molecule',
+                  ket: project.ket || null,
+                  molfile: project.molfile,
+                  smiles: project.smiles || '',
+                }, '*');
+              }, 500);
+              return;
+            }
+          }
+
           const saved = localStorage.getItem('moldraw_canvas');
           if (saved && iframeRef.current) {
             const parsed = JSON.parse(saved);
             if (parsed.molfile && parsed.molfile.trim()) {
               setTimeout(() => {
-                iframeRef.current.contentWindow.postMessage({ type: 'set-molecule', smiles: parsed.molfile }, '*');
+                iframeRef.current.contentWindow.postMessage({
+                  type: 'set-molecule',
+                  molfile: parsed.molfile,
+                  smiles: parsed.smiles || '',
+                }, '*');
               }, 500);
             }
           }
@@ -2717,6 +2773,16 @@ ${scientificGuardrails}`;
         }
         if (molfile) {
           lastMolfileForAIRef.current = molfile;
+        }
+
+        if (currentLocalProjectIdRef.current && molfile && getMolfileAtomCount(molfile) > 0) {
+          const activeProjectId = currentLocalProjectIdRef.current;
+          const nextProjects = readLocalProjects().map((project) => (
+            project.id === activeProjectId
+              ? { ...project, molfile, smiles, updatedAt: Date.now() }
+              : project
+          ));
+          writeLocalProjects(nextProjects);
         }
 
         // Copy SMILES to clipboard if requested
@@ -3391,6 +3457,104 @@ ${scientificGuardrails}`;
     bridgeWindow.postMessage({ type: 'copy-structure' }, '*');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isKetcherReady, lonePairs]);
+
+  const saveCurrentDesignLocally = async () => {
+    if (!iframeRef.current || !isKetcherReady) return { saved: false, bridgeWindow: null };
+    const bridgeWindow = iframeRef.current.contentWindow;
+    let snapshot = null;
+    try {
+      if (typeof bridgeWindow.moldrawGetCurrentStructure === 'function') {
+        snapshot = await bridgeWindow.moldrawGetCurrentStructure();
+      }
+    } catch (error) {
+      console.warn('Could not read current design from editor:', error);
+    }
+
+    const molfile = String(snapshot?.molfile || lastMolfileForAIRef.current || '').trim();
+    const smiles = sanitizeSmilesText(snapshot?.smiles || currentSmiles || lastSmilesForAIRef.current || '');
+    const atomCount = getMolfileAtomCount(molfile);
+
+    if (atomCount <= 0) {
+      return { saved: false, bridgeWindow };
+    }
+
+    const now = Date.now();
+    const svg = snapshot?.svg
+      ? makeSvgBackgroundTransparent(composeSvgWithLonePairs(snapshot.svg))
+      : '';
+    const titleSource = moleculeName && !/lookup failed|not found/i.test(moleculeName)
+      ? moleculeName
+      : iupacName || smiles || 'Untitled drawing';
+    const activeProjectId = currentLocalProjectIdRef.current;
+    const projects = readLocalProjects();
+    let savedProjectId = activeProjectId || '';
+    let savedExistingProject = false;
+    const nextProjects = projects.map((project) => {
+      if (project.id !== activeProjectId) return project;
+      savedExistingProject = true;
+      savedProjectId = project.id;
+      return {
+        ...project,
+        title: String(titleSource || project.title || 'Untitled drawing').slice(0, 90),
+        smiles,
+        molfile,
+        ket: snapshot?.ket || project.ket || null,
+        svg: svg || project.svg || '',
+        updatedAt: now,
+      };
+    });
+
+    if (!savedExistingProject) {
+      savedProjectId = createLocalProjectId();
+      nextProjects.unshift({
+        id: savedProjectId,
+        title: String(titleSource).slice(0, 90),
+        smiles,
+        molfile,
+        ket: snapshot?.ket || null,
+        svg,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    nextProjects.splice(80);
+    writeLocalProjects(nextProjects);
+    currentLocalProjectIdRef.current = savedProjectId;
+    return { saved: true, bridgeWindow };
+  };
+
+  const handleSaveDesign = async () => {
+    const result = await saveCurrentDesignLocally();
+    setProjectNotice(result.saved ? 'Design saved locally.' : 'Draw something before saving.');
+    setTimeout(() => setProjectNotice(''), 2200);
+  };
+
+  const handleCreateNewDesign = async () => {
+    if (!iframeRef.current || !isKetcherReady) return;
+
+    const result = await saveCurrentDesignLocally();
+    const bridgeWindow = result.bridgeWindow || iframeRef.current.contentWindow;
+    setProjectNotice(result.saved ? 'Current design saved. New blank session ready.' : 'New blank session ready.');
+    currentLocalProjectIdRef.current = '';
+    try {
+      localStorage.removeItem('moldraw_canvas');
+      if (window.location.search) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch {}
+    lastMolfileForAIRef.current = '';
+    lastSmilesForAIRef.current = '';
+    lastMoleculeRef.current = '';
+    previousAtomCountRef.current = 0;
+    moleculeViewCacheRef.current = null;
+    bridgeWindow.postMessage({ type: 'clear-editor' }, '*');
+    setCurrentSmiles('');
+    setCurrentMolecule(null);
+    setMultiStructure(false);
+    clearMoleculeProps();
+    setTimeout(() => setProjectNotice(''), 2400);
+  };
 
   useEffect(() => {
     window.moldrawCopySvgFromBridge = (svgText) => copyStructureToSystemClipboard(svgText);
@@ -4894,6 +5058,26 @@ ${scientificGuardrails}`;
               </a>
 
               <button
+                type="button"
+                className="tb-btn tb-btn-save-design"
+                onClick={() => handleSaveDesign()}
+                disabled={!isKetcherReady}
+                title="Save current drawing locally"
+              >
+                Save
+              </button>
+
+              <button
+                type="button"
+                className="tb-btn tb-btn-new-design"
+                onClick={handleCreateNewDesign}
+                disabled={!isKetcherReady}
+                title="Save current drawing locally and start a new blank design"
+              >
+                New design
+              </button>
+
+              <button
                 className={`tb-btn${smilesCopied ? ' tb-copied' : ''}`}
                 onClick={() => {
                   if (iframeRef.current && isKetcherReady) {
@@ -4976,6 +5160,9 @@ ${scientificGuardrails}`;
                 <span className={`tb-copy-structure-note${structureCopyError ? ' tb-copy-structure-note-error' : ''}`}>
                   {structureCopied ? 'SVG copied' : 'SVG copy blocked'}
                 </span>
+              )}
+              {projectNotice && (
+                <span className="tb-project-note">{projectNotice}</span>
               )}
 
               <div className="tb-menu-dropdown" ref={downloadMenuRef}>
@@ -5199,11 +5386,12 @@ ${scientificGuardrails}`;
               </a>
               <button
                 type="button"
-                className="viewer-toolbar-extra viewer-toolbar-updates"
-                onClick={() => setShowUpdatesModal(true)}
+                className={`viewer-toolbar-extra viewer-toolbar-updates${hasUnreadUpdates ? ' viewer-toolbar-updates-unread' : ''}`}
+                onClick={openUpdatesModal}
                 title="See recent MolDraw updates"
               >
                 Updates
+                {hasUnreadUpdates && <span className="updates-notification-dot" aria-hidden="true" />}
               </button>
               {authSession?.user ? (
                 <>
@@ -6047,6 +6235,20 @@ ${scientificGuardrails}`;
 
             <div className="updates-list">
               <article className="updates-card updates-card-highlight">
+                <div className="updates-card-date">May 2026</div>
+                <div className="updates-card-title">Local drawings dashboard</div>
+                <p>
+                  Save drawings locally with the new <strong>Save</strong> button, start fresh with <strong>New design</strong>,
+                  and view saved drawings as cards in the dashboard. Local projects stay in this browser for now; cloud saving is coming soon.
+                </p>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-date">May 2026</div>
+                <div className="updates-card-title">Feature requests</div>
+                <p>Use the toolbar request form to send feature ideas with optional screenshots or images.</p>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-date">March 2026</div>
                 <div className="updates-card-title">Transparent SVG copy and paste</div>
                 <p>
                   Use <strong>Copy SVG (Ctrl+C)</strong> to copy the current 2D structure with a transparent background.
@@ -6054,22 +6256,22 @@ ${scientificGuardrails}`;
                 </p>
               </article>
               <article className="updates-card">
+                <div className="updates-card-date">March 2026</div>
                 <div className="updates-card-title">Predict NMR menu</div>
                 <p>Predict ¹H NMR, ¹³C NMR, IR, and UV-Vis from the 2D toolbar. Predictions are marked beta and may not be fully accurate.</p>
               </article>
               <article className="updates-card">
+                <div className="updates-card-date">March 2026</div>
                 <div className="updates-card-title">AI chat panel</div>
                 <p>The AI assistant now opens as a full-height side panel with cleaner answers, compact suggestions, and quick chemistry prompts.</p>
               </article>
               <article className="updates-card">
+                <div className="updates-card-date">March 2026</div>
                 <div className="updates-card-title">Accounts and dashboard</div>
-                <p>Supabase sign-in/sign-up is available from the 3D top bar. Signed-in users can open the dashboard, and admins can review feature requests.</p>
+                <p>Supabase sign-in/sign-up is available from the 3D top bar. Signed-in users can open the dashboard and use local drawing cards.</p>
               </article>
               <article className="updates-card">
-                <div className="updates-card-title">Feature requests</div>
-                <p>Use the toolbar request form to send feature ideas with optional screenshots or images.</p>
-              </article>
-              <article className="updates-card">
+                <div className="updates-card-date">March 2026</div>
                 <div className="updates-card-title">Miew 3D viewer and cleaner UI</div>
                 <p>The 3D viewer uses Miew, navigation is cleaner, molecule detail boxes are smaller, and the MolDraw logo has the falling molecule surprise.</p>
               </article>

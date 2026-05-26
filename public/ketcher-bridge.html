@@ -127,6 +127,51 @@
             return svgBlob.text();
           };
 
+          const EMPTY_MOLFILE = [
+            '',
+            '  MolDraw',
+            '',
+            '  0  0  0  0  0  0            999 V2000',
+            'M  END',
+            ''
+          ].join('\n');
+
+          const setKetcherStructure = async (payload) => {
+            const candidates = [];
+            if (payload && payload.ket) {
+              candidates.push(typeof payload.ket === 'string' ? payload.ket : JSON.stringify(payload.ket));
+            }
+            if (payload && payload.molfile) {
+              const molfile = String(payload.molfile || '');
+              candidates.push(molfile);
+              if (molfile.includes('M  END') && !molfile.includes('$$$$')) {
+                candidates.push(`${molfile.trimEnd()}\n$$$$\n`);
+              }
+            }
+            if (payload && payload.smiles) {
+              candidates.push(String(payload.smiles || ''));
+            }
+
+            let lastError = null;
+            for (const candidate of candidates) {
+              try {
+                await ketcher.setMolecule(candidate);
+                return true;
+              } catch (error) {
+                lastError = error;
+              }
+            }
+            throw lastError || new Error('No structure payload provided');
+          };
+
+          const clearKetcherEditor = async () => {
+            if (typeof ketcher.clear === 'function') {
+              await ketcher.clear();
+              return;
+            }
+            await ketcher.setMolecule(EMPTY_MOLFILE);
+          };
+
           const copyStructureSvgToClipboard = async () => {
             if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
               throw new Error('SVG clipboard is not available in this browser.');
@@ -159,6 +204,16 @@
 
           window.moldrawCopyStructureSvg = copyStructureSvgToClipboard;
           window.moldrawGetStructureSvg = getStructureSvgText;
+          window.moldrawGetCurrentStructure = async () => {
+            const molfile = await ketcher.getMolfile();
+            const smiles = await ketcher.getSmiles();
+            const ket = await ketcher.getKet();
+            let svg = '';
+            try {
+              svg = await getStructureSvgText();
+            } catch (_) { /* preview is optional */ }
+            return { molfile, smiles, ket, svg };
+          };
 
           // Best-effort edit listeners; fall back to user-triggered requests if unavailable.
           try {
@@ -325,11 +380,9 @@
               }
             } else if (event.data.type === 'set-molecule') {
               try {
-                const structure = event.data.smiles;
-                console.log('Setting molecule with structure:', structure);
+                console.log('Setting molecule with payload:', event.data);
 
-                // Use setMolecule API to load structure
-                await ketcher.setMolecule(structure);
+                await setKetcherStructure(event.data);
 
                 console.log('Molecule set successfully');
                 window.parent.postMessage({
@@ -421,7 +474,7 @@
               }
             } else if (event.data.type === 'clear-editor') {
               try {
-                await ketcher.clear();
+                await clearKetcherEditor();
                 window.parent.postMessage({
                   type: 'molecule-set',
                   success: true

@@ -484,6 +484,39 @@
   color: #1a5a5b;
 }
 
+.tb-btn-save-design,
+.tb-btn-new-design {
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.tb-btn-save-design {
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #dbe4ee;
+  font-weight: 800;
+}
+
+.tb-btn-save-design:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.tb-btn-new-design {
+  background: #eef6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-weight: 800;
+}
+
+.tb-btn-new-design:hover {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 .tb-btn-updates {
   background: #fff7ed;
   border-color: #fed7aa;
@@ -515,6 +548,20 @@
   background: #fef2f2;
   border-color: #fecaca;
   color: #991b1b;
+}
+
+.tb-project-note {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .tb-btn-spectrum {
@@ -1061,8 +1108,24 @@ button.tb-menu-item:disabled:hover {
 }
 
 .viewer-toolbar-updates {
+  position: relative;
   color: #9a3412;
   background: #fff7ed;
+}
+
+.viewer-toolbar-updates-unread {
+  padding-right: 14px;
+}
+
+.updates-notification-dot {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px #fff7ed;
 }
 
 .viewer-toolbar-course {
@@ -2200,6 +2263,15 @@ a.viewer-toolbar-course:hover {
   color: #0f172a;
   font-size: 13px;
   font-weight: 800;
+}
+
+.updates-card-date {
+  margin-bottom: 3px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .updates-card p {
