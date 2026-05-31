@@ -1345,6 +1345,11 @@
     const expandedReplyThreads = new Set();
     const commentCache = new Map();
     const commentTotalCache = new Map();
+    const expandedFeatureCommentThreads = new Set();
+    const expandedFeatureReplyThreads = new Set();
+    const featureCommentCache = new Map();
+    const featureCommentTotalCache = new Map();
+    let featureCommentsAvailable = true;
     const statusLabels = {
       new: 'New',
       under_review: 'Under review',
@@ -1545,7 +1550,7 @@
     async function uploadImages(files) {
       if (!files?.length) return [];
       if (!requireAuth()) return [];
-      const selected = Array.from(files).slice(0, 6);
+      const selected = Array.from(files).filter((file) => file.type.startsWith('image/')).slice(0, 6);
       const urls = [];
       for (const file of selected) {
         const safeName = file.name.replace(/[^a-z0-9._-]/gi, '-').toLowerCase();
@@ -1706,14 +1711,17 @@
       return roots;
     }
 
-    function renderSingleComment(comment, postId, isReply = false, rootCommentId = comment.id) {
+    function renderSingleComment(comment, postId, isReply = false, rootCommentId = comment.id, options = {}) {
+      const reportType = options.reportType || 'comment';
+      const reportLabel = options.reportLabel || 'comment';
+      const replyThreads = options.expandedReplyThreads || expandedReplyThreads;
       const ownerTools = isOwn(comment.user_id)
         ? `<button class="comment-tool" type="button" data-edit-comment="${escapeHtml(comment.id)}">Edit</button>`
         : '';
       const allReplies = comment.replies || [];
-      const repliesExpanded = expandedReplyThreads.has(comment.id);
+      const repliesExpanded = replyThreads.has(comment.id);
       const visibleReplies = repliesExpanded ? allReplies : allReplies.slice(0, 2);
-      const replies = visibleReplies.map((reply) => renderSingleComment(reply, postId, true, comment.id)).join('');
+      const replies = visibleReplies.map((reply) => renderSingleComment(reply, postId, true, comment.id, options)).join('');
       const hiddenReplies = Math.max(allReplies.length - visibleReplies.length, 0);
       const images = renderImages(comment.image_urls, 'Reply attachment', 'card-images comment-images');
       return `
@@ -1729,7 +1737,7 @@
           ${images}
           <div class="comment-tools">
             <button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(rootCommentId)}">Reply</button>
-            <button class="comment-tool" type="button" data-report-type="comment" data-report-id="${escapeHtml(comment.id)}" data-report-label="comment">Report</button>
+            <button class="comment-tool" type="button" data-report-type="${escapeHtml(reportType)}" data-report-id="${escapeHtml(comment.id)}" data-report-label="${escapeHtml(reportLabel)}">Report</button>
             ${ownerTools}
           </div>
           <div class="comment-inline-slot" data-comment-slot="${escapeHtml(comment.id)}"></div>
@@ -1743,11 +1751,12 @@
       `;
     }
 
-    function renderCommentThread(postId, comments, totalCount) {
-      const expanded = expandedCommentThreads.has(postId);
+    function renderCommentThread(postId, comments, totalCount, options = {}) {
+      const commentThreads = options.expandedCommentThreads || expandedCommentThreads;
+      const expanded = commentThreads.has(postId);
       const roots = buildCommentTree(comments);
       const visibleComments = expanded ? roots : roots.slice(0, 3);
-      const rendered = visibleComments.map((comment) => renderSingleComment(comment, postId, false, comment.id)).join('');
+      const rendered = visibleComments.map((comment) => renderSingleComment(comment, postId, false, comment.id, options)).join('');
       const hiddenCount = Math.max(roots.length - visibleComments.length, 0);
 
       return `
@@ -1854,6 +1863,151 @@
       commentTotalCache.set(postId, (data || []).length);
       wrap.innerHTML = renderCommentThread(postId, data || [], (data || []).length);
       bindCommentThread(wrap, postId);
+    }
+
+    function renderFeatureCommentThread(requestId, comments, totalCount) {
+      if (!featureCommentsAvailable) {
+        return '<p class="author-meta">Feature request replies are being enabled. Try again after the next database update.</p>';
+      }
+      return renderCommentThread(requestId, comments, totalCount, {
+        expandedCommentThreads: expandedFeatureCommentThreads,
+        expandedReplyThreads: expandedFeatureReplyThreads,
+        reportType: 'feature_request_comment',
+        reportLabel: 'feature request reply'
+      });
+    }
+
+    async function submitFeatureComment(requestId, input, parentCommentId = null, imageInput = null) {
+      if (!requireAuth()) return;
+      const body = input.value.trim();
+      if (!body) return;
+      const imageUrls = await uploadImages(imageInput?.files);
+      const { error } = await client.from('feature_request_comments').insert({
+        feature_request_id: requestId,
+        parent_comment_id: parentCommentId,
+        body,
+        image_urls: imageUrls
+      });
+      if (error) {
+        statusEl.textContent = error.message || 'Could not add reply.';
+        return;
+      }
+      input.value = '';
+      if (imageInput) imageInput.value = '';
+      await openFeatureComments(requestId);
+      await loadFeatureRequests();
+    }
+
+    async function updateFeatureComment(commentId, requestId, body) {
+      const cleanBody = String(body || '').trim();
+      if (!cleanBody) return;
+      const { error } = await client
+        .from('feature_request_comments')
+        .update({ body: cleanBody })
+        .eq('id', commentId);
+      if (error) {
+        statusEl.textContent = error.message || 'Could not update reply.';
+        return;
+      }
+      await openFeatureComments(requestId);
+      await loadFeatureRequests();
+    }
+
+    function bindFeatureCommentThread(wrap, requestId) {
+      const mainForm = wrap.querySelector('[data-comment-form="main"]');
+      const input = mainForm?.querySelector('textarea');
+      const imageInput = mainForm?.querySelector('input[type="file"]');
+      const button = mainForm?.querySelector('.btn');
+      if (input) input.addEventListener('focus', requireAuth);
+      if (button && input) button.addEventListener('click', () => submitFeatureComment(requestId, input, null, imageInput));
+      wrap.querySelectorAll('[data-reply-comment]').forEach((replyButton) => {
+        replyButton.addEventListener('click', () => {
+          if (!requireAuth()) return;
+          const commentId = replyButton.getAttribute('data-reply-comment');
+          const parentCommentId = replyButton.getAttribute('data-reply-parent') || commentId;
+          const slot = wrap.querySelector(`[data-comment-slot="${commentId}"]`);
+          if (!slot) return;
+          slot.innerHTML = `
+            <div class="comment-form reply-form">
+              <textarea placeholder="Reply to this feature request comment..."></textarea>
+              <label class="comment-image-chip">
+                Image
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+              </label>
+              <button class="btn btn-primary" type="button">Reply</button>
+            </div>
+          `;
+          const replyInput = slot.querySelector('textarea');
+          const replyImageInput = slot.querySelector('input[type="file"]');
+          const replySubmit = slot.querySelector('button');
+          replySubmit.addEventListener('click', () => submitFeatureComment(requestId, replyInput, parentCommentId, replyImageInput));
+          replyInput.focus();
+        });
+      });
+      wrap.querySelectorAll('[data-more-replies]').forEach((moreRepliesButton) => {
+        moreRepliesButton.addEventListener('click', () => {
+          expandedFeatureReplyThreads.add(moreRepliesButton.getAttribute('data-more-replies'));
+          const comments = featureCommentCache.get(requestId) || [];
+          wrap.innerHTML = renderFeatureCommentThread(requestId, comments, featureCommentTotalCache.get(requestId) || comments.length);
+          bindFeatureCommentThread(wrap, requestId);
+        });
+      });
+      wrap.querySelectorAll('[data-edit-comment]').forEach((editButton) => {
+        editButton.addEventListener('click', () => {
+          if (!requireAuth()) return;
+          const commentId = editButton.getAttribute('data-edit-comment');
+          const comments = featureCommentCache.get(requestId) || [];
+          const comment = comments.find((item) => item.id === commentId);
+          const slot = wrap.querySelector(`[data-comment-slot="${commentId}"]`);
+          if (!slot || !comment) return;
+          slot.innerHTML = `
+            <div class="comment-edit-form">
+              <textarea>${escapeHtml(comment.body)}</textarea>
+              <button class="btn btn-primary" type="button">Save</button>
+              <button class="btn btn-light" type="button" data-cancel-edit>Cancel</button>
+            </div>
+          `;
+          const editInput = slot.querySelector('textarea');
+          slot.querySelector('.btn-primary').addEventListener('click', () => updateFeatureComment(commentId, requestId, editInput.value));
+          slot.querySelector('[data-cancel-edit]').addEventListener('click', () => { slot.innerHTML = ''; });
+          editInput.focus();
+        });
+      });
+      wrap.querySelectorAll('[data-report-type]').forEach((reportButton) => {
+        reportButton.addEventListener('click', () => {
+          openReportModal(
+            reportButton.getAttribute('data-report-type'),
+            reportButton.getAttribute('data-report-id'),
+            reportButton.getAttribute('data-report-label')
+          );
+        });
+      });
+      wrap.querySelector('[data-more-comments]')?.addEventListener('click', () => {
+        expandedFeatureCommentThreads.add(requestId);
+        const comments = featureCommentCache.get(requestId) || [];
+        wrap.innerHTML = renderFeatureCommentThread(requestId, comments, featureCommentTotalCache.get(requestId) || comments.length);
+        bindFeatureCommentThread(wrap, requestId);
+      });
+    }
+
+    async function openFeatureComments(requestId) {
+      const wrap = document.querySelector(`[data-feature-comments="${requestId}"]`);
+      if (!wrap || !featureCommentsAvailable) return;
+      const { data, error } = await client
+        .from('feature_request_comments')
+        .select('id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at')
+        .eq('feature_request_id', requestId)
+        .order('created_at', { ascending: true })
+        .limit(100);
+      if (error) {
+        featureCommentsAvailable = false;
+        wrap.innerHTML = renderFeatureCommentThread(requestId, [], 0);
+        return;
+      }
+      featureCommentCache.set(requestId, data || []);
+      featureCommentTotalCache.set(requestId, (data || []).length);
+      wrap.innerHTML = renderFeatureCommentThread(requestId, data || [], (data || []).length);
+      bindFeatureCommentThread(wrap, requestId);
     }
 
     async function loadDiscussions(setLoading = true) {
@@ -2042,10 +2196,31 @@
         const { data: votes } = await client.from('feature_request_votes').select('feature_request_id').eq('user_id', session.user.id).in('feature_request_id', requestIds);
         myVotes = new Set((votes || []).map((vote) => vote.feature_request_id));
       }
+      let commentsByRequest = new Map();
+      if (featureCommentsAvailable && requestIds.length) {
+        const { data: comments, error: commentsError } = await client
+          .from('feature_request_comments')
+          .select('id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at')
+          .in('feature_request_id', requestIds)
+          .order('created_at', { ascending: true })
+          .limit(240);
+        if (commentsError) {
+          featureCommentsAvailable = false;
+        } else {
+          (comments || []).forEach((comment) => {
+            if (!commentsByRequest.has(comment.feature_request_id)) commentsByRequest.set(comment.feature_request_id, []);
+            commentsByRequest.get(comment.feature_request_id).push(comment);
+          });
+          commentsByRequest.forEach((comments, requestId) => featureCommentCache.set(requestId, comments));
+        }
+      }
       statusEl.textContent = data?.length ? '' : 'No feature requests yet.';
       const requestCards = (data || []).map((request) => {
         const images = Array.isArray(request.image_urls) ? request.image_urls : [];
         const voted = myVotes.has(request.id);
+        const comments = commentsByRequest.get(request.id) || [];
+        const commentTotal = comments.length;
+        featureCommentTotalCache.set(request.id, commentTotal);
         const currentStatus = request.status || 'new';
         const statusControl = isAdmin()
           ? `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="Change request status">
@@ -2069,8 +2244,10 @@
             ${images.length ? `<div class="card-images">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="Feature request attachment"></a>`).join('')}</div>` : ''}
             <div class="card-actions">
               <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-feature="${escapeHtml(request.id)}" data-voted="${voted ? '1' : '0'}">▲ ${request.upvote_count || 0}</button>
+              <button class="pill" type="button" data-open-feature-comments="${escapeHtml(request.id)}">Reply ${commentTotal}</button>
               <button class="pill" type="button" data-report-type="feature_request" data-report-id="${escapeHtml(request.id)}" data-report-label="feature request">Report</button>
             </div>
+            <div class="comments visible" data-feature-comments="${escapeHtml(request.id)}">${renderFeatureCommentThread(request.id, comments, commentTotal)}</div>
           </article>
         `;
       }).join('');
@@ -2091,6 +2268,17 @@
       feed.querySelectorAll('[data-feature-status]').forEach((select) => {
         select.addEventListener('change', () => updateFeatureStatus(select.getAttribute('data-feature-status'), select.value));
       });
+      feed.querySelectorAll('[data-open-feature-comments]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (!session?.user) {
+            openAuthModal('Sign in to reply');
+            return;
+          }
+          const wrap = document.querySelector(`[data-feature-comments="${btn.getAttribute('data-open-feature-comments')}"]`);
+          const input = wrap?.querySelector('[data-comment-form="main"] textarea');
+          if (input) input.focus();
+        });
+      });
       feed.querySelectorAll('[data-report-type="feature_request"]').forEach((btn) => {
         btn.addEventListener('click', () => {
           openReportModal(
@@ -2100,6 +2288,7 @@
           );
         });
       });
+      feed.querySelectorAll('[data-feature-comments]').forEach((wrap) => bindFeatureCommentThread(wrap, wrap.getAttribute('data-feature-comments')));
     }
 
     async function loadActiveTab() {

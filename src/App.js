@@ -284,6 +284,135 @@ function liftAlkaliInFlatMolfile(molfile) {
   return lines.join('\n');
 }
 
+function normalizePdbElementSymbol(symbol) {
+  const raw = String(symbol || '').replace(/[^A-Za-z]/g, '');
+  if (!raw) return 'C';
+  if (raw.length >= 2) return `${raw[0].toUpperCase()}${raw[1].toLowerCase()}`;
+  return raw[0].toUpperCase();
+}
+
+function parseMolfileForViewerFallback(molfile) {
+  const text = String(molfile || '');
+  if (!text.trim()) return null;
+  const lines = text.split(/\r?\n/);
+  const atoms = [];
+  const bonds = [];
+
+  if (/V3000/i.test(text)) {
+    let inAtomBlock = false;
+    let inBondBlock = false;
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      if (/M\s+V30\s+BEGIN\s+ATOM/i.test(trimmed)) {
+        inAtomBlock = true;
+        return;
+      }
+      if (/M\s+V30\s+END\s+ATOM/i.test(trimmed)) {
+        inAtomBlock = false;
+        return;
+      }
+      if (/M\s+V30\s+BEGIN\s+BOND/i.test(trimmed)) {
+        inBondBlock = true;
+        return;
+      }
+      if (/M\s+V30\s+END\s+BOND/i.test(trimmed)) {
+        inBondBlock = false;
+        return;
+      }
+
+      const clean = trimmed.replace(/^\s*M\s+V30\s+/i, '').trim();
+      const parts = clean.split(/\s+/);
+      if (inAtomBlock && parts.length >= 5) {
+        const index = parseInt(parts[0], 10);
+        const elem = normalizePdbElementSymbol(parts[1]);
+        const x = parseFloat(parts[2]);
+        const y = parseFloat(parts[3]);
+        const z = parseFloat(parts[4]);
+        if (Number.isFinite(index) && Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) {
+          atoms.push({ index, elem, x, y, z });
+        }
+      }
+      if (inBondBlock && parts.length >= 4) {
+        const a1 = parseInt(parts[2], 10);
+        const a2 = parseInt(parts[3], 10);
+        if (Number.isFinite(a1) && Number.isFinite(a2)) bonds.push([a1, a2]);
+      }
+    });
+    return atoms.length ? { atoms, bonds } : null;
+  }
+
+  if (lines.length < 4) return null;
+  const countsParts = (lines[3] || '').trim().split(/\s+/);
+  const atomCount = parseInt(countsParts[0], 10);
+  const bondCount = parseInt(countsParts[1], 10);
+  if (!Number.isFinite(atomCount) || atomCount <= 0) return null;
+
+  for (let i = 0; i < atomCount; i += 1) {
+    const line = lines[4 + i] || '';
+    const x = parseFloat(line.slice(0, 10));
+    const y = parseFloat(line.slice(10, 20));
+    const z = parseFloat(line.slice(20, 30));
+    const elem = normalizePdbElementSymbol(line.slice(31, 34).trim() || line.trim().split(/\s+/)[3]);
+    if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) {
+      atoms.push({ index: i + 1, elem, x, y, z });
+    }
+  }
+
+  const safeBondCount = Number.isFinite(bondCount) && bondCount > 0 ? bondCount : 0;
+  for (let i = 0; i < safeBondCount; i += 1) {
+    const line = lines[4 + atomCount + i] || '';
+    const parts = line.trim().split(/\s+/);
+    const a1 = parseInt(parts[0], 10);
+    const a2 = parseInt(parts[1], 10);
+    if (Number.isFinite(a1) && Number.isFinite(a2)) bonds.push([a1, a2]);
+  }
+
+  return atoms.length ? { atoms, bonds } : null;
+}
+
+function buildPdbViewerFallbackFromMolfile(molfile) {
+  const parsed = parseMolfileForViewerFallback(molfile);
+  if (!parsed?.atoms?.length) return '';
+  const atomByIndex = new Map(parsed.atoms.map((atom, idx) => [atom.index, idx + 1]));
+  const pdbLines = parsed.atoms.map((atom, idx) => {
+    const serial = idx + 1;
+    const elem = normalizePdbElementSymbol(atom.elem);
+    const atomName = `${elem}${serial}`.slice(0, 4);
+    return [
+      'HETATM',
+      String(serial).padStart(5, ' '),
+      ` ${atomName.padEnd(4, ' ')}`,
+      ' MOL A   1    ',
+      atom.x.toFixed(3).padStart(8, ' '),
+      atom.y.toFixed(3).padStart(8, ' '),
+      atom.z.toFixed(3).padStart(8, ' '),
+      '  1.00  0.00          ',
+      elem.padStart(2, ' '),
+    ].join('');
+  });
+
+  const conectLines = parsed.bonds
+    .map(([a1, a2]) => [atomByIndex.get(a1), atomByIndex.get(a2)])
+    .filter(([a1, a2]) => a1 && a2)
+    .map(([a1, a2]) => `CONECT${String(a1).padStart(5, ' ')}${String(a2).padStart(5, ' ')}`);
+
+  return [...pdbLines, ...conectLines, 'END'].join('\n');
+}
+
+function buildXyzViewerFallbackFromMolfile(molfile) {
+  const parsed = parseMolfileForViewerFallback(molfile);
+  if (!parsed?.atoms?.length) return '';
+  const lines = [
+    String(parsed.atoms.length),
+    'MolDraw viewer fallback from drawn molfile',
+    ...parsed.atoms.map((atom) => {
+      const elem = normalizePdbElementSymbol(atom.elem);
+      return `${elem} ${atom.x.toFixed(6)} ${atom.y.toFixed(6)} ${atom.z.toFixed(6)}`;
+    }),
+  ];
+  return lines.join('\n');
+}
+
 function App() {
   const ketcherCanvasWrapRef = useRef(null);
   const viewer3DRef = useRef(null);
@@ -1989,16 +2118,32 @@ ${scientificGuardrails}`;
       }
     };
 
+    const expectedFallbackAtomCount = fallbackMolfile ? getMolfileAtomCount(fallbackMolfile) : 0;
     const attempts = [];
-    const addAttempt = (data, format, has3D) => {
+    const addAttempt = (data, format, has3D, sourceData = data, sourceFormat = format, minAtomCount = 1) => {
       const cleanData = String(data || '').trim();
       if (!cleanData) return;
       const key = `${format}:${cleanData}`;
       if (attempts.some((attempt) => attempt.key === key)) return;
-      attempts.push({ key, data: cleanData, format, has3D });
+      attempts.push({
+        key,
+        data: cleanData,
+        format,
+        has3D,
+        sourceData: String(sourceData || '').trim() || cleanData,
+        sourceFormat,
+        minAtomCount,
+      });
     };
 
-    addAttempt(primaryText, primaryFormat, primaryHas3D);
+    if (primaryFormat === 'mol') {
+      const expectedPrimaryAtomCount = getMolfileAtomCount(primaryText);
+      addAttempt(buildPdbViewerFallbackFromMolfile(primaryText), 'pdb', primaryHas3D, primaryText, 'mol', expectedPrimaryAtomCount || 1);
+      addAttempt(buildXyzViewerFallbackFromMolfile(primaryText), 'xyz', primaryHas3D, primaryText, 'mol', expectedPrimaryAtomCount || 1);
+      addAttempt(`${String(primaryText || '').trimEnd()}\n$$$$`, 'sdf', primaryHas3D, primaryText, 'mol', expectedPrimaryAtomCount || 1);
+    } else {
+      addAttempt(primaryText, primaryFormat, primaryHas3D);
+    }
     if (primaryFormat === 'sdf' && primaryText && !String(primaryText).includes('$$$$')) {
       addAttempt(`${String(primaryText).trimEnd()}\n$$$$`, 'sdf', primaryHas3D);
     }
@@ -2006,8 +2151,9 @@ ${scientificGuardrails}`;
     // Always keep a local molfile fallback. Some valid drawn structures either
     // fail PubChem 3D lookup or load as an empty 3Dmol model from returned SDF.
     if (fallbackMolfile) {
-      addAttempt(fallbackMolfile, 'mol', false);
-      addAttempt(`${String(fallbackMolfile).trimEnd()}\n$$$$`, 'sdf', false);
+      addAttempt(buildPdbViewerFallbackFromMolfile(fallbackMolfile), 'pdb', false, fallbackMolfile, 'mol', expectedFallbackAtomCount || 1);
+      addAttempt(buildXyzViewerFallbackFromMolfile(fallbackMolfile), 'xyz', false, fallbackMolfile, 'mol', expectedFallbackAtomCount || 1);
+      addAttempt(`${String(fallbackMolfile).trimEnd()}\n$$$$`, 'sdf', false, fallbackMolfile, 'mol', expectedFallbackAtomCount || 1);
     }
 
     for (const attempt of attempts) {
@@ -2015,15 +2161,17 @@ ${scientificGuardrails}`;
         viewer.removeAllLabels();
         viewer.clear();
         const model = viewer.addModel(attempt.data, attempt.format);
-        if (getLoadedAtomCount(model) > 0) {
+        const loadedAtomCount = getLoadedAtomCount(model);
+        if (loadedAtomCount >= attempt.minAtomCount) {
           lastModelRef.current = model;
           return {
             model,
-            data: attempt.data,
-            format: attempt.format,
+            data: attempt.sourceData,
+            format: attempt.sourceFormat,
             has3D: attempt.has3D,
           };
         }
+        console.warn(`3Dmol loaded partial ${attempt.format} model (${loadedAtomCount}/${attempt.minAtomCount} atoms); trying fallback`);
       } catch (error) {
         console.warn(`3Dmol failed to load ${attempt.format}; trying fallback`, error);
       }
@@ -2049,6 +2197,10 @@ ${scientificGuardrails}`;
       // Some Ketcher molfiles can be parsed by Miew only as SDF records.
       if (fileType === 'mol') {
         attempts.push(() => viewer.load(`${sourceText}\n$$$$\n`, { sourceType: 'immediate', fileType: 'sdf' }));
+        const pdbFallback = buildPdbViewerFallbackFromMolfile(sourceText);
+        if (pdbFallback) {
+          attempts.push(() => viewer.load(pdbFallback, { sourceType: 'immediate', fileType: 'pdb' }));
+        }
       }
 
       // Final fallback: let Miew load a canonical 3D SDF from PubChem by SMILES URL.
@@ -3039,6 +3191,16 @@ ${scientificGuardrails}`;
       } else if (event.data.type === 'molecule-set') {
         console.log('Molecule set in Ketcher:', event.data);
         if (event.data.success) {
+          const molfile = String(event.data.molfile || '').trim();
+          const smiles = sanitizeSmilesText(event.data.smiles || '');
+          if (molfile && getMolfileAtomCount(molfile) > 0) {
+            lastMolfileForAIRef.current = molfile;
+            lastSmilesForAIRef.current = smiles;
+            window.tempMolfile = molfile;
+            updateMolecule3D(molfile, smiles);
+          } else if (iframeRef.current && isKetcherReady) {
+            iframeRef.current.contentWindow.postMessage({ type: 'get-molfile' }, '*');
+          }
         } else {
           setSearchError('Failed to load molecule into editor');
         }

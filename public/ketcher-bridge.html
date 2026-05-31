@@ -454,9 +454,15 @@
                 await setKetcherStructure(event.data);
 
                 console.log('Molecule set successfully');
+                let molfile = '';
+                let smiles = String(event.data.smiles || '');
+                try { molfile = await ketcher.getMolfile(); } catch (_) {}
+                try { smiles = await ketcher.getSmiles(); } catch (_) {}
                 window.parent.postMessage({
                   type: 'molecule-set',
-                  success: true
+                  success: true,
+                  molfile: molfile,
+                  smiles: smiles
                 }, '*');
                 scheduleEditorChange();
               } catch (error) {
@@ -475,9 +481,15 @@
                 await ketcher.addFragment(structure);
 
                 console.log('Fragment appended successfully');
+                let molfile = '';
+                let smiles = '';
+                try { molfile = await ketcher.getMolfile(); } catch (_) {}
+                try { smiles = await ketcher.getSmiles(); } catch (_) {}
                 window.parent.postMessage({
                   type: 'molecule-set',
-                  success: true
+                  success: true,
+                  molfile: molfile,
+                  smiles: smiles
                 }, '*');
                 scheduleEditorChange();
               } catch (error) {
