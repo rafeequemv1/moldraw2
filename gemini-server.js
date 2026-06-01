@@ -41,7 +41,7 @@ const parseRetryAfterSeconds = (headerValue) => {
 };
 
 const app = express();
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '5mb' }));
 app.use(cors({
   origin: (origin, cb) => {
     // Allow browser requests from local app hosts and non-browser tools.
@@ -55,6 +55,63 @@ app.use(cors({
     return cb(new Error('Not allowed by CORS'));
   },
 }));
+
+const fetchText = async (url, timeoutMs = 45000) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    const text = await response.text();
+    return { ok: response.ok, status: response.status, text };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const isValidSdf = (text) => typeof text === 'string'
+  && /M\s+END/i.test(text)
+  && /^\s*\d+\s+\d+.*V[23]000/m.test(text);
+
+app.post('/api/convert-3d', async (req, res) => {
+  const smiles = String(req.body?.smiles || '').trim();
+  if (!smiles) {
+    return res.status(400).json({ error: 'Missing SMILES', code: 'MISSING_SMILES' });
+  }
+  if (smiles.length > 2000) {
+    return res.status(400).json({ error: 'SMILES is too long', code: 'SMILES_TOO_LONG' });
+  }
+
+  const encoded = encodeURIComponent(smiles);
+  const sources = [
+    {
+      name: 'pubchem',
+      url: `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/record/SDF/?record_type=3d`,
+    },
+    {
+      name: 'nci-cactus',
+      url: `https://cactus.nci.nih.gov/chemical/structure/${encoded}/file?format=sdf&get3d=true`,
+    },
+  ];
+
+  const errors = [];
+  for (const source of sources) {
+    try {
+      const result = await fetchText(source.url);
+      if (result.ok && isValidSdf(result.text)) {
+        return res.json({ sdf: result.text, source: source.name });
+      }
+      errors.push(`${source.name}:${result.status}`);
+    } catch (error) {
+      errors.push(`${source.name}:${error?.name || 'error'}`);
+    }
+  }
+
+  return res.status(404).json({
+    error: 'No 3D conformer could be generated for this SMILES.',
+    code: 'NO_3D_CONFORMER',
+    tried: errors,
+  });
+});
 
 const SYSTEM_PROMPT =
 `You are MolDraw Assistant — a chemistry AI embedded in an interactive 2D/3D molecular editor called MolDraw (by Scidart Academy).
@@ -106,8 +163,13 @@ IMPORTANT: Output ONLY the JSON object. No explanation outside it. No markdown f
 
 app.post('/api/gemini-chat', async (req, res) => {
   const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  const { prompt, smiles, molfile, apiKey, history, model } = req.body || {};
+  const { prompt, smiles, molfile, apiKey, history, model, image } = req.body || {};
   const selectedModel = selectModel(model);
+  const imageMimeType = typeof image?.mimeType === 'string' ? image.mimeType : '';
+  const imageData = typeof image?.data === 'string' ? image.data : '';
+  const hasImage = /^image\/(png|jpe?g|webp|gif)$/i.test(imageMimeType)
+    && imageData.length <= 3_600_000
+    && /^[A-Za-z0-9+/=]+$/.test(imageData);
 
   const key = apiKey || process.env.GEMINI_API_KEY || '';
   if (!key) {
@@ -116,6 +178,9 @@ app.post('/api/gemini-chat', async (req, res) => {
 
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Missing prompt', code: 'MISSING_PROMPT' });
+  }
+  if (image && !hasImage) {
+    return res.status(400).json({ error: 'Unsupported or invalid image attachment.', code: 'INVALID_IMAGE' });
   }
 
   const userContext =
@@ -141,7 +206,16 @@ app.post('/api/gemini-chat', async (req, res) => {
   }
 
   // Current user message with canvas context
-  contents.push({ role: 'user', parts: [{ text: userContext }] });
+  const userParts = [{ text: userContext }];
+  if (hasImage) {
+    userParts.push({
+      inlineData: {
+        mimeType: imageMimeType,
+        data: imageData,
+      },
+    });
+  }
+  contents.push({ role: 'user', parts: userParts });
 
   try {
     const callGemini = async (modelName) => fetch(

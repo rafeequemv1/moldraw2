@@ -460,6 +460,8 @@ function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
+  const [chatImageAttachment, setChatImageAttachment] = useState(null);
+  const [chatImageError, setChatImageError] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [geminiApiKey, setGeminiApiKey] = useState(() => {
     try { return localStorage.getItem('moldraw_gemini_key') || ''; } catch { return ''; }
@@ -574,6 +576,9 @@ function App() {
   const AI_CHAT_ENDPOINT = isLocalDevHost
     ? `http://${host === 'localhost' || host === '127.0.0.1' ? 'localhost' : host}:3001/api/gemini-chat`
     : '/api/gemini-chat';
+  const CONVERT_3D_ENDPOINT = isLocalDevHost
+    ? `http://${host === 'localhost' || host === '127.0.0.1' ? 'localhost' : host}:3001/api/convert-3d`
+    : '/api/convert-3d';
   const authDisplayName =
     userProfile?.name ||
     authSession?.user?.user_metadata?.name ||
@@ -640,6 +645,69 @@ function App() {
     setAuthForm((form) => ({ ...form, [field]: value }));
   };
 
+  const handleChatImageSelect = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    setChatImageError('');
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setChatImageError('Choose an image file.');
+      return;
+    }
+    if (file.size > 2.5 * 1024 * 1024) {
+      setChatImageError('Image must be under 2.5 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      const base64 = dataUrl.split(',')[1] || '';
+      if (!base64) {
+        setChatImageError('Could not read image.');
+        return;
+      }
+      setChatImageAttachment({
+        name: file.name,
+        mimeType: file.type,
+        size: file.size,
+        dataUrl,
+        data: base64,
+      });
+    };
+    reader.onerror = () => setChatImageError('Could not read image.');
+    reader.readAsDataURL(file);
+  };
+
+  const handlePasswordResetRequest = async () => {
+    setAuthError('');
+    setAuthNotice('');
+
+    if (!isSupabaseConfigured || !supabase) {
+      setAuthError('Supabase is not configured yet.');
+      return;
+    }
+
+    const email = authForm.email.trim();
+    if (!email) {
+      setAuthError('Enter your email first.');
+      return;
+    }
+
+    setIsAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      });
+      if (error) throw error;
+      setAuthNotice('Password reset link sent. Check your email.');
+    } catch (error) {
+      setAuthError(error?.message || 'Could not send password reset email.');
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
   const saveUserProfile = async (userId, form) => {
     if (!supabase || !userId) return;
     await supabase.from('users').upsert({
@@ -664,19 +732,33 @@ function App() {
     const password = authForm.password;
     const name = getDisplayNameFromEmail(email);
 
-    if (!email || !password) {
-      setAuthError('Please fill all required fields.');
+    if (!email || (authMode !== 'reset' && !password)) {
+      setAuthError(authMode === 'reset' ? 'Enter your email first.' : 'Please fill all required fields.');
       return;
     }
 
-    if (password.length < 6) {
+    if (authMode !== 'reset' && password.length < 6) {
       setAuthError('Password must be at least 6 characters.');
       return;
     }
 
     setIsAuthLoading(true);
     try {
-      if (authMode === 'signup') {
+      if (authMode === 'reset') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin,
+        });
+        if (error) throw error;
+        setAuthNotice('Password reset link sent. Check your email.');
+        setAuthForm((form) => ({ ...form, password: '' }));
+      } else if (authMode === 'update-password') {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        setAuthNotice('Password updated. You are signed in.');
+        setAuthMode('signin');
+        setAuthForm((form) => ({ ...form, password: '' }));
+        setShowAuthModal(false);
+      } else if (authMode === 'signup') {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -854,13 +936,20 @@ function App() {
       }
     });
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       setAuthSession(session);
       if (session?.user?.id) {
         void fetchUserProfile(session.user.id);
       } else {
         setUserProfile(null);
+      }
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthMode('update-password');
+        setAuthError('');
+        setAuthNotice('Enter a new password for your MolDraw account.');
+        setAuthForm((form) => ({ ...form, password: '' }));
+        setShowAuthModal(true);
       }
     });
 
@@ -2094,7 +2183,17 @@ ${scientificGuardrails}`;
 
     try {
       setIsConverting(true);
-      return await convertSmilesTo3DPubChem(smiles);
+      const pubchemSdf = await convertSmilesTo3DPubChem(smiles);
+      if (pubchemSdf) return pubchemSdf;
+
+      const response = await fetch(CONVERT_3D_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ smiles }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data?.sdf && /M\s+END/i.test(data.sdf) ? data.sdf : null;
     } catch (error) {
       console.error('Error converting to 3D:', error);
       return null;
@@ -3851,10 +3950,11 @@ ${scientificGuardrails}`;
 
   const sendChatMessage = async () => {
     const text = chatInput.trim();
-    if (!text || isChatLoading) return;
+    const imageAttachment = chatImageAttachment;
+    if ((!text && !imageAttachment) || isChatLoading) return;
 
     const spectrumRequestType = getSpectrumRequestType(text);
-    if (spectrumRequestType) {
+    if (spectrumRequestType && !imageAttachment) {
       setChatInput('');
       predictNMR(spectrumRequestType);
       return;
@@ -3866,9 +3966,14 @@ ${scientificGuardrails}`;
       return;
     }
 
-    const userMsg = { role: 'user', text };
+    const promptText = text || 'Please analyze the attached image.';
+    const userMsg = imageAttachment
+      ? { role: 'user', text: promptText, imageName: imageAttachment.name, imagePreview: imageAttachment.dataUrl }
+      : { role: 'user', text: promptText };
     setChatMessages((msgs) => [...msgs, userMsg]);
     setChatInput('');
+    setChatImageAttachment(null);
+    setChatImageError('');
     setIsChatLoading(true);
 
     try {
@@ -3882,12 +3987,18 @@ ${scientificGuardrails}`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: text,
+          prompt: promptText,
           smiles: lastSmilesForAIRef.current || null,
           molfile: lastMolfileForAIRef.current || null,
           apiKey: geminiApiKey,
           model: aiModel,
           history,
+          image: imageAttachment
+            ? {
+                mimeType: imageAttachment.mimeType,
+                data: imageAttachment.data,
+              }
+            : null,
         }),
       });
 
@@ -4134,6 +4245,10 @@ ${scientificGuardrails}`;
         break;
 
       case 'xyz':
+        if (!currentMolecule?.has3D) {
+          alert('Only 2D drawing coordinates are available for this molecule. XYZ export is disabled until a real 3D conformer is loaded.');
+          return;
+        }
         exportData = convertToXYZ(currentMolecule.data);
         filename = 'molecule.xyz';
         mimeType = 'chemical/x-xyz';
@@ -4231,6 +4346,10 @@ ${scientificGuardrails}`;
   };
 
   const buildQuantumInputFile = () => {
+    if (!currentMolecule?.has3D) {
+      throw new Error('Only 2D drawing coordinates are available. Gaussian, ORCA, and Q-Chem input files require a real 3D conformer.');
+    }
+
     const atoms = extractAtomsForQuantumExport(currentMolecule?.data);
     if (!atoms.length) {
       throw new Error('No 3D coordinates available. Generate or load a 3D molecule first.');
@@ -4322,8 +4441,8 @@ ${scientificGuardrails}`;
   const getQuantumInputPreview = () => {
     try {
       return buildQuantumInputFile().text;
-    } catch {
-      return 'No coordinates available yet. Draw or search a molecule, then let the 3D view load before using advanced export.';
+    } catch (error) {
+      return error?.message || 'No coordinates available yet. Draw or search a molecule, then let the 3D view load before using advanced export.';
     }
   };
 
@@ -5185,7 +5304,16 @@ ${scientificGuardrails}`;
                     className={`ai-chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}
                   >
                     {m.role === 'user' ? (
-                      <span>{m.text}</span>
+                      <span>
+                        {m.imagePreview && (
+                          <img
+                            className="ai-chat-user-image"
+                            src={m.imagePreview}
+                            alt={m.imageName || 'AI chat attachment'}
+                          />
+                        )}
+                        {m.text}
+                      </span>
                     ) : (
                       <div className="ai-chat-response">
                         {getAiResponseParagraphs(m.text).map((paragraph, paragraphIdx) => (
@@ -5209,7 +5337,27 @@ ${scientificGuardrails}`;
                   </button>
                 ))}
               </div>
+              {(chatImageAttachment || chatImageError) && (
+                <div className="ai-chat-attachment-row">
+                  {chatImageAttachment && (
+                    <div className="ai-chat-attachment-card">
+                      <img src={chatImageAttachment.dataUrl} alt={chatImageAttachment.name || 'Selected image'} />
+                      <span>{chatImageAttachment.name || 'Image attached'}</span>
+                      <button type="button" onClick={() => setChatImageAttachment(null)} aria-label="Remove AI chat image">×</button>
+                    </div>
+                  )}
+                  {chatImageError && <span className="ai-chat-attachment-error">{chatImageError}</span>}
+                </div>
+              )}
               <div className="ai-chat-input-row">
+                <label className="ai-chat-image-btn" title="Attach image for AI">
+                  +
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={handleChatImageSelect}
+                  />
+                </label>
                 <textarea
                   className="ai-chat-input"
                   value={chatInput}
@@ -5221,7 +5369,7 @@ ${scientificGuardrails}`;
                 <button
                   className="ai-chat-send-btn"
                   onClick={sendChatMessage}
-                  disabled={isChatLoading || !chatInput.trim()}
+                  disabled={isChatLoading || (!chatInput.trim() && !chatImageAttachment)}
                 >
                   {isChatLoading ? '...' : '→'}
                 </button>
@@ -5429,6 +5577,36 @@ ${scientificGuardrails}`;
               >
                 Request feature
               </button>
+
+              {authSession?.user ? (
+                <button
+                  type="button"
+                  className="tb-btn tb-btn-auth tb-btn-auth-signed"
+                  onClick={handleSignOut}
+                  title={`Signed in as ${authDisplayName}. Click to sign out.`}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="tb-btn tb-btn-auth"
+                    onClick={() => openAuthModal('signin')}
+                    title="Sign in to MolDraw"
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    type="button"
+                    className="tb-btn tb-btn-auth tb-btn-auth-cta"
+                    onClick={() => openAuthModal('signup')}
+                    title="Create a MolDraw account"
+                  >
+                    Sign up
+                  </button>
+                </>
+              )}
 
               {(structureCopied || structureCopyError) && (
                 <span className={`tb-copy-structure-note${structureCopyError ? ' tb-copy-structure-note-error' : ''}`}>
@@ -5667,45 +5845,6 @@ ${scientificGuardrails}`;
                 Updates
                 {hasUnreadUpdates && <span className="updates-notification-dot" aria-hidden="true" />}
               </button>
-              {authSession?.user ? (
-                <>
-                  <button
-                    type="button"
-                    className="viewer-toolbar-extra viewer-toolbar-auth-user"
-                    onClick={() => openAuthModal('signin')}
-                    title={userProfile?.designation ? `${userProfile.designation} account` : 'Signed in account'}
-                  >
-                    {authDisplayName}
-                  </button>
-                  <button
-                    type="button"
-                    className="viewer-toolbar-extra"
-                    onClick={handleSignOut}
-                    title="Sign out of MolDraw"
-                  >
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="viewer-toolbar-extra"
-                    onClick={() => openAuthModal('signin')}
-                    title="Sign in to MolDraw"
-                  >
-                    Sign in
-                  </button>
-                  <button
-                    type="button"
-                    className="viewer-toolbar-extra viewer-toolbar-auth-cta"
-                    onClick={() => openAuthModal('signup')}
-                    title="Create a MolDraw account"
-                  >
-                    Sign up
-                  </button>
-                </>
-              )}
               <div className="tb-menu-dropdown viewer-toolbar-more" ref={moreMenuRef}>
                 <button
                   type="button"
@@ -6076,6 +6215,14 @@ ${scientificGuardrails}`;
                         </button>
                       </div>
                     )}
+                    {!isProtein && currentMolecule && !currentMolecule.has3D && (
+                      <div className="mol-props-row mol-props-warning-row">
+                        <span className="mol-props-label">3D</span>
+                        <span className="mol-props-value">
+                          2D fallback only. Advanced quantum export is disabled until a real 3D conformer is available.
+                        </span>
+                      </div>
+                    )}
                     {!isProtein && moleculeSummary && (
                       <div className="mol-props-row mol-props-multiline-row">
                         <span className="mol-props-label">Summary</span>
@@ -6257,7 +6404,16 @@ ${scientificGuardrails}`;
                     <button onClick={() => exportModel('jpeg')} className="compact-export-btn" title="JPEG with white background">JPG</button>
                     <button onClick={() => exportModel('sdf')} className="compact-export-btn" title="SDF format">SDF</button>
                     <button onClick={() => exportModel('xyz')} className="compact-export-btn" title="XYZ format">XYZ</button>
-                    {!isProtein && <button onClick={() => setShowAdvancedExportModal(true)} className="compact-export-btn compact-export-btn-advanced" title="Gaussian, ORCA, and Q-Chem input files">Advanced</button>}
+                    {!isProtein && (
+                      <button
+                        onClick={() => setShowAdvancedExportModal(true)}
+                        className="compact-export-btn compact-export-btn-advanced"
+                        disabled={!currentMolecule?.has3D}
+                        title={currentMolecule?.has3D ? 'Gaussian, ORCA, and Q-Chem input files' : 'Advanced export requires a real 3D conformer. Current view is a 2D fallback.'}
+                      >
+                        Advanced
+                      </button>
+                    )}
                     {!isMiewEngine && <button onClick={() => exportModel('x3d')} className="compact-export-btn" title="X3D with bonds">X3D</button>}
                     {!isMiewEngine && <button onClick={() => exportModel('obj')} className="compact-export-btn" title="OBJ for Blender">OBJ</button>}
                   </div>
@@ -6686,15 +6842,26 @@ ${scientificGuardrails}`;
             <div className="auth-modal-header">
               <div>
                 <div className="auth-modal-title">
-                  {authMode === 'signup' ? 'Create MolDraw account' : authSession?.user ? 'MolDraw account' : 'Sign in to MolDraw'}
+                  {authMode === 'signup'
+                    ? 'Create MolDraw account'
+                    : authMode === 'reset'
+                      ? 'Reset password'
+                      : authMode === 'update-password'
+                        ? 'Set new password'
+                        : authSession?.user ? 'MolDraw account' : 'Sign in to MolDraw'}
                 </div>
                 <div className="auth-modal-subtitle">
-                  The editor stays free and open. Accounts will power saved work later.
+                  {authMode === 'reset'
+                    ? 'We will email a secure password reset link.'
+                    : authMode === 'update-password'
+                      ? 'Choose a new password to finish recovery.'
+                      : 'The editor stays free and open. Accounts power My designs and community actions.'}
                 </div>
               </div>
               <button type="button" className="auth-modal-x" onClick={() => setShowAuthModal(false)} aria-label="Close auth modal">×</button>
             </div>
 
+            {authMode !== 'update-password' && (
             <div className="auth-mode-switch" role="tablist" aria-label="Authentication mode">
               <button
                 type="button"
@@ -6719,6 +6886,7 @@ ${scientificGuardrails}`;
                 Sign up
               </button>
             </div>
+            )}
 
             <label className="auth-field">
               <span>Email</span>
@@ -6732,26 +6900,74 @@ ${scientificGuardrails}`;
               />
             </label>
 
+            {authMode !== 'reset' && (
             <label className="auth-field">
               <span>Password</span>
               <input
                 type="password"
                 value={authForm.password}
                 onChange={(e) => updateAuthForm('password', e.target.value)}
-                placeholder="At least 6 characters"
-                autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
+                placeholder={authMode === 'update-password' ? 'New password' : 'At least 6 characters'}
+                autoComplete={authMode === 'signin' ? 'current-password' : 'new-password'}
                 minLength={6}
                 required
               />
             </label>
+            )}
+
+            {authMode === 'signin' && (
+              <button
+                type="button"
+                className="auth-inline-link"
+                onClick={handlePasswordResetRequest}
+                disabled={isAuthLoading}
+              >
+                Forgot password?
+              </button>
+            )}
+
+            {authMode === 'reset' && (
+              <button
+                type="button"
+                className="auth-inline-link"
+                onClick={() => {
+                  setAuthMode('signin');
+                  setAuthError('');
+                  setAuthNotice('');
+                }}
+              >
+                Back to sign in
+              </button>
+            )}
 
             {authNotice && <div className="auth-notice">{authNotice}</div>}
             {authError && <div className="auth-error">{authError}</div>}
 
             <div className="auth-actions">
               <button type="submit" className="auth-submit" disabled={isAuthLoading}>
-                {isAuthLoading ? 'Please wait...' : authMode === 'signup' ? 'Create account' : 'Sign in'}
+                {isAuthLoading
+                  ? 'Please wait...'
+                  : authMode === 'signup'
+                    ? 'Create account'
+                    : authMode === 'reset'
+                      ? 'Send reset link'
+                      : authMode === 'update-password'
+                        ? 'Update password'
+                        : 'Sign in'}
               </button>
+              {authMode === 'signin' && (
+                <button
+                  type="button"
+                  className="auth-cancel"
+                  onClick={() => {
+                    setAuthMode('reset');
+                    setAuthError('');
+                    setAuthNotice('');
+                  }}
+                >
+                  Reset password
+                </button>
+              )}
               <button type="button" className="auth-cancel" onClick={() => setShowAuthModal(false)}>Cancel</button>
             </div>
           </form>

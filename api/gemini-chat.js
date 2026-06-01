@@ -66,15 +66,23 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' });
   }
 
-  const { prompt, smiles, molfile, apiKey, history, model } = req.body || {};
+  const { prompt, smiles, molfile, apiKey, history, model, image } = req.body || {};
   const selectedModel = selectModel(model);
   const key = apiKey || process.env.GEMINI_API_KEY || '';
+  const imageMimeType = typeof image?.mimeType === 'string' ? image.mimeType : '';
+  const imageData = typeof image?.data === 'string' ? image.data : '';
+  const hasImage = /^image\/(png|jpe?g|webp|gif)$/i.test(imageMimeType)
+    && imageData.length <= 3_600_000
+    && /^[A-Za-z0-9+/=]+$/.test(imageData);
 
   if (!key) {
     return res.status(400).json({ error: 'No API key provided. Paste your Gemini API key in assistant settings.', code: 'MISSING_API_KEY' });
   }
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Missing prompt', code: 'MISSING_PROMPT' });
+  }
+  if (image && !hasImage) {
+    return res.status(400).json({ error: 'Unsupported or invalid image attachment.', code: 'INVALID_IMAGE' });
   }
 
   const userContext =
@@ -97,7 +105,16 @@ module.exports = async function handler(req, res) {
       });
     });
   }
-  contents.push({ role: 'user', parts: [{ text: userContext }] });
+  const userParts = [{ text: userContext }];
+  if (hasImage) {
+    userParts.push({
+      inlineData: {
+        mimeType: imageMimeType,
+        data: imageData,
+      },
+    });
+  }
+  contents.push({ role: 'user', parts: userParts });
 
   try {
     const callGemini = async (modelName) => fetch(
