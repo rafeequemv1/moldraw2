@@ -68,9 +68,37 @@ const fetchText = async (url, timeoutMs = 45000) => {
   }
 };
 
-const isValidSdf = (text) => typeof text === 'string'
-  && /M\s+END/i.test(text)
-  && /^\s*\d+\s+\d+.*V[23]000/m.test(text);
+const getSdf3DStats = (text) => {
+  if (typeof text !== 'string' || !/M\s+END/i.test(text)) return null;
+  const lines = text.split(/\r?\n/);
+  const countsIndex = lines.findIndex((line) => /^\s*\d+\s+\d+.*V[23]000/.test(line));
+  if (countsIndex < 0) return null;
+  const atomCount = Number.parseInt(lines[countsIndex].trim().split(/\s+/)[0], 10);
+  if (!Number.isFinite(atomCount) || atomCount <= 0) return null;
+
+  const zValues = [];
+  for (let i = 0; i < atomCount; i += 1) {
+    const parts = String(lines[countsIndex + 1 + i] || '').trim().split(/\s+/);
+    const z = Number.parseFloat(parts[2]);
+    if (Number.isFinite(z)) zValues.push(z);
+  }
+  if (!zValues.length) return null;
+
+  const minZ = Math.min(...zValues);
+  const maxZ = Math.max(...zValues);
+  return {
+    atomCount,
+    headerSays3D: /3D/i.test(lines[1] || ''),
+    zDepth: maxZ - minZ,
+  };
+};
+
+const isValid3DSdf = (text) => {
+  const stats = getSdf3DStats(text);
+  // Some truly planar molecules are valid 3D conformers, but 2D service output
+  // must not be treated as quantum-ready coordinates.
+  return Boolean(stats && (stats.headerSays3D || stats.zDepth > 0.05));
+};
 
 app.post('/api/convert-3d', async (req, res) => {
   const smiles = String(req.body?.smiles || '').trim();
@@ -97,7 +125,7 @@ app.post('/api/convert-3d', async (req, res) => {
   for (const source of sources) {
     try {
       const result = await fetchText(source.url);
-      if (result.ok && isValidSdf(result.text)) {
+      if (result.ok && isValid3DSdf(result.text)) {
         return res.json({ sdf: result.text, source: source.name });
       }
       errors.push(`${source.name}:${result.status}`);

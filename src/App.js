@@ -200,22 +200,6 @@ function isAlkaliElementSymbol(sym) {
   return /^(Li|Na|K|Rb|Cs|Fr)$/i.test(s);
 }
 
-/** PubChem conformer (often keeps metals + H better than raw Ketcher 2D mol in 3Dmol). */
-async function convertSmilesTo3DPubChem(smiles) {
-  if (!smiles || !String(smiles).trim()) return null;
-  try {
-    const enc = encodeURIComponent(smiles.trim());
-    const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${enc}/record/SDF/?record_type=3d`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const text = await res.text();
-    if (!text || !/M\s+END/i.test(text)) return null;
-    return text;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Ketcher molfiles are often planar (z≈0); alkali atoms sit on top of ring carbons in 3D.
  * Nudge alkali x,y away from the heavy-atom centroid and lift z slightly.
@@ -455,6 +439,8 @@ function App() {
   const moleculeViewCacheRef = useRef(null);
   const proteinViewCacheRef = useRef(null);
   const [molecularMass, setMolecularMass] = useState(null);
+  const [moleculeFormulaStats, setMoleculeFormulaStats] = useState(null);
+  const [selectedAtomIds, setSelectedAtomIds] = useState([]);
   const [multiStructure, setMultiStructure] = useState(false);
   const [selected3DComponentIdx, setSelected3DComponentIdx] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -679,35 +665,6 @@ function App() {
     reader.readAsDataURL(file);
   };
 
-  const handlePasswordResetRequest = async () => {
-    setAuthError('');
-    setAuthNotice('');
-
-    if (!isSupabaseConfigured || !supabase) {
-      setAuthError('Supabase is not configured yet.');
-      return;
-    }
-
-    const email = authForm.email.trim();
-    if (!email) {
-      setAuthError('Enter your email first.');
-      return;
-    }
-
-    setIsAuthLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin,
-      });
-      if (error) throw error;
-      setAuthNotice('Password reset link sent. Check your email.');
-    } catch (error) {
-      setAuthError(error?.message || 'Could not send password reset email.');
-    } finally {
-      setIsAuthLoading(false);
-    }
-  };
-
   const saveUserProfile = async (userId, form) => {
     if (!supabase || !userId) return;
     await supabase.from('users').upsert({
@@ -732,8 +689,18 @@ function App() {
     const password = authForm.password;
     const name = getDisplayNameFromEmail(email);
 
-    if (!email || (authMode !== 'reset' && !password)) {
-      setAuthError(authMode === 'reset' ? 'Enter your email first.' : 'Please fill all required fields.');
+    if (authMode === 'reset' && !email) {
+      setAuthError('Enter your email first.');
+      return;
+    }
+
+    if (authMode === 'update-password' && !password) {
+      setAuthError('Enter your new password.');
+      return;
+    }
+
+    if (!['reset', 'update-password'].includes(authMode) && (!email || !password)) {
+      setAuthError('Please fill all required fields.');
       return;
     }
 
@@ -1222,6 +1189,8 @@ function App() {
     setBoilingPoint(null);
     setMeltingPoint(null);
     setCurrentSmiles('');
+    setMoleculeFormulaStats(null);
+    setSelectedAtomIds([]);
     setNmrData(null);
   };
 
@@ -2183,9 +2152,6 @@ ${scientificGuardrails}`;
 
     try {
       setIsConverting(true);
-      const pubchemSdf = await convertSmilesTo3DPubChem(smiles);
-      if (pubchemSdf) return pubchemSdf;
-
       const response = await fetch(CONVERT_3D_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2771,11 +2737,7 @@ ${scientificGuardrails}`;
       // fetches because they are blocked by browser CORS on localhost/deploys.
       const alkaliSmiles = !!(renderSmiles && smilesContainsAlkaliMetal(renderSmiles));
       let structure3D = null;
-      if (renderSmiles && alkaliSmiles) {
-        structure3D = await convertSmilesTo3DPubChem(renderSmiles);
-        if (updateSeq !== moleculeUpdateSeqRef.current) return;
-      }
-      if (!structure3D && renderSmiles && !alkaliSmiles) {
+      if (renderSmiles) {
         structure3D = await convertSmilesTo3D(renderSmiles);
         if (updateSeq !== moleculeUpdateSeqRef.current) return;
       }
@@ -2982,6 +2944,9 @@ ${scientificGuardrails}`;
         const molfile = event.data.molfile;
         const smiles = sanitizeSmilesText(event.data.smiles);
         const normalizedSmiles = (smiles || '').trim();
+        if (Array.isArray(event.data.selectedAtomIds)) {
+          setSelectedAtomIds(event.data.selectedAtomIds);
+        }
 
         if (!normalizedSmiles) {
           setCurrentSmiles('');
@@ -3018,6 +2983,8 @@ ${scientificGuardrails}`;
         } else if (smiles && smiles.trim() !== '') {
           getMoleculeName(smiles);
         }
+      } else if (event.data.type === 'selection-change') {
+        setSelectedAtomIds(Array.isArray(event.data.atomIds) ? event.data.atomIds : []);
       } else if (event.data.type === 'molfile-response') {
         const newMolfile = event.data.molfile;
         const newMolfileFingerprint = getMolfileFingerprint(newMolfile);
@@ -4935,6 +4902,162 @@ ${scientificGuardrails}`;
 
   const getAtomicWeight = (elem) => ATOMIC_WEIGHTS[elem] || 0;
 
+  const getPreferredValence = (elem) => ({
+    C: 4,
+    Si: 4,
+    N: 3,
+    P: 3,
+    O: 2,
+    S: 2,
+    F: 1,
+    Cl: 1,
+    Br: 1,
+    I: 1,
+    B: 3,
+  }[elem] || 0);
+
+  const getHillFormula = (counts) => {
+    const entries = Object.entries(counts || {}).filter(([, count]) => count > 0);
+    if (!entries.length) return '';
+    const order = [];
+    const hasCarbon = counts.C > 0;
+    if (hasCarbon) {
+      order.push('C');
+      if (counts.H > 0) order.push('H');
+    }
+    entries
+      .map(([elem]) => elem)
+      .filter((elem) => !order.includes(elem))
+      .sort((a, b) => a.localeCompare(b))
+      .forEach((elem) => order.push(elem));
+
+    return order
+      .filter((elem) => counts[elem] > 0)
+      .map((elem) => `${elem}${counts[elem] === 1 ? '' : counts[elem]}`)
+      .join('');
+  };
+
+  const parseMolfileForFormula = (molfile) => {
+    const text = String(molfile || '');
+    if (!text.trim()) return null;
+    const lines = text.split(/\r?\n/);
+    const atoms = [];
+    const bonds = [];
+
+    if (/V3000/i.test(text)) {
+      let inAtomBlock = false;
+      let inBondBlock = false;
+      lines.forEach((line) => {
+        const trimmed = line.trim();
+        if (/M\s+V30\s+BEGIN\s+ATOM/i.test(trimmed)) {
+          inAtomBlock = true;
+          return;
+        }
+        if (/M\s+V30\s+END\s+ATOM/i.test(trimmed)) {
+          inAtomBlock = false;
+          return;
+        }
+        if (/M\s+V30\s+BEGIN\s+BOND/i.test(trimmed)) {
+          inBondBlock = true;
+          return;
+        }
+        if (/M\s+V30\s+END\s+BOND/i.test(trimmed)) {
+          inBondBlock = false;
+          return;
+        }
+        const parts = trimmed.replace(/^\s*M\s+V30\s+/i, '').trim().split(/\s+/);
+        if (inAtomBlock && parts.length >= 5) {
+          const id = Number.parseInt(parts[0], 10);
+          const elem = normalizePdbElementSymbol(parts[1]);
+          if (Number.isFinite(id) && elem) atoms.push({ id, elem });
+        }
+        if (inBondBlock && parts.length >= 4) {
+          const order = Number.parseInt(parts[1], 10);
+          const a1 = Number.parseInt(parts[2], 10);
+          const a2 = Number.parseInt(parts[3], 10);
+          if (Number.isFinite(a1) && Number.isFinite(a2)) bonds.push({ a1, a2, order });
+        }
+      });
+      return atoms.length ? { atoms, bonds } : null;
+    }
+
+    const countsIdx = lines.findIndex((line) => /^\s*\d+\s+\d+/.test(line));
+    if (countsIdx < 0) return null;
+    const countsParts = lines[countsIdx].trim().split(/\s+/);
+    const atomCount = Number.parseInt(countsParts[0], 10);
+    const bondCount = Number.parseInt(countsParts[1], 10);
+    if (!Number.isFinite(atomCount) || atomCount <= 0) return null;
+
+    for (let i = 0; i < atomCount; i += 1) {
+      const line = lines[countsIdx + 1 + i] || '';
+      const elem = normalizePdbElementSymbol(line.slice(31, 34).trim() || line.trim().split(/\s+/)[3]);
+      if (elem) atoms.push({ id: i + 1, elem });
+    }
+
+    const safeBondCount = Number.isFinite(bondCount) && bondCount > 0 ? bondCount : 0;
+    for (let i = 0; i < safeBondCount; i += 1) {
+      const parts = String(lines[countsIdx + 1 + atomCount + i] || '').trim().split(/\s+/);
+      const a1 = Number.parseInt(parts[0], 10);
+      const a2 = Number.parseInt(parts[1], 10);
+      const order = Number.parseInt(parts[2], 10);
+      if (Number.isFinite(a1) && Number.isFinite(a2)) bonds.push({ a1, a2, order });
+    }
+
+    return atoms.length ? { atoms, bonds } : null;
+  };
+
+  const calculateFormulaStatsFromMolfile = (molfile, atomIds = []) => {
+    const parsed = parseMolfileForFormula(molfile);
+    if (!parsed?.atoms?.length) return null;
+    const allIds = new Set(parsed.atoms.map((atom) => atom.id));
+    const rawSelected = Array.isArray(atomIds) ? atomIds : [];
+    const normalizedSelected = rawSelected
+      .map((id) => Number.parseInt(id, 10))
+      .filter((id) => Number.isFinite(id));
+    const shiftedSelected = normalizedSelected
+      .filter((id) => !allIds.has(id) && allIds.has(id + 1))
+      .map((id) => id + 1);
+    const useZeroBasedIds = normalizedSelected.some((id) => id === 0);
+    const selectedSet = new Set(useZeroBasedIds
+      ? normalizedSelected.map((id) => id + 1).filter((id) => allIds.has(id))
+      : [
+        ...normalizedSelected.filter((id) => allIds.has(id)),
+        ...shiftedSelected,
+      ]);
+    const hasSelection = selectedSet.size > 0;
+    const includedAtoms = parsed.atoms.filter((atom) => !hasSelection || selectedSet.has(atom.id));
+    if (!includedAtoms.length) return null;
+
+    const counts = {};
+    const addCount = (elem, amount = 1) => {
+      counts[elem] = (counts[elem] || 0) + amount;
+    };
+    includedAtoms.forEach((atom) => addCount(atom.elem));
+
+    includedAtoms.forEach((atom) => {
+      if (atom.elem === 'H') return;
+      const valence = getPreferredValence(atom.elem);
+      if (!valence) return;
+      const bondOrderSum = parsed.bonds
+        .filter((bond) => bond.a1 === atom.id || bond.a2 === atom.id)
+        .reduce((sum, bond) => {
+          const order = Number.isFinite(bond.order) ? bond.order : 1;
+          return sum + (order === 4 ? 1.5 : Math.max(1, Math.min(order, 3)));
+        }, 0);
+      const implicitH = Math.max(0, Math.round(valence - bondOrderSum));
+      if (implicitH > 0) addCount('H', implicitH);
+    });
+
+    const mass = Object.entries(counts).reduce((sum, [elem, count]) => sum + (getAtomicWeight(elem) * count), 0);
+    return {
+      formula: getHillFormula(counts),
+      mass: mass > 0 ? mass : null,
+      atomCount: includedAtoms.length,
+      selectedAtomCount: hasSelection ? includedAtoms.length : 0,
+      isSelection: hasSelection,
+    };
+  };
+
   const calculateMolecularMass = (atoms, includeHydrogens) => {
     if (!atoms || !atoms.length) return null;
     let total = 0;
@@ -4947,28 +5070,8 @@ ${scientificGuardrails}`;
   };
 
   const calculateMassFromMolfile = (molfile) => {
-    if (!molfile) return null;
     try {
-      const lines = molfile.split('\n');
-      let countsIdx = -1;
-      for (let i = 0; i < Math.min(lines.length, 10); i++) {
-        if (lines[i].trim().match(/^\s*\d+\s+\d+/)) { countsIdx = i; break; }
-      }
-      if (countsIdx < 0) return null;
-      const parts = lines[countsIdx].trim().split(/\s+/);
-      const atomCount = parseInt(parts[0]) || 0;
-      if (atomCount <= 0) return null;
-
-      let total = 0;
-      for (let i = countsIdx + 1; i < countsIdx + 1 + atomCount && i < lines.length; i++) {
-        const cols = lines[i].trim().split(/\s+/);
-        if (cols.length >= 4) {
-          const elem = cols[3];
-          const w = ATOMIC_WEIGHTS[elem];
-          if (w) total += w;
-        }
-      }
-      return total > 0 ? total : null;
+      return calculateFormulaStatsFromMolfile(molfile)?.mass || null;
     } catch { return null; }
   };
 
@@ -4990,6 +5093,13 @@ ${scientificGuardrails}`;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showHydrogens, currentMolecule]);
+
+  useEffect(() => {
+    const molfile = lastMolfileForAIRef.current || (currentMolecule?.format === 'mol' ? currentMolecule.data : '');
+    const stats = calculateFormulaStatsFromMolfile(molfile, selectedAtomIds);
+    setMoleculeFormulaStats(stats);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMolecule, currentSmiles, selectedAtomIds]);
 
   useEffect(() => {
     const components = getSmilesComponents(currentSmiles);
@@ -5688,6 +5798,16 @@ ${scientificGuardrails}`;
               className="ketcher-iframe"
               data-testid="ketcher-iframe"
             />
+
+            {!isProtein && moleculeFormulaStats?.formula && (
+              <div className="formula-mw-badge" title={moleculeFormulaStats.isSelection ? 'Selected atoms formula and molecular weight' : 'Whole molecule formula and molecular weight'}>
+                <span className="formula-mw-scope">{moleculeFormulaStats.isSelection ? `Selection (${moleculeFormulaStats.selectedAtomCount})` : 'Molecule'}</span>
+                <span className="formula-mw-formula">{moleculeFormulaStats.formula}</span>
+                {moleculeFormulaStats.mass && (
+                  <span className="formula-mw-mass">{moleculeFormulaStats.mass.toFixed(2)} g/mol</span>
+                )}
+              </div>
+            )}
 
             <div className="lp-overlay">
               {lonePairs.map((lp) => (
@@ -6861,7 +6981,7 @@ ${scientificGuardrails}`;
               <button type="button" className="auth-modal-x" onClick={() => setShowAuthModal(false)} aria-label="Close auth modal">×</button>
             </div>
 
-            {authMode !== 'update-password' && (
+            {!['reset', 'update-password'].includes(authMode) && (
             <div className="auth-mode-switch" role="tablist" aria-label="Authentication mode">
               <button
                 type="button"
@@ -6919,7 +7039,12 @@ ${scientificGuardrails}`;
               <button
                 type="button"
                 className="auth-inline-link"
-                onClick={handlePasswordResetRequest}
+                onClick={() => {
+                  setAuthMode('reset');
+                  setAuthError('');
+                  setAuthNotice('');
+                  setAuthForm((form) => ({ ...form, password: '' }));
+                }}
                 disabled={isAuthLoading}
               >
                 Forgot password?
@@ -6963,6 +7088,7 @@ ${scientificGuardrails}`;
                     setAuthMode('reset');
                     setAuthError('');
                     setAuthNotice('');
+                    setAuthForm((form) => ({ ...form, password: '' }));
                   }}
                 >
                   Reset password

@@ -827,6 +827,7 @@
             </div>
             <div class="profile-actions">
               <button class="project-action project-action-primary" type="submit" style="flex:0 0 auto;padding:0 16px;">Save profile</button>
+              <button id="profile-reset-password" class="project-action" type="button" style="flex:0 0 auto;padding:0 16px;">Reset password</button>
               <span id="profile-notice" class="profile-notice"></span>
             </div>
           </form>
@@ -834,6 +835,7 @@
       `;
 
       root.querySelector('#profile-form').addEventListener('submit', saveProfile);
+      root.querySelector('#profile-reset-password').addEventListener('click', sendProfilePasswordReset);
     }
 
     async function loadProfile() {
@@ -910,6 +912,25 @@
       renderProfile(currentProfile);
       const updatedNotice = root.querySelector('#profile-notice');
       if (updatedNotice) updatedNotice.textContent = 'Profile updated.';
+    }
+
+    async function sendProfilePasswordReset() {
+      if (!currentUser?.email) return;
+      const notice = root.querySelector('#profile-notice');
+      const resetButton = root.querySelector('#profile-reset-password');
+      if (notice) notice.textContent = 'Sending reset link...';
+      if (resetButton) resetButton.disabled = true;
+
+      const { error } = await client.auth.resetPasswordForEmail(currentUser.email, {
+        redirectTo: window.location.origin
+      });
+
+      if (notice) {
+        notice.textContent = error
+          ? (error.message || 'Could not send reset link.')
+          : 'Password reset link sent. Check your email.';
+      }
+      if (resetButton) resetButton.disabled = false;
     }
 
     function renderRequests(requests) {

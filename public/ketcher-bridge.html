@@ -129,8 +129,92 @@
 
           let lastChangeFingerprint = '';
           let changeTimer = null;
+          let editorChangeInFlight = false;
+          let editorChangePending = false;
+          let selectionTimer = null;
+          let lastSelectionFingerprint = '';
           let clipboardSvgCache = '';
+          const normalizeSelectionIds = (value) => {
+            const ids = new Set();
+            const visit = (item) => {
+              if (!item) return;
+              if (typeof item === 'number' || typeof item === 'string') {
+                const parsed = parseInt(item, 10);
+                if (Number.isFinite(parsed)) ids.add(parsed);
+                return;
+              }
+              if (item instanceof Set) {
+                Array.from(item).forEach(visit);
+                return;
+              }
+              if (item instanceof Map) {
+                Array.from(item.keys()).forEach(visit);
+                Array.from(item.values()).forEach(visit);
+                return;
+              }
+              if (Array.isArray(item)) {
+                item.forEach(visit);
+                return;
+              }
+              if (typeof item === 'object') {
+                const direct = item.id ?? item.atomId ?? item.aid ?? item.index;
+                if (direct !== undefined) visit(direct);
+                if (typeof item.keys === 'function') {
+                  try { Array.from(item.keys()).forEach(visit); } catch (_) { /* noop */ }
+                }
+                if (typeof item.forEach === 'function') {
+                  try { item.forEach((value, key) => { visit(key); visit(value); }); } catch (_) { /* noop */ }
+                }
+                Object.keys(item)
+                  .filter((key) => key !== 'nextId' && /^\d+$/.test(key))
+                  .forEach(visit);
+                ['items', '_items', 'map', '_map', 'storage', '_storage'].forEach((key) => {
+                  if (item[key]) visit(item[key]);
+                });
+              }
+            };
+            visit(value);
+            return Array.from(ids);
+          };
+          const getSelectedAtomIds = () => {
+            try {
+              const editor = ketcher.editor || ketcherFrame.contentWindow.editor || null;
+              const selection = editor && (
+                (typeof editor.selection === 'function' && editor.selection()) ||
+                (typeof editor.getSelection === 'function' && editor.getSelection()) ||
+                editor.selection ||
+                null
+              );
+              const selectedStruct = editor && typeof editor.structSelected === 'function'
+                ? editor.structSelected()
+                : null;
+              const internalIds = [
+                ...normalizeSelectionIds(selection && (selection.atoms || selection.selectedAtoms || selection.atomIds)),
+                ...normalizeSelectionIds(selectedStruct && selectedStruct.atoms),
+              ];
+              // Ketcher atom pools are zero-based; molfiles are one-based.
+              return Array.from(new Set(internalIds.map((id) => id + 1).filter((id) => id > 0)));
+            } catch (_) {
+              return [];
+            }
+          };
+          const emitSelectionChange = () => {
+            const atomIds = getSelectedAtomIds();
+            const fp = atomIds.slice().sort((a, b) => a - b).join(',');
+            if (fp === lastSelectionFingerprint) return;
+            lastSelectionFingerprint = fp;
+            window.parent.postMessage({ type: 'selection-change', atomIds }, '*');
+          };
+          const scheduleSelectionChange = () => {
+            if (selectionTimer) clearTimeout(selectionTimer);
+            selectionTimer = setTimeout(emitSelectionChange, 120);
+          };
           const emitEditorChange = async () => {
+            if (editorChangeInFlight) {
+              editorChangePending = true;
+              return;
+            }
+            editorChangeInFlight = true;
             try {
               const molfile = await ketcher.getMolfile();
               const fp = getMolfileFingerprint(molfile);
@@ -153,16 +237,23 @@
                 smiles,
                 ket,
                 svg,
+                selectedAtomIds: getSelectedAtomIds(),
               }, '*');
             } catch (error) {
               console.warn('Bridge editor-change emit failed:', error);
+            } finally {
+              editorChangeInFlight = false;
+              if (editorChangePending) {
+                editorChangePending = false;
+                scheduleEditorChange();
+              }
             }
           };
           const scheduleEditorChange = () => {
             if (changeTimer) clearTimeout(changeTimer);
             changeTimer = setTimeout(() => {
               emitEditorChange();
-            }, 180);
+            }, 350);
           };
 
           async function refreshClipboardCache() {
@@ -288,15 +379,20 @@
           try {
             if (ketcher.editor && typeof ketcher.editor.subscribe === 'function') {
               ketcher.editor.subscribe('change', scheduleEditorChange);
+              ketcher.editor.subscribe('selectionChange', scheduleSelectionChange);
             }
           } catch (_) { /* noop */ }
           try {
             const frameDoc = ketcherFrame.contentWindow.document;
-            frameDoc.addEventListener('input', scheduleEditorChange, true);
-            frameDoc.addEventListener('mouseup', scheduleEditorChange, true);
-            frameDoc.addEventListener('pointerup', scheduleEditorChange, true);
-            frameDoc.addEventListener('touchend', scheduleEditorChange, { capture: true, passive: true });
-            frameDoc.addEventListener('keyup', scheduleEditorChange, true);
+            const scheduleStructureAndSelection = () => {
+              scheduleEditorChange();
+              scheduleSelectionChange();
+            };
+            frameDoc.addEventListener('input', scheduleStructureAndSelection, true);
+            frameDoc.addEventListener('mouseup', scheduleStructureAndSelection, true);
+            frameDoc.addEventListener('pointerup', scheduleStructureAndSelection, true);
+            frameDoc.addEventListener('touchend', scheduleStructureAndSelection, { capture: true, passive: true });
+            frameDoc.addEventListener('keyup', scheduleStructureAndSelection, true);
             frameDoc.addEventListener('keydown', function (event) {
               const key = String(event.key || '').toLowerCase();
               if (!(event.ctrlKey || event.metaKey) || key !== 'c') return;
@@ -465,6 +561,7 @@
                   smiles: smiles
                 }, '*');
                 scheduleEditorChange();
+                scheduleSelectionChange();
               } catch (error) {
                 console.error('Error setting molecule:', error);
                 window.parent.postMessage({
@@ -492,6 +589,7 @@
                   smiles: smiles
                 }, '*');
                 scheduleEditorChange();
+                scheduleSelectionChange();
               } catch (error) {
                 console.error('Error appending fragment:', error);
                 window.parent.postMessage({
@@ -545,6 +643,7 @@
                   annotationsApplied,
                 }, '*');
                 scheduleEditorChange();
+                scheduleSelectionChange();
               } catch (error) {
                 console.error('Error setting reaction scene:', error);
                 window.parent.postMessage({
@@ -561,6 +660,7 @@
                   success: true
                 }, '*');
                 scheduleEditorChange();
+                scheduleSelectionChange();
               } catch (error) {
                 console.error('Error clearing editor:', error);
                 window.parent.postMessage({

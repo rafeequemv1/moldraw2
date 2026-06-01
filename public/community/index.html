@@ -1398,6 +1398,10 @@
     const tabFeatures = document.getElementById('tab-features');
     const authModal = document.getElementById('auth-modal');
     const authMessage = document.getElementById('auth-message');
+    const authPassword = document.getElementById('auth-password');
+    const authReset = document.getElementById('auth-reset');
+    const authSignin = document.getElementById('auth-signin');
+    const authSignup = document.getElementById('auth-signup');
     const postModal = document.getElementById('post-modal');
     const featureRequestModal = document.getElementById('feature-request-modal');
     const reportModal = document.getElementById('report-modal');
@@ -1456,6 +1460,10 @@
 
     function openAuthModal(title) {
       document.getElementById('auth-modal-title').textContent = title || 'Sign in to continue';
+      authPassword.hidden = false;
+      authSignin.hidden = false;
+      authSignup.hidden = false;
+      authReset.textContent = 'Reset password';
       authMessage.textContent = '';
       authModal.classList.add('visible');
       authModal.setAttribute('aria-hidden', 'false');
@@ -2388,7 +2396,7 @@
       if (event.key === 'Escape' && featureRequestModal.classList.contains('visible')) closeFeatureRequestModal();
       if (event.key === 'Escape' && reportModal.classList.contains('visible')) closeReportModal();
     });
-    document.getElementById('auth-signin').addEventListener('click', async () => {
+    authSignin.addEventListener('click', async () => {
       authMessage.textContent = 'Signing in...';
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
@@ -2401,7 +2409,16 @@
       await refreshSession();
       await loadActiveTab();
     });
-    document.getElementById('auth-reset').addEventListener('click', async () => {
+    authReset.addEventListener('click', async () => {
+      if (!authPassword.hidden) {
+        document.getElementById('auth-modal-title').textContent = 'Reset password';
+        authPassword.hidden = true;
+        authSignin.hidden = true;
+        authSignup.hidden = true;
+        authReset.textContent = 'Send reset link';
+        authMessage.textContent = 'Enter your email only.';
+        return;
+      }
       const email = document.getElementById('auth-email').value.trim();
       if (!email) {
         authMessage.textContent = 'Enter your email first.';
@@ -2415,7 +2432,7 @@
         ? error.message
         : 'Password reset link sent. Check your email.';
     });
-    document.getElementById('auth-signup').addEventListener('click', async () => {
+    authSignup.addEventListener('click', async () => {
       authMessage.textContent = 'Creating account...';
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
