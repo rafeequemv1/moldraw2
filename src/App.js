@@ -441,6 +441,7 @@ function App() {
   const [molecularMass, setMolecularMass] = useState(null);
   const [moleculeFormulaStats, setMoleculeFormulaStats] = useState(null);
   const [selectedAtomIds, setSelectedAtomIds] = useState([]);
+  const [currentMolfile, setCurrentMolfile] = useState('');
   const [multiStructure, setMultiStructure] = useState(false);
   const [selected3DComponentIdx, setSelected3DComponentIdx] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -1189,6 +1190,7 @@ function App() {
     setBoilingPoint(null);
     setMeltingPoint(null);
     setCurrentSmiles('');
+    setCurrentMolfile('');
     setMoleculeFormulaStats(null);
     setSelectedAtomIds([]);
     setNmrData(null);
@@ -2578,6 +2580,7 @@ ${scientificGuardrails}`;
       setMolecularMass(null);
       setMoleculeSummary('');
       setCurrentSmiles('');
+      setCurrentMolfile('');
       setMultiStructure(false);
       setProteinStatus(`Loaded ${label}.`);
       const parsedMeta = parseProteinMetadata(cleanText, label);
@@ -2944,6 +2947,9 @@ ${scientificGuardrails}`;
         const molfile = event.data.molfile;
         const smiles = sanitizeSmilesText(event.data.smiles);
         const normalizedSmiles = (smiles || '').trim();
+        if (molfile) {
+          setCurrentMolfile(molfile);
+        }
         if (Array.isArray(event.data.selectedAtomIds)) {
           setSelectedAtomIds(event.data.selectedAtomIds);
         }
@@ -2988,6 +2994,9 @@ ${scientificGuardrails}`;
       } else if (event.data.type === 'molfile-response') {
         const newMolfile = event.data.molfile;
         const newMolfileFingerprint = getMolfileFingerprint(newMolfile);
+        if (newMolfile) {
+          setCurrentMolfile(newMolfile);
+        }
 
         // Keep protein mode isolated from Ketcher polling responses.
         if (viewerMode === 'protein') {
@@ -3055,6 +3064,9 @@ ${scientificGuardrails}`;
         const molfile = window.tempMolfile;
         const smiles = sanitizeSmilesText(event.data.smiles);
         const normalizedSmiles = (smiles || '').trim();
+        if (molfile) {
+          setCurrentMolfile(molfile);
+        }
 
         // If canvas is empty, clear related UI state and persisted canvas
         if (!normalizedSmiles) {
@@ -3260,6 +3272,7 @@ ${scientificGuardrails}`;
           const molfile = String(event.data.molfile || '').trim();
           const smiles = sanitizeSmilesText(event.data.smiles || '');
           if (molfile && getMolfileAtomCount(molfile) > 0) {
+            setCurrentMolfile(molfile);
             lastMolfileForAIRef.current = molfile;
             lastSmilesForAIRef.current = smiles;
             window.tempMolfile = molfile;
@@ -3869,6 +3882,7 @@ ${scientificGuardrails}`;
     moleculeViewCacheRef.current = null;
     bridgeWindow.postMessage({ type: 'clear-editor' }, '*');
     setCurrentSmiles('');
+    setCurrentMolfile('');
     setCurrentMolecule(null);
     setMultiStructure(false);
     clearMoleculeProps();
@@ -4902,19 +4916,34 @@ ${scientificGuardrails}`;
 
   const getAtomicWeight = (elem) => ATOMIC_WEIGHTS[elem] || 0;
 
-  const getPreferredValence = (elem) => ({
-    C: 4,
-    Si: 4,
-    N: 3,
-    P: 3,
-    O: 2,
-    S: 2,
-    F: 1,
-    Cl: 1,
-    Br: 1,
-    I: 1,
-    B: 3,
-  }[elem] || 0);
+  const getPreferredValence = (elem, charge = 0) => {
+    if (elem === 'N' && charge > 0) return 4;
+    if (elem === 'N' && charge < 0) return 2;
+    if (elem === 'O' && charge < 0) return 1;
+    if (elem === 'S' && charge < 0) return 1;
+    return ({
+      C: 4,
+      Si: 4,
+      N: 3,
+      P: 3,
+      O: 2,
+      S: 2,
+      F: 1,
+      Cl: 1,
+      Br: 1,
+      I: 1,
+      B: 3,
+    }[elem] || 0);
+  };
+
+  const getV2000FormalCharge = (chargeCode) => ({
+    1: 3,
+    2: 2,
+    3: 1,
+    5: -1,
+    6: -2,
+    7: -3,
+  }[chargeCode] || 0);
 
   const getHillFormula = (counts) => {
     const entries = Object.entries(counts || {}).filter(([, count]) => count > 0);
@@ -4969,7 +4998,9 @@ ${scientificGuardrails}`;
         if (inAtomBlock && parts.length >= 5) {
           const id = Number.parseInt(parts[0], 10);
           const elem = normalizePdbElementSymbol(parts[1]);
-          if (Number.isFinite(id) && elem) atoms.push({ id, elem });
+          const chargeMatch = trimmed.match(/\bCHG=(-?\d+)/i);
+          const charge = chargeMatch ? Number.parseInt(chargeMatch[1], 10) : 0;
+          if (Number.isFinite(id) && elem) atoms.push({ id, elem, charge: Number.isFinite(charge) ? charge : 0 });
         }
         if (inBondBlock && parts.length >= 4) {
           const order = Number.parseInt(parts[1], 10);
@@ -4990,8 +5021,10 @@ ${scientificGuardrails}`;
 
     for (let i = 0; i < atomCount; i += 1) {
       const line = lines[countsIdx + 1 + i] || '';
-      const elem = normalizePdbElementSymbol(line.slice(31, 34).trim() || line.trim().split(/\s+/)[3]);
-      if (elem) atoms.push({ id: i + 1, elem });
+      const parts = line.trim().split(/\s+/);
+      const elem = normalizePdbElementSymbol(line.slice(31, 34).trim() || parts[3]);
+      const charge = getV2000FormalCharge(Number.parseInt(parts[5], 10) || 0);
+      if (elem) atoms.push({ id: i + 1, elem, charge });
     }
 
     const safeBondCount = Number.isFinite(bondCount) && bondCount > 0 ? bondCount : 0;
@@ -5036,7 +5069,7 @@ ${scientificGuardrails}`;
 
     includedAtoms.forEach((atom) => {
       if (atom.elem === 'H') return;
-      const valence = getPreferredValence(atom.elem);
+      const valence = getPreferredValence(atom.elem, atom.charge || 0);
       if (!valence) return;
       const bondOrderSum = parsed.bonds
         .filter((bond) => bond.a1 === atom.id || bond.a2 === atom.id)
@@ -5095,11 +5128,11 @@ ${scientificGuardrails}`;
   }, [showHydrogens, currentMolecule]);
 
   useEffect(() => {
-    const molfile = lastMolfileForAIRef.current || (currentMolecule?.format === 'mol' ? currentMolecule.data : '');
+    const molfile = currentMolfile || lastMolfileForAIRef.current || (currentMolecule?.format === 'mol' ? currentMolecule.data : '');
     const stats = calculateFormulaStatsFromMolfile(molfile, selectedAtomIds);
     setMoleculeFormulaStats(stats);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMolecule, currentSmiles, selectedAtomIds]);
+  }, [currentMolecule, currentMolfile, selectedAtomIds]);
 
   useEffect(() => {
     const components = getSmilesComponents(currentSmiles);
