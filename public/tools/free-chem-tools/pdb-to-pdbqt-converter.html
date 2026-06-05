@@ -3,28 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="PDB to PDBQT converter by MolDraw. Convert PDB structure text into docking-ready PDBQT format quickly in your browser.">
-  <meta name="keywords" content="pdb to pdbqt converter, pdbqt generator, autodock pdbqt, molecular docking tools, MolDraw">
+  <meta name="description" content="PDB to PDBQT converter online by MolDraw. Paste PDB text and generate a docking-ready PDBQT draft for AutoDock-style workflows, ligand prep, and molecular docking checks.">
+  <meta name="keywords" content="pdb to pdbqt converter, convert pdb to pdbqt, pdbqt generator, pdb vs pdbqt, pdbqt to pdb, autodock pdbqt, molecular docking tools">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html">
-  <title>PDB to PDBQT Converter | MolDraw</title>
-  <meta property="og:title" content="PDB to PDBQT Converter | MolDraw" />
-  <meta property="og:description" content="PDB to PDBQT converter by MolDraw. Convert PDB structure text into docking-ready PDBQT format quickly in your browser." />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index" />
+  <title>PDB to PDBQT Converter Online | AutoDock PDBQT Tool | MolDraw</title>
+  <meta property="og:title" content="PDB to PDBQT Converter Online | MolDraw" />
+  <meta property="og:description" content="Paste PDB text and generate a PDBQT draft for AutoDock-style molecular docking workflows in the browser." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html" />
   <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="PDB to PDBQT Converter Online | MolDraw" />
+  <meta name="twitter:description" content="Convert PDB structure text to a PDBQT draft for docking workflows and AutoDock-style preparation." />
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "PDB to PDBQT Converter",
+    "name": "PDB to PDBQT Converter Online",
     "applicationCategory": "ScientificApplication",
     "operatingSystem": "Web",
     "url": "https://www.moldraw.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html",
-    "description": "Convert PDB structure text to PDBQT format for molecular docking workflows."
+    "description": "Convert PDB structure text to PDBQT format for molecular docking workflows.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is a PDB to PDBQT converter used for?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A PDB to PDBQT converter prepares PDB coordinate text into a PDBQT-style format used in AutoDock and related molecular docking workflows. PDBQT adds atom type and charge fields to PDB-like coordinates."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the difference between PDB and PDBQT?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "PDB stores atomic coordinates and structure records. PDBQT is a docking-oriented format that extends PDB-style coordinates with partial charge and AutoDock atom type information."
+        }
+      }
+    ]
   }
   </script>
   <style>
@@ -44,6 +72,10 @@
     .ghost-btn { border-color: #d1d5db; background: #fff; color: #334155; }
     .status { margin-top: 10px; font-size: 12px; color: #334155; min-height: 20px; }
     ul { padding-left: 18px; color: #475569; font-size: 14px; line-height: 1.6; }
+    h3 { font-size: 15px; color: #0f172a; margin: 14px 0 6px; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; line-height: 1.55; }
+    .related-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .related-links a { display: inline-flex; align-items: center; min-height: 30px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 9px; background: #f8fafc; color: #334155; text-decoration: none; font-size: 12px; font-weight: 700; }
     @media (max-width: 860px) { .io-grid { grid-template-columns: 1fr; } }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
@@ -57,8 +89,9 @@
     </nav>
 
     <section class="panel">
-      <h1>PDB to PDBQT Converter</h1>
+      <h1>PDB to PDBQT Converter Online</h1>
       <p>Paste a PDB structure and convert it into PDBQT for docking pipelines. This browser tool adds element and charge/type columns in PDBQT layout for fast preparation.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> PDB stores structure coordinates, while PDBQT is a docking format that includes PDB-style coordinates plus partial charge and AutoDock atom type fields. Use this tool for a quick PDBQT draft before deeper ligand or receptor preparation.</div>
       <div class="io-grid">
         <div>
           <h2>PDB Input</h2>
@@ -85,6 +118,15 @@
         <li>For production docking runs, you can further refine protonation state and torsion definitions in your docking suite.</li>
         <li>Use this page as a quick conversion utility when you need a fast PDBQT draft structure.</li>
       </ul>
+      <h3>PDB vs PDBQT</h3>
+      <p>PDB is a general structural biology coordinate format. PDBQT is commonly used by AutoDock-style docking tools because it carries atom typing and partial charge information needed during docking calculations.</p>
+      <h3>Related docking and structure tools</h3>
+      <div class="related-links" aria-label="Related docking converter tools">
+        <a href="/tools/free-chem-tools/smiles-to-pdbqt-converter.html">SMILES to PDBQT</a>
+        <a href="/tools/free-chem-tools/smiles-to-pdb-converter.html">SMILES to PDB</a>
+        <a href="/tools/free-chem-tools/pdb-to-smiles-converter.html">PDB to SMILES</a>
+        <a href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">SMILES to 3D</a>
+      </div>
     </section>
   </main>
 

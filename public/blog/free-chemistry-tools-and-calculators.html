@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Free chemistry tools and calculators by MolDraw: SMILES converters, InChI tools, SDF/MOL/PDB converters, molarity calculators, TLC diagram tool, periodic table, and molecule drawing utilities.">
+  <meta name="keywords" content="free chemistry tools, chemistry calculators, SMILES converter, InChI converter, molarity calculator, TLC diagram tool, periodic table, MolDraw tools">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="Free Chemistry Tools and Calculators | MolDraw">
+  <meta property="og:description" content="A complete guide to MolDraw chemistry tools: converters, calculators, structure utilities, TLC, periodic table, and file-format helpers.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.moldraw.com/blog/free-chemistry-tools-and-calculators.html">
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Free Chemistry Tools and Calculators | MolDraw">
+  <meta name="twitter:description" content="Explore free MolDraw chemistry converters, calculators, structure tools, TLC tools, and teaching resources.">
+  <link rel="canonical" href="https://www.moldraw.com/blog/free-chemistry-tools-and-calculators.html">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
+  <link rel="stylesheet" href="/css/site-topbar.css">
+  <link rel="stylesheet" href="/css/site-footer.css">
+  <title>Free Chemistry Tools and Calculators | MolDraw Blog</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Free Chemistry Tools and Calculators",
+    "description": "Guide to MolDraw free chemistry tools, converters, calculators, and structure utilities.",
+    "datePublished": "2026-06-06",
+    "dateModified": "2026-06-06",
+    "author": { "@type": "Organization", "name": "Scidart Academy" },
+    "publisher": { "@type": "Organization", "name": "Scidart Academy" },
+    "mainEntityOfPage": "https://www.moldraw.com/blog/free-chemistry-tools-and-calculators.html"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What free chemistry tools are available in MolDraw?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "MolDraw includes free chemistry tools for SMILES, InChI, InChIKey, MOL, SDF, PDB, PDBQT, MOL2, CID lookup, IUPAC conversion, molarity, molality, dilution, solution preparation, equation balancing, TLC diagrams, and periodic table lookup."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Are MolDraw chemistry tools connected to the molecule editor?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "MolDraw tools complement the main editor. You can draw molecules in the editor, copy identifiers, use converters and calculators, then return to the editor or related guides."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; line-height: 1.7; }
+    .layout { width: min(1180px, 94vw); margin: 0 auto; padding: 24px 0 46px; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 18px; }
+    .outline { position: sticky; top: 16px; align-self: start; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+    .outline h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 10px; }
+    .outline a { display: block; color: #334155; text-decoration: none; font-size: 13px; font-weight: 700; padding: 7px 8px; border-radius: 8px; }
+    .outline a:hover { background: #f0fdfa; color: #0f766e; }
+    .article { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 24px; }
+    .top-links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .top-link, .primary-link { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 12px; color: #334155; background: #fff; text-decoration: none; font-size: 13px; font-weight: 800; }
+    .primary-link { background: #2C7A7B; border-color: #2C7A7B; color: #fff; }
+    h1 { font-size: clamp(30px, 4vw, 42px); line-height: 1.12; margin-bottom: 10px; }
+    h2 { font-size: 24px; margin: 28px 0 10px; scroll-margin-top: 18px; }
+    h3 { font-size: 18px; margin: 16px 0 8px; }
+    p { color: #334155; margin-bottom: 12px; }
+    .lede { color: #475569; max-width: 820px; font-size: 16px; }
+    .meta { color: #64748b; font-size: 13px; margin-bottom: 18px; }
+    .callout { border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; border-radius: 10px; padding: 12px; margin: 14px 0; }
+    .tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+    .tool-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; background: #f8fafc; }
+    .tool-card h3 { margin-top: 0; }
+    .link-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .link-list a { display: inline-flex; align-items: center; min-height: 30px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 9px; background: #fff; color: #334155; text-decoration: none; font-size: 12px; font-weight: 700; }
+    .answer-box { border-left: 4px solid #2C7A7B; background: #f0fdfa; border-radius: 10px; padding: 12px; margin: 14px 0; }
+    ul { margin: 8px 0 12px 20px; color: #334155; }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .outline { position: static; } .tool-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <aside class="outline" aria-label="Article sections">
+      <h2>Tools Guide</h2>
+      <a href="#overview">Overview</a>
+      <a href="#converters">Converters</a>
+      <a href="#calculators">Calculators</a>
+      <a href="#drawing">Drawing and structure tools</a>
+      <a href="#learning">Learning tools</a>
+      <a href="#faq">FAQ</a>
+    </aside>
+    <article class="article">
+      <nav class="top-links" aria-label="Blog navigation">
+        <a class="top-link" href="/blog/">Back to Blog</a>
+        <a class="top-link" href="/">Open MolDraw</a>
+        <a class="primary-link" href="/tools/">Open Tools Hub</a>
+      </nav>
+      <h1>Free Chemistry Tools and Calculators</h1>
+      <p class="lede">MolDraw includes a growing tools hub for chemistry students, educators, researchers, and lab teams. This guide links the most useful converters, calculators, structure utilities, and teaching tools in one SEO-friendly reference page.</p>
+      <p class="meta">Published: 6 Jun 2026 · Category: Tools · Publisher: Scidart Academy</p>
+
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>Use the <a href="/tools/">MolDraw Tools Hub</a> when you need quick chemistry utilities without leaving the browser. The tools are grouped around common workflows: converting identifiers, preparing solutions, drawing structures, balancing equations, making TLC diagrams, and checking periodic table data.</p>
+        <div class="answer-box"><strong>Short answer:</strong> MolDraw tools cover chemistry converters, concentration calculators, structure utilities, periodic table lookup, TLC diagrams, and file-format helpers for everyday chemistry work.</div>
+      </section>
+
+      <section id="converters">
+        <h2>Chemistry Converters</h2>
+        <p>Converter pages help move between common chemical identifiers and file formats. They are useful when a database, notebook, docking workflow, or drawing tool expects a specific format.</p>
+        <div class="tool-grid">
+          <div class="tool-card">
+            <h3>SMILES and structure converters</h3>
+            <p>Convert between SMILES, 2D structures, MOL, SDF, MOL2, PDB, and PDBQT formats.</p>
+            <div class="link-list">
+              <a href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to structure</a>
+              <a href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">SMILES to 3D</a>
+              <a href="/tools/free-chem-tools/smiles-to-mol-converter.html">SMILES to MOL</a>
+              <a href="/tools/free-chem-tools/smiles-to-sdf-converter.html">SMILES to SDF</a>
+              <a href="/tools/free-chem-tools/smiles-to-pdb-converter.html">SMILES to PDB</a>
+              <a href="/tools/free-chem-tools/smiles-to-pdbqt-converter.html">SMILES to PDBQT</a>
+            </div>
+          </div>
+          <div class="tool-card">
+            <h3>Identifier converters</h3>
+            <p>Resolve and convert InChI, InChIKey, IUPAC, CID, and SMILES identifiers.</p>
+            <div class="link-list">
+              <a href="/tools/free-chem-tools/smiles-to-inchi-converter.html">SMILES to InChI</a>
+              <a href="/tools/free-chem-tools/smiles-to-inchikey-converter.html">SMILES to InChIKey</a>
+              <a href="/tools/free-chem-tools/inchi-to-smiles-converter.html">InChI to SMILES</a>
+              <a href="/tools/free-chem-tools/inchikey-to-smiles-converter.html">InChIKey to SMILES</a>
+              <a href="/tools/free-chem-tools/iupac-name-to-smiles-converter.html">IUPAC to SMILES</a>
+              <a href="/tools/free-chem-tools/smiles-to-iupac-name-converter.html">SMILES to IUPAC</a>
+              <a href="/tools/free-chem-tools/cid-to-smiles-converter.html">CID to SMILES</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="calculators">
+        <h2>Chemistry Calculators</h2>
+        <p>Calculator tools support routine classroom and wet-lab calculations such as molarity, molality, dilution, and solution preparation.</p>
+        <div class="link-list">
+          <a href="/tools/free-chem-tools/molarity-calculator.html">Molarity calculator</a>
+          <a href="/tools/free-chem-tools/molality-calculator.html">Molality calculator</a>
+          <a href="/tools/free-chem-tools/dilution-calculator.html">Dilution calculator</a>
+          <a href="/tools/free-chem-tools/solution-prep-calculator.html">Solution preparation calculator</a>
+          <a href="/tools/free-chem-tools/chemical-equation-balancer.html">Chemical equation balancer</a>
+        </div>
+      </section>
+
+      <section id="drawing">
+        <h2>Drawing and Structure Tools</h2>
+        <p>The main <a href="/">MolDraw editor</a> is the fastest route for drawing molecules, visualizing 3D structures, and exporting chemistry formats. The linked tools support format conversion, structure lookup, and downstream workflows.</p>
+        <div class="link-list">
+          <a href="/">MolDraw editor</a>
+          <a href="/tools/">Tools hub</a>
+          <a href="/tools/free-chem-tools/">Free chemistry tools directory</a>
+          <a href="/tools/protein-viewer/index.html">Protein viewer</a>
+          <a href="/blog/molecules/">Molecule reference pages</a>
+          <a href="/reaction/">Reaction guide pages</a>
+        </div>
+      </section>
+
+      <section id="learning">
+        <h2>Learning and Classroom Tools</h2>
+        <p>MolDraw also includes teaching-friendly pages for chemical structure drawing, reaction examples, TLC diagrams, and periodic table lookup.</p>
+        <div class="link-list">
+          <a href="/tools/free-chem-tools/tlc-diagram-tool.html">TLC diagram tool</a>
+          <a href="/tools/free-chem-tools/interactive-periodic-table.html">Interactive periodic table</a>
+          <a href="/course/index.html">MolDraw course</a>
+          <a href="/blog/how-to-add-lone-pair-in-moldraw.html">How to add lone pairs</a>
+          <a href="/blog/chemical-structure-drawing-app-seo-optimized.html">Chemical drawing guide</a>
+        </div>
+      </section>
+
+      <section id="faq">
+        <h2>FAQ</h2>
+        <h3>What is the best starting point?</h3>
+        <p>Start with the <a href="/tools/">Tools Hub</a> for browsing, or open the <a href="/">MolDraw editor</a> if you already have a molecule to draw or paste.</p>
+        <h3>Are these tools free?</h3>
+        <p>Yes. MolDraw’s core browser-based tools and calculators are free to use.</p>
+        <h3>Which tool should I use for a molecule identifier?</h3>
+        <p>Use SMILES, InChI, InChIKey, IUPAC, and CID converter pages depending on the identifier you have and the format you need.</p>
+      </section>
+    </article>
+  </main>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

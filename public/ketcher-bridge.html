@@ -38,28 +38,28 @@
             const candidates = [
               () => {
                 if (editor && typeof editor.setZoom === 'function') {
-                  editor.setZoom(2);
+                  editor.setZoom(1);
                   return true;
                 }
                 return false;
               },
               () => {
                 if (editor && typeof editor.zoom === 'function') {
-                  editor.zoom(2);
+                  editor.zoom(1);
                   return true;
                 }
                 return false;
               },
               () => {
                 if (editor && typeof editor.zoomTo === 'function') {
-                  editor.zoomTo(2);
+                  editor.zoomTo(1);
                   return true;
                 }
                 return false;
               },
               () => {
                 if (ketcher && typeof ketcher.setZoom === 'function') {
-                  ketcher.setZoom(2);
+                  ketcher.setZoom(1);
                   return true;
                 }
                 return false;
@@ -72,22 +72,7 @@
               } catch (_) { /* try next zoom API */ }
             }
 
-            try {
-              const frameDoc = ketcherFrame.contentWindow.document;
-              const zoomButtons = [
-                '[data-testid*="zoom-in" i]',
-                '[title*="Zoom in" i]',
-                '[aria-label*="Zoom in" i]',
-                'button[class*="zoom"][class*="in"]',
-              ];
-              const zoomInButton = zoomButtons
-                .map((selector) => frameDoc.querySelector(selector))
-                .find(Boolean);
-              if (zoomInButton) {
-                zoomInButton.click();
-                zoomInButton.click();
-              }
-            } catch (_) { /* best effort only */ }
+            // If the current Ketcher build exposes no zoom API, keep its native 100% default.
           };
 
           const tryAddTextLabel = async (editor, text, x, y) => {

@@ -4,5 +4,6 @@ Allow: /blog/
 Allow: /tools/
 Allow: /course/
 Allow: /pages/
+Allow: /reaction/
 
 Sitemap: https://www.moldraw.com/sitemap.xml

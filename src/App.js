@@ -70,6 +70,8 @@ const getDisplayNameFromEmail = (email) => {
     .replace(/\b\w/g, (char) => char.toUpperCase()) || 'MolDraw user';
 };
 
+const DESIGNATION_OPTIONS = ['Student', 'Researcher', 'Scientist', 'Faculty', 'Artist', 'Educator', 'Pharma', 'Other'];
+
 const DEFAULT_QC_EXPORT_OPTIONS = {
   software: 'orca',
   jobType: 'opt',
@@ -526,6 +528,8 @@ function App() {
   const [authForm, setAuthForm] = useState({
     email: '',
     password: '',
+    designation: '',
+    instituteName: '',
   });
   const [authError, setAuthError] = useState('');
   const [authNotice, setAuthNotice] = useState('');
@@ -580,6 +584,14 @@ function App() {
   ];
 
   const promptAiSetupModal = () => {
+    if (!authSession?.user) {
+      setShowAiSetupModal(false);
+      setAuthMode('signup');
+      setAuthError('');
+      setAuthNotice('Create a free MolDraw account to use AI. Drawing structures stays open without signing in.');
+      setShowAuthModal(true);
+      return;
+    }
     setShowAiSetupModal(true);
     setIsChatOpen(true);
     setShowApiKeyInput(true);
@@ -612,13 +624,15 @@ function App() {
     if (!supabase || !userId) return;
     const { data, error } = await supabase
       .from('users')
-      .select('name,email,designation,is_admin,role')
+      .select('name,email,designation,institute_name,is_admin,role')
       .eq('id', userId)
       .maybeSingle();
 
     if (!error) {
       setUserProfile(data || null);
+      return data || null;
     }
+    return null;
   }, []);
 
   const openAuthModal = (mode = 'signin') => {
@@ -673,6 +687,7 @@ function App() {
       name: form.name?.trim() || getDisplayNameFromEmail(form.email),
       email: form.email.trim(),
       designation: form.designation || 'Other',
+      institute_name: String(form.instituteName || '').trim() || null,
     }, { onConflict: 'id' });
   };
 
@@ -689,6 +704,8 @@ function App() {
     const email = authForm.email.trim();
     const password = authForm.password;
     const name = getDisplayNameFromEmail(email);
+    const designation = DESIGNATION_OPTIONS.includes(authForm.designation) ? authForm.designation : '';
+    const instituteName = String(authForm.instituteName || '').trim();
 
     if (authMode === 'reset' && !email) {
       setAuthError('Enter your email first.');
@@ -702,6 +719,11 @@ function App() {
 
     if (!['reset', 'update-password'].includes(authMode) && (!email || !password)) {
       setAuthError('Please fill all required fields.');
+      return;
+    }
+
+    if (authMode === 'signup' && !designation) {
+      setAuthError('Choose your designation.');
       return;
     }
 
@@ -733,6 +755,8 @@ function App() {
           options: {
             data: {
               name,
+              designation,
+              institute_name: instituteName || null,
             },
             emailRedirectTo: window.location.origin,
           },
@@ -741,7 +765,7 @@ function App() {
         if (error) throw error;
 
         if (data?.session?.user) {
-          await saveUserProfile(data.session.user.id, { email, name, designation: 'Other' });
+          await saveUserProfile(data.session.user.id, { email, name, designation, instituteName });
           await fetchUserProfile(data.session.user.id);
           setShowAuthModal(false);
         } else {
@@ -752,7 +776,18 @@ function App() {
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        if (data?.user) await fetchUserProfile(data.user.id);
+        if (data?.user) {
+          const profile = await fetchUserProfile(data.user.id);
+          if (!profile) {
+            await saveUserProfile(data.user.id, {
+              email: data.user.email || email,
+              name: data.user.user_metadata?.name,
+              designation: data.user.user_metadata?.designation || 'Other',
+              instituteName: data.user.user_metadata?.institute_name || '',
+            });
+            await fetchUserProfile(data.user.id);
+          }
+        }
         setShowAuthModal(false);
         setAuthForm((form) => ({ ...form, password: '' }));
       }
@@ -768,6 +803,7 @@ function App() {
     await supabase.auth.signOut();
     setAuthSession(null);
     setUserProfile(null);
+    setIsChatOpen(false);
     currentLocalProjectIdRef.current = '';
   };
 
@@ -787,6 +823,21 @@ function App() {
     setAuthError('');
     setAuthNotice('Create an account to save local drawings and open My designs.');
     setShowAuthModal(true);
+  };
+
+  const promptSignupForRestrictedFeature = (featureName) => {
+    setAuthMode('signup');
+    setAuthError('');
+    setAuthNotice(`Create a free MolDraw account to use ${featureName}. Drawing and editing structures stays open without signing in.`);
+    setShowAuthModal(true);
+  };
+
+  const requireSignedInForFeature = (featureName) => {
+    if (authSession?.user) return true;
+    setShowDownloadMenu(false);
+    setShowSpectrumMenu(false);
+    promptSignupForRestrictedFeature(featureName);
+    return false;
   };
 
   const updateFeatureRequestForm = (field, value) => {
@@ -946,6 +997,12 @@ function App() {
       document.body.classList.remove('ai-chat-panel-open');
     };
   }, [isChatOpen, closeCharlaWidget]);
+
+  useEffect(() => {
+    if (!authSession?.user && isChatOpen) {
+      setIsChatOpen(false);
+    }
+  }, [authSession, isChatOpen]);
 
   useEffect(() => {
     const onDocClick = (event) => {
@@ -1120,6 +1177,29 @@ function App() {
     return compact;
   };
 
+  const sanitizeReactionSmilesText = (value) => {
+    const text = String(value || '').trim();
+    const lowered = text.toLowerCase();
+    if (
+      !text ||
+      text.length > 3000 ||
+      text.includes('\n') ||
+      text.includes('\r') ||
+      lowered.includes('v2000') ||
+      lowered.includes('v3000') ||
+      lowered.includes('m  end') ||
+      !text.includes('>>')
+    ) {
+      return '';
+    }
+    const compact = text.replace(/\s+/g, '');
+    if (!/^[A-Za-z0-9@+\-[\]()=#$\\/%.:*>,]+$/.test(compact)) {
+      return '';
+    }
+    return compact;
+  };
+
+
   // Flag to suppress the next 3D update coming from Ketcher polling
   const suppressNext3DUpdateRef = useRef(false);
 
@@ -1182,6 +1262,12 @@ function App() {
       setIsSearching(false);
     }
   };
+
+  useEffect(() => {
+    if (!searchError) return undefined;
+    const timeout = window.setTimeout(() => setSearchError(''), 4500);
+    return () => window.clearTimeout(timeout);
+  }, [searchError]);
 
   const clearMoleculeProps = () => {
     setMoleculeName('');
@@ -1311,6 +1397,7 @@ function App() {
 
   const fetchControlledAiEnrichment = async (smiles, requestedFields = []) => {
     const fields = Array.from(new Set(requestedFields)).filter(Boolean);
+    if (!authSession?.user) return;
     if (!geminiApiKey || !smiles || !fields.length) return;
 
     const schemaParts = fields.map((field) => {
@@ -1521,6 +1608,7 @@ Do not include unrequested properties. Use null when uncertain.`,
   const searchReactionsWithGemini = async (query) => {
     const cleaned = String(query || '').trim();
     if (!cleaned || isReactionSearchLoading) return;
+    if (!requireSignedInForFeature('AI reaction search')) return;
     if (!geminiApiKey) {
       promptAiSetupModal();
       setReactionSearchError('Connect Gemini AI first to search reactions.');
@@ -1759,6 +1847,7 @@ Rules:
   const predictNMR = async (type = 'proton') => {
     const smiles = currentSmiles || lastSmilesForAIRef.current;
     if (!smiles) { alert('No molecule on canvas to predict a spectrum for.'); return; }
+    if (!requireSignedInForFeature('AI spectrum prediction')) return;
     if (!geminiApiKey) { promptAiSetupModal(); return; }
 
     const typeMap = {
@@ -2910,7 +2999,8 @@ ${scientificGuardrails}`;
 
         // Restore a dashboard project first, otherwise restore the last local canvas.
         try {
-          const projectId = new URLSearchParams(window.location.search).get('project');
+          const params = new URLSearchParams(window.location.search);
+          const projectId = params.get('project');
           if (projectId && iframeRef.current) {
             const project = readLocalProjects().find((item) => item.id === projectId);
             if (project?.molfile) {
@@ -2927,6 +3017,28 @@ ${scientificGuardrails}`;
               }, 500);
               return;
             }
+          }
+
+          const urlSmiles = sanitizeSmilesText(params.get('smiles') || '');
+          if (urlSmiles && iframeRef.current) {
+            setTimeout(() => {
+              iframeRef.current.contentWindow.postMessage({
+                type: 'set-molecule',
+                smiles: urlSmiles,
+              }, '*');
+            }, 500);
+            return;
+          }
+
+          const urlReaction = sanitizeReactionSmilesText(params.get('reaction') || '');
+          if (urlReaction && iframeRef.current) {
+            setTimeout(() => {
+              iframeRef.current.contentWindow.postMessage({
+                type: 'set-molecule',
+                smiles: urlReaction,
+              }, '*');
+            }, 500);
+            return;
           }
 
           const saved = localStorage.getItem('moldraw_canvas');
@@ -3764,6 +3876,10 @@ ${scientificGuardrails}`;
 
   const copyStructureSvg = useCallback(async () => {
     if (!iframeRef.current || !isKetcherReady) return;
+    if (!authSession?.user) {
+      promptSignupForRestrictedFeature('Copy SVG');
+      return;
+    }
 
     const bridgeWindow = iframeRef.current.contentWindow;
     try {
@@ -3782,7 +3898,7 @@ ${scientificGuardrails}`;
 
     bridgeWindow.postMessage({ type: 'copy-structure' }, '*');
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isKetcherReady, lonePairs]);
+  }, [isKetcherReady, lonePairs, authSession]);
 
   const upsertLocalProjectSnapshot = (snapshot, options = {}) => {
     if (!authSession?.user) return { saved: false, projectId: '' };
@@ -3933,6 +4049,7 @@ ${scientificGuardrails}`;
     const text = chatInput.trim();
     const imageAttachment = chatImageAttachment;
     if ((!text && !imageAttachment) || isChatLoading) return;
+    if (!requireSignedInForFeature('MolDraw AI chat')) return;
 
     const spectrumRequestType = getSpectrumRequestType(text);
     if (spectrumRequestType && !imageAttachment) {
@@ -4077,6 +4194,7 @@ ${scientificGuardrails}`;
   };
 
   const exportModel = (format) => {
+    if (!requireSignedInForFeature('exports')) return;
     if (!viewerInstanceRef.current || !currentMolecule) {
       alert('No molecule to export');
       return;
@@ -4428,6 +4546,7 @@ ${scientificGuardrails}`;
   };
 
   const downloadAdvancedQuantumInput = () => {
+    if (!requireSignedInForFeature('advanced exports')) return;
     try {
       if (isProtein) {
         alert('Quantum chemistry input export is for small molecules, not proteins.');
@@ -5585,7 +5704,18 @@ ${scientificGuardrails}`;
                   </span>
                 </a>
                 {searchError && (
-                  <div className="search-error">{searchError}</div>
+                  <div className="search-error" role="status">
+                    <span>{searchError}</span>
+                    <button
+                      type="button"
+                      className="search-error-close"
+                      onClick={() => setSearchError('')}
+                      aria-label="Dismiss search message"
+                      title="Dismiss"
+                    >
+                      ×
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -5645,6 +5775,7 @@ ${scientificGuardrails}`;
               <button
                 className={`tb-btn${smilesCopied ? ' tb-copied' : ''}`}
                 onClick={() => {
+                  if (!requireSignedInForFeature('Copy SMILES')) return;
                   if (iframeRef.current && isKetcherReady) {
                     copySmilesRequestedRef.current = true;
                     iframeRef.current.contentWindow.postMessage({ type: 'get-smiles' }, '*');
@@ -5705,8 +5836,14 @@ ${scientificGuardrails}`;
               <button
                 type="button"
                 className={`tb-btn tb-btn-ai ${isChatOpen ? 'tb-btn-ai-active' : ''}`}
-                onClick={() => setIsChatOpen((open) => !open)}
-                title="Open MolDraw AI assistant"
+                onClick={() => {
+                  if (!authSession?.user) {
+                    promptSignupForRestrictedFeature('MolDraw AI chat');
+                    return;
+                  }
+                  setIsChatOpen((open) => !open);
+                }}
+                title={authSession?.user ? 'Open MolDraw AI assistant' : 'Sign up to use MolDraw AI assistant'}
               >
                 <span className="tb-ai-star" aria-hidden="true">★</span>
                 AI
@@ -5765,8 +5902,11 @@ ${scientificGuardrails}`;
                   type="button"
                   className="tb-btn"
                   disabled={!isKetcherReady}
-                  onClick={() => setShowDownloadMenu((v) => !v)}
-                  title="Download structure (SVG, PNG, or JPEG)"
+                  onClick={() => {
+                    if (!requireSignedInForFeature('2D structure downloads')) return;
+                    setShowDownloadMenu((v) => !v);
+                  }}
+                  title={authSession?.user ? 'Download structure (SVG, PNG, or JPEG)' : 'Sign up to download structures'}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                   Download
@@ -5781,6 +5921,7 @@ ${scientificGuardrails}`;
                       className="tb-menu-item"
                       role="menuitem"
                       onClick={() => {
+                        if (!requireSignedInForFeature('2D SVG export')) return;
                         if (iframeRef.current && isKetcherReady) {
                           iframeRef.current.contentWindow.postMessage({ type: 'get-svg' }, '*');
                         }
@@ -5794,6 +5935,7 @@ ${scientificGuardrails}`;
                       className="tb-menu-item"
                       role="menuitem"
                       onClick={() => {
+                        if (!requireSignedInForFeature('2D PNG export')) return;
                         if (iframeRef.current && isKetcherReady) {
                           iframeRef.current.contentWindow.postMessage({ type: 'get-png' }, '*');
                         }
@@ -5807,6 +5949,7 @@ ${scientificGuardrails}`;
                       className="tb-menu-item"
                       role="menuitem"
                       onClick={() => {
+                        if (!requireSignedInForFeature('2D JPEG export')) return;
                         if (iframeRef.current && isKetcherReady) {
                           iframeRef.current.contentWindow.postMessage({ type: 'get-png-jpeg' }, '*');
                         }
@@ -6353,6 +6496,7 @@ ${scientificGuardrails}`;
                         <button
                           className={`mol-props-copy-btn${metaSmilesCopied ? ' mol-props-copy-btn-copied' : ''}`}
                           onClick={() => {
+                            if (!requireSignedInForFeature('Copy SMILES')) return;
                             navigator.clipboard.writeText(currentSmiles).then(() => {
                               setMetaSmilesCopied(true);
                               setTimeout(() => setMetaSmilesCopied(false), 1200);
@@ -6559,7 +6703,10 @@ ${scientificGuardrails}`;
                     <button onClick={() => exportModel('xyz')} className="compact-export-btn" title="XYZ format">XYZ</button>
                     {!isProtein && (
                       <button
-                        onClick={() => setShowAdvancedExportModal(true)}
+                        onClick={() => {
+                          if (!requireSignedInForFeature('advanced exports')) return;
+                          setShowAdvancedExportModal(true);
+                        }}
                         className="compact-export-btn compact-export-btn-advanced"
                         disabled={!currentMolecule?.has3D}
                         title={currentMolecule?.has3D ? 'Gaussian, ORCA, and Q-Chem input files' : 'Advanced export requires a real 3D conformer. Current view is a 2D fallback.'}
@@ -6646,6 +6793,10 @@ ${scientificGuardrails}`;
               <button
                 className="ai-setup-modal-btn"
                 onClick={() => {
+                  if (!requireSignedInForFeature('MolDraw AI')) {
+                    setShowAiSetupModal(false);
+                    return;
+                  }
                   setShowAiSetupModal(false);
                   setIsChatOpen(true);
                   setShowApiKeyInput(true);
@@ -7051,6 +7202,11 @@ ${scientificGuardrails}`;
                 autoComplete="email"
                 required
               />
+              {authMode === 'signup' && (
+                <small className="auth-field-note">
+                  Prefer a personal email, such as Gmail or another long-term address. Institute emails can change, expire, or filter account emails.
+                </small>
+              )}
             </label>
 
             {authMode !== 'reset' && (
@@ -7066,6 +7222,36 @@ ${scientificGuardrails}`;
                 required
               />
             </label>
+            )}
+
+            {authMode === 'signup' && (
+              <label className="auth-field">
+                <span>Designation</span>
+                <select
+                  value={authForm.designation}
+                  onChange={(e) => updateAuthForm('designation', e.target.value)}
+                  required
+                >
+                  <option value="">Select designation</option>
+                  {DESIGNATION_OPTIONS.map((designation) => (
+                    <option key={designation} value={designation}>{designation}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {authMode === 'signup' && (
+              <label className="auth-field">
+                <span>Institute name optional</span>
+                <input
+                  type="text"
+                  value={authForm.instituteName}
+                  onChange={(e) => updateAuthForm('instituteName', e.target.value)}
+                  placeholder="University, lab, company, or independent"
+                  autoComplete="organization"
+                  maxLength={160}
+                />
+              </label>
             )}
 
             {authMode === 'signin' && (

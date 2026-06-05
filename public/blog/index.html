@@ -32,6 +32,71 @@
     "blogPost": [
       {
         "@type": "BlogPosting",
+        "headline": "Free Chemistry Tools and Calculators",
+        "url": "https://www.moldraw.com/blog/free-chemistry-tools-and-calculators.html"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Aldol Condensation",
+        "url": "https://www.moldraw.com/reaction/aldol-condensation"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Wittig Reaction",
+        "url": "https://www.moldraw.com/reaction/wittig-reaction"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Grignard Reaction",
+        "url": "https://www.moldraw.com/reaction/grignard-reaction"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Suzuki Coupling",
+        "url": "https://www.moldraw.com/reaction/suzuki-coupling"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Heck Reaction",
+        "url": "https://www.moldraw.com/reaction/heck-reaction"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Friedel-Crafts Acylation",
+        "url": "https://www.moldraw.com/reaction/friedel-crafts-acylation"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Diels-Alder Reaction",
+        "url": "https://www.moldraw.com/reaction/diels-alder-reaction"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Caffeine Structure",
+        "url": "https://www.moldraw.com/blog/molecules/caffeine.html"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Aspirin Structure",
+        "url": "https://www.moldraw.com/blog/molecules/aspirin.html"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Ibuprofen Structure",
+        "url": "https://www.moldraw.com/blog/molecules/ibuprofen.html"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Paracetamol Structure",
+        "url": "https://www.moldraw.com/blog/molecules/paracetamol.html"
+      },
+      {
+        "@type": "BlogPosting",
+        "headline": "Glucose Structure",
+        "url": "https://www.moldraw.com/blog/molecules/glucose.html"
+      },
+      {
+        "@type": "BlogPosting",
         "headline": "Download MolDraw for Windows (Free): Official Install Guide",
         "url": "https://www.moldraw.com/blog/download-moldraw-windows.html"
       },
@@ -112,6 +177,63 @@
       max-width: 860px;
       font-size: 15px;
     }
+    .blog-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .category-sidebar {
+      position: sticky;
+      top: 16px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .category-sidebar h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+    .category-list {
+      display: grid;
+      gap: 7px;
+    }
+    .category-list button {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 34px;
+      width: 100%;
+      border: 1px solid #eef2f7;
+      border-radius: 8px;
+      padding: 0 10px;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .category-list button:hover,
+    .category-list button.active {
+      border-color: #99f6e4;
+      background: #f0fdfa;
+      color: #0f766e;
+    }
+    .category-list button.active {
+      box-shadow: inset 3px 0 0 #2C7A7B;
+    }
+    .category-note {
+      margin-top: 10px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
     .grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -126,6 +248,15 @@
       border-radius: 12px;
       padding: 16px;
       min-height: 230px;
+    }
+    .card[hidden] {
+      display: none;
+    }
+    .blog-results-note {
+      grid-column: 1 / -1;
+      color: #64748b;
+      font-size: 13px;
+      margin: -4px 0 2px;
     }
     .tag {
       display: inline-flex;
@@ -177,8 +308,14 @@
       text-align: center;
     }
     @media (max-width: 980px) {
+      .blog-layout { grid-template-columns: 1fr; }
+      .category-sidebar { position: static; }
+      .category-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .grid { grid-template-columns: 1fr; }
       .hero h1 { font-size: 24px; }
+    }
+    @media (max-width: 520px) {
+      .category-list { grid-template-columns: 1fr; }
     }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
@@ -195,61 +332,169 @@
       <p>Actionable chemistry content for students, researchers, and teams. Learn molecule drawing best practices, cleaner reaction schemes, and practical workflows for 2D and 3D chemistry visualization.</p>
     </section>
 
+    <div class="blog-layout">
+      <aside class="category-sidebar" aria-label="Blog categories">
+        <h2>Categories</h2>
+        <nav class="category-list">
+          <button type="button" class="active" data-blog-filter="all" aria-pressed="true">All</button>
+          <button type="button" data-blog-filter="reactions" aria-pressed="false">Reactions</button>
+          <button type="button" data-blog-filter="molecules" aria-pressed="false">Molecules</button>
+          <button type="button" data-blog-filter="tools" aria-pressed="false">Tools</button>
+          <button type="button" data-blog-filter="drawing-guides" aria-pressed="false">Drawing guides</button>
+          <button type="button" data-blog-filter="downloads" aria-pressed="false">Downloads</button>
+          <button type="button" data-blog-filter="coming-soon" aria-pressed="false">Coming soon</button>
+        </nav>
+        <p class="category-note">Filter the blog cards on the right. The category list stays here while you browse.</p>
+      </aside>
+
     <section class="grid" aria-label="Blog cards">
-      <article class="card">
+      <p class="blog-results-note" id="blogResultsNote">Showing all blog categories.</p>
+      <article class="card" data-blog-card data-category="reactions">
+        <span class="tag">Reaction</span>
+        <h2>Aldol Condensation</h2>
+        <p>Learn the aldol condensation with rendered reaction schemes, two examples, reaction SMILES, conditions, and an edit-in-MolDraw button.</p>
+        <a class="read-btn" href="/reaction/aldol-condensation">Read reaction</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="reactions">
+        <span class="tag">Reaction</span>
+        <h2>Wittig Reaction</h2>
+        <p>Understand Wittig olefination with example schemes, phosphonium ylide context, reaction SMILES, and MolDraw editing links.</p>
+        <a class="read-btn" href="/reaction/wittig-reaction">Read reaction</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="reactions">
+        <span class="tag">Reaction</span>
+        <h2>Grignard Reaction</h2>
+        <p>Explore carbonyl addition by Grignard reagents with rendered examples, typical dry conditions, and editable reaction schemes.</p>
+        <a class="read-btn" href="/reaction/grignard-reaction">Read reaction</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="reactions">
+        <span class="tag">Reaction</span>
+        <h2>Suzuki Coupling</h2>
+        <p>Reference guide for Suzuki-Miyaura coupling, including biaryl examples, reaction SMILES, conditions, and internal reaction links.</p>
+        <a class="read-btn" href="/reaction/suzuki-coupling">Read reaction</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="reactions">
+        <span class="tag">Reaction</span>
+        <h2>Heck Reaction</h2>
+        <p>Quick guide to palladium-catalyzed alkene arylation with rendered examples, product classes, and edit-in-MolDraw links.</p>
+        <a class="read-btn" href="/reaction/heck-reaction">Read reaction</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="reactions">
+        <span class="tag">Reaction</span>
+        <h2>Friedel-Crafts Acylation</h2>
+        <p>Electrophilic aromatic substitution guide with acetophenone examples, acyl chloride conditions, and rendered reaction samples.</p>
+        <a class="read-btn" href="/reaction/friedel-crafts-acylation">Read reaction</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="reactions">
+        <span class="tag">Reaction</span>
+        <h2>Diels-Alder Reaction</h2>
+        <p>Learn the [4+2] cycloaddition with rendered diene and dienophile examples, reaction SMILES, and MolDraw editor buttons.</p>
+        <a class="read-btn" href="/reaction/diels-alder-reaction">Read reaction</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="molecules">
+        <span class="tag">Molecule</span>
+        <h2>Caffeine Structure</h2>
+        <p>Caffeine page with structure image, lazy 3D viewer, SMILES, InChI, formula, molecular weight, class, and editor link.</p>
+        <a class="read-btn" href="/blog/molecules/caffeine.html">Read molecule</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="molecules">
+        <span class="tag">Molecule</span>
+        <h2>Aspirin Structure</h2>
+        <p>Aspirin reference with acetylsalicylic acid structure, 3D preview, identifiers, properties, drug class, and MolDraw link.</p>
+        <a class="read-btn" href="/blog/molecules/aspirin.html">Read molecule</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="molecules">
+        <span class="tag">Molecule</span>
+        <h2>Ibuprofen Structure</h2>
+        <p>Ibuprofen structure page with SMILES, InChI, 3D viewer, molecular properties, NSAID class, and direct editor loading.</p>
+        <a class="read-btn" href="/blog/molecules/ibuprofen.html">Read molecule</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="molecules">
+        <span class="tag">Molecule</span>
+        <h2>Paracetamol Structure</h2>
+        <p>Paracetamol and acetaminophen reference page with structure, identifiers, properties, drug class, and MolDraw editor button.</p>
+        <a class="read-btn" href="/blog/molecules/paracetamol.html">Read molecule</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="molecules">
+        <span class="tag">Molecule</span>
+        <h2>Glucose Structure</h2>
+        <p>Glucose page covering carbohydrate structure, 3D conformer preview, SMILES, InChI, molecular properties, and editor link.</p>
+        <a class="read-btn" href="/blog/molecules/glucose.html">Read molecule</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="tools">
+        <span class="tag">Tools</span>
+        <h2>Free Chemistry Tools and Calculators</h2>
+        <p>A standalone guide to MolDraw tools: converters, calculators, structure utilities, TLC diagram tool, periodic table, and file helpers.</p>
+        <a class="read-btn" href="/blog/free-chemistry-tools-and-calculators.html">Read tools guide</a>
+      </article>
+
+      <article class="card" data-blog-card data-category="downloads">
         <span class="tag">Download</span>
         <h2>Download MolDraw for Windows (Free)</h2>
         <p>Official SEO landing page: Windows installer link, what MolDraw includes, system requirements, install steps, and the browser app alternative.</p>
         <a class="read-btn" href="/blog/download-moldraw-windows.html">Read article</a>
       </article>
 
-      <article class="card">
+      <article class="card" data-blog-card data-category="drawing-guides">
         <span class="tag">New</span>
         <h2>How to Add Lone Pair in MolDraw</h2>
         <p>A short, practical step-by-step guide to adding lone pairs: select atom, right-click, Edit, then use the Radical dropdown.</p>
         <a class="read-btn" href="/blog/how-to-add-lone-pair-in-moldraw.html">Read article</a>
       </article>
 
-      <article class="card">
+      <article class="card" data-blog-card data-category="drawing-guides">
         <span class="tag">New</span>
         <h2>Free Chemical Drawing Software: Why MolDraw Is a Practical Choice</h2>
         <p>A practical MolDraw-focused guide covering features, workflows, exports, and how to get professional outcomes using free chemical drawing software.</p>
         <a class="read-btn" href="/blog/free-chemical-drawing-software-iupac-guide.html">Read article</a>
       </article>
 
-      <article class="card">
+      <article class="card" data-blog-card data-category="drawing-guides">
         <span class="tag">New</span>
         <h2>Chemistry Drawing Guide: Concepts and Workflow</h2>
         <p>A lightweight educational guide for chemistry drawing with task table, workflow diagram, and practical FAQs.</p>
         <a class="read-btn" href="/blog/chemistry-drawing-keyword-guide.html">Read article</a>
       </article>
 
-      <article class="card">
+      <article class="card" data-blog-card data-category="drawing-guides">
         <span class="tag">New</span>
         <h2>ChemDraw vs MolDraw: Free Alternative Guide (2026)</h2>
         <p>A technical comparison with feature matrix, practical workflow diagram, FAQs, and recommendations for students, educators, and researchers.</p>
         <a class="read-btn" href="/blog/chemdraw-vs-moldraw-free-alternative-guide.html">Read article</a>
       </article>
 
-      <article class="card">
+      <article class="card" data-blog-card data-category="drawing-guides">
         <span class="tag">Featured</span>
         <h2>Chemical Structure Drawing App: Practical Guide</h2>
         <p>How to choose and use a modern chemical structure drawing app with better readability, naming support, and export-ready outputs. Includes workflow tips for students and lab teams.</p>
         <a class="read-btn" href="/blog/chemical-structure-drawing-app-seo-optimized.html">Read article</a>
       </article>
 
-      <article class="card muted-card">
+      <article class="card muted-card" data-blog-card data-category="coming-soon">
         <span class="tag">Soon</span>
         <h2>TLC Interpretation and Reporting Workflow</h2>
         <p>End-to-end TLC documentation with Rf tracking and publication-ready plate diagrams.</p>
       </article>
 
-      <article class="card muted-card">
+      <article class="card muted-card" data-blog-card data-category="coming-soon">
         <span class="tag">Soon</span>
         <h2>NMR + IR Sanity Checks for Faster Assignments</h2>
         <p>A practical checklist to validate spectral assignments before writing reports.</p>
       </article>
     </section>
+    </div>
 
     <footer class="site-footer-root" role="contentinfo">
       <div class="site-footer-inner">
@@ -295,6 +540,45 @@
       <script src="/js/site-footer.js" defer></script>
     </footer>
   </main>
+  <script>
+    (function () {
+      var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-blog-filter]'));
+      var cards = Array.prototype.slice.call(document.querySelectorAll('[data-blog-card]'));
+      var note = document.getElementById('blogResultsNote');
+      var labels = {
+        all: 'all blog categories',
+        reactions: 'reaction guides',
+        molecules: 'molecule pages',
+        tools: 'tools',
+        'drawing-guides': 'drawing guides',
+        downloads: 'downloads',
+        'coming-soon': 'coming soon'
+      };
+
+      function applyFilter(category) {
+        var visible = 0;
+        cards.forEach(function (card) {
+          var match = category === 'all' || card.getAttribute('data-category') === category;
+          card.hidden = !match;
+          if (match) visible += 1;
+        });
+        buttons.forEach(function (button) {
+          var active = button.getAttribute('data-blog-filter') === category;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        if (note) {
+          note.textContent = 'Showing ' + visible + ' ' + (visible === 1 ? 'item' : 'items') + ' in ' + (labels[category] || category) + '.';
+        }
+      }
+
+      buttons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          applyFilter(button.getAttribute('data-blog-filter') || 'all');
+        });
+      });
+    }());
+  </script>
   <script src="/js/site-topbar.js" defer></script>
 </body>
 </html>

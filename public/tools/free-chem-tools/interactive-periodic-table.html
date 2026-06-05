@@ -3,27 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interactive periodic table by MolDraw with accurate data for all 118 elements. Search by symbol/name and view atomic mass, electron configuration, melting/boiling point, oxidation states, and more.">
-  <meta name="keywords" content="interactive periodic table, periodic table with metadata, 118 elements, atomic mass, electron configuration, chemistry tool, MolDraw">
+  <meta name="description" content="Periodic table of elements interactive tool by MolDraw. Search all 118 elements and view atomic number, atomic mass, symbol, category, phase, electron configuration, density, melting point, boiling point, and first ionization energy.">
+  <meta name="keywords" content="periodic table of elements interactive, interactive periodic table, periodic table with atomic mass, 118 elements, atomic number, electron configuration, first ionization energy, chemistry tool">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/interactive-periodic-table.html">
-  <title>Interactive Periodic Table (118 Elements) | MolDraw</title>
-  <meta property="og:title" content="Interactive Periodic Table (118 Elements) | MolDraw" />
-  <meta property="og:description" content="Interactive periodic table by MolDraw with accurate data for all 118 elements. Search by symbol/name and view atomic mass, electron configuration, melting/boiling point, oxidation states, and more." />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index" />
+  <title>Periodic Table of Elements Interactive | Atomic Mass & Number | MolDraw</title>
+  <meta property="og:title" content="Periodic Table of Elements Interactive | MolDraw" />
+  <meta property="og:description" content="Search all 118 elements in an interactive periodic table and view atomic mass, atomic number, category, phase, electron configuration, density, melting point, boiling point, and ionization energy." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/interactive-periodic-table.html" />
   <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Periodic Table of Elements Interactive | MolDraw" />
+  <meta name="twitter:description" content="Interactive periodic table with atomic number, atomic mass, electron configuration, phase, density, melting point, boiling point, and ionization energy." />
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "MolDraw Interactive Periodic Table",
+    "name": "Periodic Table of Elements Interactive - MolDraw",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Web",
     "url": "https://www.moldraw.com/tools/free-chem-tools/interactive-periodic-table.html",
-    "description": "Interactive periodic table with detailed metadata for all 118 elements."
+    "description": "Interactive periodic table of elements with atomic number, atomic mass, element symbol, category, phase, electron configuration, density, melting point, boiling point, and first ionization energy.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is the MolDraw interactive periodic table?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The MolDraw interactive periodic table is a free browser tool for searching all 118 elements and viewing element data such as atomic number, atomic mass, symbol, category, phase, electron configuration, density, melting point, boiling point, and first ionization energy."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does this periodic table show atomic mass and atomic number?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Each element tile shows atomic number and symbol, and the details panel shows atomic mass along with additional element metadata."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I search the periodic table by element name or symbol?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. You can search by element name, chemical symbol, or atomic number, then filter results by element category and phase."
+        }
+      }
+    ]
   }
   </script>
   <style>
@@ -73,6 +113,38 @@
       font-size: 14px;
       max-width: 980px;
     }
+    .quick-answer {
+      margin-top: 12px;
+      border: 1px solid #99f6e4;
+      background: #f0fdfa;
+      color: #134e4a;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      max-width: 1040px;
+    }
+    .hero-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .hero-links a,
+    .content-link {
+      color: #0f766e;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .hero-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      border: 1px solid #ccfbf1;
+      border-radius: 8px;
+      padding: 0 10px;
+      background: #f0fdfa;
+      font-size: 12px;
+    }
     .toolbar {
       display: grid;
       grid-template-columns: minmax(220px, 1fr) 220px 220px auto;
@@ -102,7 +174,7 @@
     }
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 340px;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
       gap: 12px;
       align-items: start;
     }
@@ -111,14 +183,23 @@
       border: 1px solid #e2e8f0;
       border-radius: 12px;
       padding: 12px;
+      min-width: 0;
+    }
+    .table-scroll {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
     }
     .pt-grid {
       display: grid;
       grid-template-columns: repeat(18, minmax(42px, 1fr));
       grid-template-rows: repeat(10, 52px);
       gap: 5px;
-      overflow-x: auto;
       min-width: 920px;
+      width: 100%;
     }
     .el-card {
       position: relative;
@@ -139,6 +220,9 @@
     .el-card.selected {
       border-color: #0f766e;
       box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
+    }
+    .el-card[hidden] {
+      display: none;
     }
     .el-num {
       position: absolute;
@@ -170,6 +254,21 @@
       font-size: 11px;
       color: #64748b;
       margin-top: 8px;
+    }
+    .empty-state {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #475569;
+      padding: 16px;
+      font-size: 13px;
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
     .legend {
       display: flex;
@@ -236,13 +335,82 @@
       font-weight: 700;
       text-decoration: none;
     }
-    @media (max-width: 1180px) {
+    .seo-content {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .seo-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .seo-card h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #0f172a;
+    }
+    .seo-card h3 {
+      font-size: 15px;
+      margin: 12px 0 4px;
+      color: #0f172a;
+    }
+    .seo-card p,
+    .seo-card li {
+      color: #475569;
+      font-size: 13px;
+    }
+    .seo-card ul {
+      margin: 8px 0 0 18px;
+    }
+    .faq-list {
+      display: grid;
+      gap: 10px;
+    }
+    .related-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .related-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 0 9px;
+      background: #f8fafc;
+      color: #334155;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    @media (max-width: 1240px) {
       .layout { grid-template-columns: 1fr; }
+      .seo-content { grid-template-columns: 1fr; }
     }
     @media (max-width: 1024px) {
       .toolbar { grid-template-columns: 1fr; }
       .status { text-align: left; }
       .hero h1 { font-size: 24px; }
+    }
+    @media (max-width: 720px) {
+      .container { width: min(100% - 20px, 1320px); padding-top: 14px; }
+      .hero, .toolbar, .panel, .seo-card { border-radius: 10px; }
+      .pt-grid {
+        grid-template-columns: repeat(18, 39px);
+        grid-template-rows: repeat(10, 48px);
+        min-width: 790px;
+        gap: 4px;
+      }
+      .el-card { border-radius: 7px; padding: 3px; }
+      .el-symbol { font-size: 14px; margin-top: 11px; }
+      .el-name { font-size: 7.5px; }
+      .meta-row { grid-template-columns: 112px minmax(0, 1fr); gap: 8px; }
+      .details-title { font-size: 22px; }
     }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
@@ -256,8 +424,15 @@
     </nav>
 
     <section class="hero">
-      <h1>Interactive Periodic Table (118 Elements)</h1>
-      <p>Explore every element with metadata including atomic number, atomic mass, category, phase, electron configuration, electronegativity, melting point, boiling point, and density. Click an element tile to inspect details.</p>
+      <h1>Periodic Table of Elements Interactive</h1>
+      <p>Explore all 118 elements with atomic number, atomic mass, symbol, category, phase, electron configuration, electronegativity, density, melting point, boiling point, and first ionization energy. Search by element name, symbol, or atomic number, then click any tile to inspect details.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> This free interactive periodic table lets you search the periodic table of elements and view atomic mass, atomic number, chemical symbol, phase, group, period, electron configuration, density, melting point, boiling point, and ionization energy in one browser tool.</div>
+      <div class="hero-links" aria-label="Related chemistry tools">
+        <a href="/tools/">Tools hub</a>
+        <a href="/tools/free-chem-tools/chemical-equation-balancer.html">Equation balancer</a>
+        <a href="/tools/free-chem-tools/molarity-calculator.html">Molarity calculator</a>
+        <a href="/blog/free-chemistry-tools-and-calculators.html">Chemistry tools guide</a>
+      </div>
     </section>
 
     <section class="toolbar" aria-label="Periodic table filters">
@@ -273,7 +448,9 @@
 
     <section class="layout">
       <article class="panel">
-        <div id="tableGrid" class="pt-grid" aria-label="Periodic table grid"></div>
+        <div class="table-scroll" aria-label="Scrollable periodic table">
+          <div id="tableGrid" class="pt-grid" aria-label="Periodic table grid"></div>
+        </div>
         <p class="muted-note">Rows 9 and 10 display lanthanides and actinides. Data source includes all known elements (1-118).</p>
         <div class="legend" id="categoryLegend"></div>
       </article>
@@ -284,6 +461,45 @@
           <div class="details-sub">Click an element in the table</div>
         </div>
         <div class="meta-list" id="metaList"></div>
+      </aside>
+    </section>
+
+    <section class="seo-content" aria-label="Interactive periodic table guide">
+      <article class="seo-card">
+        <h2>Interactive periodic table with atomic mass and element data</h2>
+        <p>Use this periodic table of elements interactive tool to look up core element properties while studying chemistry, preparing lesson material, or checking quick reference data. The table includes every currently named element from hydrogen to oganesson.</p>
+        <ul>
+          <li>Search by element name, symbol, or atomic number.</li>
+          <li>Filter elements by category and phase.</li>
+          <li>Open details for atomic mass, group, period, block, density, and electron configuration.</li>
+          <li>Check melting point, boiling point, molar heat, and first ionization energy where available.</li>
+        </ul>
+        <h3>When to use it</h3>
+        <p>Use this page when you need a fast online periodic table with atomic mass, chemical symbols, element categories, and physical property metadata. For molecule drawing and structure conversion, open the <a class="content-link" href="/">MolDraw editor</a> or browse the <a class="content-link" href="/tools/">chemistry tools hub</a>.</p>
+      </article>
+
+      <aside class="seo-card">
+        <h2>FAQ</h2>
+        <div class="faq-list">
+          <div>
+            <h3>What is the MolDraw interactive periodic table?</h3>
+            <p>It is a free browser-based periodic table of elements for searching all 118 elements and checking element properties.</p>
+          </div>
+          <div>
+            <h3>Does it show atomic mass and atomic number?</h3>
+            <p>Yes. The element tiles show atomic number and symbol, and the details panel includes atomic mass and other properties.</p>
+          </div>
+          <div>
+            <h3>Can I search by symbol?</h3>
+            <p>Yes. Search works with element names, chemical symbols, and atomic numbers.</p>
+          </div>
+        </div>
+        <div class="related-links" aria-label="Related pages">
+          <a href="/tools/free-chem-tools/">Free chemistry tools</a>
+          <a href="/tools/free-chem-tools/solution-prep-calculator.html">Solution prep</a>
+          <a href="/tools/free-chem-tools/dilution-calculator.html">Dilution calculator</a>
+          <a href="/blog/">MolDraw blog</a>
+        </div>
       </aside>
     </section>
   </main>
@@ -344,6 +560,10 @@
     function getCategoryColor(category) {
       if (!category) return '#94a3b8';
       return categoryColors[category] || '#94a3b8';
+    }
+
+    function normalizeFilterValue(value) {
+      return String(value || '').trim().toLowerCase();
     }
 
     function setStatus(text) {
@@ -444,13 +664,21 @@
 
     function applyFilters() {
       const q = state.search.trim().toLowerCase();
+      const category = normalizeFilterValue(state.category);
+      const phase = normalizeFilterValue(state.phase);
       state.filtered = state.elements.filter((e) => {
+        const elementName = normalizeFilterValue(e.name);
+        const elementSymbol = normalizeFilterValue(e.symbol);
+        const elementCategory = normalizeFilterValue(e.category);
+        const elementPhase = normalizeFilterValue(e.phase);
         const matchesSearch = !q
-          || e.name.toLowerCase().includes(q)
-          || e.symbol.toLowerCase().includes(q)
+          || elementName.includes(q)
+          || elementSymbol.includes(q)
+          || elementCategory.includes(q)
+          || elementPhase.includes(q)
           || String(e.number).includes(q);
-        const matchesCategory = state.category === 'all' || e.category === state.category;
-        const matchesPhase = state.phase === 'all' || e.phase === state.phase;
+        const matchesCategory = category === 'all' || elementCategory === category;
+        const matchesPhase = phase === 'all' || elementPhase === phase;
         return matchesSearch && matchesCategory && matchesPhase;
       });
     }
@@ -458,13 +686,21 @@
     function renderGrid() {
       ui.grid.innerHTML = '';
       const visibleSet = new Set(state.filtered.map((e) => e.number));
+      const currentSelectionIsVisible = state.selectedNumber && visibleSet.has(state.selectedNumber);
+      if (!currentSelectionIsVisible) {
+        state.selectedNumber = state.filtered[0] ? state.filtered[0].number : null;
+        renderDetails(state.filtered[0] || null);
+      }
 
       state.elements.forEach((el) => {
+        const isVisible = visibleSet.has(el.number);
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'el-card';
         if (state.selectedNumber === el.number) btn.classList.add('selected');
-        if (!visibleSet.has(el.number)) btn.style.opacity = '0.16';
+        btn.hidden = !isVisible;
+        btn.disabled = !isVisible;
+        btn.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
         btn.style.gridColumn = String(el.xpos);
         btn.style.gridRow = String(el.ypos);
         btn.style.background = getCategoryColor(el.category);
@@ -495,9 +731,11 @@
       const found = state.filtered.length;
       setStatus(`Showing ${found} of ${state.elements.length} elements`);
 
-      if (state.selectedNumber && !visibleSet.has(state.selectedNumber)) {
-        const selected = state.elements.find((e) => e.number === state.selectedNumber) || null;
-        renderDetails(selected);
+      if (found === 0) {
+        const msg = document.createElement('div');
+        msg.className = 'empty-state';
+        msg.textContent = 'No elements match the current search and filters. Clear search or choose All categories / All phases.';
+        ui.grid.appendChild(msg);
       }
     }
 

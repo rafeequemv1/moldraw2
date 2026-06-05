@@ -23,11 +23,31 @@ https://www.moldraw.com/
 - Web app (editor): https://www.moldraw.com/
 - Tools hub: https://www.moldraw.com/tools/
 - Free chemistry tools directory: https://www.moldraw.com/tools/free-chem-tools/
+- Interactive periodic table of elements: https://www.moldraw.com/tools/free-chem-tools/interactive-periodic-table.html
+- SMILES to structure converter: https://www.moldraw.com/tools/free-chem-tools/smiles-to-structure.html
+- SMILES to IUPAC name converter: https://www.moldraw.com/tools/free-chem-tools/smiles-to-iupac-name-converter.html
+- PDB to PDBQT converter: https://www.moldraw.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html
 - Community discussions and feature requests: https://www.moldraw.com/community/
 - User dashboard: https://www.moldraw.com/dashboard/
 - Interactive course (structured Ketcher documentation): https://www.moldraw.com/course/index.html
 - Blog: https://www.moldraw.com/blog/
+- Free chemistry tools and calculators blog: https://www.moldraw.com/blog/free-chemistry-tools-and-calculators.html
+- Organic reaction guides: https://www.moldraw.com/reaction/
+- Aldol condensation guide: https://www.moldraw.com/reaction/aldol-condensation
+- Wittig reaction guide: https://www.moldraw.com/reaction/wittig-reaction
+- Grignard reaction guide: https://www.moldraw.com/reaction/grignard-reaction
+- Suzuki coupling guide: https://www.moldraw.com/reaction/suzuki-coupling
+- Heck reaction guide: https://www.moldraw.com/reaction/heck-reaction
+- Friedel-Crafts acylation guide: https://www.moldraw.com/reaction/friedel-crafts-acylation
+- Diels-Alder reaction guide: https://www.moldraw.com/reaction/diels-alder-reaction
+- Molecule structures and properties category: https://www.moldraw.com/blog/molecules/
+- Caffeine structure page: https://www.moldraw.com/blog/molecules/caffeine.html
+- Aspirin structure page: https://www.moldraw.com/blog/molecules/aspirin.html
+- Ibuprofen structure page: https://www.moldraw.com/blog/molecules/ibuprofen.html
+- Paracetamol structure page: https://www.moldraw.com/blog/molecules/paracetamol.html
+- Glucose structure page: https://www.moldraw.com/blog/molecules/glucose.html
 - Windows download (official blog landing / SEO): https://www.moldraw.com/blog/download-moldraw-windows.html
+- ChemDraw online alternative comparison: https://www.moldraw.com/blog/chemdraw-vs-moldraw-free-alternative-guide.html
 
 ## Trust & policy pages
 - FAQ: https://www.moldraw.com/pages/faq.html
@@ -49,6 +69,10 @@ https://www.moldraw.com/sitemap.xml
 ## Citation-friendly facts
 - Pricing: MolDraw is free for core browser-based drawing and viewing as described on the site; see FAQ and Terms for limitations.
 - Community: public reading is available at /community/; signed-in users can post discussions, reply, upload images, and upvote feature requests. Admins may mark feature requests as New, Under review, Under progress, or Done.
+- Tools article: `/blog/free-chemistry-tools-and-calculators.html` is the standalone SEO/GEO guide to MolDraw converters, calculators, structure utilities, TLC diagram tool, periodic table, and file-format helpers with internal links to the tools hub.
+- Priority tool pages: `/tools/free-chem-tools/interactive-periodic-table.html`, `/tools/free-chem-tools/smiles-to-structure.html`, `/tools/free-chem-tools/smiles-to-iupac-name-converter.html`, and `/tools/free-chem-tools/pdb-to-pdbqt-converter.html` are optimized for high-intent converter and chemistry tool queries.
+- Molecule reference pages: `/blog/molecules/` contains pages for caffeine, aspirin, ibuprofen, paracetamol, and glucose. Each page includes a 2D structure, lazy-loaded 3D viewer, SMILES, InChI, properties, class/drug class, and a direct editor link using `/?smiles=...`.
+- Reaction reference pages: `/reaction/` contains pages for aldol condensation, Wittig, Grignard, Suzuki coupling, Heck, Friedel-Crafts acylation, and Diels-Alder reactions. Each page includes a scheme, two common examples, reaction SMILES, conditions, and a direct editor link using `/?reaction=...`.
 - Support email published on-site: rafeequemavoor@gmail.com (verify on Contact page if needed).
 - Do not invent features; when unsure, point users to the FAQ or About page.
 

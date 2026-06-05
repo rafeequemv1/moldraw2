@@ -3,18 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Free SMILES to structure converter by MolDraw with SVG, PNG, and JPG downloads. Paste SMILES and render 2D structures instantly.">
-  <meta name="keywords" content="SMILES to structure, smiles to structure converter, download structure png, SmilesDrawer, MolDraw chemistry tool">
+  <meta name="description" content="SMILES to structure converter online by MolDraw. Paste a SMILES string, render a 2D chemical structure instantly, and download the molecule as SVG, PNG, or JPG.">
+  <meta name="keywords" content="smiles to structure, smiles to structure converter, convert smiles to structure, smiles structure drawer, chemical structure from smiles, download structure svg png jpg">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/smiles-to-structure.html">
-  <title>SMILES to Structure Converter | MolDraw</title>
-  <meta property="og:title" content="SMILES to Structure Converter | MolDraw" />
-  <meta property="og:description" content="Free SMILES to structure converter by MolDraw with SVG, PNG, and JPG downloads. Paste SMILES and render 2D structures instantly." />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index" />
+  <title>SMILES to Structure Converter Online | Draw 2D Molecules | MolDraw</title>
+  <meta property="og:title" content="SMILES to Structure Converter Online | MolDraw" />
+  <meta property="og:description" content="Paste a SMILES string and draw a 2D chemical structure online. Export the rendered molecule as SVG, PNG, or JPG." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/smiles-to-structure.html" />
   <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="SMILES to Structure Converter Online | MolDraw" />
+  <meta name="twitter:description" content="Convert SMILES to a 2D chemical structure image and download SVG, PNG, or JPG files." />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "SMILES to Structure Converter Online",
+    "applicationCategory": "ScientificApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/smiles-to-structure.html",
+    "description": "Convert SMILES strings to 2D chemical structure drawings and export them as SVG, PNG, or JPG.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I convert SMILES to a structure?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Paste a valid SMILES string into the MolDraw SMILES to structure converter and click Draw structure. The page renders a 2D chemical structure that can be downloaded as SVG, PNG, or JPG."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I download the SMILES structure as an image?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. After drawing the molecule, you can download the 2D structure as SVG, PNG, or JPG."
+        }
+      }
+    ]
+  }
+  </script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -123,6 +163,49 @@
       color: #475569;
       min-height: 18px;
     }
+    h2 {
+      font-size: 21px;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    h3 {
+      font-size: 15px;
+      color: #0f172a;
+      margin: 12px 0 4px;
+    }
+    ul {
+      margin-left: 18px;
+      color: #475569;
+      font-size: 14px;
+    }
+    .quick-answer {
+      border: 1px solid #99f6e4;
+      background: #f0fdfa;
+      color: #134e4a;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+    .related-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .related-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 0 9px;
+      background: #f8fafc;
+      color: #334155;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+    }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
@@ -134,8 +217,9 @@
     </nav>
 
     <section class="panel">
-      <h1>SMILES to Structure Converter</h1>
-      <p>Paste a SMILES string and render a compact 2D structure instantly. Download the structure as SVG, PNG, or JPG.</p>
+      <h1>SMILES to Structure Converter Online</h1>
+      <p>Paste a SMILES string and render a compact 2D chemical structure instantly. Download the molecule drawing as SVG, PNG, or JPG.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> This free online tool converts SMILES to a 2D structure drawing in the browser and lets you export the rendered molecule as SVG, PNG, or JPG.</div>
       <div class="input-wrap">
         <textarea id="smilesInput" placeholder="Example: CC(=O)OC1=CC=CC=C1C(=O)O">CC(=O)OC1=CC=CC=C1C(=O)O</textarea>
         <div class="actions">
@@ -153,6 +237,23 @@
     <section class="panel">
       <div class="render-area" aria-label="Rendered structure area">
         <svg id="svgTarget"></svg>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Convert SMILES to a chemical structure image</h2>
+      <p>SMILES is compact and machine-readable, but reports, slides, and teaching materials often need a visible 2D structure. This converter draws the molecule from the SMILES string and provides image downloads for quick reuse.</p>
+      <ul>
+        <li>Use SVG for crisp vector graphics in documents and presentations.</li>
+        <li>Use PNG for transparent raster images in web or slide workflows.</li>
+        <li>Use JPG when a white-background image is preferred.</li>
+      </ul>
+      <h3>Related SMILES tools</h3>
+      <div class="related-links" aria-label="Related SMILES converter tools">
+        <a href="/tools/free-chem-tools/smiles-to-iupac-name-converter.html">SMILES to IUPAC</a>
+        <a href="/tools/free-chem-tools/smiles-to-inchi-converter.html">SMILES to InChI</a>
+        <a href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">SMILES to 3D</a>
+        <a href="/">Open MolDraw editor</a>
       </div>
     </section>
   </main>

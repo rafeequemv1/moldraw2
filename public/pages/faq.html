@@ -425,7 +425,7 @@
         "name": "How accurate is the 3D visualization?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "MolDraw uses 3Dmol.js for accurate 3D molecular visualization. The structures are generated from 2D coordinates and provide realistic representations suitable for educational and research purposes."
+          "text": "MolDraw uses EPAM Miew for interactive 3D molecular visualization in the main app. 3D structures are useful for teaching and routine visualization; validate coordinates for publication or computational workflows."
         }
       },
       {
@@ -459,6 +459,30 @@
           "@type": "Answer",
           "text": "Yes, MolDraw is free to use for both personal and commercial purposes. Review Ketcher and 3Dmol.js licenses if you distribute a commercial product."
         }
+      },
+      {
+        "@type": "Question",
+        "name": "Does MolDraw have molecule reference pages with structures and identifiers?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. MolDraw has molecule reference pages for caffeine, aspirin, ibuprofen, paracetamol, and glucose with structure images, lazy-loaded 3D viewers, SMILES, InChI, properties, and editor links."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can a molecule reference page open the structure directly in the editor?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. The molecule pages use SMILES links such as /?smiles=... so clicking the editor button opens the compound directly in the MolDraw editor."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does MolDraw have organic reaction guide pages?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. MolDraw has reaction guide pages for aldol condensation, Wittig, Grignard, Suzuki coupling, Heck, Friedel-Crafts acylation, and Diels-Alder reactions. Each guide includes examples and an editor link."
+        }
       }
     ]
   }
@@ -489,6 +513,8 @@
             <li><button type="button" class="faq-cat-btn" data-category="faq-cat-privacy" aria-pressed="false">Privacy &amp; data</button></li>
             <li><button type="button" class="faq-cat-btn" data-category="faq-cat-technical" aria-pressed="false">Technical</button></li>
             <li><button type="button" class="faq-cat-btn" data-category="faq-cat-editor" aria-pressed="false">Drawing &amp; editor</button></li>
+            <li><button type="button" class="faq-cat-btn" data-category="faq-cat-molecules" aria-pressed="false">Molecule pages</button></li>
+            <li><button type="button" class="faq-cat-btn" data-category="faq-cat-reactions" aria-pressed="false">Reaction guides</button></li>
             <li><button type="button" class="faq-cat-btn" data-category="faq-cat-about" aria-pressed="false">About &amp; licensing</button></li>
           </ul>
         </nav>
@@ -596,7 +622,7 @@
           <article class="faq-item">
             <h3>How accurate is the 3D visualization?</h3>
             <div class="faq-answer">
-              Built with <a href="https://3dmol.csb.pitt.edu/" target="_blank" rel="noopener noreferrer">3Dmol.js</a>. Styles include ball &amp; stick, stick, space-fill, and line — suitable for teaching and routine visualization; validate structures for publication workflows.
+              The main MolDraw app uses EPAM Miew for interactive 3D molecular visualization. Styles include ball &amp; stick, stick, space-fill, and line — suitable for teaching and routine visualization; validate structures for publication or computational workflows.
             </div>
           </article>
         </div>
@@ -626,6 +652,36 @@
                 <li>On the canvas, <strong>click and drag</strong> from the tail (electron source) toward the head (destination bond or atom).</li>
               </ol>
               <p class="faq-answer-note">Exact icons vary slightly by Ketcher version; look for the curved arrow next to other arrow and shape tools. For reaction schemes, see <a href="/course/chapters/drawing-reactions.html">Drawing reactions</a> in the course.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-category" aria-labelledby="faq-cat-molecules" data-faq-section>
+        <h2 id="faq-cat-molecules" class="faq-cat-heading">Molecule pages</h2>
+        <div class="faq-list">
+          <article class="faq-item">
+            <h3>Does MolDraw have molecule reference pages with structures and identifiers?</h3>
+            <div class="faq-answer">
+              Yes. The <a href="/blog/molecules/">molecule structures and properties category</a> includes pages for <a href="/blog/molecules/caffeine.html">caffeine</a>, <a href="/blog/molecules/aspirin.html">aspirin</a>, <a href="/blog/molecules/ibuprofen.html">ibuprofen</a>, <a href="/blog/molecules/paracetamol.html">paracetamol</a>, and <a href="/blog/molecules/glucose.html">glucose</a>. Each page includes a structure image, lazy-loaded 3D viewer, SMILES, InChI, properties, and class information.
+            </div>
+          </article>
+          <article class="faq-item">
+            <h3>Can a molecule reference page open the structure directly in the editor?</h3>
+            <div class="faq-answer">
+              Yes. Each molecule page includes a “Draw or edit” button that opens MolDraw with the molecule loaded from its SMILES string, so you can start editing immediately.
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-category" aria-labelledby="faq-cat-reactions" data-faq-section>
+        <h2 id="faq-cat-reactions" class="faq-cat-heading">Reaction guides</h2>
+        <div class="faq-list">
+          <article class="faq-item">
+            <h3>Does MolDraw have organic reaction guide pages?</h3>
+            <div class="faq-answer">
+              Yes. The <a href="/reaction/">organic reaction guides</a> cover <a href="/reaction/aldol-condensation">aldol condensation</a>, <a href="/reaction/wittig-reaction">Wittig</a>, <a href="/reaction/grignard-reaction">Grignard</a>, <a href="/reaction/suzuki-coupling">Suzuki coupling</a>, <a href="/reaction/heck-reaction">Heck</a>, <a href="/reaction/friedel-crafts-acylation">Friedel-Crafts acylation</a>, and <a href="/reaction/diels-alder-reaction">Diels-Alder</a>. Each page includes examples and an edit-in-MolDraw button.
             </div>
           </article>
         </div>
