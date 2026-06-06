@@ -2666,12 +2666,19 @@ a.viewer-toolbar-course:hover {
 .auth-modal {
   width: 390px;
   max-width: 92vw;
+  max-height: 92vh;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
   padding: 16px;
   font-family: 'Libre Franklin', sans-serif;
+  overflow-y: auto;
+}
+
+.auth-modal--signin,
+.auth-modal--signup {
+  min-height: 468px;
 }
 
 .auth-modal-header {
@@ -2745,6 +2752,14 @@ a.viewer-toolbar-course:hover {
   font-size: 12px;
   font-weight: 700;
   color: #334155;
+}
+
+.auth-field .auth-required-star {
+  display: inline;
+  margin: 0;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .auth-field input,

@@ -7142,7 +7142,7 @@ ${scientificGuardrails}`;
 
       {showAuthModal && (
         <div className="auth-modal-backdrop" onClick={() => setShowAuthModal(false)}>
-          <form className="auth-modal" onSubmit={handleAuthSubmit} onClick={(e) => e.stopPropagation()}>
+          <form className={`auth-modal auth-modal--${authMode}`} onSubmit={handleAuthSubmit} onClick={(e) => e.stopPropagation()}>
             <div className="auth-modal-header">
               <div>
                 <div className="auth-modal-title">
@@ -7193,7 +7193,7 @@ ${scientificGuardrails}`;
             )}
 
             <label className="auth-field">
-              <span>Email</span>
+              <span>Email <span className="auth-required-star" aria-hidden="true">*</span></span>
               <input
                 type="email"
                 value={authForm.email}
@@ -7211,7 +7211,7 @@ ${scientificGuardrails}`;
 
             {authMode !== 'reset' && (
             <label className="auth-field">
-              <span>Password</span>
+              <span>Password <span className="auth-required-star" aria-hidden="true">*</span></span>
               <input
                 type="password"
                 value={authForm.password}
@@ -7226,7 +7226,7 @@ ${scientificGuardrails}`;
 
             {authMode === 'signup' && (
               <label className="auth-field">
-                <span>Designation</span>
+                <span>Designation <span className="auth-required-star" aria-hidden="true">*</span></span>
                 <select
                   value={authForm.designation}
                   onChange={(e) => updateAuthForm('designation', e.target.value)}
@@ -7242,7 +7242,7 @@ ${scientificGuardrails}`;
 
             {authMode === 'signup' && (
               <label className="auth-field">
-                <span>Institute name optional</span>
+                <span>Institute name</span>
                 <input
                   type="text"
                   value={authForm.instituteName}
