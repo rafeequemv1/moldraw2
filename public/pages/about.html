@@ -3,150 +3,482 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About MolDraw | Free ChemDraw Alternative</title>
-  <meta name="description" content="Learn about MolDraw, a free ChemDraw alternative built by Scidart Academy for browser-based molecule drawing, 3D visualization, and chemistry education.">
+  <title>MolDraw Homepage | Free Molecular Drawing and Chemistry Tools</title>
+  <meta name="description" content="MolDraw is a free browser-based molecular drawing app with 2D editing, 3D visualization, PubChem lookup, chemistry converters, formula tools, spectroscopy utilities, and learning resources.">
+  <meta name="keywords" content="MolDraw homepage, free molecule drawing app, online molecular editor, chemistry tools, structure editor, SMILES converter, spectroscopy tools, free ChemDraw alternative">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="MolDraw Homepage | Free Molecular Drawing and Chemistry Tools" />
+  <meta property="og:description" content="Draw molecules, explore 3D structures, convert chemistry formats, calculate properties, and learn chemistry in the browser." />
   <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.moldraw.com/pages/about.html" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="canonical" href="https://www.moldraw.com/pages/about.html" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "AboutPage",
-    "name": "About MolDraw",
-    "description": "Learn about MolDraw, a free ChemDraw alternative built by Scidart Academy",
+    "name": "MolDraw Homepage",
+    "description": "MolDraw is a free browser-based molecular drawing app with chemistry converters, calculators, 3D visualization, and learning resources.",
     "url": "https://www.moldraw.com/pages/about.html",
     "mainEntity": {
-      "@type": "Organization",
-      "name": "Scidart Academy",
-      "url": "https://www.moldraw.com",
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "email": "rafeequemavoor@gmail.com",
-        "contactType": "Technical Support"
+      "@type": "SoftwareApplication",
+      "name": "MolDraw",
+      "applicationCategory": "ScientificApplication",
+      "operatingSystem": "Web",
+      "url": "https://www.moldraw.com/",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Scidart Academy",
+        "url": "https://www.moldraw.com"
       }
     }
   }
   </script>
-  
-  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-0GXXMTT1RP"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-0GXXMTT1RP');
   </script>
-  
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: #f7f8fb;
-      color: #1f2933;
-      line-height: 1.6;
+      font-family: 'Libre Franklin', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.65;
     }
+    a { color: inherit; text-decoration: none; }
     .page {
-      max-width: 900px;
-      margin: 64px auto;
-      padding: 0 24px;
+      width: min(1180px, 94vw);
+      margin: 0 auto;
+      padding: 24px 0 54px;
     }
-    header {
-      margin-bottom: 24px;
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: inline-grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, #2C7A7B, #0f766e);
+      box-shadow: 0 12px 26px rgba(44, 122, 123, 0.22);
+    }
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .nav-links a,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border: 1px solid #dbe4ee;
+      border-radius: 999px;
+      padding: 0 14px;
+      background: #fff;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .btn-primary {
+      border-color: #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(44, 122, 123, 0.22);
+    }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.8fr);
+      gap: 18px;
+      align-items: stretch;
+      padding: clamp(24px, 4vw, 42px);
+      border: 1px solid #dbe4ee;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at top right, rgba(45, 212, 191, 0.22), transparent 34%),
+        linear-gradient(135deg, #ffffff 0%, #f0fdfa 50%, #ffffff 100%);
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-bottom: 14px;
+      border: 1px solid #99f6e4;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(240, 253, 250, 0.9);
+      color: #115e59;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
     h1 {
-      font-size: 32px;
-      margin: 0 0 12px;
-      letter-spacing: -0.5px;
-    }
-    .tagline {
-      color: #4a5568;
-      font-size: 16px;
+      max-width: 760px;
       margin: 0;
+      color: #0f172a;
+      font-size: clamp(42px, 7vw, 74px);
+      line-height: 0.94;
+      letter-spacing: -0.07em;
     }
-    .card {
+    .hero-copy {
+      max-width: 720px;
+      margin: 18px 0 0;
+      color: #475569;
+      font-size: clamp(16px, 2vw, 19px);
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .hero-card {
+      align-self: stretch;
+      border: 1px solid rgba(148, 163, 184, 0.34);
+      border-radius: 22px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+    }
+    .molecule-preview {
+      min-height: 220px;
+      border: 1px solid #ccfbf1;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
       background: #fff;
-      border: 1px solid #e5e7eb;
+    }
+    .molecule-preview svg {
+      width: min(290px, 86%);
+      height: auto;
+    }
+    .mini-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .mini-stat {
+      border: 1px solid #e2e8f0;
       border-radius: 14px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      padding: 10px;
+      background: #f8fafc;
+    }
+    .mini-stat strong {
+      display: block;
+      font-size: 18px;
+      color: #0f172a;
+    }
+    .mini-stat span {
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .section {
+      margin-top: 18px;
+      padding: clamp(18px, 3vw, 26px);
+      border: 1px solid #e5e7eb;
+      border-radius: 24px;
+      background: #fff;
+    }
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
       margin-bottom: 16px;
     }
     h2 {
-      font-size: 22px;
-      margin: 0 0 12px;
+      margin: 0;
+      color: #0f172a;
+      font-size: clamp(24px, 4vw, 36px);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
     }
-    a {
-      color: #5a67d8;
-      text-decoration: none;
-      font-weight: 600;
+    .section-head p,
+    .section > p {
+      max-width: 720px;
+      margin: 8px 0 0;
+      color: #64748b;
+      font-size: 14px;
     }
-    a:hover {
-      text-decoration: underline;
-    }
-    .credits {
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
     }
-    .pill {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #eef2ff;
-      color: #4338ca;
-      font-weight: 600;
+    .card {
+      min-width: 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 16px;
+      background: #f8fafc;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      color: #0f172a;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+    }
+    .card p {
+      margin: 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+    .link-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .tool-link {
+      border: 1px solid #dbe4ee;
+      border-radius: 16px;
+      padding: 13px;
+      background: #fff;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .tool-link span {
+      display: block;
+      margin-top: 3px;
+      color: #64748b;
       font-size: 12px;
-      margin-bottom: 10px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+    .quote-card {
+      border-radius: 22px;
+      padding: 20px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .quote-card h2 {
+      color: #fff;
+    }
+    .quote-card p {
+      color: #cbd5e1;
+    }
+    .footer-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 18px;
+      border: 1px solid #ccfbf1;
+      border-radius: 24px;
+      padding: 18px;
+      background: #f0fdfa;
+    }
+    .footer-card p {
+      margin: 0;
+      color: #115e59;
+      font-size: 14px;
+    }
+    @media (max-width: 900px) {
+      .hero,
+      .split,
+      .grid,
+      .link-grid {
+        grid-template-columns: 1fr;
+      }
+      .section-head,
+      .footer-card,
+      .top-nav {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .nav-links {
+        justify-content: flex-start;
+      }
     }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
 <body>
-  <div class="page">
-    <header>
-      <p class="pill">MolDraw</p>
-      <h1>Free ChemDraw Alternative</h1>
-      <p class="tagline">Draw, name, and export molecules with 3D visualization — powered by open science.</p>
-      <p style="margin-top: 16px;">
-        <a href="/course/index.html">Course</a> | <a href="/">Back to MolDraw</a>
-      </p>
-    </header>
-
-    <div class="card">
-      <h2>About the Project</h2>
-      <p>MolDraw is a free, browser-based alternative to ChemDraw focused on fast sketching, naming, and exporting of chemical structures with an integrated 3D viewer.</p>
-      <p>This project is maintained by <strong>Scidart Academy</strong> as part of our mission to make computational chemistry tools accessible to everyone.</p>
-    </div>
-
-    <div class="card">
-      <h2>Learn More</h2>
-      <p>Explore MolDraw resources:</p>
-      <ul>
-        <li><a href="/blog/">Blog</a> - Learn about MolDraw features, tips, and tutorials</li>
-        <li><a href="/pages/faq.html">FAQ</a> - Frequently asked questions about MolDraw</li>
-        <li><a href="/course/index.html">Course</a> - Interactive course to master MolDraw</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h2>Open Chemistry on the Web</h2>
-      <p>MolDraw is designed around accessible chemistry drawing, browser-first workflows, and practical tools for students, educators, and researchers.</p>
-    </div>
-
-    <div class="card credits">
-      <div>
-        <h2>Project Attribution</h2>
-        <p>Created by <strong>Rafeeque Mavoor</strong> (<a href="https://rafeeque.com" target="_blank" rel="noopener noreferrer">rafeeque.com</a>)</p>
-        <p>Contact: <a href="mailto:rafeequemavoor@gmail.com">rafeequemavoor@gmail.com</a></p>
+  <main class="page">
+    <nav class="top-nav" aria-label="MolDraw page navigation">
+      <a class="brand" href="/" aria-label="Open MolDraw app">
+        <span class="brand-mark">M</span>
+        <span>MolDraw</span>
+      </a>
+      <div class="nav-links">
+        <a href="/">Open app</a>
+        <a href="/tools/">Tools</a>
+        <a href="/course/index.html">Course</a>
+        <a href="/blog/">Blog</a>
       </div>
+    </nav>
+
+    <section class="hero">
       <div>
-        <h2>Organization</h2>
-        <p><strong>Scidart Academy</strong><br />Advancing open, learner-friendly science software.</p>
+        <span class="eyebrow">Free browser chemistry workspace</span>
+        <h1>Draw molecules. Explore structures. Keep chemistry moving.</h1>
+        <p class="hero-copy">MolDraw brings molecule drawing, 3D visualization, PubChem lookup, format conversion, calculators, spectroscopy helpers, and chemistry learning tools into one fast web workspace.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/">Open MolDraw App</a>
+          <a class="btn" href="/tools/">Explore Chemistry Tools</a>
+          <a class="btn" href="/?signup=1">Sign up free</a>
+        </div>
       </div>
-    </div>
-  </div>
+      <aside class="hero-card" aria-label="MolDraw preview">
+        <div class="molecule-preview">
+          <svg viewBox="0 0 360 230" role="img" aria-label="Stylized molecule drawing">
+            <defs>
+              <linearGradient id="bondGradient" x1="0" x2="1">
+                <stop offset="0" stop-color="#2C7A7B" />
+                <stop offset="1" stop-color="#0f766e" />
+              </linearGradient>
+            </defs>
+            <g fill="none" stroke="url(#bondGradient)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M76 114 L126 72 L186 92 L206 154 L156 194 L96 174 Z" />
+              <path d="M186 92 L242 62 L292 96" />
+              <path d="M206 154 L266 180" />
+            </g>
+            <g fill="#fff" stroke="#2C7A7B" stroke-width="7">
+              <circle cx="76" cy="114" r="18" />
+              <circle cx="126" cy="72" r="18" />
+              <circle cx="186" cy="92" r="18" />
+              <circle cx="206" cy="154" r="18" />
+              <circle cx="156" cy="194" r="18" />
+              <circle cx="96" cy="174" r="18" />
+              <circle cx="292" cy="96" r="18" />
+              <circle cx="266" cy="180" r="18" />
+            </g>
+            <text x="286" y="101" text-anchor="middle" fill="#0f766e" font-size="17" font-weight="800">O</text>
+            <text x="266" y="185" text-anchor="middle" fill="#0f766e" font-size="17" font-weight="800">N</text>
+          </svg>
+        </div>
+        <div class="mini-stats">
+          <div class="mini-stat"><strong>2D</strong><span>Editor</span></div>
+          <div class="mini-stat"><strong>3D</strong><span>Viewer</span></div>
+          <div class="mini-stat"><strong>40+</strong><span>Tools</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>What MolDraw Does</h2>
+          <p>MolDraw is designed for students, educators, researchers, and builders who need practical chemistry utilities without installing desktop software.</p>
+        </div>
+        <a class="btn" href="/pages/faq.html">Read FAQ</a>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <h3>Draw and Edit Structures</h3>
+          <p>Sketch molecules in the browser, work with SMILES and molfiles, and move quickly between drawing and data.</p>
+        </article>
+        <article class="card">
+          <h3>Visualize in 3D</h3>
+          <p>Explore 3D molecular models, protein structures, and common molecular file formats from web-based viewers.</p>
+        </article>
+        <article class="card">
+          <h3>Convert and Calculate</h3>
+          <p>Use conversion tools, formula and mass calculators, pH tools, yield calculators, and spectroscopy utilities.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Popular Workflows</h2>
+          <p>Direct paths to the parts of MolDraw people reach for most often.</p>
+        </div>
+      </div>
+      <div class="link-grid">
+        <a class="tool-link" href="/">Molecule Editor<span>Open the main MolDraw app.</span></a>
+        <a class="tool-link" href="/tools/free-chem-tools/structure-to-smiles-converter.html">Structure to SMILES<span>Draw a molecule and copy SMILES.</span></a>
+        <a class="tool-link" href="/tools/free-chem-tools/name-to-structure.html">Name to Structure<span>Resolve compound names through PubChem.</span></a>
+        <a class="tool-link" href="/tools/free-chem-tools/molecular-formula-to-structure.html">Formula to Structure<span>Browse formula-matched candidates.</span></a>
+        <a class="tool-link" href="/tools/free-chem-tools/molecular-weight-calculator.html">Molecular Weight<span>Calculate molar mass and composition.</span></a>
+        <a class="tool-link" href="/tools/free-chem-tools/mass-spectrum-predictor.html">Mass Spectrum<span>Predict isotope patterns from structures.</span></a>
+        <a class="tool-link" href="/tools/free-chem-tools/interactive-periodic-table.html">Periodic Table<span>Search element properties.</span></a>
+        <a class="tool-link" href="/tools/free-chem-tools/tlc-diagram-tool.html">TLC Diagram<span>Create clean TLC plate graphics.</span></a>
+      </div>
+    </section>
+
+    <section class="section split">
+      <div class="quote-card">
+        <h2>Built for open chemistry learning.</h2>
+        <p>MolDraw is maintained by Scidart Academy with the goal of making chemistry drawing, visualization, and day-to-day calculation tools easier to access from any modern browser.</p>
+      </div>
+      <div class="card">
+        <h3>Who It Helps</h3>
+        <p>Students checking structures and formulas, teachers preparing examples, researchers moving identifiers between databases, and creators building chemistry content for the web.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/course/index.html">Start Course</a>
+          <a class="btn" href="/community/">Join Community</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Learn, Reference, and Build</h2>
+          <p>MolDraw includes learning pages, molecule references, reaction guides, and documentation alongside the editor and tools.</p>
+        </div>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <h3>Learning Course</h3>
+          <p>Follow practical chapters on drawing, bonds, reactions, 3D viewing, export formats, and chemistry workflows.</p>
+        </article>
+        <article class="card">
+          <h3>Molecule Pages</h3>
+          <p>Reference pages for molecules such as caffeine, aspirin, ibuprofen, paracetamol, and glucose.</p>
+        </article>
+        <article class="card">
+          <h3>Reaction Guides</h3>
+          <p>Explore organic reaction pages with examples, conditions, schemes, and editor links.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="footer-card">
+      <p><strong>Project:</strong> MolDraw by Scidart Academy. Created by Rafeeque Mavoor. Contact: <a href="mailto:rafeequemavoor@gmail.com">rafeequemavoor@gmail.com</a></p>
+      <a class="btn btn-primary" href="/">Open App</a>
+    </section>
+  </main>
   <script src="/js/site-topbar.js" defer></script>
 </body>
 </html>

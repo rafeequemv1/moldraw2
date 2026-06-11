@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CAS Number to Structure tool by MolDraw. Enter a CAS Registry Number and view the chemical structure, SMILES, formula, molecular weight, and PubChem CID.">
+  <meta name="keywords" content="cas number to structure, cas to structure, cas structure lookup, cas number chemical structure, cas to smiles">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/cas-number-to-structure.html">
+  <title>CAS Number to Structure | Chemical Structure Lookup | MolDraw</title>
+  <meta property="og:title" content="CAS Number to Structure | MolDraw" />
+  <meta property="og:description" content="Resolve CAS numbers to chemical structures and PubChem metadata." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/cas-number-to-structure.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "CAS Number to Structure",
+    "applicationCategory": "ScientificApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/cas-number-to-structure.html",
+    "description": "Resolve CAS Registry Numbers to chemical structures using PubChem records.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(900px, 94vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .top-link { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 700; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 28px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    h3 { font-size: 15px; color: #0f172a; margin: 12px 0 4px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    input { width: 100%; height: 38px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #0f172a; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; margin-bottom: 10px; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn { border-color: #d1d5db; background: #fff; color: #334155; }
+    .actions, .presets, .related-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .presets button, .related-links a { min-height: 30px; border-color: #d1d5db; background: #fff; color: #334155; text-decoration: none; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 800; }
+    .tool-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(280px, 1fr); gap: 12px; align-items: stretch; }
+    .structure-card { border: 1px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; padding: 12px; display: grid; place-items: center; min-height: 280px; }
+    .structure-card img { max-width: 100%; max-height: 260px; background: #fff; border-radius: 10px; }
+    .output { margin-top: 12px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 12px; padding: 12px; min-height: 112px; white-space: pre-wrap; overflow-wrap: anywhere; font-family: 'Courier New', monospace; font-size: 13px; color: #0f172a; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; font-family: inherit; white-space: normal; }
+    ul { padding-left: 18px; }
+    @media (max-width: 760px) { .tool-grid { grid-template-columns: 1fr; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/cas-number-to-smiles-converter.html">CAS to SMILES</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel">
+      <h1>CAS Number to Structure</h1>
+      <p>Look up a CAS Registry Number and view the matching 2D chemical structure, SMILES, formula, molecular weight, and PubChem CID.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> Enter a CAS number such as <strong>64-17-5</strong> or <strong>7732-18-5</strong>. The page resolves a PubChem record and displays the chemical structure image.</div>
+      <div class="tool-grid">
+        <div>
+          <label>CAS Registry Number
+            <input id="casInput" type="text" value="64-17-5" placeholder="Example: 64-17-5">
+          </label>
+          <div class="actions">
+            <button id="lookupBtn" type="button">Show structure</button>
+            <button id="copyBtn" class="ghost-btn" type="button">Copy SMILES</button>
+            <a id="editorLink" class="top-link" href="/" target="_blank" rel="noopener">Open in MolDraw</a>
+          </div>
+          <h3>Examples</h3>
+          <div class="presets">
+            <button type="button" data-cas="64-17-5">Ethanol</button>
+            <button type="button" data-cas="50-00-0">Formaldehyde</button>
+            <button type="button" data-cas="7732-18-5">Water</button>
+            <button type="button" data-cas="67-56-1">Methanol</button>
+          </div>
+          <div id="outputBox" class="output">Structure metadata appears here.</div>
+        </div>
+        <div class="structure-card" id="structureCard">Structure image appears here.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>How CAS to Structure Lookup Works</h2>
+      <p>CAS numbers are resolved through public PubChem synonym records. The tool then uses the matching PubChem CID to display a 2D structure image and metadata.</p>
+      <ul>
+        <li>Verify the result for salts, mixtures, hydrates, and ambiguous registry records.</li>
+        <li>Use the SMILES value to open the compound in MolDraw or convert it to other identifiers.</li>
+      </ul>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/cas-number-to-smiles-converter.html">CAS to SMILES</a>
+        <a href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to Structure</a>
+        <a href="/tools/free-chem-tools/molecular-weight-calculator.html">Molecular Weight Calculator</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const casInput = document.getElementById('casInput');
+    const outputBox = document.getElementById('outputBox');
+    const structureCard = document.getElementById('structureCard');
+    const editorLink = document.getElementById('editorLink');
+    let latestSmiles = '';
+
+    function isValidCas(value) {
+      if (!/^\d{2,7}-\d{2}-\d$/.test(value)) return false;
+      const digits = value.replace(/-/g, '');
+      const check = Number(digits.at(-1));
+      const body = digits.slice(0, -1).split('').reverse();
+      return body.reduce((acc, digit, index) => acc + Number(digit) * (index + 1), 0) % 10 === check;
+    }
+
+    function getSmiles(props) {
+      return props?.IsomericSMILES || props?.CanonicalSMILES || props?.SMILES || props?.ConnectivitySMILES || '';
+    }
+
+    async function lookupCas() {
+      const cas = casInput.value.trim();
+      latestSmiles = '';
+      editorLink.href = '/';
+      if (!isValidCas(cas)) {
+        outputBox.textContent = 'Enter a valid CAS Registry Number, for example 64-17-5.';
+        structureCard.textContent = 'Structure image appears here.';
+        return;
+      }
+      outputBox.textContent = 'Searching PubChem...';
+      structureCard.textContent = 'Loading structure...';
+      try {
+        const cidRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/xref/RN/${encodeURIComponent(cas)}/cids/JSON`);
+        if (!cidRes.ok) throw new Error('No PubChem CID match');
+        const cid = (await cidRes.json())?.IdentifierList?.CID?.[0];
+        if (!cid) throw new Error('No PubChem CID match');
+        const propsRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${encodeURIComponent(cid)}/property/IUPACName,SMILES,CanonicalSMILES,IsomericSMILES,MolecularFormula,MolecularWeight/JSON`);
+        if (!propsRes.ok) throw new Error('No PubChem properties');
+        const props = (await propsRes.json())?.PropertyTable?.Properties?.[0];
+        const smiles = getSmiles(props);
+        if (!props?.CID || !smiles) throw new Error('No structure returned');
+        latestSmiles = smiles;
+        const imgUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${encodeURIComponent(props.CID)}/PNG?image_size=large`;
+        structureCard.innerHTML = `<img src="${imgUrl}" loading="lazy" alt="2D chemical structure for CAS ${cas}">`;
+        editorLink.href = `/?smiles=${encodeURIComponent(smiles)}`;
+        outputBox.textContent = `SMILES: ${smiles}\nCAS: ${cas}\nCID: ${props.CID}\nIUPAC: ${props.IUPACName || 'N/A'}\nFormula: ${props.MolecularFormula || 'N/A'}\nMolecular weight: ${props.MolecularWeight || 'N/A'}`;
+      } catch {
+        outputBox.textContent = 'No PubChem structure match found for this CAS number. Check the CAS number or try another record.';
+        structureCard.textContent = 'Structure image unavailable.';
+      }
+    }
+
+    document.getElementById('lookupBtn').addEventListener('click', lookupCas);
+    document.getElementById('copyBtn').addEventListener('click', async () => { if (latestSmiles) { try { await navigator.clipboard.writeText(latestSmiles); } catch {} } });
+    document.querySelectorAll('[data-cas]').forEach((button) => button.addEventListener('click', () => { casInput.value = button.dataset.cas; lookupCas(); }));
+    lookupCas();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Structure to SMILES converter by MolDraw. Draw a molecule in the 2D editor and get the SMILES string in realtime.">
+  <meta name="keywords" content="structure to smiles, structure to smiles converter, draw structure get smiles, molecule editor smiles, 2d structure to smiles, MolDraw">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/structure-to-smiles-converter.html">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
+  <title>Structure to SMILES Converter | Draw Molecule and Get SMILES | MolDraw</title>
+  <meta property="og:title" content="Structure to SMILES Converter | MolDraw" />
+  <meta property="og:description" content="Draw a molecule in the 2D editor and get a realtime SMILES string." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/structure-to-smiles-converter.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Structure to SMILES Converter",
+    "applicationCategory": "ScientificApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/structure-to-smiles-converter.html",
+    "description": "Draw a chemical structure in a 2D editor and convert it to a realtime SMILES string.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I convert a drawn structure to SMILES?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Draw or edit a molecule in the left 2D editor. The Structure to SMILES tool reads the editor output and updates the SMILES string on the right in realtime."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I copy the generated SMILES?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Use the Copy SMILES button after drawing a structure."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #111827;
+      line-height: 1.6;
+    }
+    .container {
+      width: min(1180px, 95vw);
+      margin: 0 auto;
+      padding: 24px 0 42px;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .top-link {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 6px 10px;
+      text-decoration: none;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 800;
+      background: #fff;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: clamp(28px, 4vw, 38px);
+      line-height: 1.12;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: 18px;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    p, li {
+      color: #475569;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .quick-answer {
+      border: 1px solid #99f6e4;
+      background: #f0fdfa;
+      color: #134e4a;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+    .tool-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.8fr);
+      gap: 12px;
+      align-items: stretch;
+      margin-top: 14px;
+    }
+    .tool-card {
+      min-width: 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #f8fafc;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .editor-frame-wrap {
+      min-height: 560px;
+      border: 1px solid #dbe4ee;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .editor-frame {
+      width: 100%;
+      height: 560px;
+      border: 0;
+      display: block;
+      background: #fff;
+    }
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border: 1px solid #dbe4ee;
+      border-radius: 999px;
+      padding: 0 8px;
+      background: #fff;
+    }
+    .status-pill.ready {
+      border-color: #99f6e4;
+      color: #0f766e;
+      background: #f0fdfa;
+    }
+    textarea {
+      width: 100%;
+      min-height: 210px;
+      border: 1px solid #cfd8e3;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #0f172a;
+      background: #fff;
+      resize: vertical;
+      overflow-wrap: anywhere;
+    }
+    .actions,
+    .examples,
+    .related-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    button {
+      border: 1px solid #2C7A7B;
+      background: #2C7A7B;
+      color: #fff;
+      border-radius: 8px;
+      min-height: 34px;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .ghost-btn,
+    .examples button {
+      border-color: #d1d5db;
+      background: #fff;
+      color: #334155;
+    }
+    .message {
+      min-height: 34px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      color: #64748b;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .meta-grid span {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 8px;
+      background: #fff;
+      color: #334155;
+      font-size: 13px;
+    }
+    .meta-grid strong {
+      display: block;
+      color: #0f172a;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .related-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 0 9px;
+      background: #fff;
+      color: #334155;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    ul { padding-left: 18px; }
+    @media (max-width: 900px) {
+      .tool-shell { grid-template-columns: 1fr; }
+      .editor-frame-wrap,
+      .editor-frame { min-height: 460px; height: 460px; }
+      .meta-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to Structure</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel">
+      <h1>Structure to SMILES Converter</h1>
+      <p>Draw or edit a molecule in the 2D editor on the left. The SMILES string updates on the right as the structure changes.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> draw a molecule in the editor and copy the realtime SMILES output.</div>
+
+      <div class="tool-shell">
+        <section class="tool-card" aria-label="2D structure editor">
+          <div class="status-row">
+            <h2>2D Structure Editor</h2>
+            <span id="editorStatus" class="status-pill">Loading editor...</span>
+          </div>
+          <div class="editor-frame-wrap">
+            <iframe id="editorFrame" class="editor-frame" src="/ketcher-bridge.html" title="Structure editor for SMILES conversion"></iframe>
+          </div>
+        </section>
+
+        <aside class="tool-card" aria-label="SMILES output">
+          <h2>Realtime SMILES</h2>
+          <textarea id="smilesOutput" readonly spellcheck="false" placeholder="SMILES output appears here as you draw."></textarea>
+          <div class="actions">
+            <button id="copyBtn" type="button">Copy SMILES</button>
+            <button id="clearBtn" class="ghost-btn" type="button">Clear editor</button>
+            <a id="openAppLink" class="top-link" href="/" target="_blank" rel="noopener noreferrer">Open in MolDraw</a>
+          </div>
+          <div id="messageBox" class="message">Waiting for editor.</div>
+          <div class="examples" aria-label="Structure examples">
+            <button type="button" data-smiles="CCO">Ethanol</button>
+            <button type="button" data-smiles="CC(=O)OC1=CC=CC=C1C(=O)O">Aspirin</button>
+            <button type="button" data-smiles="Cn1cnc2c1c(=O)n(C)c(=O)n2C">Caffeine</button>
+            <button type="button" data-smiles="CC(C)CC1=CC=C(C=C1)C(C)C(=O)O">Ibuprofen</button>
+          </div>
+          <div class="meta-grid">
+            <span><strong>Atoms</strong><span id="atomCount">0</span></span>
+            <span><strong>Last update</strong><span id="lastUpdate">Not yet</span></span>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>How Structure to SMILES Works</h2>
+      <p>This page embeds the existing MolDraw 2D editor and listens for realtime editor messages. When Ketcher updates the molecule, the tool reads the generated SMILES and displays it in the output box.</p>
+      <ul>
+        <li>Use it when you want to sketch a molecule and immediately copy a SMILES string.</li>
+        <li>Check stereochemistry, charges, aromaticity, and salts before using SMILES in databases or modeling workflows.</li>
+        <li>For the reverse workflow, use the SMILES to Structure tool.</li>
+      </ul>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to structure</a>
+        <a href="/tools/free-chem-tools/smiles-to-iupac-name-converter.html">SMILES to IUPAC</a>
+        <a href="/tools/free-chem-tools/smiles-to-molecular-formula.html">SMILES to formula</a>
+        <a href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">SMILES to 3D</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const editorFrame = document.getElementById('editorFrame');
+    const editorStatus = document.getElementById('editorStatus');
+    const smilesOutput = document.getElementById('smilesOutput');
+    const messageBox = document.getElementById('messageBox');
+    const atomCount = document.getElementById('atomCount');
+    const lastUpdate = document.getElementById('lastUpdate');
+    const openAppLink = document.getElementById('openAppLink');
+    let editorReady = false;
+    let latestSmiles = '';
+
+    function editorWindow() {
+      return editorFrame && editorFrame.contentWindow;
+    }
+
+    function setMessage(text) {
+      messageBox.textContent = text;
+    }
+
+    function countAtomsFromMolfile(molfile) {
+      const line = String(molfile || '').replace(/\r\n/g, '\n').split('\n').find((item) => /^\s*\d+\s+\d+\s+/.test(item));
+      if (!line) return 0;
+      const match = line.match(/^\s*(\d+)\s+\d+\s+/);
+      return match ? Number(match[1]) || 0 : 0;
+    }
+
+    function setSmiles(smiles, molfile) {
+      latestSmiles = String(smiles || '').trim();
+      smilesOutput.value = latestSmiles;
+      atomCount.textContent = String(countAtomsFromMolfile(molfile));
+      lastUpdate.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      openAppLink.href = latestSmiles ? `/?smiles=${encodeURIComponent(latestSmiles)}` : '/';
+      setMessage(latestSmiles ? 'SMILES updated from the editor.' : 'Draw a structure to generate SMILES.');
+    }
+
+    function requestSmiles() {
+      if (!editorReady || !editorWindow()) return;
+      editorWindow().postMessage({ type: 'get-smiles' }, '*');
+      editorWindow().postMessage({ type: 'get-molfile' }, '*');
+    }
+
+    window.addEventListener('message', (event) => {
+      const data = event.data || {};
+      if (data.type === 'ketcher-ready') {
+        editorReady = true;
+        editorStatus.textContent = 'Editor ready';
+        editorStatus.classList.add('ready');
+        setMessage('Draw a structure in the editor.');
+        requestSmiles();
+      } else if (data.type === 'editor-change') {
+        setSmiles(data.smiles || '', data.molfile || '');
+      } else if (data.type === 'smiles-response') {
+        setSmiles(data.smiles || latestSmiles, window.latestMolfile || '');
+      } else if (data.type === 'molfile-response') {
+        window.latestMolfile = data.molfile || '';
+        atomCount.textContent = String(countAtomsFromMolfile(window.latestMolfile));
+      } else if (data.type === 'molecule-set') {
+        if (data.success) {
+          setSmiles(data.smiles || '', data.molfile || '');
+        } else {
+          setMessage(data.error || 'Could not load sample structure.');
+        }
+      } else if (data.type === 'smiles-error') {
+        setMessage(data.error || 'Could not read SMILES.');
+      }
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      if (!latestSmiles) {
+        setMessage('No SMILES to copy yet.');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(latestSmiles);
+        setMessage('SMILES copied.');
+      } catch {
+        window.prompt('Copy this SMILES:', latestSmiles);
+      }
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (editorReady && editorWindow()) {
+        editorWindow().postMessage({ type: 'clear-editor' }, '*');
+      }
+      setSmiles('', '');
+      window.latestMolfile = '';
+    });
+
+    document.querySelectorAll('[data-smiles]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const smiles = button.getAttribute('data-smiles') || '';
+        if (!editorReady || !editorWindow()) {
+          setMessage('Editor is still loading.');
+          return;
+        }
+        editorWindow().postMessage({ type: 'set-molecule', smiles }, '*');
+      });
+    });
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

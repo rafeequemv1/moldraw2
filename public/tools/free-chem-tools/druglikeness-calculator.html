@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Free druglikeness calculator for SMILES or compound names. Check Lipinski and Veber-style properties including MW, LogP, HBD, HBA, TPSA, and rotatable bonds.">
+  <meta name="keywords" content="druglikeness calculator, drug likeness score, Lipinski Veber calculator, SMILES druglikeness, oral drug likeness">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/druglikeness-calculator.html">
+  <title>Druglikeness Calculator | Lipinski and Veber Checks | MolDraw</title>
+  <meta property="og:title" content="Druglikeness Calculator | MolDraw" />
+  <meta property="og:description" content="Calculate lightweight druglikeness from SMILES or compound name using PubChem properties." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/druglikeness-calculator.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Druglikeness Calculator","applicationCategory":"ScientificApplication","operatingSystem":"Web","url":"https://www.moldraw.com/tools/free-chem-tools/druglikeness-calculator.html","description":"Calculate a lightweight druglikeness guideline score from SMILES or compound name.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(960px, 94vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav, .actions, .examples, .radio-row, .related-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .top-nav { margin-bottom: 14px; }
+    .top-link, .related-links a { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 800; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 30px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    textarea { width: 100%; min-height: 86px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 10px 12px; font-family: 'Courier New', monospace; font-size: 13px; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn, .examples button { border-color: #d1d5db; background: #fff; color: #334155; }
+    .radio-row label { display: inline-flex; align-items: center; gap: 6px; color: #334155; font-size: 13px; font-weight: 800; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .output { margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; padding: 12px; min-height: 140px; overflow-wrap: anywhere; color: #0f172a; }
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 10px 0; }
+    .meta-grid span { border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px; background: #fff; font-size: 13px; color: #334155; }
+    .meta-grid strong { display: block; color: #0f172a; font-size: 11px; text-transform: uppercase; }
+    .score-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .score-table th, .score-table td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+    .score-table th { background: #fff; color: #0f172a; }
+    .pass { color: #047857; font-weight: 900; }
+    .fail { color: #b45309; font-weight: 900; }
+    .note { color: #64748b; margin-top: 10px; font-size: 13px; }
+    ul { padding-left: 18px; }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/lipinski-rule-calculator.html">Lipinski Rule Calculator</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel" data-medchem-tool="druglikeness">
+      <h1>Druglikeness Calculator</h1>
+      <p>Enter a SMILES string or compound name to calculate a simple druglikeness guideline score from Lipinski and Veber-style properties.</p>
+      <div id="summaryBox" class="quick-answer">Enter a compound to calculate.</div>
+      <div class="radio-row">
+        <label><input type="radio" name="inputType" value="smiles" checked> SMILES</label>
+        <label><input type="radio" name="inputType" value="name"> Compound name</label>
+      </div>
+      <textarea id="compoundInput" spellcheck="false">CC(C)CC1=CC=C(C=C1)C(C)C(=O)O</textarea>
+      <div class="examples">
+        <button type="button" data-example="CC(C)CC1=CC=C(C=C1)C(C)C(=O)O">Ibuprofen</button>
+        <button type="button" data-example="caffeine" data-type="name">Caffeine name</button>
+        <button type="button" data-example="glucose" data-type="name">Glucose name</button>
+      </div>
+      <div class="actions">
+        <button id="calculateBtn" type="button">Calculate druglikeness</button>
+        <button id="copyBtn" class="ghost-btn" type="button">Copy result</button>
+        <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+      </div>
+      <div id="outputBox" class="output">Results appear here.</div>
+    </section>
+
+    <section class="panel">
+      <h2>How the Druglikeness Score Works</h2>
+      <p>This tool combines six common medicinal chemistry property checks: Lipinski molecular weight, LogP, H-bond donors, H-bond acceptors, plus Veber-style TPSA and rotatable bond checks. The score is the percentage of these checks that pass.</p>
+      <ul>
+        <li>Use it for quick triage, teaching, and early compound comparison.</li>
+        <li>Do not treat the score as a prediction of potency, safety, or approval likelihood.</li>
+        <li>Natural products, macrocycles, prodrugs, and specialized target classes may fall outside these simple guidelines.</li>
+      </ul>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/lipinski-rule-calculator.html">Lipinski rule calculator</a>
+        <a href="/tools/free-chem-tools/logp-calculator.html">LogP calculator</a>
+        <a href="/tools/free-chem-tools/tpsa-calculator.html">TPSA calculator</a>
+      </div>
+    </section>
+  </main>
+  <script src="/js/medchem-property-tools.js" defer></script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

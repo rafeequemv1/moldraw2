@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="pKa calculator by MolDraw. Calculate pKa from pH and base/acid ratio, pH from pKa, or Henderson-Hasselbalch buffer ratios.">
+  <meta name="keywords" content="pka calculator, ph to pka calculator, pka from ph, Henderson Hasselbalch calculator, ph pka calculator, buffer pka calculator">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/pka-calculator.html">
+  <title>pKa Calculator | pH to pKa and Henderson-Hasselbalch | MolDraw</title>
+  <meta property="og:title" content="pKa Calculator | MolDraw" />
+  <meta property="og:description" content="Calculate pKa, pH, or buffer ratio using Henderson-Hasselbalch." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/pka-calculator.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"pKa Calculator","applicationCategory":"EducationalApplication","operatingSystem":"Web","url":"https://www.moldraw.com/tools/free-chem-tools/pka-calculator.html","description":"Calculate pKa, pH, or buffer ratio using Henderson-Hasselbalch equation.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(920px, 94vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav, .actions, .mode-tabs, .related-links, .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .top-nav { margin-bottom: 14px; }
+    .top-link, .related-links a { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 800; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 29px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .tool-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(300px, 1fr); gap: 12px; align-items: stretch; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; margin-bottom: 10px; }
+    input { width: 100%; height: 38px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #0f172a; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn, .mode-tabs button, .presets button { border-color: #d1d5db; background: #fff; color: #334155; }
+    .mode-tabs button.active { border-color: #2C7A7B; background: #2C7A7B; color: #fff; }
+    .result { border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; padding: 14px; min-height: 210px; }
+    .result strong { display: block; color: #0f172a; font-size: 24px; margin-bottom: 6px; }
+    .result code { display: block; white-space: pre-wrap; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; padding: 8px; margin-top: 8px; color: #0f172a; }
+    .warning { border: 1px solid #fde68a; background: #fffbeb; color: #92400e; border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+    ul { padding-left: 18px; }
+    @media (max-width: 780px) { .tool-grid { grid-template-columns: 1fr; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/ph-calculator.html">pH Calculator</a>
+      <a class="top-link" href="/tools/free-chem-tools/dilution-calculator.html">Dilution Calculator</a>
+    </nav>
+    <section class="panel">
+      <h1>pKa Calculator</h1>
+      <p>Calculate pKa from pH and conjugate base/acid ratio, calculate buffer pH from pKa, or solve for the base/acid ratio with Henderson-Hasselbalch.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> pH = pKa + log10(base / acid), so pKa = pH - log10(base / acid).</div>
+      <div class="tool-grid">
+        <div>
+          <div class="mode-tabs">
+            <button type="button" class="active" data-mode="pka">pH to pKa</button>
+            <button type="button" data-mode="ph">pKa to pH</button>
+            <button type="button" data-mode="ratio">Target ratio</button>
+          </div>
+          <div id="fields"></div>
+          <div class="actions">
+            <button id="calcBtn" type="button">Calculate</button>
+            <button id="copyBtn" class="ghost-btn" type="button">Copy result</button>
+            <button id="resetBtn" class="ghost-btn" type="button">Reset</button>
+          </div>
+          <div class="presets">
+            <button type="button" data-preset="acetate">Acetate buffer</button>
+            <button type="button" data-preset="phosphate">Phosphate buffer</button>
+          </div>
+        </div>
+        <div id="resultBox" class="result">Result appears here.</div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Henderson-Hasselbalch pKa Formula</h2>
+      <ul>
+        <li><strong>pH:</strong> pH = pKa + log10(base / acid).</li>
+        <li><strong>pKa:</strong> pKa = pH - log10(base / acid).</li>
+        <li><strong>base/acid ratio:</strong> base / acid = 10^(pH - pKa).</li>
+      </ul>
+      <p class="warning">This educational calculator assumes ideal buffer behavior. Activity, ionic strength, temperature, and buffer capacity can shift real measured pH.</p>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/ph-calculator.html">pH calculator</a>
+        <a href="/tools/free-chem-tools/molarity-calculator.html">Molarity calculator</a>
+        <a href="/tools/free-chem-tools/dilution-calculator.html">Dilution calculator</a>
+      </div>
+    </section>
+  </main>
+  <script>
+    const fields = document.getElementById('fields');
+    const resultBox = document.getElementById('resultBox');
+    let mode = 'pka';
+    const config = {
+      pka: [{ id: 'ph', label: 'pH', value: '4.76' }, { id: 'base', label: 'Conjugate base amount/concentration', value: '0.10' }, { id: 'acid', label: 'Weak acid amount/concentration', value: '0.10' }],
+      ph: [{ id: 'pka', label: 'pKa', value: '4.76' }, { id: 'base', label: 'Conjugate base amount/concentration', value: '0.10' }, { id: 'acid', label: 'Weak acid amount/concentration', value: '0.10' }],
+      ratio: [{ id: 'ph', label: 'Target pH', value: '5.00' }, { id: 'pka', label: 'pKa', value: '4.76' }]
+    };
+    function n(id) { const value = Number(document.getElementById(id)?.value); return Number.isFinite(value) ? value : NaN; }
+    function renderFields() {
+      fields.innerHTML = config[mode].map((field) => `<label>${field.label}<input id="${field.id}" type="number" step="any" value="${field.value}"></label>`).join('');
+      fields.querySelectorAll('input').forEach((el) => el.addEventListener('input', calculate));
+      calculate();
+    }
+    function show(title, lines, formula) { resultBox.innerHTML = `<strong>${title}</strong>${lines.map((line) => `<div>${line}</div>`).join('')}<code>${formula}</code>`; }
+    function calculate() {
+      try {
+        if (mode === 'pka') {
+          const ph = n('ph'); const base = n('base'); const acid = n('acid');
+          if (base <= 0 || acid <= 0) throw new Error('Base and acid must be positive.');
+          const ratio = base / acid; const pka = ph - Math.log10(ratio);
+          show(`pKa = ${pka.toFixed(4)}`, [`pH = ${ph}`, `Base/acid ratio = ${ratio.toFixed(4)}`], `pKa = pH - log10(base / acid)`);
+        } else if (mode === 'ph') {
+          const pka = n('pka'); const base = n('base'); const acid = n('acid');
+          if (base <= 0 || acid <= 0) throw new Error('Base and acid must be positive.');
+          const ratio = base / acid; const ph = pka + Math.log10(ratio);
+          show(`pH = ${ph.toFixed(4)}`, [`pKa = ${pka}`, `Base/acid ratio = ${ratio.toFixed(4)}`], `pH = pKa + log10(base / acid)`);
+        } else {
+          const ph = n('ph'); const pka = n('pka'); const ratio = 10 ** (ph - pka);
+          show(`Base/acid ratio = ${ratio.toFixed(4)}`, [`Target pH = ${ph}`, `pKa = ${pka}`], `base / acid = 10^(pH - pKa)`);
+        }
+      } catch (err) { resultBox.textContent = err.message || 'Could not calculate.'; }
+    }
+    document.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => { mode = button.dataset.mode; document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('active', b === button)); renderFields(); }));
+    document.getElementById('calcBtn').addEventListener('click', calculate);
+    document.getElementById('copyBtn').addEventListener('click', async () => { try { await navigator.clipboard.writeText(resultBox.textContent.trim()); } catch {} });
+    document.getElementById('resetBtn').addEventListener('click', renderFields);
+    document.querySelectorAll('[data-preset]').forEach((button) => button.addEventListener('click', () => {
+      if (button.dataset.preset === 'phosphate') { mode = 'ph'; config.ph[0].value = '7.21'; config.ph[1].value = '0.10'; config.ph[2].value = '0.10'; }
+      else { mode = 'ph'; config.ph[0].value = '4.76'; config.ph[1].value = '0.10'; config.ph[2].value = '0.10'; }
+      document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+      renderFields();
+    }));
+    renderFields();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

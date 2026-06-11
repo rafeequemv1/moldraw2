@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Mass spectrum predictor and isotope pattern tool by MolDraw. Import by PubChem name, draw a molecule, paste SMILES, or enter a formula to estimate monoisotopic mass, average mass, molecular ion peak, M+1/M+2 isotope peaks, and an isotope pattern chart.">
+  <meta name="keywords" content="mass spectrum predictor, isotope pattern calculator, PubChem mass spectrum, molecular ion peak calculator, M+1 peak, M+2 peak, exact mass calculator, mass spectrometry tool">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/mass-spectrum-predictor.html">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
+  <title>Mass Spectrum Predictor | Isotope Pattern Calculator | MolDraw</title>
+  <meta property="og:title" content="Mass Spectrum Predictor | MolDraw" />
+  <meta property="og:description" content="Predict isotope pattern peaks from a drawn molecule, SMILES, or molecular formula." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/mass-spectrum-predictor.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Mass Spectrum Predictor",
+    "applicationCategory": "ScientificApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/mass-spectrum-predictor.html",
+    "description": "Predict isotope patterns, monoisotopic mass, average mass, and molecular ion peaks from formula, SMILES, or drawn structure.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What does this mass spectrum predictor calculate?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It estimates the isotope pattern from the molecular formula, including monoisotopic mass, average mass, nominal molecular ion peak, and relative M, M+1, M+2 and higher isotope peaks."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does this predict EI or MS/MS fragmentation?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. This first version predicts isotope distribution from elemental composition. Fragmentation depends on instrument conditions and chemistry-specific pathways."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(1180px, 95vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .top-link { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 800; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.12; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    h3 { font-size: 15px; color: #0f172a; margin-bottom: 6px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; margin-bottom: 10px; }
+    input, textarea { width: 100%; border: 1px solid #cfd8e3; border-radius: 10px; padding: 9px 11px; font-size: 14px; color: #0f172a; background: #fff; }
+    textarea { min-height: 70px; font-family: 'Courier New', monospace; resize: vertical; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn, .examples button, .related-links a { border-color: #d1d5db; background: #fff; color: #334155; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .tool-shell { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr); gap: 12px; align-items: start; margin-top: 14px; }
+    .tool-card { min-width: 0; border: 1px solid #e2e8f0; border-radius: 14px; background: #f8fafc; padding: 12px; display: grid; gap: 10px; }
+    .editor-frame-wrap { min-height: 440px; border: 1px solid #dbe4ee; border-radius: 12px; overflow: hidden; background: #fff; }
+    .editor-frame { width: 100%; height: 440px; border: 0; display: block; background: #fff; }
+    .actions, .examples, .related-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .examples button, .related-links a { min-height: 30px; border-radius: 8px; padding: 6px 10px; text-decoration: none; font-size: 12px; font-weight: 800; }
+    .status { border: 1px solid #e2e8f0; background: #fff; color: #64748b; border-radius: 10px; padding: 8px 10px; font-size: 12px; min-height: 34px; }
+    .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .metric { border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 10px; min-width: 0; }
+    .metric span { display: block; color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+    .metric strong { display: block; color: #0f172a; font-size: 18px; line-height: 1.25; overflow-wrap: anywhere; }
+    .chart-box { border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 10px; overflow: hidden; }
+    .spectrum-svg { display: block; width: 100%; height: auto; max-height: 300px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border-radius: 12px; overflow: hidden; }
+    th, td { border: 1px solid #e5e7eb; padding: 7px 8px; text-align: left; }
+    th { background: #f8fafc; color: #0f172a; }
+    .note { color: #64748b; font-size: 12px; margin: 0; }
+    ul { padding-left: 18px; }
+    @media (max-width: 900px) { .tool-shell, .result-grid { grid-template-columns: 1fr; } .editor-frame, .editor-frame-wrap { min-height: 380px; height: 380px; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/exact-mass-calculator.html">Exact Mass</a>
+      <a class="top-link" href="/tools/free-chem-tools/molecular-formula-to-structure.html">Formula Search</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel">
+      <h1>Mass Spectrum Predictor</h1>
+      <p>Import a compound by PubChem name, draw a molecule, paste SMILES, or enter a molecular formula to estimate isotope pattern peaks, monoisotopic mass, average mass, and the molecular ion region.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> search PubChem by name or CID, draw a structure, paste SMILES, or type a formula. The isotope pattern updates from the molecular formula.</div>
+      <div class="tool-shell">
+        <div class="tool-card">
+          <h2>Draw or Paste Input</h2>
+          <div class="editor-frame-wrap">
+            <iframe id="editorFrame" class="editor-frame" src="/ketcher-bridge.html" title="MolDraw 2D editor for mass spectrum prediction"></iframe>
+          </div>
+          <label>Import from PubChem by name or CID
+            <input id="pubchemInput" type="text" value="aspirin" placeholder="Example: aspirin, caffeine, ibuprofen, 2244">
+          </label>
+          <div class="actions">
+            <button id="pubchemBtn" type="button">Import from PubChem</button>
+          </div>
+          <label>SMILES input
+            <textarea id="smilesInput" spellcheck="false" placeholder="Example: CC(=O)OC1=CC=CC=C1C(=O)O"></textarea>
+          </label>
+          <div class="actions">
+            <button id="smilesBtn" type="button">Get formula from SMILES</button>
+            <button id="drawnBtn" class="ghost-btn" type="button">Use drawn molecule</button>
+            <button id="clearEditorBtn" class="ghost-btn" type="button">Clear editor</button>
+          </div>
+          <label>Molecular formula
+            <input id="formulaInput" type="text" value="C9H8O4" placeholder="Example: C9H8O4, C8H10N4O2, C6H12O6">
+          </label>
+          <div class="actions">
+            <button id="predictBtn" type="button">Predict isotope pattern</button>
+            <button id="copyBtn" class="ghost-btn" type="button">Copy peaks</button>
+          </div>
+          <div class="examples">
+            <button type="button" data-smiles="CC(=O)OC1=CC=CC=C1C(=O)O" data-formula="C9H8O4">Aspirin</button>
+            <button type="button" data-smiles="Cn1cnc2c1c(=O)n(C)c(=O)n2C" data-formula="C8H10N4O2">Caffeine</button>
+            <button type="button" data-smiles="Clc1ccccc1" data-formula="C6H5Cl">Chlorobenzene</button>
+            <button type="button" data-smiles="Brc1ccccc1" data-formula="C6H5Br">Bromobenzene</button>
+          </div>
+          <div id="statusBox" class="status">Ready. Formula prediction is fully client-side; SMILES lookup uses PubChem.</div>
+        </div>
+        <div class="tool-card">
+          <h2>Predicted Spectrum</h2>
+          <div class="actions">
+            <button id="downloadPngBtn" class="ghost-btn" type="button">Download PNG</button>
+            <button id="downloadCsvBtn" class="ghost-btn" type="button">Download CSV</button>
+          </div>
+          <div class="result-grid" id="metricsGrid"></div>
+          <div class="chart-box" id="chartBox">Spectrum chart appears here.</div>
+          <div id="peaksBox"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>What This Mass Spectrum Tool Predicts</h2>
+      <p>This tool predicts isotope distribution from elemental composition. It is useful for molecular ion peak checks, M+1/M+2 pattern interpretation, chlorine/bromine isotope patterns, and exact mass teaching.</p>
+      <ul>
+        <li><strong>Monoisotopic mass:</strong> mass from the lightest common isotopes.</li>
+        <li><strong>Average mass:</strong> abundance-weighted molecular mass.</li>
+        <li><strong>Isotope pattern:</strong> relative molecular ion peaks from natural isotope abundances.</li>
+      </ul>
+      <p class="note">This is not an EI fragmentation or MS/MS predictor. Fragment ions depend on ionization method, collision energy, instrument settings, and molecule-specific fragmentation pathways.</p>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/exact-mass-calculator.html">Exact mass calculator</a>
+        <a href="/tools/free-chem-tools/molecular-weight-calculator.html">Molecular weight calculator</a>
+        <a href="/tools/free-chem-tools/molecular-formula-to-structure.html">Formula to structure search</a>
+        <a href="/tools/free-chem-tools/smiles-to-molecular-formula.html">SMILES to molecular formula</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const formulaInput = document.getElementById('formulaInput');
+    const smilesInput = document.getElementById('smilesInput');
+    const pubchemInput = document.getElementById('pubchemInput');
+    const metricsGrid = document.getElementById('metricsGrid');
+    const chartBox = document.getElementById('chartBox');
+    const peaksBox = document.getElementById('peaksBox');
+    const statusBox = document.getElementById('statusBox');
+    const editorFrame = document.getElementById('editorFrame');
+    let latestPeaksText = '';
+    let latestPeaks = [];
+    let latestFormula = '';
+    let latestDrawnSmiles = '';
+    let editorReady = false;
+    let smilesLookupTimer = null;
+    let smilesLookupToken = 0;
+    const formulaCache = new Map();
+
+    const isotopeData = {
+      H: [{ mass: 1.007825032, abundance: 0.999885 }, { mass: 2.014101778, abundance: 0.000115 }],
+      C: [{ mass: 12.000000000, abundance: 0.9893 }, { mass: 13.003354836, abundance: 0.0107 }],
+      N: [{ mass: 14.003074005, abundance: 0.99636 }, { mass: 15.000108899, abundance: 0.00364 }],
+      O: [{ mass: 15.994914620, abundance: 0.99757 }, { mass: 16.999131757, abundance: 0.00038 }, { mass: 17.999159613, abundance: 0.00205 }],
+      F: [{ mass: 18.998403163, abundance: 1 }],
+      P: [{ mass: 30.973761998, abundance: 1 }],
+      S: [{ mass: 31.972071174, abundance: 0.9499 }, { mass: 32.971458910, abundance: 0.0075 }, { mass: 33.967867004, abundance: 0.0425 }, { mass: 35.96708071, abundance: 0.0001 }],
+      Cl: [{ mass: 34.968852682, abundance: 0.7576 }, { mass: 36.965902602, abundance: 0.2424 }],
+      Br: [{ mass: 78.9183376, abundance: 0.5069 }, { mass: 80.9162897, abundance: 0.4931 }],
+      I: [{ mass: 126.9044719, abundance: 1 }],
+      Si: [{ mass: 27.976926535, abundance: 0.9223 }, { mass: 28.976494665, abundance: 0.0467 }, { mass: 29.973770137, abundance: 0.0310 }],
+      B: [{ mass: 10.01293695, abundance: 0.199 }, { mass: 11.00930536, abundance: 0.801 }],
+      Na: [{ mass: 22.98976928, abundance: 1 }],
+      K: [{ mass: 38.96370649, abundance: 0.932581 }, { mass: 39.96399817, abundance: 0.000117 }, { mass: 40.96182526, abundance: 0.067302 }]
+    };
+
+    function setStatus(text) {
+      statusBox.textContent = text;
+    }
+
+    function mergeCounts(target, source, factor = 1) {
+      Object.entries(source).forEach(([element, count]) => {
+        target[element] = (target[element] || 0) + count * factor;
+      });
+    }
+
+    function parseFormula(formula) {
+      let i = 0;
+      const clean = String(formula || '').replace(/\s+/g, '');
+      function parseNumber() {
+        const match = clean.slice(i).match(/^(\d+(?:\.\d+)?)/);
+        if (!match) return 1;
+        i += match[1].length;
+        return Number(match[1]);
+      }
+      function parseGroup() {
+        const counts = {};
+        while (i < clean.length) {
+          if (clean[i] === '(') {
+            i++;
+            const inner = parseGroup();
+            if (clean[i] !== ')') throw new Error('Missing closing parenthesis.');
+            i++;
+            mergeCounts(counts, inner, parseNumber());
+          } else if (clean[i] === ')') {
+            break;
+          } else {
+            const match = clean.slice(i).match(/^([A-Z][a-z]?)/);
+            if (!match) throw new Error('Invalid formula near "' + clean.slice(i) + '".');
+            const element = match[1];
+            if (!isotopeData[element]) throw new Error('Isotope table does not include element: ' + element);
+            i += element.length;
+            counts[element] = (counts[element] || 0) + parseNumber();
+          }
+        }
+        return counts;
+      }
+      if (!clean) throw new Error('Enter a molecular formula first.');
+      const counts = parseGroup();
+      if (i !== clean.length) throw new Error('Could not parse entire formula.');
+      return counts;
+    }
+
+    function normalizeElementSymbol(symbol) {
+      const raw = String(symbol || '').replace(/[^A-Za-z]/g, '');
+      if (!raw) return '';
+      if (raw.length >= 2) return `${raw[0].toUpperCase()}${raw[1].toLowerCase()}`;
+      return raw[0].toUpperCase();
+    }
+
+    function getV2000FormalCharge(chargeCode) {
+      return ({ 1: 3, 2: 2, 3: 1, 5: -1, 6: -2, 7: -3 }[chargeCode] || 0);
+    }
+
+    function getPreferredValence(element, charge = 0) {
+      if (element === 'N' && charge > 0) return 4;
+      if (element === 'N' && charge < 0) return 2;
+      if (element === 'O' && charge < 0) return 1;
+      if (element === 'S' && charge < 0) return 1;
+      return ({ C: 4, Si: 4, N: 3, P: 3, O: 2, S: 2, F: 1, Cl: 1, Br: 1, I: 1, B: 3 }[element] || 0);
+    }
+
+    function getHillFormula(counts) {
+      const entries = Object.entries(counts || {}).filter(([, count]) => count > 0);
+      if (!entries.length) return '';
+      const order = [];
+      if (counts.C > 0) {
+        order.push('C');
+        if (counts.H > 0) order.push('H');
+      }
+      entries
+        .map(([element]) => element)
+        .filter((element) => !order.includes(element))
+        .sort((a, b) => a.localeCompare(b))
+        .forEach((element) => order.push(element));
+      return order
+        .filter((element) => counts[element] > 0)
+        .map((element) => `${element}${counts[element] === 1 ? '' : counts[element]}`)
+        .join('');
+    }
+
+    function parseMolfileForFormula(molfile) {
+      const text = String(molfile || '');
+      if (!text.trim()) return null;
+      const lines = text.split(/\r?\n/);
+      const atoms = [];
+      const bonds = [];
+
+      if (/V3000/i.test(text)) {
+        let inAtomBlock = false;
+        let inBondBlock = false;
+        lines.forEach((line) => {
+          const trimmed = line.trim();
+          if (/M\s+V30\s+BEGIN\s+ATOM/i.test(trimmed)) {
+            inAtomBlock = true;
+            return;
+          }
+          if (/M\s+V30\s+END\s+ATOM/i.test(trimmed)) {
+            inAtomBlock = false;
+            return;
+          }
+          if (/M\s+V30\s+BEGIN\s+BOND/i.test(trimmed)) {
+            inBondBlock = true;
+            return;
+          }
+          if (/M\s+V30\s+END\s+BOND/i.test(trimmed)) {
+            inBondBlock = false;
+            return;
+          }
+          const parts = trimmed.replace(/^\s*M\s+V30\s+/i, '').trim().split(/\s+/);
+          if (inAtomBlock && parts.length >= 5) {
+            const id = Number.parseInt(parts[0], 10);
+            const element = normalizeElementSymbol(parts[1]);
+            const chargeMatch = trimmed.match(/\bCHG=(-?\d+)/i);
+            const charge = chargeMatch ? Number.parseInt(chargeMatch[1], 10) : 0;
+            if (Number.isFinite(id) && element) atoms.push({ id, element, charge: Number.isFinite(charge) ? charge : 0 });
+          }
+          if (inBondBlock && parts.length >= 4) {
+            const order = Number.parseInt(parts[1], 10);
+            const a1 = Number.parseInt(parts[2], 10);
+            const a2 = Number.parseInt(parts[3], 10);
+            if (Number.isFinite(a1) && Number.isFinite(a2)) bonds.push({ a1, a2, order });
+          }
+        });
+        return atoms.length ? { atoms, bonds } : null;
+      }
+
+      const countsIdx = lines.findIndex((line) => /^\s*\d+\s+\d+/.test(line));
+      if (countsIdx < 0) return null;
+      const countsParts = lines[countsIdx].trim().split(/\s+/);
+      const atomCount = Number.parseInt(countsParts[0], 10);
+      const bondCount = Number.parseInt(countsParts[1], 10);
+      if (!Number.isFinite(atomCount) || atomCount <= 0) return null;
+
+      for (let i = 0; i < atomCount; i += 1) {
+        const line = lines[countsIdx + 1 + i] || '';
+        const parts = line.trim().split(/\s+/);
+        const element = normalizeElementSymbol(line.slice(31, 34).trim() || parts[3]);
+        const charge = getV2000FormalCharge(Number.parseInt(parts[5], 10) || 0);
+        if (element) atoms.push({ id: i + 1, element, charge });
+      }
+
+      const safeBondCount = Number.isFinite(bondCount) && bondCount > 0 ? bondCount : 0;
+      for (let i = 0; i < safeBondCount; i += 1) {
+        const parts = String(lines[countsIdx + 1 + atomCount + i] || '').trim().split(/\s+/);
+        const a1 = Number.parseInt(parts[0], 10);
+        const a2 = Number.parseInt(parts[1], 10);
+        const order = Number.parseInt(parts[2], 10);
+        if (Number.isFinite(a1) && Number.isFinite(a2)) bonds.push({ a1, a2, order });
+      }
+
+      return atoms.length ? { atoms, bonds } : null;
+    }
+
+    function formulaFromMolfile(molfile) {
+      const parsed = parseMolfileForFormula(molfile);
+      if (!parsed?.atoms?.length) return '';
+      const counts = {};
+      const addCount = (element, amount = 1) => {
+        counts[element] = (counts[element] || 0) + amount;
+      };
+      parsed.atoms.forEach((atom) => addCount(atom.element));
+      parsed.atoms.forEach((atom) => {
+        if (atom.element === 'H') return;
+        const valence = getPreferredValence(atom.element, atom.charge || 0);
+        if (!valence) return;
+        const bondOrderSum = parsed.bonds
+          .filter((bond) => bond.a1 === atom.id || bond.a2 === atom.id)
+          .reduce((sum, bond) => {
+            const order = Number.isFinite(bond.order) ? bond.order : 1;
+            return sum + (order === 4 ? 1.5 : Math.max(1, Math.min(order, 3)));
+          }, 0);
+        const implicitH = Math.max(0, Math.round(valence - bondOrderSum));
+        if (implicitH > 0) addCount('H', implicitH);
+      });
+      return getHillFormula(counts);
+    }
+
+    function convolve(a, b) {
+      const out = [];
+      a.forEach((peakA) => {
+        b.forEach((peakB) => {
+          out.push({ mass: peakA.mass + peakB.mass, intensity: peakA.intensity * peakB.intensity });
+        });
+      });
+      return mergeClosePeaks(out);
+    }
+
+    function mergeClosePeaks(peaks, tolerance = 0.01) {
+      const sorted = peaks.filter((peak) => peak.intensity > 1e-14).sort((a, b) => a.mass - b.mass);
+      const merged = [];
+      sorted.forEach((peak) => {
+        const last = merged[merged.length - 1];
+        if (last && Math.abs(last.mass - peak.mass) <= tolerance) {
+          const total = last.intensity + peak.intensity;
+          last.mass = ((last.mass * last.intensity) + (peak.mass * peak.intensity)) / total;
+          last.intensity = total;
+        } else {
+          merged.push({ ...peak });
+        }
+      });
+      return merged
+        .sort((a, b) => b.intensity - a.intensity)
+        .slice(0, 240)
+        .sort((a, b) => a.mass - b.mass);
+    }
+
+    function elementDistribution(element, count) {
+      let distribution = [{ mass: 0, intensity: 1 }];
+      const single = isotopeData[element].map((iso) => ({ mass: iso.mass, intensity: iso.abundance }));
+      for (let n = 0; n < count; n += 1) {
+        distribution = convolve(distribution, single);
+      }
+      return distribution;
+    }
+
+    function buildDistribution(counts) {
+      let distribution = [{ mass: 0, intensity: 1 }];
+      Object.entries(counts).forEach(([element, rawCount]) => {
+        const count = Math.round(rawCount);
+        if (count !== rawCount || count < 0) throw new Error('Isotope prediction requires whole-number atom counts.');
+        distribution = convolve(distribution, elementDistribution(element, count));
+      });
+      const max = Math.max(...distribution.map((peak) => peak.intensity));
+      return distribution
+        .map((peak) => ({ mass: peak.mass, intensity: peak.intensity, relative: (peak.intensity / max) * 100 }))
+        .filter((peak) => peak.relative >= 0.05)
+        .sort((a, b) => a.mass - b.mass);
+    }
+
+    function calculateMasses(counts) {
+      let mono = 0;
+      let average = 0;
+      Object.entries(counts).forEach(([element, count]) => {
+        const isotopes = isotopeData[element];
+        mono += isotopes[0].mass * count;
+        average += isotopes.reduce((sum, iso) => sum + iso.mass * iso.abundance, 0) * count;
+      });
+      return { mono, average };
+    }
+
+    function renderChart(peaks) {
+      const width = 640;
+      const height = 260;
+      const left = 54;
+      const right = 18;
+      const top = 18;
+      const bottom = 42;
+      const minMass = Math.floor(peaks[0].mass - 0.5);
+      const maxMass = Math.ceil(peaks[peaks.length - 1].mass + 0.5);
+      const xScale = (mass) => left + ((mass - minMass) / Math.max(1, maxMass - minMass)) * (width - left - right);
+      const yScale = (rel) => top + (100 - rel) / 100 * (height - top - bottom);
+      const stems = peaks.map((peak) => {
+        const x = xScale(peak.mass).toFixed(2);
+        const y = yScale(peak.relative).toFixed(2);
+        return `<line x1="${x}" y1="${height - bottom}" x2="${x}" y2="${y}" stroke="#2C7A7B" stroke-width="2.5" stroke-linecap="round" />`;
+      }).join('');
+      const labels = peaks.slice(0, 8).map((peak) => {
+        const x = xScale(peak.mass).toFixed(2);
+        const y = Math.max(13, yScale(peak.relative) - 6).toFixed(2);
+        return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="#0f172a">${peak.mass.toFixed(2)}</text>`;
+      }).join('');
+      chartBox.innerHTML = `<svg class="spectrum-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Predicted isotope mass spectrum">
+        <rect x="0" y="0" width="${width}" height="${height}" rx="10" fill="#ffffff" />
+        <line x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}" stroke="#94a3b8" />
+        <line x1="${left}" y1="${top}" x2="${left}" y2="${height - bottom}" stroke="#94a3b8" />
+        <text x="${width / 2}" y="${height - 10}" text-anchor="middle" font-size="12" fill="#475569">m/z</text>
+        <text x="16" y="${height / 2}" text-anchor="middle" font-size="12" fill="#475569" transform="rotate(-90 16 ${height / 2})">Relative intensity</text>
+        <text x="${left}" y="${height - 24}" text-anchor="middle" font-size="10" fill="#64748b">${minMass}</text>
+        <text x="${width - right}" y="${height - 24}" text-anchor="middle" font-size="10" fill="#64748b">${maxMass}</text>
+        <text x="${left - 8}" y="${top + 4}" text-anchor="end" font-size="10" fill="#64748b">100</text>
+        <text x="${left - 8}" y="${height - bottom + 3}" text-anchor="end" font-size="10" fill="#64748b">0</text>
+        ${stems}
+        ${labels}
+      </svg>`;
+    }
+
+    function renderPeakTable(peaks) {
+      const rows = peaks.slice(0, 18).map((peak, index) => `<tr><td>${index + 1}</td><td>${peak.mass.toFixed(5)}</td><td>${peak.relative.toFixed(2)}%</td></tr>`).join('');
+      peaksBox.innerHTML = `<table><thead><tr><th>Peak</th><th>m/z</th><th>Relative intensity</th></tr></thead><tbody>${rows}</tbody></table>`;
+      latestPeaks = peaks;
+      latestPeaksText = ['m/z,relative_intensity_percent'].concat(peaks.map((peak) => `${peak.mass.toFixed(5)},${peak.relative.toFixed(2)}`)).join('\n');
+    }
+
+    function predict() {
+      try {
+        const formula = formulaInput.value.trim();
+        const counts = parseFormula(formula);
+        const peaks = buildDistribution(counts);
+        const masses = calculateMasses(counts);
+        const basePeak = peaks.reduce((best, peak) => peak.relative > best.relative ? peak : best, peaks[0]);
+        latestFormula = formula;
+        metricsGrid.innerHTML = `
+          <div class="metric"><span>Formula</span><strong>${formula}</strong></div>
+          <div class="metric"><span>Monoisotopic mass</span><strong>${masses.mono.toFixed(6)} Da</strong></div>
+          <div class="metric"><span>Average mass</span><strong>${masses.average.toFixed(4)} g/mol</strong></div>
+          <div class="metric"><span>Molecular ion region</span><strong>M+ ≈ ${Math.round(masses.mono)}</strong></div>
+          <div class="metric"><span>Base isotope peak</span><strong>${basePeak.mass.toFixed(5)} m/z</strong></div>
+          <div class="metric"><span>Reported peaks</span><strong>${peaks.length}</strong></div>`;
+        renderChart(peaks);
+        renderPeakTable(peaks);
+        setStatus('Predicted isotope pattern from formula ' + formula + '.');
+      } catch (err) {
+        latestPeaksText = '';
+        latestPeaks = [];
+        latestFormula = '';
+        metricsGrid.innerHTML = '';
+        chartBox.textContent = 'Spectrum chart appears here.';
+        peaksBox.textContent = err.message || 'Could not predict spectrum.';
+        setStatus(err.message || 'Could not predict spectrum.');
+      }
+    }
+
+    async function formulaFromSmiles(smiles) {
+      if (formulaCache.has(smiles)) return formulaCache.get(smiles);
+      const res = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(smiles)}/property/MolecularFormula,CanonicalSMILES,IsomericSMILES/JSON`);
+      if (!res.ok) throw new Error('No PubChem formula match for this SMILES.');
+      const props = (await res.json())?.PropertyTable?.Properties?.[0];
+      if (!props?.MolecularFormula) throw new Error('No molecular formula returned.');
+      formulaCache.set(smiles, props);
+      return props;
+    }
+
+    function pubChemBase(query) {
+      const clean = String(query || '').trim();
+      return /^\d+$/.test(clean)
+        ? `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${encodeURIComponent(clean)}`
+        : `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(clean)}`;
+    }
+
+    function getSmiles(props) {
+      return props?.IsomericSMILES || props?.CanonicalSMILES || props?.SMILES || props?.ConnectivitySMILES || '';
+    }
+
+    async function importFromPubChem() {
+      const query = pubchemInput.value.trim();
+      if (!query) {
+        setStatus('Enter a PubChem compound name or CID first.');
+        return;
+      }
+      setStatus('Importing ' + query + ' from PubChem...');
+      try {
+        const url = `${pubChemBase(query)}/property/IUPACName,MolecularFormula,MolecularWeight,CanonicalSMILES,IsomericSMILES,SMILES/JSON`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('No PubChem match found.');
+        const props = (await res.json())?.PropertyTable?.Properties?.[0];
+        if (!props?.MolecularFormula) throw new Error('No molecular formula returned.');
+        const smiles = getSmiles(props);
+        formulaInput.value = props.MolecularFormula;
+        if (smiles) {
+          smilesInput.value = smiles;
+          latestDrawnSmiles = smiles;
+          if (editorReady) postToEditor({ type: 'set-molecule', smiles });
+        }
+        predict();
+        setStatus(`Imported ${props.IUPACName || query} from PubChem${props.CID ? ' (CID ' + props.CID + ')' : ''}.`);
+      } catch (err) {
+        setStatus((err.message || 'PubChem import failed') + ' Try a different name or CID.');
+      }
+    }
+
+    async function useSmiles(smiles, sourceLabel) {
+      const clean = String(smiles || '').trim();
+      if (!clean) {
+        setStatus('No SMILES available yet.');
+        return;
+      }
+      smilesInput.value = clean;
+      const token = ++smilesLookupToken;
+      setStatus('Looking up formula from ' + sourceLabel + '...');
+      try {
+        const props = await formulaFromSmiles(clean);
+        if (token !== smilesLookupToken) return;
+        formulaInput.value = props.MolecularFormula;
+        predict();
+      } catch (err) {
+        if (token !== smilesLookupToken) return;
+        setStatus((err.message || 'SMILES lookup failed') + ' Enter the formula manually to predict the isotope pattern.');
+      }
+    }
+
+    function scheduleSmilesLookup(smiles, sourceLabel) {
+      window.clearTimeout(smilesLookupTimer);
+      const clean = String(smiles || '').trim();
+      if (!clean) return;
+      smilesLookupTimer = window.setTimeout(() => useSmiles(clean, sourceLabel), 650);
+    }
+
+    function updateFromDrawnStructure(data) {
+      const molfileFormula = formulaFromMolfile(data.molfile);
+      if (molfileFormula && molfileFormula !== formulaInput.value.trim()) {
+        formulaInput.value = molfileFormula;
+        predict();
+        setStatus('Updated prediction from drawn structure.');
+      }
+      latestDrawnSmiles = String(data.smiles || latestDrawnSmiles || '').trim();
+      if (latestDrawnSmiles && latestDrawnSmiles !== smilesInput.value.trim()) {
+        smilesInput.value = latestDrawnSmiles;
+        scheduleSmilesLookup(latestDrawnSmiles, 'drawn molecule');
+      }
+    }
+
+    function postToEditor(message) {
+      if (!editorReady || !editorFrame.contentWindow) return;
+      editorFrame.contentWindow.postMessage(message, '*');
+    }
+
+    window.addEventListener('message', (event) => {
+      const data = event.data || {};
+      if (data.type === 'ketcher-ready') {
+        editorReady = true;
+        postToEditor({ type: 'set-molecule', smiles: smilesInput.value || 'CC(=O)OC1=CC=CC=C1C(=O)O' });
+      } else if (data.type === 'editor-change' || data.type === 'molecule-set') {
+        updateFromDrawnStructure(data);
+      } else if (data.type === 'smiles-response') {
+        latestDrawnSmiles = String(data.smiles || latestDrawnSmiles || '').trim();
+        if (latestDrawnSmiles) scheduleSmilesLookup(latestDrawnSmiles, 'drawn molecule');
+      }
+    });
+
+    document.getElementById('predictBtn').addEventListener('click', predict);
+    formulaInput.addEventListener('input', predict);
+    smilesInput.addEventListener('input', () => scheduleSmilesLookup(smilesInput.value, 'SMILES'));
+    pubchemInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') importFromPubChem(); });
+    document.getElementById('pubchemBtn').addEventListener('click', importFromPubChem);
+    document.getElementById('smilesBtn').addEventListener('click', () => useSmiles(smilesInput.value, 'SMILES'));
+    document.getElementById('drawnBtn').addEventListener('click', () => {
+      postToEditor({ type: 'get-smiles' });
+      setTimeout(() => useSmiles(latestDrawnSmiles || smilesInput.value, 'drawn molecule'), 250);
+    });
+    document.getElementById('clearEditorBtn').addEventListener('click', () => {
+      postToEditor({ type: 'clear-editor' });
+      latestDrawnSmiles = '';
+      smilesInput.value = '';
+      window.clearTimeout(smilesLookupTimer);
+      setStatus('Editor cleared.');
+    });
+    document.getElementById('copyBtn').addEventListener('click', async () => { if (latestPeaksText) { try { await navigator.clipboard.writeText(latestPeaksText); } catch {} } });
+    document.getElementById('downloadCsvBtn').addEventListener('click', () => {
+      if (!latestPeaksText) return;
+      const blob = new Blob([latestPeaksText], { type: 'text/csv;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `moldraw-isotope-pattern-${(latestFormula || 'spectrum').replace(/[^A-Za-z0-9]+/g, '-')}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+    document.getElementById('downloadPngBtn').addEventListener('click', () => {
+      const svg = chartBox.querySelector('svg');
+      if (!svg || !latestPeaks.length) return;
+      const serializer = new XMLSerializer();
+      const svgText = serializer.serializeToString(svg);
+      const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1280;
+        canvas.height = 520;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `moldraw-isotope-pattern-${(latestFormula || 'spectrum').replace(/[^A-Za-z0-9]+/g, '-')}.png`;
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }, 'image/png');
+      };
+      image.src = url;
+    });
+    document.querySelectorAll('[data-formula]').forEach((button) => button.addEventListener('click', () => {
+      formulaInput.value = button.dataset.formula;
+      smilesInput.value = button.dataset.smiles || '';
+      if (editorReady && button.dataset.smiles) postToEditor({ type: 'set-molecule', smiles: button.dataset.smiles });
+      predict();
+    }));
+
+    smilesInput.value = 'CC(=O)OC1=CC=CC=C1C(=O)O';
+    predict();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

@@ -114,7 +114,7 @@ const QC_METHOD_OPTIONS = ['B3LYP', 'CAM-B3LYP', 'PBE0', 'M06-2X', 'wB97X-D', 'H
 const QC_BASIS_OPTIONS = ['6-31G(d)', '6-31+G(d,p)', 'def2-SVP', 'def2-TZVP', 'cc-pVDZ', 'cc-pVTZ'];
 const LOCAL_PROJECTS_STORAGE_KEY = 'moldraw_local_projects';
 const UPDATES_SEEN_STORAGE_KEY = 'moldraw_updates_seen_version';
-const CURRENT_UPDATES_VERSION = '2026-05-community';
+const CURRENT_UPDATES_VERSION = '2026-06-tools-homepage';
 
 const readLocalProjects = () => {
   try {
@@ -6207,7 +6207,7 @@ ${scientificGuardrails}`;
                     >
                       Reactions
                     </button>
-                    <a className="tb-menu-item" href="/pages/about.html" target="_blank" rel="noopener noreferrer" title="About MolDraw">About</a>
+                    <a className="tb-menu-item" href="/pages/about.html" target="_blank" rel="noopener noreferrer" title="MolDraw homepage">Homepage</a>
                     <a className="tb-menu-item" href="/course/index.html" target="_blank" rel="noopener noreferrer" title="Open Course">Course</a>
                     <a className="tb-menu-item" href="/pages/faq.html" target="_blank" rel="noopener noreferrer" title="Frequently asked questions">FAQ</a>
                     <a className="tb-menu-item" href="/pages/ai-help.html" target="_blank" rel="noopener noreferrer" title="How to use AI assistant">AI Setup</a>
@@ -6574,6 +6574,20 @@ ${scientificGuardrails}`;
                       <div className="mol-props-row">
                         <span className="mol-props-label">Mass</span>
                         <span className="mol-props-value">{molecularMass.toFixed(2)} g/mol</span>
+                      </div>
+                    )}
+                    {!isProtein && (
+                      <div className="mol-props-row mol-props-tool-row">
+                        <span className="mol-props-label">Tools</span>
+                        <span className="mol-props-tool-links">
+                          <a href="/tools/free-chem-tools/formula-and-mass-tools.html" target="_blank" rel="noopener noreferrer">Formula &amp; mass</a>
+                          {currentSmiles && (
+                            <>
+                              <a href={`/tools/free-chem-tools/smiles-to-molecular-formula.html?smiles=${encodeURIComponent(currentSmiles)}`} target="_blank" rel="noopener noreferrer">Formula</a>
+                              <a href={`/tools/free-chem-tools/smiles-to-molecular-weight.html?smiles=${encodeURIComponent(currentSmiles)}`} target="_blank" rel="noopener noreferrer">Weight</a>
+                            </>
+                          )}
+                        </span>
                       </div>
                     )}
                     {!isProtein && (meltingPoint || boilingPoint) && (
@@ -6999,60 +7013,61 @@ ${scientificGuardrails}`;
               <div>
                 <div className="updates-eyebrow">MolDraw updates</div>
                 <div className="feature-request-title">What is new</div>
-                <div className="feature-request-subtitle">Recent improvements added to the editor and viewer.</div>
+                <div className="feature-request-subtitle">Recent improvements grouped by area so you can scan what changed quickly.</div>
               </div>
               <button type="button" className="feature-request-close" onClick={() => setShowUpdatesModal(false)} aria-label="Close updates modal">×</button>
             </div>
 
             <div className="updates-list">
               <article className="updates-card updates-card-highlight">
-                <div className="updates-card-date">May 2026</div>
-                <div className="updates-card-title">New MolDraw Community</div>
+                <div className="updates-card-date">June 2026</div>
+                <div className="updates-card-title">Major chemistry tools expansion</div>
                 <p>
-                  Join the new <strong>Community</strong> page to post chemistry workflow questions, reply with images,
-                  upvote ideas, and follow feature request status updates.
+                  The Tools Hub now has many new standalone pages grouped by workflow: formula and mass, structure lookup,
+                  classroom calculators, drug-likeness, spectroscopy, Lewis structures, and conversion tools.
+                </p>
+                <ul className="updates-card-list">
+                  <li><strong>New lookup tools:</strong> Name to Structure, Formula to Structure, Structure to SMILES, CAS tools, and PubChem import flows.</li>
+                  <li><strong>New calculators:</strong> grams to moles, percent yield, pKa, limiting reagent, molecular weight, exact mass, LogP, TPSA, Lipinski, and druglikeness.</li>
+                  <li><strong>Tool Hub UX:</strong> category filters, compact cards, a prominent back button, sample presets, and a subtle <strong>Sign up free</strong> CTA on tools pages.</li>
+                </ul>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-date">June 2026</div>
+                <div className="updates-card-title">Spectroscopy and mass spectrometry tools</div>
+                <p>
+                  Added a new <strong>Spectroscopy</strong> category and a Mass Spectrum Predictor that updates from drawn structures,
+                  SMILES, formula input, or PubChem name/CID import.
+                </p>
+                <ul className="updates-card-list">
+                  <li>Realtime isotope pattern chart from drawn molecules with local formula estimation.</li>
+                  <li>Monoisotopic mass, average mass, molecular ion region, peak table, CSV export, and PNG chart download.</li>
+                </ul>
+              </article>
+              <article className="updates-card">
+                <div className="updates-card-date">June 2026</div>
+                <div className="updates-card-title">Molecule pages, content, and homepage</div>
+                <p>
+                  Molecule reference pages were expanded with richer properties, downloads, FAQs, related molecule links,
+                  and conversion actions. The old About page is now a polished MolDraw homepage linked from the More menu.
                 </p>
               </article>
               <article className="updates-card">
-                <div className="updates-card-date">May 2026</div>
-                <div className="updates-card-title">Local drawings dashboard</div>
+                <div className="updates-card-date">June 2026</div>
+                <div className="updates-card-title">Editor, exports, and account flow</div>
                 <p>
-                  Drawings now autosave locally as you work. Start fresh with <strong>New design</strong>,
-                  and view saved drawings as cards in the dashboard. Local projects stay in this browser for now; cloud saving is coming soon.
+                  The editor and export experience now includes VeloXChem text/Python input generation, stronger 3D loading fallbacks,
+                  selected-fragment mass updates, improved SMILES/structure download controls, and clearer sign-up prompts for saved designs,
+                  AI, and exports.
                 </p>
               </article>
               <article className="updates-card">
-                <div className="updates-card-date">May 2026</div>
-                <div className="updates-card-title">Feature requests</div>
-                <p>Use the toolbar request form to send feature ideas with optional screenshots or images.</p>
-              </article>
-              <article className="updates-card">
-                <div className="updates-card-date">March 2026</div>
-                <div className="updates-card-title">Transparent SVG copy and paste</div>
+                <div className="updates-card-date">Previous milestones</div>
+                <div className="updates-card-title">Community, dashboard, AI panel, and viewer UI</div>
                 <p>
-                  Use <strong>Copy SVG (Ctrl+C)</strong> to copy the current 2D structure with a transparent background.
-                  Paste it into tools like PowerPoint, Canva, Illustrator, Affinity, and other design or presentation apps.
+                  Earlier updates added the Community page, local drawing dashboard, feature request form, transparent SVG copy,
+                  AI side panel, account sign-in, Miew 3D viewer improvements, and cleaner toolbar navigation.
                 </p>
-              </article>
-              <article className="updates-card">
-                <div className="updates-card-date">March 2026</div>
-                <div className="updates-card-title">Predict NMR menu</div>
-                <p>Predict ¹H NMR, ¹³C NMR, IR, and UV-Vis from the 2D toolbar. Predictions are marked beta and may not be fully accurate.</p>
-              </article>
-              <article className="updates-card">
-                <div className="updates-card-date">March 2026</div>
-                <div className="updates-card-title">AI chat panel</div>
-                <p>The AI assistant now opens as a full-height side panel with cleaner answers, compact suggestions, and quick chemistry prompts.</p>
-              </article>
-              <article className="updates-card">
-                <div className="updates-card-date">March 2026</div>
-                <div className="updates-card-title">Accounts and dashboard</div>
-                <p>Supabase sign-in/sign-up is available from the 3D top bar. Signed-in users can open the dashboard and use local drawing cards.</p>
-              </article>
-              <article className="updates-card">
-                <div className="updates-card-date">March 2026</div>
-                <div className="updates-card-title">Miew 3D viewer and cleaner UI</div>
-                <p>The 3D viewer uses Miew, navigation is cleaner, molecule detail boxes are smaller, and the MolDraw logo has the falling molecule surprise.</p>
               </article>
             </div>
           </div>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Percent yield calculator by MolDraw. Calculate percent yield, actual yield, or theoretical yield with gram, milligram, kilogram, mole, or mmol units.">
+  <meta name="keywords" content="percent yield calculator, theoretical yield calculator, actual yield calculator, chemistry yield calculator, percent yield formula">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/percent-yield-calculator.html">
+  <title>Percent Yield Calculator | Actual and Theoretical Yield | MolDraw</title>
+  <meta property="og:title" content="Percent Yield Calculator | MolDraw" />
+  <meta property="og:description" content="Calculate percent yield, actual yield, or theoretical yield for chemistry labs." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/percent-yield-calculator.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Percent Yield Calculator","applicationCategory":"EducationalApplication","operatingSystem":"Web","url":"https://www.moldraw.com/tools/free-chem-tools/percent-yield-calculator.html","description":"Calculate percent yield, actual yield, or theoretical yield with unit support.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(900px, 94vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav, .actions, .mode-tabs, .related-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .top-nav { margin-bottom: 14px; }
+    .top-link, .related-links a { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 800; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 29px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .tool-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(300px, 1fr); gap: 12px; align-items: stretch; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; margin-bottom: 10px; }
+    input, select { width: 100%; height: 38px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #0f172a; background: #fff; }
+    .input-row { display: grid; grid-template-columns: minmax(0, 1fr) 105px; gap: 8px; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn, .mode-tabs button { border-color: #d1d5db; background: #fff; color: #334155; }
+    .mode-tabs button.active { border-color: #2C7A7B; background: #2C7A7B; color: #fff; }
+    .result { border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; padding: 14px; min-height: 190px; }
+    .result strong { display: block; color: #0f172a; font-size: 24px; margin-bottom: 6px; }
+    .result code { display: block; white-space: pre-wrap; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; padding: 8px; margin-top: 8px; color: #0f172a; }
+    ul { padding-left: 18px; }
+    @media (max-width: 780px) { .tool-grid { grid-template-columns: 1fr; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/limiting-reagent-calculator.html">Limiting Reagent</a>
+      <a class="top-link" href="/tools/free-chem-tools/grams-to-moles-calculator.html">Grams to Moles</a>
+    </nav>
+    <section class="panel">
+      <h1>Percent Yield Calculator</h1>
+      <p>Calculate percent yield from actual and theoretical yield, or solve for actual/theoretical yield when percent yield is known.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> percent yield = actual yield / theoretical yield × 100.</div>
+      <div class="tool-grid">
+        <div>
+          <div class="mode-tabs">
+            <button type="button" class="active" data-mode="percent">Find percent yield</button>
+            <button type="button" data-mode="actual">Find actual yield</button>
+            <button type="button" data-mode="theoretical">Find theoretical yield</button>
+          </div>
+          <label id="actualWrap">Actual yield
+            <div class="input-row"><input id="actualInput" type="number" step="any" value="8.5"><select id="actualUnit"><option>g</option><option>mg</option><option>kg</option><option>mol</option><option>mmol</option></select></div>
+          </label>
+          <label id="theoreticalWrap">Theoretical yield
+            <div class="input-row"><input id="theoreticalInput" type="number" step="any" value="10"><select id="theoreticalUnit"><option>g</option><option>mg</option><option>kg</option><option>mol</option><option>mmol</option></select></div>
+          </label>
+          <label id="percentWrap">Percent yield (%)
+            <input id="percentInput" type="number" step="any" value="85">
+          </label>
+          <div class="actions">
+            <button id="calcBtn" type="button">Calculate</button>
+            <button id="copyBtn" class="ghost-btn" type="button">Copy result</button>
+            <button id="resetBtn" class="ghost-btn" type="button">Reset</button>
+          </div>
+        </div>
+        <div id="resultBox" class="result">Result appears here.</div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Percent Yield Formula</h2>
+      <ul>
+        <li><strong>Percent yield:</strong> actual yield / theoretical yield × 100.</li>
+        <li><strong>Actual yield:</strong> theoretical yield × percent yield / 100.</li>
+        <li><strong>Theoretical yield:</strong> actual yield × 100 / percent yield.</li>
+      </ul>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/limiting-reagent-calculator.html">Limiting reagent calculator</a>
+        <a href="/tools/free-chem-tools/grams-to-moles-calculator.html">Grams to moles calculator</a>
+        <a href="/tools/free-chem-tools/molecular-weight-calculator.html">Molecular weight calculator</a>
+      </div>
+    </section>
+  </main>
+  <script>
+    let mode = 'percent';
+    const factors = { g: 1, mg: 0.001, kg: 1000, mol: 1, mmol: 0.001 };
+    const unitFamilies = { g: 'mass', mg: 'mass', kg: 'mass', mol: 'amount', mmol: 'amount' };
+    const actualInput = document.getElementById('actualInput');
+    const theoreticalInput = document.getElementById('theoreticalInput');
+    const percentInput = document.getElementById('percentInput');
+    const resultBox = document.getElementById('resultBox');
+    function baseValue(inputId, unitId) {
+      const value = Number(document.getElementById(inputId).value);
+      const unit = document.getElementById(unitId).value;
+      if (!Number.isFinite(value) || value < 0) throw new Error('Enter non-negative yield values.');
+      return { value: value * factors[unit], unit };
+    }
+    function assertCompatibleUnits(a, b) {
+      if (unitFamilies[a.unit] !== unitFamilies[b.unit]) throw new Error('Use the same unit family for actual and theoretical yield.');
+    }
+    function updateMode() {
+      document.getElementById('actualWrap').style.display = mode === 'actual' ? 'none' : '';
+      document.getElementById('theoreticalWrap').style.display = mode === 'theoretical' ? 'none' : '';
+      document.getElementById('percentWrap').style.display = mode === 'percent' ? 'none' : '';
+      calculate();
+    }
+    function calculate() {
+      try {
+        if (mode === 'percent') {
+          const actual = baseValue('actualInput', 'actualUnit');
+          const theoretical = baseValue('theoreticalInput', 'theoreticalUnit');
+          assertCompatibleUnits(actual, theoretical);
+          if (theoretical.value <= 0) throw new Error('Theoretical yield must be greater than zero.');
+          const pct = (actual.value / theoretical.value) * 100;
+          resultBox.innerHTML = `<strong>${pct.toFixed(2)}%</strong><div>Actual yield / theoretical yield × 100</div><code>${actual.value} / ${theoretical.value} × 100 = ${pct.toFixed(2)}%</code>`;
+        } else if (mode === 'actual') {
+          const theoretical = baseValue('theoreticalInput', 'theoreticalUnit');
+          const pct = Number(percentInput.value);
+          if (!Number.isFinite(pct) || pct < 0) throw new Error('Enter a non-negative percent yield.');
+          const actual = theoretical.value * pct / 100;
+          const actualDisplay = actual / factors[theoretical.unit];
+          resultBox.innerHTML = `<strong>${actualDisplay.toPrecision(6)} ${theoretical.unit}</strong><div>Actual yield from theoretical yield and percent yield.</div><code>${theoretical.value} base units × ${pct} / 100 = ${actual}</code>`;
+        } else {
+          const actual = baseValue('actualInput', 'actualUnit');
+          const pct = Number(percentInput.value);
+          if (!Number.isFinite(pct) || pct <= 0) throw new Error('Percent yield must be greater than zero.');
+          const theoretical = actual.value * 100 / pct;
+          const theoreticalDisplay = theoretical / factors[actual.unit];
+          resultBox.innerHTML = `<strong>${theoreticalDisplay.toPrecision(6)} ${actual.unit}</strong><div>Theoretical yield from actual yield and percent yield.</div><code>${actual.value} base units × 100 / ${pct} = ${theoretical}</code>`;
+        }
+      } catch (err) { resultBox.textContent = err.message || 'Could not calculate.'; }
+    }
+    document.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => { mode = button.dataset.mode; document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('active', b === button)); updateMode(); }));
+    document.querySelectorAll('input, select').forEach((el) => el.addEventListener('input', calculate));
+    document.getElementById('calcBtn').addEventListener('click', calculate);
+    document.getElementById('copyBtn').addEventListener('click', async () => { try { await navigator.clipboard.writeText(resultBox.textContent.trim()); } catch {} });
+    document.getElementById('resetBtn').addEventListener('click', () => { actualInput.value = '8.5'; theoreticalInput.value = '10'; percentInput.value = '85'; calculate(); });
+    updateMode();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

@@ -9,6 +9,15 @@
 
   if (window.location.pathname.indexOf('/tools/') === 0 || window.location.pathname === '/tools') {
     document.body.classList.add('tools-page-sticky-nav');
+    Array.from(document.querySelectorAll('.top-nav')).forEach(function (nav) {
+      if (nav.querySelector('[data-site-signup-cta]')) return;
+      var signupLink = document.createElement('a');
+      signupLink.className = 'top-link site-tools-signup-cta';
+      signupLink.href = '/?signup=1';
+      signupLink.setAttribute('data-site-signup-cta', 'true');
+      signupLink.textContent = 'Sign up free';
+      nav.appendChild(signupLink);
+    });
     if (!document.querySelector('.site-scroll-top-btn')) {
       var scrollTopButton = document.createElement('button');
       scrollTopButton.type = 'button';
@@ -352,10 +361,31 @@
     panel.classList.add('site-converter-enhanced');
   }
 
+  function addFormulaMassClusterLinks() {
+    if (!/\/tools\/free-chem-tools\/smiles-to-/.test(window.location.pathname)) return;
+    if (document.querySelector('[data-site-formula-mass-links]')) return;
+    var panel = document.querySelector('main .panel');
+    if (!panel) return;
+    var links = document.createElement('div');
+    links.className = 'site-formula-mass-links';
+    links.setAttribute('data-site-formula-mass-links', 'true');
+    links.innerHTML = [
+      '<span>Formula &amp; mass</span>',
+      '<a href="/tools/free-chem-tools/formula-and-mass-tools.html">Cluster</a>',
+      '<a href="/tools/free-chem-tools/smiles-to-molecular-formula.html">SMILES to formula</a>',
+      '<a href="/tools/free-chem-tools/smiles-to-molecular-weight.html">SMILES to weight</a>',
+      '<a href="/tools/free-chem-tools/exact-mass-calculator.html">Exact mass</a>'
+    ].join('');
+    var target = panel.querySelector('.quick-answer') || panel.querySelector('p');
+    if (target && target.parentNode) target.parentNode.insertBefore(links, target.nextSibling);
+    else panel.insertBefore(links, panel.firstChild);
+  }
+
   if (window.location.pathname.indexOf('/tools/free-chem-tools/') === 0) {
     document.body.classList.add('site-free-tools-page');
     addSmilesPubChemImport();
     addConverterSamplePresets();
+    addFormulaMassClusterLinks();
     Array.from(document.querySelectorAll('main .panel')).forEach(enhanceSimpleConverter);
   }
 

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chemical name to structure tool by MolDraw. Enter a compound name and get the structure image, SMILES, formula, molecular weight, IUPAC name, and PubChem CID.">
+  <meta name="keywords" content="chemical name to structure, compound name to structure, name to molecule, name to smiles, chemical structure lookup">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/name-to-structure.html">
+  <title>Name to Structure Tool | Chemical Name to Molecule | MolDraw</title>
+  <meta property="og:title" content="Name to Structure Tool | MolDraw" />
+  <meta property="og:description" content="Resolve compound names to structure image, SMILES, formula, molecular weight, and PubChem CID." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/name-to-structure.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Name to Structure Tool","applicationCategory":"ScientificApplication","operatingSystem":"Web","url":"https://www.moldraw.com/tools/free-chem-tools/name-to-structure.html","description":"Convert chemical names to structure images and compound metadata using PubChem.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(960px, 94vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav, .actions, .presets, .related-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .top-nav { margin-bottom: 14px; }
+    .top-link, .related-links a { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 800; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 29px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; margin-bottom: 10px; }
+    input { width: 100%; height: 38px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #0f172a; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn, .presets button { border-color: #d1d5db; background: #fff; color: #334155; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .tool-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(300px, 1fr); gap: 12px; align-items: stretch; }
+    .structure-card { border: 1px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; padding: 12px; display: grid; place-items: center; min-height: 300px; }
+    .structure-card img { max-width: 100%; max-height: 280px; background: #fff; border-radius: 10px; }
+    .output { margin-top: 12px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 12px; padding: 12px; min-height: 130px; white-space: pre-wrap; overflow-wrap: anywhere; font-family: 'Courier New', monospace; font-size: 13px; color: #0f172a; }
+    ul { padding-left: 18px; }
+    @media (max-width: 780px) { .tool-grid { grid-template-columns: 1fr; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/structure-to-smiles-converter.html">Structure to SMILES</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+    <section class="panel">
+      <h1>Name to Structure Tool</h1>
+      <p>Enter a chemical name, common name, or IUPAC name to retrieve the matching structure image, SMILES, formula, molecular weight, and PubChem CID.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> search names like aspirin, caffeine, ibuprofen, glucose, or ethanol to view the molecule structure.</div>
+      <div class="tool-grid">
+        <div>
+          <label>Chemical or compound name
+            <input id="nameInput" type="text" value="aspirin" placeholder="Example: aspirin, caffeine, acetaminophen">
+          </label>
+          <div class="actions">
+            <button id="lookupBtn" type="button">Show structure</button>
+            <button id="copyBtn" class="ghost-btn" type="button">Copy SMILES</button>
+            <a id="editorLink" class="top-link" href="/" target="_blank" rel="noopener">Open in MolDraw</a>
+          </div>
+          <div class="presets">
+            <button type="button" data-name="aspirin">Aspirin</button>
+            <button type="button" data-name="caffeine">Caffeine</button>
+            <button type="button" data-name="ibuprofen">Ibuprofen</button>
+            <button type="button" data-name="glucose">Glucose</button>
+          </div>
+          <div id="outputBox" class="output">Structure metadata appears here.</div>
+        </div>
+        <div class="structure-card" id="structureCard">Structure image appears here.</div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>How Name to Structure Lookup Works</h2>
+      <p>The tool resolves names through PubChem and then displays a 2D structure image with key metadata. Always verify salts, mixtures, stereochemistry, and ambiguous common names before using the result in publication or modeling workflows.</p>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/structure-to-smiles-converter.html">Structure to SMILES</a>
+        <a href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to Structure</a>
+        <a href="/tools/free-chem-tools/molecular-formula-to-structure.html">Formula to Structure</a>
+      </div>
+    </section>
+  </main>
+  <script>
+    const nameInput = document.getElementById('nameInput');
+    const outputBox = document.getElementById('outputBox');
+    const structureCard = document.getElementById('structureCard');
+    const editorLink = document.getElementById('editorLink');
+    let latestSmiles = '';
+    function getSmiles(props) { return props.IsomericSMILES || props.CanonicalSMILES || props.SMILES || props.ConnectivitySMILES || ''; }
+    async function lookupName() {
+      const query = nameInput.value.trim();
+      latestSmiles = '';
+      editorLink.href = '/';
+      if (!query) {
+        outputBox.textContent = 'Enter a compound name first.';
+        structureCard.textContent = 'Structure image appears here.';
+        return;
+      }
+      outputBox.textContent = 'Searching PubChem...';
+      structureCard.textContent = 'Loading structure...';
+      try {
+        const propsUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(query)}/property/IUPACName,SMILES,CanonicalSMILES,IsomericSMILES,MolecularFormula,MolecularWeight/JSON`;
+        const res = await fetch(propsUrl);
+        if (!res.ok) throw new Error('No PubChem match');
+        const props = (await res.json())?.PropertyTable?.Properties?.[0];
+        const smiles = getSmiles(props || {});
+        if (!props?.CID || !smiles) throw new Error('No structure returned');
+        latestSmiles = smiles;
+        const imgUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${encodeURIComponent(props.CID)}/PNG?image_size=large`;
+        structureCard.innerHTML = `<img src="${imgUrl}" loading="lazy" alt="2D chemical structure for ${query.replace(/"/g, '&quot;')}">`;
+        editorLink.href = `/?smiles=${encodeURIComponent(smiles)}`;
+        outputBox.textContent = `SMILES: ${smiles}\nName searched: ${query}\nCID: ${props.CID}\nIUPAC: ${props.IUPACName || 'N/A'}\nFormula: ${props.MolecularFormula || 'N/A'}\nMolecular weight: ${props.MolecularWeight || 'N/A'} g/mol`;
+      } catch {
+        outputBox.textContent = 'No PubChem structure match found. Try a more specific common name, IUPAC name, or synonym.';
+        structureCard.textContent = 'Structure image unavailable.';
+      }
+    }
+    document.getElementById('lookupBtn').addEventListener('click', lookupName);
+    nameInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') lookupName(); });
+    document.getElementById('copyBtn').addEventListener('click', async () => { if (latestSmiles) { try { await navigator.clipboard.writeText(latestSmiles); } catch {} } });
+    document.querySelectorAll('[data-name]').forEach((button) => button.addEventListener('click', () => { nameInput.value = button.dataset.name; lookupName(); }));
+    lookupName();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

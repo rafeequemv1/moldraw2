@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Molecular weight calculator by MolDraw. Enter a chemical formula such as H2O, NaCl, Ca(OH)2, or C6H12O6 to calculate molar mass, element breakdown, and percent composition.">
+  <meta name="keywords" content="molecular weight calculator, molar mass calculator, formula weight calculator, molecular mass calculator, chemical formula calculator, percent composition calculator">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/molecular-weight-calculator.html">
+  <title>Molecular Weight Calculator | Molar Mass from Formula | MolDraw</title>
+  <meta property="og:title" content="Molecular Weight Calculator | MolDraw" />
+  <meta property="og:description" content="Calculate molecular weight and percent composition from a chemical formula." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/molecular-weight-calculator.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Molecular Weight Calculator",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/molecular-weight-calculator.html",
+    "description": "Calculate molecular weight, molar mass, formula weight, and percent composition from a chemical formula.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(900px, 94vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .top-link { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 700; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 28px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    h3 { font-size: 15px; color: #0f172a; margin: 12px 0 4px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .tool-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr); gap: 12px; align-items: stretch; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; margin-bottom: 10px; }
+    input { width: 100%; height: 38px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #0f172a; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn { border-color: #d1d5db; background: #fff; color: #334155; }
+    .actions, .presets, .related-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .presets button, .related-links a { min-height: 30px; border-color: #d1d5db; background: #fff; color: #334155; text-decoration: none; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 800; }
+    .result { border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; padding: 12px; min-height: 132px; }
+    .result strong { color: #0f172a; font-size: 18px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+    th { background: #f8fafc; color: #0f172a; }
+    .note { color: #64748b; font-size: 12px; margin-top: 8px; }
+    ul { padding-left: 18px; }
+    @media (max-width: 760px) { .tool-grid { grid-template-columns: 1fr; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel">
+      <h1>Molecular Weight Calculator</h1>
+      <p>Enter a chemical formula and calculate molecular weight, molar mass, formula weight, elemental composition, and percent composition.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> Type a formula such as <strong>H2O</strong>, <strong>NaCl</strong>, <strong>Ca(OH)2</strong>, or <strong>C6H12O6</strong>. The calculator sums standard atomic weights to return g/mol.</div>
+      <div class="tool-grid">
+        <div>
+          <label>Chemical formula
+            <input id="formulaInput" type="text" value="C6H12O6" placeholder="Example: C6H12O6, Ca(OH)2, Al2(SO4)3">
+          </label>
+          <div class="actions">
+            <button id="calcBtn" type="button">Calculate molecular weight</button>
+            <button id="copyBtn" class="ghost-btn" type="button">Copy result</button>
+            <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+          </div>
+          <h3>Presets</h3>
+          <div class="presets" aria-label="Example formulas">
+            <button type="button" data-formula="H2O">Water</button>
+            <button type="button" data-formula="NaCl">Sodium chloride</button>
+            <button type="button" data-formula="Ca(OH)2">Calcium hydroxide</button>
+            <button type="button" data-formula="C6H12O6">Glucose</button>
+            <button type="button" data-formula="Al2(SO4)3">Aluminum sulfate</button>
+          </div>
+        </div>
+        <div class="result" id="resultBox">Enter a formula to calculate molecular weight.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>How Molecular Weight Is Calculated</h2>
+      <p>Molecular weight, also called molar mass or formula weight, is calculated by multiplying each element count by its atomic weight and summing the values. The result is reported in g/mol for one mole of formula units.</p>
+      <ul>
+        <li><strong>H2O:</strong> 2 hydrogens plus 1 oxygen.</li>
+        <li><strong>Ca(OH)2:</strong> parentheses multiply oxygen and hydrogen by 2.</li>
+        <li><strong>Al2(SO4)3:</strong> nested-style formula groups are expanded before summing.</li>
+      </ul>
+      <h3>Related tools</h3>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/formula-and-mass-tools.html">Formula and mass tools</a>
+        <a href="/tools/free-chem-tools/smiles-to-molecular-formula.html">SMILES to molecular formula</a>
+        <a href="/tools/free-chem-tools/smiles-to-molecular-weight.html">SMILES to molecular weight</a>
+        <a href="/tools/free-chem-tools/exact-mass-calculator.html">Exact mass calculator</a>
+        <a href="/tools/free-chem-tools/molarity-calculator.html">Molarity calculator</a>
+        <a href="/tools/free-chem-tools/solution-prep-calculator.html">Solution prep calculator</a>
+        <a href="/tools/free-chem-tools/ph-calculator.html">pH calculator</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const atomicWeights = {
+      H: 1.008, He: 4.0026, Li: 6.94, Be: 9.0122, B: 10.81, C: 12.011, N: 14.007, O: 15.999, F: 18.998, Ne: 20.180,
+      Na: 22.990, Mg: 24.305, Al: 26.982, Si: 28.085, P: 30.974, S: 32.06, Cl: 35.45, Ar: 39.948, K: 39.098, Ca: 40.078,
+      Sc: 44.956, Ti: 47.867, V: 50.942, Cr: 51.996, Mn: 54.938, Fe: 55.845, Co: 58.933, Ni: 58.693, Cu: 63.546, Zn: 65.38,
+      Ga: 69.723, Ge: 72.630, As: 74.922, Se: 78.971, Br: 79.904, Kr: 83.798, Rb: 85.468, Sr: 87.62, Y: 88.906, Zr: 91.224,
+      Nb: 92.906, Mo: 95.95, Ru: 101.07, Rh: 102.906, Pd: 106.42, Ag: 107.868, Cd: 112.414, In: 114.818, Sn: 118.710,
+      Sb: 121.760, I: 126.904, Te: 127.60, Xe: 131.293, Cs: 132.905, Ba: 137.327, Pt: 195.084, Au: 196.967, Hg: 200.592, Pb: 207.2
+    };
+    const formulaInput = document.getElementById('formulaInput');
+    const resultBox = document.getElementById('resultBox');
+
+    function mergeCounts(target, source, factor = 1) {
+      Object.entries(source).forEach(([el, count]) => {
+        target[el] = (target[el] || 0) + count * factor;
+      });
+    }
+
+    function parseFormula(formula) {
+      let i = 0;
+      const clean = formula.replace(/\s+/g, '');
+      function parseGroup() {
+        const counts = {};
+        while (i < clean.length) {
+          const char = clean[i];
+          if (char === '(') {
+            i++;
+            const inner = parseGroup();
+            if (clean[i] !== ')') throw new Error('Missing closing parenthesis.');
+            i++;
+            const mult = parseNumber();
+            mergeCounts(counts, inner, mult);
+          } else if (char === ')') {
+            break;
+          } else {
+            const match = clean.slice(i).match(/^([A-Z][a-z]?)/);
+            if (!match) throw new Error('Invalid formula near "' + clean.slice(i) + '".');
+            const element = match[1];
+            if (!atomicWeights[element]) throw new Error('Unknown element: ' + element);
+            i += element.length;
+            counts[element] = (counts[element] || 0) + parseNumber();
+          }
+        }
+        return counts;
+      }
+      function parseNumber() {
+        const match = clean.slice(i).match(/^(\d+(?:\.\d+)?)/);
+        if (!match) return 1;
+        i += match[1].length;
+        return Number(match[1]);
+      }
+      if (!clean) throw new Error('Enter a formula first.');
+      const counts = parseGroup();
+      if (i !== clean.length) throw new Error('Could not parse entire formula.');
+      return counts;
+    }
+
+    function calculate() {
+      try {
+        const counts = parseFormula(formulaInput.value);
+        const rows = Object.entries(counts).map(([el, count]) => {
+          const mass = atomicWeights[el] * count;
+          return { el, count, mass };
+        });
+        const total = rows.reduce((sum, row) => sum + row.mass, 0);
+        const tableRows = rows.map((row) => `<tr><td>${row.el}</td><td>${row.count}</td><td>${atomicWeights[row.el].toFixed(4)}</td><td>${row.mass.toFixed(4)}</td><td>${((row.mass / total) * 100).toFixed(2)}%</td></tr>`).join('');
+        resultBox.innerHTML = `<strong>${total.toFixed(4)} g/mol</strong><div class="note">Formula: ${formulaInput.value.trim()}</div><table><thead><tr><th>Element</th><th>Count</th><th>Atomic wt.</th><th>Mass</th><th>%</th></tr></thead><tbody>${tableRows}</tbody></table>`;
+      } catch (err) {
+        resultBox.textContent = err.message || 'Could not parse this formula.';
+      }
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', calculate);
+    formulaInput.addEventListener('input', calculate);
+    document.querySelectorAll('[data-formula]').forEach((button) => button.addEventListener('click', () => { formulaInput.value = button.dataset.formula; calculate(); }));
+    document.getElementById('copyBtn').addEventListener('click', async () => { try { await navigator.clipboard.writeText(resultBox.textContent.trim()); } catch {} });
+    document.getElementById('clearBtn').addEventListener('click', () => { formulaInput.value = ''; resultBox.textContent = 'Enter a formula to calculate molecular weight.'; });
+    calculate();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

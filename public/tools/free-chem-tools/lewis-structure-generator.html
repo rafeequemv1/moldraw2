@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Free Lewis structure generator for common molecules and ions. Enter a molecular formula, choose charge, preview valence electrons, lone pairs, bonds, and download SVG.">
+  <meta name="keywords" content="Lewis structure generator, Lewis dot structure, molecular formula Lewis structure, sulfate Lewis structure, PCl5 Lewis structure, valence electrons calculator">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/lewis-structure-generator.html">
+  <title>Lewis Structure Generator | Lewis Dot Structures | MolDraw</title>
+  <meta property="og:title" content="Lewis Structure Generator | MolDraw" />
+  <meta property="og:description" content="Generate classroom Lewis dot structures for common molecules and ions." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/lewis-structure-generator.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Lewis Structure Generator","applicationCategory":"EducationalApplication","operatingSystem":"Web","url":"https://www.moldraw.com/tools/free-chem-tools/lewis-structure-generator.html","description":"Generate Lewis dot structures for common molecules and ions from formula and charge.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(1050px, 94vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav, .actions, .examples, .related-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .top-nav { margin-bottom: 14px; }
+    .top-link, .related-links a { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 800; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 30px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    .input-grid { display: grid; grid-template-columns: 1fr 150px; gap: 10px; align-items: end; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 13px; font-weight: 800; }
+    input, select { width: 100%; height: 40px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 0 10px; font-size: 14px; background: #fff; color: #0f172a; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 36px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn, .examples button { border-color: #d1d5db; background: #fff; color: #334155; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .viewer { margin-top: 12px; min-height: 430px; border: 1px solid #dbe4ee; border-radius: 14px; background: #fbfffe; display: grid; place-items: center; overflow: auto; }
+    .viewer svg { width: min(760px, 100%); height: auto; display: block; }
+    .message { color: #64748b; padding: 18px; text-align: center; }
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 12px; }
+    .meta-grid span { border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px; background: #fff; color: #334155; font-size: 13px; }
+    .meta-grid strong { display: block; color: #0f172a; font-size: 11px; text-transform: uppercase; }
+    ul { padding-left: 18px; }
+    @media (max-width: 760px) { .input-grid { grid-template-columns: 1fr; } .viewer { min-height: 320px; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/chemical-equation-balancer.html">Equation Balancer</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="panel">
+      <h1>Lewis Structure Generator</h1>
+      <p>Enter a molecular formula and charge to draw a Lewis dot structure for common classroom molecules and ions. The generator includes tuned structures for common examples and a best-effort fallback for simple main-group formulas.</p>
+      <div class="input-grid">
+        <label>Molecular formula
+          <input id="formulaInput" value="PCl5" spellcheck="false" placeholder="Examples: H2O, CO2, NH3, SO4">
+        </label>
+        <label>Charge
+          <select id="chargeSelect">
+            <option value="3">3+</option>
+            <option value="2">2+</option>
+            <option value="1">1+</option>
+            <option value="0" selected>Neutral</option>
+            <option value="-1">1-</option>
+            <option value="-2">2-</option>
+            <option value="-3">3-</option>
+          </select>
+        </label>
+      </div>
+      <div id="preview" class="quick-answer">Preview: PCl5</div>
+      <div class="actions">
+        <button id="generateBtn" type="button">Generate Lewis Structure</button>
+        <button id="downloadBtn" class="ghost-btn" type="button">Download SVG</button>
+        <button id="copyBtn" class="ghost-btn" type="button">Copy SVG</button>
+      </div>
+      <div class="examples" aria-label="Lewis structure examples">
+        <button type="button" data-formula="H2O" data-charge="0">H2O</button>
+        <button type="button" data-formula="CO2" data-charge="0">CO2</button>
+        <button type="button" data-formula="NH3" data-charge="0">NH3</button>
+        <button type="button" data-formula="O3" data-charge="0">O3</button>
+        <button type="button" data-formula="SO4" data-charge="-2">SO4 2-</button>
+        <button type="button" data-formula="PCl5" data-charge="0">PCl5</button>
+        <button type="button" data-formula="SF6" data-charge="0">SF6</button>
+      </div>
+      <div id="viewer" class="viewer"><div class="message">Lewis structure output appears here.</div></div>
+      <div id="metaBox" class="meta-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h2>How This Lewis Dot Tool Works</h2>
+      <p>The tool parses the formula, counts valence electrons using common main-group valences, adjusts for ion charge, and renders a Lewis-style SVG. Resonance structures and expanded octets can have multiple valid drawings, so treat the output as a classroom guide and verify formal charges for advanced work.</p>
+      <ul>
+        <li>Best supported: H2O, CO2, NH3, O3, SO4 2-, PCl5, SF6, CH4, BF3, and similar simple formulas.</li>
+        <li>For polyatomic ions, choose charge explicitly before generating the structure.</li>
+        <li>Use the SVG download for notes, presentations, and worksheets.</li>
+      </ul>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/molecular-weight-calculator.html">Molecular weight calculator</a>
+        <a href="/tools/free-chem-tools/chemical-equation-balancer.html">Chemical equation balancer</a>
+        <a href="/tools/free-chem-tools/interactive-periodic-table.html">Periodic table</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const formulaInput = document.getElementById('formulaInput');
+    const chargeSelect = document.getElementById('chargeSelect');
+    const preview = document.getElementById('preview');
+    const viewer = document.getElementById('viewer');
+    const metaBox = document.getElementById('metaBox');
+    let latestSvg = '';
+
+    const valence = { H: 1, B: 3, C: 4, N: 5, O: 6, F: 7, P: 5, S: 6, Cl: 7, Br: 7, I: 7, Si: 4 };
+    const colors = { H: '#475569', B: '#b45309', C: '#111827', N: '#2563eb', O: '#dc2626', F: '#16a34a', P: '#b45309', S: '#ca8a04', Cl: '#16a34a', Br: '#92400e', I: '#7c3aed', Si: '#64748b' };
+
+    function parseFormula(formula) {
+      const clean = formula.replace(/\s+/g, '').replace(/[₀-₉]/g, (d) => '₀₁₂₃₄₅₆₇₈₉'.indexOf(d));
+      const matches = [...clean.matchAll(/([A-Z][a-z]?)(\d*)/g)];
+      if (!matches.length || matches.map((m) => m[0]).join('') !== clean) throw new Error('Formula not recognized');
+      return matches.map((m) => ({ element: m[1], count: Number(m[2] || 1) }));
+    }
+
+    function formulaHtml(formula, charge) {
+      const html = formula.replace(/(\d+)/g, '<sub>$1</sub>');
+      if (Number(charge) === 0) return html;
+      const abs = Math.abs(Number(charge));
+      return `${html}<sup>${abs === 1 ? '' : abs}${Number(charge) > 0 ? '+' : '-'}</sup>`;
+    }
+
+    function totalValence(parts, charge) {
+      return parts.reduce((sum, part) => sum + (valence[part.element] || 0) * part.count, 0) - Number(charge);
+    }
+
+    function atom(symbol, x, y, chargeLabel = '') {
+      const fill = colors[symbol] || '#334155';
+      return `<g><circle cx="${x}" cy="${y}" r="22" fill="${fill}" opacity="0.13"/><text x="${x}" y="${y + 7}" text-anchor="middle" font-size="20" font-weight="900" fill="${fill}">${symbol}</text>${chargeLabel ? `<text x="${x + 18}" y="${y - 14}" font-size="13" font-weight="900" fill="#2563eb">${chargeLabel}</text>` : ''}</g>`;
+    }
+
+    function bond(x1, y1, x2, y2, order = 1) {
+      const dx = y2 - y1;
+      const dy = x1 - x2;
+      const len = Math.hypot(dx, dy) || 1;
+      const ox = (dx / len) * 4;
+      const oy = (dy / len) * 4;
+      if (order === 2) {
+        return `<line x1="${x1 + ox}" y1="${y1 + oy}" x2="${x2 + ox}" y2="${y2 + oy}" stroke="#64748b" stroke-width="4" stroke-linecap="round"/><line x1="${x1 - ox}" y1="${y1 - oy}" x2="${x2 - ox}" y2="${y2 - oy}" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>`;
+      }
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>`;
+    }
+
+    function dots(x, y, pairs) {
+      const positions = [[x, y - 42], [x + 42, y], [x, y + 42], [x - 42, y]];
+      let out = '';
+      positions.slice(0, pairs).forEach(([px, py]) => {
+        out += `<circle cx="${px - 4}" cy="${py}" r="3.2" fill="#0f172a"/><circle cx="${px + 4}" cy="${py}" r="3.2" fill="#0f172a"/>`;
+      });
+      return out;
+    }
+
+    function svgWrap(content) {
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 430" role="img" aria-label="Lewis structure"><rect width="760" height="430" rx="16" fill="#fbfffe"/><g>${content}</g></svg>`;
+    }
+
+    function template(formula, charge) {
+      const key = `${formula.toUpperCase()}_${charge}`;
+      if (key === 'H2O_0') return svgWrap(`${bond(350,215,275,215)}${bond(410,215,485,215)}${atom('O',380,215)}${dots(380,215,2)}${atom('H',255,215)}${atom('H',505,215)}`);
+      if (key === 'CO2_0') return svgWrap(`${bond(345,215,260,215,2)}${bond(415,215,500,215,2)}${atom('C',380,215)}${atom('O',230,215)}${dots(230,215,2)}${atom('O',530,215)}${dots(530,215,2)}`);
+      if (key === 'NH3_0') return svgWrap(`${bond(380,190,380,105)}${bond(355,235,285,295)}${bond(405,235,475,295)}${atom('N',380,215)}${dots(380,215,1)}${atom('H',380,80)}${atom('H',260,315)}${atom('H',500,315)}`);
+      if (key === 'O3_0') return svgWrap(`${bond(345,220,260,255,2)}${bond(415,220,500,255)}${atom('O',380,205,'+1')}${dots(380,205,1)}${atom('O',230,265)}${dots(230,265,2)}${atom('O',530,265,'-1')}${dots(530,265,3)}`);
+      if (key === 'SO4_-2') return svgWrap(`${bond(360,195,285,120,2)}${bond(400,195,475,120,2)}${bond(360,235,285,310)}${bond(400,235,475,310)}${atom('S',380,215)}${atom('O',260,95)}${dots(260,95,2)}${atom('O',500,95)}${dots(500,95,2)}${atom('O',260,335,'-1')}${dots(260,335,3)}${atom('O',500,335,'-1')}${dots(500,335,3)}`);
+      if (key === 'PCL5_0') return svgWrap(`${bond(380,195,380,95)}${bond(380,235,380,335)}${bond(355,215,250,215)}${bond(405,215,510,215)}${bond(360,235,285,310)}${atom('P',380,215)}${atom('Cl',380,70)}${dots(380,70,3)}${atom('Cl',380,360)}${dots(380,360,3)}${atom('Cl',225,215)}${dots(225,215,3)}${atom('Cl',535,215)}${dots(535,215,3)}${atom('Cl',260,335)}${dots(260,335,3)}`);
+      if (key === 'SF6_0') return svgWrap(`${bond(380,195,380,85)}${bond(380,235,380,345)}${bond(355,215,245,215)}${bond(405,215,515,215)}${bond(360,195,285,120)}${bond(400,235,475,310)}${atom('S',380,215)}${atom('F',380,60)}${dots(380,60,3)}${atom('F',380,370)}${dots(380,370,3)}${atom('F',220,215)}${dots(220,215,3)}${atom('F',540,215)}${dots(540,215,3)}${atom('F',260,95)}${dots(260,95,3)}${atom('F',500,335)}${dots(500,335,3)}`);
+      if (key === 'CH4_0') return svgWrap(`${bond(380,195,380,105)}${bond(380,235,380,325)}${bond(355,215,265,215)}${bond(405,215,495,215)}${atom('C',380,215)}${atom('H',380,80)}${atom('H',380,350)}${atom('H',240,215)}${atom('H',520,215)}`);
+      if (key === 'BF3_0') return svgWrap(`${bond(380,190,380,95)}${bond(355,235,270,310)}${bond(405,235,490,310)}${atom('B',380,215)}${atom('F',380,70)}${dots(380,70,3)}${atom('F',245,335)}${dots(245,335,3)}${atom('F',515,335)}${dots(515,335,3)}`);
+      return null;
+    }
+
+    function genericSvg(parts) {
+      const central = parts.find((p) => p.element !== 'H')?.element || parts[0].element;
+      const terminals = [];
+      parts.forEach((p) => {
+        const count = p.element === central ? Math.max(0, p.count - 1) : p.count;
+        for (let i = 0; i < count; i += 1) terminals.push(p.element);
+      });
+      const radius = 135;
+      let out = atom(central, 380, 215);
+      terminals.slice(0, 8).forEach((el, i) => {
+        const angle = -Math.PI / 2 + (i * 2 * Math.PI) / Math.max(terminals.length, 1);
+        const x = 380 + Math.cos(angle) * radius;
+        const y = 215 + Math.sin(angle) * radius;
+        out += bond(380 + Math.cos(angle) * 28, 215 + Math.sin(angle) * 28, x - Math.cos(angle) * 28, y - Math.sin(angle) * 28);
+        out += atom(el, x, y);
+        if (el !== 'H') out += dots(x, y, Math.min(3, Math.max(0, (valence[el] || 0) - 1) / 2));
+      });
+      return svgWrap(out);
+    }
+
+    function updatePreview() {
+      const formula = formulaInput.value.trim() || 'Formula';
+      preview.innerHTML = `Preview: ${formulaHtml(formula, chargeSelect.value)}`;
+    }
+
+    function generate() {
+      const formula = formulaInput.value.trim();
+      try {
+        const parts = parseFormula(formula);
+        const charge = chargeSelect.value;
+        latestSvg = template(formula.replace(/\s+/g, ''), charge) || genericSvg(parts);
+        viewer.innerHTML = latestSvg;
+        metaBox.innerHTML = `<span><strong>Formula</strong>${formulaHtml(formula, charge)}</span><span><strong>Valence electrons</strong>${totalValence(parts, charge)}</span><span><strong>Mode</strong>${template(formula.replace(/\s+/g, ''), charge) ? 'Tuned example' : 'Best-effort simple layout'}</span>`;
+      } catch (error) {
+        latestSvg = '';
+        viewer.innerHTML = '<div class="message">Formula not recognized. Try a simple formula such as H2O, CO2, NH3, SO4, PCl5, or SF6.</div>';
+        metaBox.innerHTML = '';
+      }
+      updatePreview();
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', generate);
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      if (!latestSvg) return;
+      const blob = new Blob([latestSvg], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${formulaInput.value.trim() || 'lewis-structure'}.svg`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      if (!latestSvg) return;
+      try { await navigator.clipboard.writeText(latestSvg); } catch {}
+    });
+    document.querySelectorAll('[data-formula]').forEach((button) => {
+      button.addEventListener('click', () => {
+        formulaInput.value = button.getAttribute('data-formula') || '';
+        chargeSelect.value = button.getAttribute('data-charge') || '0';
+        generate();
+      });
+    });
+    formulaInput.addEventListener('input', updatePreview);
+    chargeSelect.addEventListener('change', updatePreview);
+    updatePreview();
+    generate();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

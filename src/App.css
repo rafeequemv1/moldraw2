@@ -1920,6 +1920,32 @@ a.viewer-toolbar-course:hover {
   overflow: visible;
 }
 
+.mol-props-tool-row {
+  align-items: flex-start;
+}
+
+.mol-props-tool-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mol-props-tool-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  border: 1px solid rgba(44, 122, 123, 0.28);
+  border-radius: 999px;
+  padding: 0 6px;
+  background: rgba(240, 253, 250, 0.9);
+  color: #0f766e;
+  text-decoration: none;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .mol-props-iupac {
   font-style: italic;
   max-width: 160px;
@@ -2469,6 +2495,18 @@ a.viewer-toolbar-course:hover {
   color: #475569;
   font-size: 12px;
   line-height: 1.5;
+}
+
+.updates-card-list {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.updates-card-list li + li {
+  margin-top: 4px;
 }
 
 .feature-request-header {

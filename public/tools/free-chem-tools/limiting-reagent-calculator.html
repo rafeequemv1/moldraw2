@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Free limiting reagent calculator for stoichiometry. Enter a balanced equation, reactant amounts in moles, grams, or solution molarity and volume, then find the limiting reactant, excess reagent, leftover amounts, and theoretical yield.">
+  <meta name="keywords" content="limiting reagent calculator, limiting reactant calculator, excess reagent calculator, theoretical yield calculator, stoichiometry calculator, limiting reactant grams moles solution">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/limiting-reagent-calculator.html">
+  <title>Limiting Reagent Calculator | Stoichiometry and Theoretical Yield | MolDraw</title>
+  <meta property="og:title" content="Limiting Reagent Calculator | MolDraw" />
+  <meta property="og:description" content="Find the limiting reactant, excess reagent, leftover amounts, and theoretical yield from a balanced reaction." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/limiting-reagent-calculator.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Limiting Reagent Calculator",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/limiting-reagent-calculator.html",
+    "description": "Calculate limiting reactant, excess reagent, leftover reactants, reaction extent, and theoretical yield from balanced equations.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do you find the limiting reagent?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Convert each reactant amount to moles, divide by its balanced-equation coefficient, and choose the smallest value. That reactant limits the amount of product." }
+      },
+      {
+        "@type": "Question",
+        "name": "Can this calculator use grams?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. Choose grams and provide or review the molar mass. The calculator converts grams to moles before comparing stoichiometric capacity." }
+      },
+      {
+        "@type": "Question",
+        "name": "Can this calculator handle solutions?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. Choose solution mode and enter molarity and volume in liters. Moles are calculated as M times L." }
+      }
+    ]
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(980px, 94vw); margin: 0 auto; padding: 24px 0 44px; }
+    .top-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .top-link { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 700; background: #fff; }
+    .hero, .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    .hero { background: linear-gradient(135deg, #f0fdfa 0%, #fff 58%); }
+    h1 { font-size: clamp(1.6rem, 4vw, 2.15rem); color: #0f172a; margin-bottom: 8px; line-height: 1.18; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    h3 { font-size: 15px; color: #0f172a; margin: 12px 0 6px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    code { background: #f1f5f9; border-radius: 5px; padding: 2px 5px; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0 0; font-size: 13px; }
+    .tool-shell { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr); gap: 12px; align-items: start; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; }
+    input, select { width: 100%; min-height: 38px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 0 11px; font-size: 14px; color: #0f172a; background: #fff; }
+    .reaction-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; margin-bottom: 12px; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn { border-color: #d1d5db; background: #fff; color: #334155; }
+    .actions, .presets, .related-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .presets button, .related-links a { min-height: 30px; border-color: #d1d5db; background: #fff; color: #334155; text-decoration: none; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 800; }
+    .reactant-list { display: grid; gap: 10px; margin-top: 10px; }
+    .reactant-card { border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; padding: 12px; }
+    .reactant-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .reactant-head strong { color: #0f172a; }
+    .chip { border: 1px solid #cbd5e1; border-radius: 999px; padding: 2px 8px; font-size: 11px; color: #475569; background: #fff; }
+    .reactant-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .solution-fields { display: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+    .reactant-card[data-unit="solution"] .solution-fields { display: grid; }
+    .reactant-card[data-unit="solution"] .amount-field { display: none; }
+    .result { border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; padding: 14px; min-height: 230px; }
+    .result-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; background: #fff; margin-top: 10px; }
+    .result-card:first-child { margin-top: 0; }
+    .result-card strong { color: #0f172a; }
+    .result-title { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 6px; }
+    .limit-badge { color: #fff; background: #2C7A7B; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 800; }
+    .excess-badge { color: #475569; background: #f1f5f9; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 800; }
+    .bar { height: 10px; border-radius: 999px; background: #e2e8f0; overflow: hidden; margin-top: 7px; }
+    .bar span { display: block; height: 100%; background: #2C7A7B; }
+    .warning { border: 1px solid #fde68a; background: #fffbeb; color: #92400e; border-radius: 10px; padding: 10px 12px; font-size: 13px; margin-top: 10px; }
+    .error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    ul, ol { padding-left: 20px; }
+    @media (max-width: 860px) {
+      .tool-shell, .reactant-grid { grid-template-columns: 1fr; }
+      .reaction-row { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/chemical-equation-balancer.html">Equation Balancer</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <header class="hero">
+      <h1>Limiting Reagent Calculator</h1>
+      <p>Find the limiting reactant, excess reagent, reaction extent, leftover amounts, and theoretical yield from a balanced chemical equation.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> convert each reactant to moles, divide by its coefficient, and the smallest value is the limiting reagent.</div>
+    </header>
+
+    <section class="panel">
+      <h2>Set up your stoichiometry calculation</h2>
+      <div class="tool-shell">
+        <div>
+          <div class="reaction-row">
+            <label>Balanced reaction
+              <input id="reactionInput" type="text" value="2 Al + 3 Cl2 -> 2 AlCl3" spellcheck="false" placeholder="Example: 2 Al + 3 Cl2 -> 2 AlCl3">
+            </label>
+            <button id="loadReactionBtn" type="button">Load reactants</button>
+          </div>
+          <p>Enter a balanced equation first. Use <code>+</code> between species and <code>-></code> or <code>=</code> as the arrow.</p>
+          <div id="reactantList" class="reactant-list"></div>
+          <h3>Product of interest</h3>
+          <div class="reactant-grid">
+            <label>Product
+              <select id="productSelect"></select>
+            </label>
+            <label>Product coefficient
+              <input id="productCoeff" type="number" step="any" min="0" value="2">
+            </label>
+            <label>Product molar mass (g/mol)
+              <input id="productMw" type="number" step="any" min="0" value="133.34">
+            </label>
+            <label>Actual yield (optional, g)
+              <input id="actualYield" type="number" step="any" min="0" placeholder="For % yield">
+            </label>
+          </div>
+          <div class="actions">
+            <button id="calculateBtn" type="button">Calculate limiting reagent</button>
+            <button id="copyBtn" class="ghost-btn" type="button">Copy result</button>
+            <button id="resetBtn" class="ghost-btn" type="button">Reset</button>
+          </div>
+          <h3>Quick presets</h3>
+          <div class="presets">
+            <button type="button" data-preset="alcl3">2 Al + 3 Cl2 -> 2 AlCl3 (grams)</button>
+            <button type="button" data-preset="water">2 H2 + O2 -> 2 H2O (moles)</button>
+            <button type="button" data-preset="ammonia">N2 + 3 H2 -> 2 NH3 (moles)</button>
+            <button type="button" data-preset="neutralization">HCl + NaOH -> NaCl + H2O (solution)</button>
+          </div>
+        </div>
+        <div id="resultBox" class="result" aria-live="polite">Load a reaction and enter reactant amounts to calculate the limiting reagent.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>How to Find the Limiting Reagent</h2>
+      <ol>
+        <li>Make sure the chemical equation is balanced.</li>
+        <li>Convert each reactant amount to moles. For grams, use <code>moles = grams / molar mass</code>. For solutions, use <code>moles = M x L</code>.</li>
+        <li>Divide moles of each reactant by its stoichiometric coefficient.</li>
+        <li>The smallest value is the reaction extent and identifies the limiting reagent.</li>
+        <li>Use the limiting extent to calculate product moles and leftover excess reactants.</li>
+      </ol>
+      <div class="warning">This educational calculator assumes the equation is already balanced and the reaction goes to completion. Real experiments may have side reactions, purity issues, equilibrium limits, or incomplete conversion.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Related Chemistry Tools</h2>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/chemical-equation-balancer.html">Chemical equation balancer</a>
+        <a href="/tools/free-chem-tools/molecular-weight-calculator.html">Molecular weight calculator</a>
+        <a href="/tools/free-chem-tools/molarity-calculator.html">Molarity calculator</a>
+        <a href="/tools/free-chem-tools/solution-prep-calculator.html">Solution prep calculator</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const atomicWeights = {
+      H: 1.008, He: 4.0026, Li: 6.94, Be: 9.0122, B: 10.81, C: 12.011, N: 14.007, O: 15.999, F: 18.998, Ne: 20.180,
+      Na: 22.990, Mg: 24.305, Al: 26.982, Si: 28.085, P: 30.974, S: 32.06, Cl: 35.45, Ar: 39.948, K: 39.098, Ca: 40.078,
+      Fe: 55.845, Cu: 63.546, Zn: 65.38, Br: 79.904, Ag: 107.868, I: 126.904, Ba: 137.327, Pt: 195.084, Au: 196.967, Hg: 200.592, Pb: 207.2
+    };
+    const presets = {
+      alcl3: {
+        reaction: '2 Al + 3 Cl2 -> 2 AlCl3',
+        amounts: [{ unit: 'g', amount: 10 }, { unit: 'g', amount: 50 }],
+        product: 'AlCl3'
+      },
+      water: {
+        reaction: '2 H2 + O2 -> 2 H2O',
+        amounts: [{ unit: 'mol', amount: 4 }, { unit: 'mol', amount: 1.5 }],
+        product: 'H2O'
+      },
+      ammonia: {
+        reaction: 'N2 + 3 H2 -> 2 NH3',
+        amounts: [{ unit: 'mol', amount: 2 }, { unit: 'mol', amount: 3 }],
+        product: 'NH3'
+      },
+      neutralization: {
+        reaction: 'HCl + NaOH -> NaCl + H2O',
+        amounts: [{ unit: 'solution', molarity: 0.1, volume: 0.05 }, { unit: 'solution', molarity: 0.08, volume: 0.04 }],
+        product: 'NaCl'
+      }
+    };
+    let currentEquation = { reactants: [], products: [] };
+
+    function parseFormula(formula) {
+      let i = 0;
+      const clean = formula.replace(/\s+/g, '');
+      function parseNumber() {
+        const match = clean.slice(i).match(/^(\d+(?:\.\d+)?)/);
+        if (!match) return 1;
+        i += match[1].length;
+        return Number(match[1]);
+      }
+      function merge(target, source, factor) {
+        Object.entries(source).forEach(([element, count]) => {
+          target[element] = (target[element] || 0) + count * factor;
+        });
+      }
+      function parseGroup() {
+        const counts = {};
+        while (i < clean.length) {
+          if (clean[i] === '(') {
+            i++;
+            const inner = parseGroup();
+            if (clean[i] !== ')') throw new Error('Missing closing parenthesis in ' + formula);
+            i++;
+            merge(counts, inner, parseNumber());
+          } else if (clean[i] === ')') {
+            break;
+          } else {
+            const match = clean.slice(i).match(/^([A-Z][a-z]?)/);
+            if (!match) throw new Error('Invalid formula near ' + clean.slice(i));
+            const element = match[1];
+            if (!atomicWeights[element]) throw new Error('Unknown element: ' + element);
+            i += element.length;
+            counts[element] = (counts[element] || 0) + parseNumber();
+          }
+        }
+        return counts;
+      }
+      const counts = parseGroup();
+      if (i !== clean.length) throw new Error('Could not parse formula: ' + formula);
+      return counts;
+    }
+
+    function molarMass(formula) {
+      return Object.entries(parseFormula(formula)).reduce((sum, [element, count]) => sum + atomicWeights[element] * count, 0);
+    }
+
+    function parseSpecies(text) {
+      const trimmed = text.trim();
+      const match = trimmed.match(/^(\d+(?:\.\d+)?)\s*([A-Z].*)$/);
+      const coeff = match ? Number(match[1]) : 1;
+      const formula = match ? match[2].trim() : trimmed;
+      if (!formula) throw new Error('Missing species formula.');
+      return { coeff, formula };
+    }
+
+    function parseEquation(text) {
+      const parts = text.split(/\s*(?:->|→|=)\s*/);
+      if (parts.length !== 2) throw new Error('Use one reaction arrow, for example: 2 H2 + O2 -> 2 H2O');
+      const reactants = parts[0].split('+').map(parseSpecies);
+      const products = parts[1].split('+').map(parseSpecies);
+      if (!reactants.length || !products.length) throw new Error('Enter reactants and products.');
+      reactants.concat(products).forEach((species) => molarMass(species.formula));
+      return { reactants, products };
+    }
+
+    function fmt(value, digits = 6) {
+      if (!Number.isFinite(value)) return 'N/A';
+      if (Math.abs(value) >= 1000 || Math.abs(value) < 0.001 && value !== 0) return value.toExponential(4);
+      return Number(value.toFixed(digits)).toString();
+    }
+
+    function loadReaction(presetData) {
+      const reactionText = presetData?.reaction || document.getElementById('reactionInput').value;
+      try {
+        currentEquation = parseEquation(reactionText);
+        document.getElementById('reactionInput').value = reactionText;
+        const list = document.getElementById('reactantList');
+        list.innerHTML = currentEquation.reactants.map((reactant, index) => {
+          const preset = presetData?.amounts?.[index] || {};
+          const unit = preset.unit || 'g';
+          const mw = molarMass(reactant.formula);
+          return `<div class="reactant-card" data-index="${index}" data-unit="${unit}">
+            <div class="reactant-head"><strong>Reactant ${index + 1}: ${reactant.formula}</strong><span class="chip">coefficient ${reactant.coeff}</span></div>
+            <div class="reactant-grid">
+              <label>Amount <input class="amount-field" data-field="amount" type="number" step="any" min="0" value="${preset.amount ?? 10}"></label>
+              <label>Unit <select data-field="unit">
+                <option value="mol" ${unit === 'mol' ? 'selected' : ''}>Moles (mol)</option>
+                <option value="g" ${unit === 'g' ? 'selected' : ''}>Grams (g)</option>
+                <option value="solution" ${unit === 'solution' ? 'selected' : ''}>Solution (M x L)</option>
+              </select></label>
+              <label>Molar mass (g/mol) <input data-field="mw" type="number" step="any" min="0" value="${mw.toFixed(4)}"></label>
+              <label>Coefficient <input data-field="coeff" type="number" step="any" min="0" value="${reactant.coeff}"></label>
+            </div>
+            <div class="solution-fields">
+              <label>Molarity (M) <input data-field="molarity" type="number" step="any" min="0" value="${preset.molarity ?? 0.1}"></label>
+              <label>Volume (L) <input data-field="volume" type="number" step="any" min="0" value="${preset.volume ?? 0.1}"></label>
+            </div>
+          </div>`;
+        }).join('');
+        list.querySelectorAll('input, select').forEach((el) => {
+          el.addEventListener('input', handleInput);
+          el.addEventListener('change', handleInput);
+        });
+        const select = document.getElementById('productSelect');
+        select.innerHTML = currentEquation.products.map((product) => `<option value="${product.formula}">${product.formula}</option>`).join('');
+        if (presetData?.product) select.value = presetData.product;
+        syncProductFields();
+        calculate();
+      } catch (err) {
+        document.getElementById('resultBox').innerHTML = `<div class="warning error">${err.message || 'Could not parse the reaction.'}</div>`;
+      }
+    }
+
+    function handleInput(event) {
+      const card = event.target.closest('.reactant-card');
+      if (event.target.dataset.field === 'unit' && card) card.dataset.unit = event.target.value;
+      calculate();
+    }
+
+    function syncProductFields() {
+      const selected = document.getElementById('productSelect').value;
+      const product = currentEquation.products.find((item) => item.formula === selected) || currentEquation.products[0];
+      if (!product) return;
+      document.getElementById('productCoeff').value = product.coeff;
+      document.getElementById('productMw').value = molarMass(product.formula).toFixed(4);
+    }
+
+    function getCardValue(card, field) {
+      return Number(card.querySelector(`[data-field="${field}"]`)?.value);
+    }
+
+    function getReactantData() {
+      return Array.from(document.querySelectorAll('.reactant-card')).map((card) => {
+        const index = Number(card.dataset.index);
+        const formula = currentEquation.reactants[index].formula;
+        const unit = card.querySelector('[data-field="unit"]').value;
+        const coeff = getCardValue(card, 'coeff');
+        const mw = getCardValue(card, 'mw');
+        const amount = getCardValue(card, 'amount');
+        const molarity = getCardValue(card, 'molarity');
+        const volume = getCardValue(card, 'volume');
+        let moles = amount;
+        if (unit === 'g') moles = amount / mw;
+        if (unit === 'solution') moles = molarity * volume;
+        return { formula, unit, coeff, mw, amount, molarity, volume, moles, extent: moles / coeff };
+      });
+    }
+
+    function calculate() {
+      const resultBox = document.getElementById('resultBox');
+      try {
+        const reactants = getReactantData();
+        if (reactants.length < 2) throw new Error('Use at least two reactants for a limiting reagent comparison.');
+        reactants.forEach((item) => {
+          if (!(item.coeff > 0) || !(item.moles >= 0) || !Number.isFinite(item.extent)) throw new Error('Enter valid positive reactant amounts and coefficients.');
+          if (item.unit === 'g' && !(item.mw > 0)) throw new Error('Molar mass is required for gram inputs.');
+        });
+        const limiting = reactants.reduce((min, item) => item.extent < min.extent ? item : min, reactants[0]);
+        const productName = document.getElementById('productSelect').value;
+        const productCoeff = Number(document.getElementById('productCoeff').value);
+        const productMw = Number(document.getElementById('productMw').value);
+        if (!(productCoeff > 0) || !(productMw > 0)) throw new Error('Enter valid product coefficient and molar mass.');
+        const productMoles = limiting.extent * productCoeff;
+        const productGrams = productMoles * productMw;
+        const actual = Number(document.getElementById('actualYield').value);
+        const percentYield = actual > 0 ? (actual / productGrams) * 100 : null;
+        const maxExtent = Math.max(...reactants.map((item) => item.extent));
+        const breakdown = reactants.map((item) => {
+          const used = limiting.extent * item.coeff;
+          const leftover = Math.max(0, item.moles - used);
+          const isLimit = item === limiting;
+          const bar = Math.max(3, Math.min(100, (item.extent / maxExtent) * 100));
+          return `<div class="result-card">
+            <div class="result-title"><strong>${item.formula}</strong><span class="${isLimit ? 'limit-badge' : 'excess-badge'}">${isLimit ? 'Limiting' : 'Excess'}</span></div>
+            <div>Available: <strong>${fmt(item.moles)}</strong> mol | Used: <strong>${fmt(used)}</strong> mol | Leftover: <strong>${fmt(leftover)}</strong> mol</div>
+            <div>Extent = moles / coefficient = ${fmt(item.moles)} / ${fmt(item.coeff)} = <strong>${fmt(item.extent)}</strong></div>
+            <div class="bar" aria-hidden="true"><span style="width:${bar}%"></span></div>
+          </div>`;
+        }).join('');
+        resultBox.innerHTML = `<div class="result-card">
+          <strong>Summary</strong>
+          <div>Limiting reagent: <strong>${limiting.formula}</strong></div>
+          <div>Reaction extent: <strong>${fmt(limiting.extent)}</strong></div>
+        </div>
+        ${breakdown}
+        <div class="result-card">
+          <strong>Theoretical yield</strong>
+          <div>Product: <strong>${productName}</strong></div>
+          <div>${fmt(productMoles)} mol | <strong>${fmt(productGrams, 4)} g</strong></div>
+          ${percentYield ? `<div>Percent yield from actual yield: <strong>${fmt(percentYield, 2)}%</strong></div>` : ''}
+        </div>
+        <div class="result-card">
+          <strong>Steps</strong>
+          <ol>
+            <li>Convert every reactant to moles.</li>
+            <li>Compute capacity: moles divided by coefficient.</li>
+            <li>The smallest capacity is the limiting reagent.</li>
+            <li>Use that extent for product yield and leftovers.</li>
+          </ol>
+        </div>`;
+      } catch (err) {
+        resultBox.innerHTML = `<div class="warning error">${err.message || 'Check the inputs and try again.'}</div>`;
+      }
+    }
+
+    document.getElementById('loadReactionBtn').addEventListener('click', () => loadReaction());
+    document.getElementById('calculateBtn').addEventListener('click', calculate);
+    document.getElementById('productSelect').addEventListener('change', () => { syncProductFields(); calculate(); });
+    ['productCoeff', 'productMw', 'actualYield'].forEach((id) => document.getElementById(id).addEventListener('input', calculate));
+    document.getElementById('copyBtn').addEventListener('click', async () => { try { await navigator.clipboard.writeText(document.getElementById('resultBox').textContent.trim()); } catch {} });
+    document.getElementById('resetBtn').addEventListener('click', () => loadReaction(presets.alcl3));
+    document.querySelectorAll('[data-preset]').forEach((button) => button.addEventListener('click', () => loadReaction(presets[button.dataset.preset])));
+    loadReaction(presets.alcl3);
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

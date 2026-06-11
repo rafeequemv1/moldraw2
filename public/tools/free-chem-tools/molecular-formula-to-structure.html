@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Molecular formula to structure search by MolDraw. Enter a formula such as C9H8O4 and browse matching PubChem structures, names, SMILES, formula, MW, and CID.">
+  <meta name="keywords" content="molecular formula to structure, formula to structure, C9H8O4 structure, chemical formula search, formula to molecule">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/molecular-formula-to-structure.html">
+  <title>Molecular Formula to Structure Search | Formula to Molecule | MolDraw</title>
+  <meta property="og:title" content="Molecular Formula to Structure Search | MolDraw" />
+  <meta property="og:description" content="Search PubChem candidates by molecular formula and view structures, SMILES, MW, and CID." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/molecular-formula-to-structure.html" />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Molecular Formula to Structure Search","applicationCategory":"ScientificApplication","operatingSystem":"Web","url":"https://www.moldraw.com/tools/free-chem-tools/molecular-formula-to-structure.html","description":"Search PubChem structures by molecular formula and display multiple candidate molecules.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(1120px, 94vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav, .actions, .presets, .related-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .top-nav { margin-bottom: 14px; }
+    .top-link, .related-links a { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 800; background: #fff; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: 29px; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    h3 { font-size: 15px; color: #0f172a; margin-bottom: 6px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; margin-bottom: 10px; }
+    input { width: 100%; height: 38px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 0 12px; font-size: 14px; color: #0f172a; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn, .presets button { border-color: #d1d5db; background: #fff; color: #334155; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 14px; }
+    .candidate { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: #f8fafc; display: grid; gap: 8px; }
+    .candidate img { width: 100%; height: 150px; object-fit: contain; background: #fff; border: 1px solid #eef2f7; border-radius: 10px; }
+    .candidate code { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #0f172a; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px; font-size: 12px; }
+    .candidate a { width: fit-content; display: inline-flex; align-items: center; min-height: 30px; border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; padding: 0 9px; text-decoration: none; font-size: 12px; font-weight: 800; }
+    .message { margin-top: 12px; color: #64748b; font-size: 13px; }
+    ul { padding-left: 18px; }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/name-to-structure.html">Name to Structure</a>
+      <a class="top-link" href="/tools/free-chem-tools/molecular-weight-calculator.html">Molecular Weight</a>
+    </nav>
+    <section class="panel">
+      <h1>Molecular Formula to Structure Search</h1>
+      <p>Enter a formula such as C9H8O4 or C6H12O6 to browse multiple possible PubChem structure matches. Formula searches are often ambiguous, so this page shows candidate molecules instead of pretending there is only one structure.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> formula-to-structure lookup returns candidate compounds with structure image, name, SMILES, formula, molecular weight, and CID.</div>
+      <label>Molecular formula
+        <input id="formulaInput" value="C9H8O4" placeholder="Example: C9H8O4, C6H12O6, C8H10N4O2">
+      </label>
+      <div class="actions">
+        <button id="searchBtn" type="button">Search structures</button>
+        <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+      </div>
+      <div class="presets">
+        <button type="button" data-formula="C9H8O4">C9H8O4</button>
+        <button type="button" data-formula="C6H12O6">C6H12O6</button>
+        <button type="button" data-formula="C8H10N4O2">C8H10N4O2</button>
+        <button type="button" data-formula="C2H6O">C2H6O</button>
+      </div>
+      <div id="message" class="message">Candidate structures appear below.</div>
+      <div id="results" class="result-grid"></div>
+    </section>
+    <section class="panel">
+      <h2>Why Formula Searches Return Multiple Structures</h2>
+      <p>A molecular formula only tells you atom counts. Many compounds can share the same formula but have different connectivity, stereochemistry, or functional groups. Use the candidate names, images, and SMILES to choose the intended molecule.</p>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/name-to-structure.html">Name to Structure</a>
+        <a href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to Structure</a>
+        <a href="/tools/free-chem-tools/exact-mass-calculator.html">Exact Mass Calculator</a>
+      </div>
+    </section>
+  </main>
+  <script>
+    const formulaInput = document.getElementById('formulaInput');
+    const results = document.getElementById('results');
+    const message = document.getElementById('message');
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function getSmiles(props) { return props.IsomericSMILES || props.CanonicalSMILES || props.SMILES || props.ConnectivitySMILES || ''; }
+    async function searchFormula() {
+      const formula = formulaInput.value.trim();
+      results.innerHTML = '';
+      if (!formula) {
+        message.textContent = 'Enter a formula first.';
+        return;
+      }
+      message.textContent = 'Searching PubChem formula matches...';
+      try {
+        const cidRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/${encodeURIComponent(formula)}/cids/JSON?MaxRecords=12`);
+        if (!cidRes.ok) throw new Error('No formula matches');
+        const cids = ((await cidRes.json())?.IdentifierList?.CID || []).slice(0, 12);
+        if (!cids.length) throw new Error('No formula matches');
+        const propsRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cids.join(',')}/property/IUPACName,SMILES,CanonicalSMILES,IsomericSMILES,MolecularFormula,MolecularWeight/JSON`);
+        if (!propsRes.ok) throw new Error('No properties');
+        const props = (await propsRes.json())?.PropertyTable?.Properties || [];
+        message.textContent = `Showing ${props.length} candidate structure${props.length === 1 ? '' : 's'} for ${formula}.`;
+        results.innerHTML = props.map((item) => {
+          const smiles = getSmiles(item);
+          const title = item.IUPACName || `PubChem CID ${item.CID}`;
+          return `<article class="candidate">
+            <img src="https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${encodeURIComponent(item.CID)}/PNG" loading="lazy" alt="Structure for ${escapeHtml(title)}">
+            <h3>${escapeHtml(title)}</h3>
+            <p>CID: ${item.CID}<br>Formula: ${escapeHtml(item.MolecularFormula)}<br>MW: ${escapeHtml(item.MolecularWeight)} g/mol</p>
+            <code title="${escapeHtml(smiles)}">${escapeHtml(smiles)}</code>
+            <a href="/?smiles=${encodeURIComponent(smiles)}" target="_blank" rel="noopener">Open in MolDraw</a>
+          </article>`;
+        }).join('');
+      } catch {
+        message.textContent = 'No PubChem formula matches found. Check the formula capitalization and atom counts.';
+      }
+    }
+    document.getElementById('searchBtn').addEventListener('click', searchFormula);
+    document.getElementById('clearBtn').addEventListener('click', () => { formulaInput.value = ''; results.innerHTML = ''; message.textContent = 'Candidate structures appear below.'; });
+    formulaInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') searchFormula(); });
+    document.querySelectorAll('[data-formula]').forEach((button) => button.addEventListener('click', () => { formulaInput.value = button.dataset.formula; searchFormula(); }));
+    searchFormula();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

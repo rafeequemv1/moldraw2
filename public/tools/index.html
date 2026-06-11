@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Free chemistry tools hub by MolDraw. Use SMILES, IUPAC, InChI, PDB, PDBQT, MOL, SDF, and MOL2 converters plus calculators, periodic table, TLC diagram tool, equation balancer, and 3D structure utilities.">
-  <meta name="keywords" content="free chemistry tools, chemistry calculators, smiles converter, iupac converter, inchi converter, pdbqt converter, mol sdf converter, periodic table, tlc diagram tool, MolDraw tools">
+  <meta name="description" content="Free chemistry tools hub by MolDraw. Use name to structure, formula to structure, spectroscopy tools, mass spectrum predictor, structure to SMILES, SMILES, IUPAC, InChI, PDB, PDBQT, MOL, SDF, and MOL2 converters plus pH, pKa, percent yield, grams to moles, Lipinski, druglikeness, LogP, TPSA, Lewis structure, periodic table, TLC, and equation tools.">
+  <meta name="keywords" content="free chemistry tools, chemistry calculators, spectroscopy tools, mass spectrum predictor, isotope pattern calculator, name to structure, formula to structure, grams to moles calculator, percent yield calculator, pKa calculator, structure to smiles, smiles converter, Lipinski calculator, druglikeness calculator, LogP calculator, TPSA calculator, Lewis structure generator, periodic table, MolDraw tools">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <meta property="og:title" content="Free Chemistry Tools | Converters, Calculators and Periodic Table | MolDraw">
-  <meta property="og:description" content="Browse MolDraw chemistry tools for SMILES, IUPAC, InChI, PDB, PDBQT, MOL, SDF, MOL2, calculators, periodic table, TLC diagrams, and equation balancing.">
+  <meta property="og:description" content="Browse MolDraw chemistry tools for name to structure, formula to structure, spectroscopy, mass spectrum prediction, structure to SMILES, converters, calculators, pKa, percent yield, grams to moles, Lipinski, druglikeness, LogP, TPSA, Lewis structures, periodic table, TLC diagrams, and equation balancing.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.moldraw.com/tools/">
   <meta property="og:image" content="https://www.moldraw.com/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Free Chemistry Tools | MolDraw">
-  <meta name="twitter:description" content="Converters, calculators, periodic table, TLC diagram tool, equation balancer, and 3D chemistry utilities.">
+  <meta name="twitter:description" content="Converters, calculators, structure lookups, periodic table, TLC diagram tool, equation balancer, and 3D chemistry utilities.">
   <link rel="canonical" href="https://www.moldraw.com/tools/">
   <link rel="stylesheet" href="/css/site-footer.css" />
   <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index" />
@@ -25,7 +25,7 @@
     "@type": "CollectionPage",
     "name": "Free Chemistry Tools by MolDraw",
     "url": "https://www.moldraw.com/tools/",
-    "description": "Free MolDraw chemistry tools including SMILES, IUPAC, InChI, PDB, PDBQT, MOL, SDF, MOL2 converters, 3D viewers, calculators, periodic table, equation balancer, and TLC support.",
+    "description": "Free MolDraw chemistry tools including name to structure, formula to structure, spectroscopy tools, mass spectrum prediction, structure to SMILES, SMILES, IUPAC, InChI, PDB, PDBQT, MOL, SDF, MOL2 converters, 3D viewers, calculators, pKa, percent yield, grams to moles, Lipinski, druglikeness, LogP, TPSA, Lewis structures, periodic table, equation balancer, and TLC support.",
     "publisher": {
       "@type": "Organization",
       "name": "Scidart Academy"
@@ -64,7 +64,19 @@
         { "@type": "ListItem", "position": 29, "name": "Molarity Calculator" },
         { "@type": "ListItem", "position": 30, "name": "Molality Calculator" },
         { "@type": "ListItem", "position": 31, "name": "Chemical Equation Balancer" },
-        { "@type": "ListItem", "position": 32, "name": "TLC Diagram Tool" }
+        { "@type": "ListItem", "position": 32, "name": "TLC Diagram Tool" },
+        { "@type": "ListItem", "position": 33, "name": "Lipinski Rule Calculator" },
+        { "@type": "ListItem", "position": 34, "name": "Druglikeness Calculator" },
+        { "@type": "ListItem", "position": 35, "name": "LogP Calculator" },
+        { "@type": "ListItem", "position": 36, "name": "TPSA Calculator" },
+        { "@type": "ListItem", "position": 37, "name": "Lewis Structure Generator" },
+        { "@type": "ListItem", "position": 38, "name": "Structure to SMILES Converter" },
+        { "@type": "ListItem", "position": 39, "name": "Name to Structure Tool" },
+        { "@type": "ListItem", "position": 40, "name": "Molecular Formula to Structure Search" },
+        { "@type": "ListItem", "position": 41, "name": "Grams to Moles Calculator" },
+        { "@type": "ListItem", "position": 42, "name": "Percent Yield Calculator" },
+        { "@type": "ListItem", "position": 43, "name": "pKa Calculator" },
+        { "@type": "ListItem", "position": 44, "name": "Mass Spectrum Predictor" }
       ]
     }
   }
@@ -550,7 +562,7 @@
 
     <section class="hero">
       <h1>Free Chemistry Tools, Converters and Calculators</h1>
-      <p>Practical chemistry utilities for everyday lab work, learning, and structure workflows. Browse SMILES, IUPAC, InChI, PDB, PDBQT, MOL, SDF, and MOL2 converters plus calculators, periodic table, TLC diagram tool, equation balancer, and 3D structure tools.</p>
+      <p>Practical chemistry utilities for everyday lab work, learning, and structure workflows. Browse name to structure, formula to structure, spectroscopy tools, mass spectrum predictor, structure to SMILES, SMILES, IUPAC, InChI, CAS, PDB, PDBQT, MOL, SDF, and MOL2 converters plus pH, pKa, percent yield, grams to moles, molecular weight, Lipinski, druglikeness, LogP, TPSA, Lewis structure, periodic table, TLC, equation, and 3D structure tools.</p>
     </section>
 
     <div class="tools-layout">
@@ -560,6 +572,9 @@
           <li><button type="button" class="tools-cat-btn active" role="tab" aria-selected="true" data-tool-type="all" id="cat-all">All tools</button></li>
           <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="conversion" id="cat-conversion">Conversion</button></li>
           <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="viewer" id="cat-viewer">3D viewers</button></li>
+          <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="formula-mass" id="cat-formula-mass">Formula &amp; mass</button></li>
+          <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="spectroscopy" id="cat-spectroscopy">Spectroscopy</button></li>
+          <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="druglike" id="cat-druglike">Druglike</button></li>
           <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="calculator" id="cat-calculator">Calculators</button></li>
           <li><button type="button" class="tools-cat-btn" role="tab" aria-selected="false" data-tool-type="lab" id="cat-lab">Lab workflows</button></li>
         </ul>
@@ -575,6 +590,7 @@
           Input file / identifier
           <select id="conversionInput">
             <option value="">Select input</option>
+            <option value="structure">Structure / drawing</option>
             <option value="smiles">SMILES</option>
             <option value="mol">MOL / SDF</option>
             <option value="sdf">SDF</option>
@@ -583,7 +599,10 @@
             <option value="inchikey">InChIKey</option>
             <option value="mol2">MOL2</option>
             <option value="cid">PubChem CID</option>
+            <option value="cas">CAS number</option>
             <option value="iupac">IUPAC name</option>
+            <option value="name">Compound name</option>
+            <option value="formula">Molecular formula</option>
           </select>
         </label>
         <label class="conversion-field">
@@ -631,6 +650,18 @@
           <p>Balance reactions with clear steps—homework, labs, and quick stoichiometry checks.</p>
           <a href="/tools/free-chem-tools/chemical-equation-balancer.html">Open balancer</a>
         </article>
+        <article class="tool-card tool-card-featured" data-tool-type="calculator" data-tool-search="limiting reagent calculator limiting reactant excess reagent theoretical yield stoichiometry grams moles solution">
+          <span class="featured-badge">Stoichiometry</span>
+          <h2>Limiting reagent calculator</h2>
+          <p>Find the limiting reactant, excess reagent, leftovers, and theoretical yield.</p>
+          <a href="/tools/free-chem-tools/limiting-reagent-calculator.html">Open calculator</a>
+        </article>
+        <article class="tool-card tool-card-featured" data-tool-type="calculator" data-tool-search="ph calculator poh hydrogen ion concentration buffer pka henderson hasselbalch acid base solution">
+          <span class="featured-badge">High-demand</span>
+          <h2>pH calculator</h2>
+          <p>Calculate pH, pOH, concentration, strong acid/base pH, buffer pH, and pKa.</p>
+          <a href="/tools/free-chem-tools/ph-calculator.html">Open calculator</a>
+        </article>
         <article class="tool-card tool-card-featured" data-tool-type="conversion" data-tool-search="pdb pdbqt docking autodock converter upload pdb id import">
           <span class="featured-badge">Docking</span>
           <h2>PDB to PDBQT</h2>
@@ -645,6 +676,21 @@
         <h2>SMILES to Structure</h2>
         <p>Convert SMILES strings to 2D structures and export image files.</p>
         <a href="/tools/free-chem-tools/smiles-to-structure.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="structure to smiles converter draw molecule 2d editor realtime smiles ketcher">
+        <h2>Structure to SMILES</h2>
+        <p>Draw a molecule in the 2D editor and copy the realtime SMILES output.</p>
+        <a href="/tools/free-chem-tools/structure-to-smiles-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="chemical name to structure compound name to molecule name to smiles pubchem">
+        <h2>Name to Structure</h2>
+        <p>Resolve compound names to a structure image, SMILES, formula, molecular weight, and PubChem CID.</p>
+        <a href="/tools/free-chem-tools/name-to-structure.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="formula-mass" data-tool-search="molecular formula to structure formula search c9h8o4 structure pubchem candidates">
+        <h2>Molecular Formula to Structure</h2>
+        <p>Search PubChem by formula and compare candidate structures, names, CIDs, and SMILES.</p>
+        <a href="/tools/free-chem-tools/molecular-formula-to-structure.html">Open tool</a>
       </article>
       <article class="tool-card" data-tool-type="viewer" data-tool-search="smiles 3d structure viewer sdf xyz pdb obj x3d">
         <h2>SMILES to 3D Structure</h2>
@@ -731,6 +777,16 @@
         <p>Resolve PubChem CID values to canonical SMILES identifiers.</p>
         <a href="/tools/free-chem-tools/cid-to-smiles-converter.html">Open tool</a>
       </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="cas number to smiles converter registry pubchem chemical identifier">
+        <h2>CAS Number to SMILES Converter</h2>
+        <p>Resolve CAS Registry Numbers to SMILES, IUPAC name, formula, molecular weight, and CID.</p>
+        <a href="/tools/free-chem-tools/cas-number-to-smiles-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="cas number to structure chemical structure lookup pubchem image smiles">
+        <h2>CAS Number to Structure</h2>
+        <p>Look up a CAS number and view the matching 2D chemical structure with metadata.</p>
+        <a href="/tools/free-chem-tools/cas-number-to-structure.html">Open tool</a>
+      </article>
       <article class="tool-card" data-tool-type="conversion" data-tool-search="smiles to mol2 converter docking">
         <h2>SMILES to MOL2 Converter</h2>
         <p>Convert SMILES into MOL2 format for docking and med-chem workflows.</p>
@@ -781,6 +837,81 @@
         <p>Compute molarity from mass, molecular weight, and final volume.</p>
         <a href="/tools/free-chem-tools/molarity-calculator.html">Open tool</a>
       </article>
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="limiting reagent calculator limiting reactant excess reagent theoretical yield stoichiometry grams moles solution">
+        <h2>Limiting Reagent Calculator</h2>
+        <p>Find the limiting reactant, excess reagent, leftover amounts, and theoretical yield.</p>
+        <a href="/tools/free-chem-tools/limiting-reagent-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="formula-mass" data-tool-search="grams to moles calculator moles to grams molar mass formula stoichiometry">
+        <h2>Grams to Moles Calculator</h2>
+        <p>Convert grams to moles or moles to grams using molar mass from a chemical formula.</p>
+        <a href="/tools/free-chem-tools/grams-to-moles-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="percent yield calculator actual yield theoretical yield chemistry lab">
+        <h2>Percent Yield Calculator</h2>
+        <p>Calculate percent yield, actual yield, or theoretical yield with common unit support.</p>
+        <a href="/tools/free-chem-tools/percent-yield-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="formula-mass" data-tool-search="molecular weight calculator molar mass formula weight percent composition chemical formula">
+        <h2>Molecular Weight Calculator</h2>
+        <p>Calculate molar mass, element breakdown, and percent composition from a formula.</p>
+        <a href="/tools/free-chem-tools/molecular-weight-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="formula-mass" data-tool-search="smiles to molecular formula chemical formula from smiles converter">
+        <h2>SMILES to Molecular Formula</h2>
+        <p>Convert a SMILES string to formula with molecular weight and PubChem metadata.</p>
+        <a href="/tools/free-chem-tools/smiles-to-molecular-formula.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="formula-mass" data-tool-search="smiles to molecular weight molar mass calculator">
+        <h2>SMILES to Molecular Weight</h2>
+        <p>Calculate molecular weight from SMILES and show formula and compound metadata.</p>
+        <a href="/tools/free-chem-tools/smiles-to-molecular-weight.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="formula-mass" data-tool-search="exact mass calculator monoisotopic mass formula mass spectrometry">
+        <h2>Exact Mass Calculator</h2>
+        <p>Calculate monoisotopic exact mass from a chemical formula for MS workflows.</p>
+        <a href="/tools/free-chem-tools/exact-mass-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="spectroscopy" data-tool-search="spectroscopy mass spectrum predictor isotope pattern calculator molecular ion peak m plus one m plus two exact mass">
+        <h2>Mass Spectrum Predictor</h2>
+        <p>Predict isotope pattern peaks, monoisotopic mass, average mass, and molecular ion region.</p>
+        <a href="/tools/free-chem-tools/mass-spectrum-predictor.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="druglike" data-tool-search="lipinski rule of five calculator drug likeness smiles molecular weight logp hbd hba">
+        <h2>Lipinski Rule Calculator</h2>
+        <p>Check Rule of Five properties from SMILES or compound name: MW, LogP, HBD, and HBA.</p>
+        <a href="/tools/free-chem-tools/lipinski-rule-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="druglike" data-tool-search="druglikeness calculator drug likeness score lipinski veber tpsa rotatable bonds smiles">
+        <h2>Druglikeness Calculator</h2>
+        <p>Calculate a simple Lipinski plus Veber-style druglikeness guideline score.</p>
+        <a href="/tools/free-chem-tools/druglikeness-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="druglike" data-tool-search="logp calculator xlogp partition coefficient hydrophobicity smiles pubchem">
+        <h2>LogP Calculator</h2>
+        <p>Retrieve PubChem XLogP from SMILES or compound name for hydrophobicity checks.</p>
+        <a href="/tools/free-chem-tools/logp-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="druglike" data-tool-search="tpsa calculator topological polar surface area veber smiles pubchem">
+        <h2>TPSA Calculator</h2>
+        <p>Calculate topological polar surface area from SMILES or compound name.</p>
+        <a href="/tools/free-chem-tools/tpsa-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="ph calculator poh hydrogen ion hydroxide concentration buffer pka acid base solution">
+        <h2>pH Calculator</h2>
+        <p>Calculate pH, pOH, concentrations, strong acid/base pH, buffer pH, and pKa.</p>
+        <a href="/tools/free-chem-tools/ph-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="pka calculator ph to pka henderson hasselbalch buffer ratio acid base">
+        <h2>pKa Calculator</h2>
+        <p>Calculate pKa from pH, pH from pKa, or Henderson-Hasselbalch buffer ratios.</p>
+        <a href="/tools/free-chem-tools/pka-calculator.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="calculator" data-tool-search="lewis structure generator lewis dot valence electrons formula charge molecule ion so4 pcl5 sf6">
+        <h2>Lewis Structure Generator</h2>
+        <p>Generate Lewis dot structures from formula and charge with SVG download.</p>
+        <a href="/tools/free-chem-tools/lewis-structure-generator.html">Open tool</a>
+      </article>
       <article class="tool-card" data-tool-type="calculator" data-tool-search="molality calculator solute solvent mass">
         <h2>Molality Calculator</h2>
         <p>Compute molality from solute amount and solvent mass.</p>
@@ -800,6 +931,7 @@
     const conversionOpenBtn = document.getElementById('conversionOpenBtn');
     const conversionRouterNote = document.getElementById('conversionRouterNote');
     const conversionRoutes = {
+      'structure:smiles': '/tools/free-chem-tools/structure-to-smiles-converter.html',
       'smiles:structure': '/tools/free-chem-tools/smiles-to-structure.html',
       'smiles:3d': '/tools/free-chem-tools/smiles-to-3d-structure-converter.html',
       'smiles:pdb': '/tools/free-chem-tools/smiles-to-pdb-converter.html',
@@ -825,7 +957,12 @@
       'inchikey:inchi': '/tools/free-chem-tools/inchikey-to-inchi-converter.html',
       'mol2:smiles': '/tools/free-chem-tools/mol2-to-smiles-converter.html',
       'cid:smiles': '/tools/free-chem-tools/cid-to-smiles-converter.html',
-      'iupac:smiles': '/tools/free-chem-tools/iupac-name-to-smiles-converter.html'
+      'cas:smiles': '/tools/free-chem-tools/cas-number-to-smiles-converter.html',
+      'cas:structure': '/tools/free-chem-tools/cas-number-to-structure.html',
+      'iupac:smiles': '/tools/free-chem-tools/iupac-name-to-smiles-converter.html',
+      'iupac:structure': '/tools/free-chem-tools/name-to-structure.html',
+      'name:structure': '/tools/free-chem-tools/name-to-structure.html',
+      'formula:structure': '/tools/free-chem-tools/molecular-formula-to-structure.html'
     };
     let selectedType = 'all';
     let activeToolUrl = '';

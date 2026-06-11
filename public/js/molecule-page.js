@@ -10,10 +10,17 @@
   }
   if (!molecule || !molecule.cid) return;
 
-  const editorLink = document.querySelector('[data-editor-link]');
-  if (editorLink && molecule.smiles) {
-    editorLink.href = `/?smiles=${encodeURIComponent(molecule.smiles)}`;
-  }
+  document.querySelectorAll('[data-editor-link]').forEach((editorLink) => {
+    if (molecule.smiles) {
+      editorLink.href = `/?smiles=${encodeURIComponent(molecule.smiles)}`;
+    }
+  });
+
+  document.querySelectorAll('[data-smiles-href]').forEach((link) => {
+    if (!molecule.smiles) return;
+    const base = link.getAttribute('data-smiles-href');
+    link.href = `${base}${base.includes('?') ? '&' : '?'}smiles=${encodeURIComponent(molecule.smiles)}`;
+  });
 
   document.querySelectorAll('[data-copy]').forEach((button) => {
     button.addEventListener('click', async () => {

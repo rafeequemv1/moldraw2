@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="MolDraw molecule pages with structures, 3D viewers, SMILES, InChI, properties, classes, and direct editor links for caffeine, aspirin, ibuprofen, paracetamol, and glucose.">
-  <meta name="keywords" content="molecule structures, caffeine structure, aspirin structure, ibuprofen structure, paracetamol structure, glucose structure, SMILES, InChI, MolDraw">
+  <meta name="description" content="MolDraw molecule pages with 2D structures, 3D viewers, SMILES, InChIKey, molecular formula, molecular weight, exact mass, computed properties, downloads, FAQs, and conversion links.">
+  <meta name="keywords" content="molecule structures, molecular formula, molecular weight, exact mass, caffeine structure, aspirin structure, ibuprofen structure, paracetamol structure, glucose structure, SMILES, InChIKey, MolDraw">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <meta property="og:title" content="Molecule Structures and Properties | MolDraw Blog">
-  <meta property="og:description" content="Explore common molecule pages with structure images, 3D viewers, SMILES, InChI, properties, and MolDraw editor links.">
+  <meta property="og:description" content="Explore molecule pages with structure images, 3D viewers, identifiers, computed properties, downloads, FAQs, and conversion links.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.moldraw.com/blog/molecules/">
   <meta property="og:image" content="https://www.moldraw.com/og-image.png">
@@ -23,7 +23,7 @@
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "name": "Molecule Structures and Properties",
-    "description": "SEO molecule pages with structures, 3D viewers, identifiers, properties, and MolDraw editor links.",
+    "description": "SEO molecule pages with structures, 3D viewers, identifiers, computed properties, downloads, FAQs, and MolDraw editor links.",
     "url": "https://www.moldraw.com/blog/molecules/",
     "publisher": { "@type": "Organization", "name": "Scidart Academy" },
     "hasPart": [
@@ -45,7 +45,7 @@
         "name": "What molecule pages are available in MolDraw?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "MolDraw provides molecule reference pages for caffeine, aspirin, ibuprofen, paracetamol, and glucose. Each page includes a 2D structure, 3D viewer, SMILES, InChI, properties, class, and an editor link."
+          "text": "MolDraw provides molecule reference pages for caffeine, aspirin, ibuprofen, paracetamol, and glucose. Each page includes a 2D structure, 3D viewer, SMILES, InChI, InChIKey, molecular formula, molecular weight, exact mass, computed properties, downloads, conversion links, safety notes, related molecules, FAQ, and an editor link."
         }
       },
       {
@@ -75,6 +75,8 @@
     .card h2 { font-size: 20px; line-height: 1.3; }
     .card p { color: #475569; font-size: 14px; flex: 1; }
     .read-btn { width: fit-content; display: inline-flex; align-items: center; justify-content: center; min-height: 34px; border-radius: 8px; border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; text-decoration: none; font-size: 13px; font-weight: 800; padding: 0 12px; }
+    .mini-props { display: flex; flex-wrap: wrap; gap: 6px; }
+    .mini-props span { border: 1px solid #e2e8f0; border-radius: 999px; padding: 2px 8px; color: #334155; background: #f8fafc; font-size: 11px; font-weight: 800; }
     .answer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
     .answer-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
     .answer-card h2 { font-size: 18px; margin-bottom: 8px; }
@@ -90,53 +92,58 @@
     </nav>
     <section class="hero">
       <h1>Molecule Structures and Properties</h1>
-      <p>Quick reference pages for common molecules. Each page includes a 2D structure, interactive 3D conformer preview, SMILES, InChI, molecular properties, molecule class, and a direct button to open the compound in the MolDraw editor.</p>
+      <p>Quick reference pages for common molecules. Each page now includes a 2D structure, interactive 3D conformer preview, SMILES, InChIKey, molecular formula, molecular weight, exact mass, computed properties, download links, conversion buttons, related compounds, safety notes, and visible FAQ content.</p>
     </section>
     <section class="grid" aria-label="Molecule pages">
       <article class="card">
         <span class="tag">Stimulant</span>
         <img src="https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/2519/PNG" alt="Caffeine chemical structure" loading="lazy" decoding="async">
         <h2>Caffeine</h2>
-        <p>Caffeine structure, 3D viewer, SMILES, InChI, formula, molecular weight, and methylxanthine class information.</p>
+        <p>Caffeine structure, 3D viewer, SMILES, InChIKey, exact mass, computed properties, downloads, FAQ, and methylxanthine class information.</p>
+        <div class="mini-props"><span>C8H10N4O2</span><span>194.19 g/mol</span><span>LogP -0.1</span></div>
         <a class="read-btn" href="/blog/molecules/caffeine.html">Open page</a>
       </article>
       <article class="card">
         <span class="tag">NSAID</span>
         <img src="https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/2244/PNG" alt="Aspirin chemical structure" loading="lazy" decoding="async">
         <h2>Aspirin</h2>
-        <p>Aspirin structure, 3D viewer, SMILES, InChI, properties, and salicylate NSAID class details.</p>
+        <p>Aspirin structure, 3D viewer, SMILES, InChIKey, exact mass, computed properties, downloads, FAQ, and salicylate NSAID class details.</p>
+        <div class="mini-props"><span>C9H8O4</span><span>180.16 g/mol</span><span>LogP 1.2</span></div>
         <a class="read-btn" href="/blog/molecules/aspirin.html">Open page</a>
       </article>
       <article class="card">
         <span class="tag">NSAID</span>
         <img src="https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/3672/PNG" alt="Ibuprofen chemical structure" loading="lazy" decoding="async">
         <h2>Ibuprofen</h2>
-        <p>Ibuprofen structure, 3D viewer, SMILES, InChI, properties, and propionic acid NSAID class details.</p>
+        <p>Ibuprofen structure, 3D viewer, SMILES, InChIKey, exact mass, computed properties, downloads, FAQ, and propionic acid NSAID class details.</p>
+        <div class="mini-props"><span>C13H18O2</span><span>206.28 g/mol</span><span>LogP 3.5</span></div>
         <a class="read-btn" href="/blog/molecules/ibuprofen.html">Open page</a>
       </article>
       <article class="card">
         <span class="tag">Analgesic</span>
         <img src="https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/1983/PNG" alt="Paracetamol chemical structure" loading="lazy" decoding="async">
         <h2>Paracetamol</h2>
-        <p>Paracetamol structure, 3D viewer, SMILES, InChI, properties, and analgesic-antipyretic class details.</p>
+        <p>Paracetamol structure, 3D viewer, SMILES, InChIKey, exact mass, computed properties, downloads, FAQ, and analgesic-antipyretic class details.</p>
+        <div class="mini-props"><span>C8H9NO2</span><span>151.16 g/mol</span><span>LogP 0.5</span></div>
         <a class="read-btn" href="/blog/molecules/paracetamol.html">Open page</a>
       </article>
       <article class="card">
         <span class="tag">Carbohydrate</span>
         <img src="https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/5793/PNG" alt="Glucose chemical structure" loading="lazy" decoding="async">
         <h2>Glucose</h2>
-        <p>Glucose structure, 3D viewer, SMILES, InChI, molecular properties, and monosaccharide class information.</p>
+        <p>Glucose structure, 3D viewer, SMILES, InChIKey, exact mass, computed properties, downloads, FAQ, and monosaccharide class information.</p>
+        <div class="mini-props"><span>C6H12O6</span><span>180.16 g/mol</span><span>TPSA 110 Å²</span></div>
         <a class="read-btn" href="/blog/molecules/glucose.html">Open page</a>
       </article>
     </section>
     <section class="answer-grid" aria-label="Molecule page answers">
       <article class="answer-card">
         <h2>What is included on each molecule page?</h2>
-        <p>Each page includes a 2D structure, lazy-loaded 3D conformer viewer, SMILES, InChI, formula, molecular weight, class or drug class, copy buttons, and a direct MolDraw editor link.</p>
+        <p>Each page includes a 2D structure, lazy-loaded 3D conformer viewer, SMILES, InChI, InChIKey, formula, molecular weight, exact mass, LogP, TPSA, hydrogen-bond counts, rotatable bonds, heavy atom count, copy buttons, and a direct MolDraw editor link.</p>
       </article>
       <article class="answer-card">
-        <h2>How does the MolDraw editor button work?</h2>
-        <p>The button opens the main MolDraw app with a SMILES query parameter, so the selected molecule loads directly in the editor for drawing, editing, and visualization.</p>
+        <h2>What can I do from a molecule page?</h2>
+        <p>You can open the molecule in MolDraw, copy identifiers, download common structure formats, convert the SMILES into MOL/PDB/PDBQT/InChI/formula/weight tools, and compare related molecules.</p>
       </article>
     </section>
   </main>
