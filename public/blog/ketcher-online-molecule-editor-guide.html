@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Detailed Ketcher guide for chemistry students and researchers: what Ketcher is, common molecule drawing workflows, file formats, limits, alternatives, and browser-based structure editing tips.">
+  <meta name="keywords" content="ketcher, ketcher online, ketcher molecule editor, ketcher chemical structure editor, free molecule editor, online chemical drawing, chemical structure editor, MolDraw">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="Ketcher Online Molecule Editor Guide | MolDraw Blog">
+  <meta property="og:description" content="Learn what Ketcher is, how browser molecule editors work, common chemistry drawing workflows, supported formats, and practical alternatives for drawing structures online.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.moldraw.com/blog/ketcher-online-molecule-editor-guide.html">
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ketcher Online Molecule Editor Guide | MolDraw">
+  <meta name="twitter:description" content="A practical guide to Ketcher, online molecule editors, chemistry drawing workflows, file formats, and browser-based alternatives.">
+  <link rel="canonical" href="https://www.moldraw.com/blog/ketcher-online-molecule-editor-guide.html">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
+  <link rel="stylesheet" href="/css/site-topbar.css">
+  <link rel="stylesheet" href="/css/site-footer.css">
+  <title>Ketcher Online Molecule Editor Guide | Chemical Structure Drawing</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Ketcher Online Molecule Editor Guide",
+    "description": "A detailed guide to Ketcher, online molecule editing, chemical structure drawing workflows, file formats, and browser-based alternatives.",
+    "datePublished": "2026-06-11",
+    "dateModified": "2026-06-11",
+    "author": { "@type": "Organization", "name": "Scidart Academy" },
+    "publisher": { "@type": "Organization", "name": "Scidart Academy" },
+    "mainEntityOfPage": "https://www.moldraw.com/blog/ketcher-online-molecule-editor-guide.html"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is Ketcher?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ketcher is an open-source chemical structure editor used for drawing molecules, reactions, atoms, bonds, stereochemistry, templates, and chemical file formats in browser-based chemistry workflows."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I use a Ketcher-style molecule editor online?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Browser molecule editors let users draw chemical structures online, copy SMILES, export files, and prepare structures for teaching, publication drafts, database lookup, and computational chemistry workflows."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is a good alternative if I searched for Ketcher online?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "If your goal is to draw molecules quickly in the browser, MolDraw provides a free online editor with 2D drawing, 3D viewing, structure search, exports, and chemistry tools."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; line-height: 1.7; }
+    .layout { width: min(1180px, 94vw); margin: 0 auto; padding: 24px 0 46px; display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; }
+    .outline { position: sticky; top: 16px; align-self: start; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+    .outline h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 10px; }
+    .outline a { display: block; color: #334155; text-decoration: none; font-size: 13px; font-weight: 800; padding: 7px 8px; border-radius: 8px; }
+    .outline a:hover { background: #f0fdfa; color: #0f766e; }
+    .article { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 24px; }
+    .top-links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .top-link, .primary-link { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 12px; color: #334155; background: #fff; text-decoration: none; font-size: 13px; font-weight: 800; }
+    .primary-link { background: #2C7A7B; border-color: #2C7A7B; color: #fff; }
+    h1 { font-size: clamp(30px, 4vw, 42px); line-height: 1.12; margin-bottom: 10px; letter-spacing: -0.02em; }
+    h2 { font-size: 24px; margin: 28px 0 10px; scroll-margin-top: 18px; }
+    h3 { font-size: 18px; margin: 16px 0 8px; }
+    p { color: #334155; margin-bottom: 12px; }
+    .lede { color: #475569; max-width: 850px; font-size: 16px; }
+    .meta { color: #64748b; font-size: 13px; margin-bottom: 18px; }
+    .answer-box { border-left: 4px solid #2C7A7B; background: #f0fdfa; border-radius: 10px; padding: 12px; margin: 14px 0; color: #134e4a; }
+    .callout { border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; border-radius: 10px; padding: 12px; margin: 14px 0; }
+    .comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+    .mini-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; background: #f8fafc; }
+    .mini-card h3 { margin-top: 0; }
+    ul, ol { margin: 8px 0 12px 20px; color: #334155; }
+    li { margin-bottom: 6px; }
+    code { background: #eef2f7; border-radius: 6px; padding: 1px 5px; color: #0f172a; font-size: 0.95em; }
+    .link-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .link-list a { display: inline-flex; align-items: center; min-height: 30px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 9px; background: #fff; color: #334155; text-decoration: none; font-size: 12px; font-weight: 800; }
+    .quick-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+    .quick-table th, .quick-table td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+    .quick-table th { background: #f8fafc; color: #0f172a; }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .outline { position: static; } .comparison-grid { grid-template-columns: 1fr; } .article { padding: 18px; } }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <aside class="outline" aria-label="Article sections">
+      <h2>Ketcher Guide</h2>
+      <a href="#overview">Overview</a>
+      <a href="#what-is-ketcher">What is Ketcher?</a>
+      <a href="#online-editor">Online editor workflow</a>
+      <a href="#features">Key features</a>
+      <a href="#formats">Formats</a>
+      <a href="#alternatives">Alternatives</a>
+      <a href="#faq">FAQ</a>
+    </aside>
+    <article class="article">
+      <nav class="top-links" aria-label="Blog navigation">
+        <a class="top-link" href="/blog/">Back to Blog</a>
+        <a class="top-link" href="/tools/">Chemistry Tools</a>
+        <a class="primary-link" href="/">Open MolDraw</a>
+      </nav>
+      <h1>Ketcher Online Molecule Editor Guide</h1>
+      <p class="lede">Ketcher is one of the best-known names in browser-based chemical structure editing. This guide explains what people usually mean by Ketcher online, what a chemical structure editor should do, which file formats matter, and how to choose a practical drawing workflow for class, research, or computational chemistry.</p>
+      <p class="meta">Published: 11 Jun 2026 · Category: Drawing guides · Publisher: Scidart Academy</p>
+
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>When chemistry users search for Ketcher, they are usually looking for a fast way to draw molecules online. The intent is often simple: sketch a structure, fix atoms and bonds, copy a SMILES string, export an image, or prepare a molecule for another chemistry tool.</p>
+        <div class="answer-box"><strong>Short answer:</strong> Ketcher is an open-source chemical structure editor, and the broader Ketcher search intent is about online molecule drawing. If you need a free browser workflow for drawing, viewing, searching, and exporting molecules, you can also try <a href="/">MolDraw</a>.</div>
+      </section>
+
+      <section id="what-is-ketcher">
+        <h2>What Is Ketcher?</h2>
+        <p>Ketcher is an open-source chemical structure editor created for drawing and editing molecular structures in a web environment. It is commonly discussed in the context of molecule sketchers, cheminformatics interfaces, ELN systems, database search forms, and chemistry web apps.</p>
+        <p>A Ketcher-style editor normally focuses on precise 2D chemical drawing rather than artistic illustration. The main goal is to create chemically meaningful structures that can be converted into machine-readable formats such as SMILES, MOL, or reaction formats.</p>
+        <p>For primary references, see the <a href="https://lifescience.opensource.epam.com/ketcher/" rel="noopener">official Ketcher project page</a> and the <a href="https://github.com/epam/ketcher" rel="noopener">Ketcher GitHub repository</a>.</p>
+        <h3>Why chemists search for Ketcher</h3>
+        <ul>
+          <li>They need a free molecule editor that works in a browser.</li>
+          <li>They want to draw a compound and copy SMILES or MOL data.</li>
+          <li>They need reaction sketching for organic chemistry workflows.</li>
+          <li>They are comparing Ketcher, ChemDraw, Marvin, and newer browser tools.</li>
+          <li>They want a quick editor for teaching, assignments, lab notes, or database lookup.</li>
+        </ul>
+      </section>
+
+      <section id="online-editor">
+        <h2>How an Online Molecule Editor Workflow Works</h2>
+        <p>A good online molecule editor should let users move from a rough chemical idea to a usable digital structure without installing desktop software. The typical workflow is:</p>
+        <ol>
+          <li>Draw atoms, bonds, rings, charges, stereochemistry, and functional groups.</li>
+          <li>Clean up the layout so the structure is readable.</li>
+          <li>Generate or copy a chemical identifier such as SMILES or InChI.</li>
+          <li>Export an image or chemistry file for reports, slides, notebooks, or downstream tools.</li>
+          <li>Optionally view the structure in 3D or run related converters.</li>
+        </ol>
+        <div class="callout">If your goal is not to study Ketcher itself but to draw chemistry quickly, open <a href="/">MolDraw</a> and start with a structure, name search, SMILES, or file export workflow.</div>
+      </section>
+
+      <section id="features">
+        <h2>Important Features in a Ketcher-Style Editor</h2>
+        <div class="comparison-grid">
+          <div class="mini-card">
+            <h3>2D structure drawing</h3>
+            <p>Atoms, single/double/triple bonds, rings, charges, aromatic structures, templates, and stereochemical wedges are the foundation of any serious molecule editor.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Identifier support</h3>
+            <p>SMILES, InChI, InChIKey, common names, and IUPAC workflows help connect drawings to databases and computational tools.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Export formats</h3>
+            <p>Useful editors support image export plus chemistry formats such as MOL, SDF, RXN, PDB, and sometimes docking or quantum chemistry files.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Browser convenience</h3>
+            <p>The main advantage of an online editor is speed: open the page, draw, copy, export, and continue without license setup or desktop installation.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="formats">
+        <h2>Formats People Use With Ketcher and Online Editors</h2>
+        <p>Chemical drawing is most useful when the structure can leave the editor in a format another tool understands. These are the common formats users should know:</p>
+        <table class="quick-table">
+          <thead>
+            <tr>
+              <th>Format</th>
+              <th>Best use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>SMILES</td>
+              <td>Compact molecule identifiers for databases, search, scripts, and quick sharing.</td>
+            </tr>
+            <tr>
+              <td>MOL / SDF</td>
+              <td>Structure files with atom and bond blocks, useful for cheminformatics and batch workflows.</td>
+            </tr>
+            <tr>
+              <td>RXN</td>
+              <td>Reaction structures with reactants, agents, and products.</td>
+            </tr>
+            <tr>
+              <td>SVG / PNG</td>
+              <td>Images for presentations, papers, reports, and teaching slides.</td>
+            </tr>
+            <tr>
+              <td>PDB / PDBQT</td>
+              <td>3D coordinate and docking workflows, especially for structural biology and docking preparation.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="link-list" aria-label="Related format tools">
+          <a href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to structure</a>
+          <a href="/tools/free-chem-tools/smiles-to-iupac-name-converter.html">SMILES to IUPAC</a>
+          <a href="/tools/free-chem-tools/smiles-to-sdf-converter.html">SMILES to SDF</a>
+          <a href="/tools/free-chem-tools/pdb-to-pdbqt-converter.html">PDB to PDBQT</a>
+          <a href="/tools/free-chem-tools/interactive-periodic-table.html">Interactive periodic table</a>
+        </div>
+      </section>
+
+      <section id="alternatives">
+        <h2>Ketcher Alternatives and Browser Drawing Options</h2>
+        <p>Ketcher is not the only search path for online chemical drawing. Users also compare free chemistry drawing software, ChemDraw alternatives, structure converters, molecule viewers, and lightweight browser editors.</p>
+        <p><a href="/">MolDraw</a> is useful when you want an online structure drawing workspace with integrated 3D viewing, PubChem-style name search, copy/export options, molecule references, reaction guides, and chemistry converters.</p>
+        <div class="link-list" aria-label="Recommended MolDraw pages">
+          <a href="/">Open MolDraw editor</a>
+          <a href="/blog/free-chemical-drawing-software-iupac-guide.html">Free chemical drawing software</a>
+          <a href="/blog/chemdraw-vs-moldraw-free-alternative-guide.html">ChemDraw alternative guide</a>
+          <a href="/blog/molecules/">Molecule pages</a>
+          <a href="/reaction/">Reaction guides</a>
+          <a href="/tools/">Tools hub</a>
+        </div>
+      </section>
+
+      <section id="faq">
+        <h2>Ketcher FAQ</h2>
+        <h3>What is Ketcher used for?</h3>
+        <p>Ketcher is used for drawing and editing chemical structures, reactions, atoms, bonds, stereochemistry, templates, and structure files in web-based chemistry workflows.</p>
+        <h3>Is Ketcher the same as ChemDraw?</h3>
+        <p>No. Ketcher and ChemDraw are different tools. ChemDraw is a commercial desktop suite, while Ketcher is known as an open-source chemical structure editor for web workflows.</p>
+        <h3>Can I draw molecules online without installing software?</h3>
+        <p>Yes. Browser tools such as <a href="/">MolDraw</a> let users draw molecules online, view structures, use converters, and export common chemistry formats without installing a desktop program.</p>
+        <h3>What should I use if I searched Ketcher but need an editor now?</h3>
+        <p>If your immediate goal is to draw or edit a molecule, open the <a href="/">MolDraw editor</a>. If your goal is format conversion, use the <a href="/tools/">MolDraw Tools Hub</a>.</p>
+      </section>
+    </article>
+  </main>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

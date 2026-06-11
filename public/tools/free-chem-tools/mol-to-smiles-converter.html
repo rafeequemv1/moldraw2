@@ -83,6 +83,12 @@
       </div>
       <div class="output" id="resultBox">SMILES output appears here.</div>
     </section>
+    <section class="panel">
+      <h2>File Format Explained</h2>
+      <p><strong>MOL</strong> and <strong>SDF</strong> files store atom and bond blocks, often with 2D or 3D coordinates. They are useful for editable structure exchange and compound data records.</p>
+      <p><strong>SMILES</strong> converts that structure into a compact one-line text notation. It is useful for search, identifiers, scripts, and web tools.</p>
+      <p>When converting MOL or SDF to SMILES, check stereochemistry, charges, salts, and aromaticity. Some coordinate or property data from the source file will not be preserved in SMILES.</p>
+    </section>
   </main>
   <script>
     const molInput = document.getElementById('molInput');

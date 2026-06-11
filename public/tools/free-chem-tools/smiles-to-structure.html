@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="SMILES to structure converter online by MolDraw. Paste a SMILES string, render a 2D chemical structure instantly, and download the molecule as SVG, PNG, or JPG.">
+  <meta name="description" content="SMILES to structure converter online by MolDraw. Paste SMILES or import a compound from PubChem, render a 2D chemical structure, and download SVG, PNG, or JPG.">
   <meta name="keywords" content="smiles to structure, smiles to structure converter, convert smiles to structure, smiles structure drawer, chemical structure from smiles, download structure svg png jpg">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
@@ -11,13 +11,13 @@
   <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index" />
   <title>SMILES to Structure Converter Online | Draw 2D Molecules | MolDraw</title>
   <meta property="og:title" content="SMILES to Structure Converter Online | MolDraw" />
-  <meta property="og:description" content="Paste a SMILES string and draw a 2D chemical structure online. Export the rendered molecule as SVG, PNG, or JPG." />
+  <meta property="og:description" content="Paste SMILES or import from PubChem, draw a 2D chemical structure online, and export SVG, PNG, or JPG." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/smiles-to-structure.html" />
   <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="SMILES to Structure Converter Online | MolDraw" />
-  <meta name="twitter:description" content="Convert SMILES to a 2D chemical structure image and download SVG, PNG, or JPG files." />
+  <meta name="twitter:description" content="Convert SMILES or PubChem compounds to 2D chemical structure images and download SVG, PNG, or JPG files." />
 
   <script type="application/ld+json">
   {
@@ -27,7 +27,7 @@
     "applicationCategory": "ScientificApplication",
     "operatingSystem": "Web",
     "url": "https://www.moldraw.com/tools/free-chem-tools/smiles-to-structure.html",
-    "description": "Convert SMILES strings to 2D chemical structure drawings and export them as SVG, PNG, or JPG.",
+    "description": "Convert SMILES strings or PubChem compound imports to 2D chemical structure drawings and export them as SVG, PNG, or JPG.",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
@@ -108,6 +108,62 @@
       display: grid;
       gap: 10px;
     }
+    .structure-converter-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(96px, auto) minmax(0, 1fr);
+      gap: 12px;
+      align-items: stretch;
+      margin-top: 14px;
+    }
+    .structure-converter-shell.style-open {
+      grid-template-columns: minmax(0, 0.85fr) minmax(96px, auto) minmax(0, 1fr) minmax(320px, 0.8fr);
+    }
+    .structure-card {
+      min-width: 0;
+      max-width: 100%;
+      height: 360px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #f8fafc;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .structure-card h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .structure-converter-middle {
+      min-width: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .structure-converter-middle button {
+      height: auto;
+      min-height: 40px;
+      max-width: 120px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      white-space: normal;
+      line-height: 1.2;
+      box-shadow: 0 10px 22px rgba(44, 122, 123, 0.18);
+    }
+    .structure-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: auto;
+    }
+    .structure-card-actions button {
+      height: auto;
+      min-height: 32px;
+      white-space: normal;
+      line-height: 1.2;
+    }
     textarea {
       width: 100%;
       min-height: 88px;
@@ -140,19 +196,53 @@
       background: #fff;
       color: #334155;
     }
+    .pubchem-import {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+    .pubchem-import input {
+      min-height: 36px;
+      border: 1px solid #cfd8e3;
+      border-radius: 10px;
+      padding: 0 10px;
+      font-size: 13px;
+      color: #0f172a;
+      min-width: 0;
+    }
+    .example-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .example-chips button {
+      height: 28px;
+      border-color: #d1d5db;
+      background: #fff;
+      color: #334155;
+      font-size: 11px;
+    }
     .render-area {
       border: 1px dashed #cbd5e1;
       background: #f8fafc;
       border-radius: 10px;
       min-height: 300px;
+      flex: 1 1 auto;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 12px;
       overflow: auto;
     }
+    .structure-card textarea {
+      flex: 1 1 0;
+      min-height: 0;
+      resize: none;
+      overflow: auto;
+    }
     #svgTarget {
-      width: min(560px, 100%);
+      width: auto;
+      max-width: 100%;
       min-height: 240px;
       background: #fff;
       border-radius: 8px;
@@ -206,6 +296,170 @@
       font-size: 12px;
       font-weight: 700;
     }
+    .style-panel {
+      position: sticky;
+      top: 96px;
+      z-index: 10;
+      width: 100%;
+      height: calc(100vh - 112px);
+      display: none;
+      flex-direction: column;
+      transform: none;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.10);
+      overflow: hidden;
+    }
+    .style-panel.open {
+      display: flex;
+      transform: none;
+    }
+    .style-panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 16px 18px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .style-panel-header h2 {
+      margin: 0 0 3px;
+      font-size: 18px;
+    }
+    .style-panel-header p {
+      margin: 0;
+      font-size: 12px;
+    }
+    .style-panel-body {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 16px 18px 20px;
+      display: grid;
+      gap: 14px;
+    }
+    .style-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+    .style-section h3 {
+      margin: 0 0 9px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #0f172a;
+    }
+    .style-control {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .style-control:first-of-type {
+      margin-top: 0;
+    }
+    .style-control-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+    .style-control input[type="range"] {
+      width: 100%;
+    }
+    .style-control input[type="number"],
+    .style-control select {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid #cfd8e3;
+      border-radius: 8px;
+      background: #fff;
+      padding: 0 9px;
+      color: #0f172a;
+      font-size: 13px;
+    }
+    .style-value {
+      min-width: 44px;
+      border-radius: 7px;
+      background: #ccfbf1;
+      color: #0f766e;
+      padding: 2px 6px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .toggle-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .toggle-line input {
+      width: 18px;
+      height: 18px;
+      accent-color: #2C7A7B;
+    }
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+    .color-grid label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .color-grid input {
+      width: 42px;
+      height: 30px;
+      border: 1px solid #cfd8e3;
+      border-radius: 8px;
+      background: #fff;
+      padding: 2px;
+    }
+    .style-panel-footer {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 14px 18px;
+      border-top: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    @media (max-width: 640px) {
+      .structure-converter-shell,
+      .structure-converter-shell.style-open,
+      .pubchem-import {
+        grid-template-columns: 1fr;
+      }
+      .structure-converter-middle {
+        min-width: 0;
+      }
+      .structure-converter-middle button {
+        max-width: 100%;
+        width: 100%;
+      }
+      .structure-card-actions button {
+        flex: 1 1 140px;
+      }
+      .style-panel {
+        position: static;
+        height: auto;
+      }
+      .structure-card {
+        height: 320px;
+      }
+    }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
@@ -220,29 +474,50 @@
       <h1>SMILES to Structure Converter Online</h1>
       <p>Paste a SMILES string and render a compact 2D chemical structure instantly. Download the molecule drawing as SVG, PNG, or JPG.</p>
       <div class="quick-answer"><strong>Quick answer:</strong> This free online tool converts SMILES to a 2D structure drawing in the browser and lets you export the rendered molecule as SVG, PNG, or JPG.</div>
-      <div class="input-wrap">
-        <textarea id="smilesInput" placeholder="Example: CC(=O)OC1=CC=CC=C1C(=O)O">CC(=O)OC1=CC=CC=C1C(=O)O</textarea>
-        <div class="actions">
+      <div id="structureConverterShell" class="structure-converter-shell">
+        <div class="structure-card structure-input-card">
+          <h2>SMILES Input</h2>
+        <div class="pubchem-import">
+          <input id="pubchemQuery" type="text" placeholder="Search PubChem by compound name or CID, e.g. aspirin, caffeine, 2244">
+          <button id="pubchemImportBtn" type="button">Import from PubChem</button>
+        </div>
+        <div class="example-chips" aria-label="Example compounds">
+          <button type="button" data-example-smiles="CC(=O)OC1=CC=CC=C1C(=O)O">Aspirin</button>
+          <button type="button" data-example-smiles="Cn1cnc2c1c(=O)n(C)c(=O)n2C">Caffeine</button>
+          <button type="button" data-example-smiles="CC(C)CC1=CC=C(C=C1)C(C)C(=O)O">Ibuprofen</button>
+          <button type="button" data-example-smiles="C(C1C(C(C(C(O1)O)O)O)O)O">Glucose</button>
+        </div>
+          <textarea id="smilesInput" placeholder="Example: CC(=O)OC1=CC=CC=C1C(=O)O">CC(=O)OC1=CC=CC=C1C(=O)O</textarea>
+          <div class="structure-card-actions">
+            <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+            <button id="sampleBtn" class="ghost-btn" type="button">Load sample</button>
+          </div>
+        </div>
+        <div class="structure-converter-middle">
           <button id="drawBtn" type="button">Draw structure</button>
-          <button id="downloadSvgBtn" class="ghost-btn" type="button">Download SVG</button>
-          <button id="downloadPngBtn" class="ghost-btn" type="button">Download PNG</button>
-          <button id="downloadJpgBtn" class="ghost-btn" type="button">Download JPG</button>
-          <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
-          <button id="sampleBtn" class="ghost-btn" type="button">Load sample</button>
+        </div>
+        <div class="structure-card structure-output-card">
+          <h2>Structure Output</h2>
+          <div class="render-area" aria-label="Rendered structure area">
+            <svg id="svgTarget"></svg>
+          </div>
+          <div class="structure-card-actions">
+            <button id="downloadSvgBtn" class="ghost-btn" type="button">Download SVG</button>
+            <button id="downloadPngBtn" class="ghost-btn" type="button">Download PNG</button>
+            <button id="downloadJpgBtn" class="ghost-btn" type="button">Download JPG</button>
+            <button id="styleBtn" class="ghost-btn" type="button">Edit style</button>
+          </div>
         </div>
       </div>
       <div class="status" id="statusText">Ready.</div>
     </section>
 
     <section class="panel">
-      <div class="render-area" aria-label="Rendered structure area">
-        <svg id="svgTarget"></svg>
-      </div>
-    </section>
-
-    <section class="panel">
       <h2>Convert SMILES to a chemical structure image</h2>
       <p>SMILES is compact and machine-readable, but reports, slides, and teaching materials often need a visible 2D structure. This converter draws the molecule from the SMILES string and provides image downloads for quick reuse.</p>
+      <h3>File Format Explained</h3>
+      <p><strong>SMILES</strong> is a one-line molecular notation that stores connectivity in text form. It is ideal for databases and converters, but not for human-friendly visual layout.</p>
+      <p><strong>SVG</strong> is a vector image format, best for crisp structures in slides and documents. <strong>PNG</strong> and <strong>JPG</strong> are raster image formats, useful for quick sharing, web uploads, and reports.</p>
       <ul>
         <li>Use SVG for crisp vector graphics in documents and presentations.</li>
         <li>Use PNG for transparent raster images in web or slide workflows.</li>
@@ -258,23 +533,360 @@
     </section>
   </main>
 
+  <aside id="stylePanel" class="style-panel" aria-label="Structure style settings" aria-hidden="true">
+    <div class="style-panel-header">
+      <div>
+        <h2>Structure style</h2>
+        <p>Adjust SmilesDrawer rendering settings and redraw the current molecule.</p>
+      </div>
+      <button id="closeStylePanelBtn" class="ghost-btn" type="button">Close</button>
+    </div>
+    <div class="style-panel-body">
+      <section class="style-section">
+        <h3>Theme</h3>
+        <label class="style-control">Render palette
+          <select id="settingTheme">
+            <option value="light">light</option>
+            <option value="dark">dark</option>
+            <option value="oldschool">oldschool</option>
+            <option value="solarized">solarized</option>
+            <option value="solarized-dark">solarized-dark</option>
+            <option value="matrix">matrix</option>
+            <option value="github">github</option>
+            <option value="carbon">carbon</option>
+            <option value="cyberpunk">cyberpunk</option>
+            <option value="gruvbox">gruvbox</option>
+            <option value="gruvbox-dark">gruvbox-dark</option>
+            <option value="custom">custom colors</option>
+          </select>
+        </label>
+      </section>
+      <section class="style-section">
+        <h3>Sizing</h3>
+        <label class="style-control"><span class="style-control-row">Canvas width <span class="style-value" data-style-value="width">520</span></span><input id="settingWidth" type="range" min="280" max="900" step="10" value="520"></label>
+        <label class="style-control"><span class="style-control-row">Canvas height <span class="style-value" data-style-value="height">240</span></span><input id="settingHeight" type="range" min="180" max="700" step="10" value="240"></label>
+        <label class="style-control"><span class="style-control-row">Bond length <span class="style-value" data-style-value="bondLength">30</span></span><input id="settingBondLength" type="range" min="12" max="44" step="1" value="30"></label>
+        <label class="style-control"><span class="style-control-row">Bond thickness <span class="style-value" data-style-value="bondThickness">1</span></span><input id="settingBondThickness" type="range" min="0.5" max="3" step="0.1" value="1"></label>
+        <label class="style-control"><span class="style-control-row">Short bond length <span class="style-value" data-style-value="shortBondLength">0.8</span></span><input id="settingShortBondLength" type="range" min="0.45" max="1" step="0.05" value="0.8"></label>
+        <label class="style-control"><span class="style-control-row">Bond spacing <span class="style-value" data-style-value="bondSpacing">5.1</span></span><input id="settingBondSpacing" type="range" min="2" max="10" step="0.1" value="5.1"></label>
+        <label class="style-control"><span class="style-control-row">Atom font size <span class="style-value" data-style-value="fontSizeLarge">11</span></span><input id="settingFontSizeLarge" type="range" min="6" max="22" step="0.5" value="11"></label>
+        <label class="style-control"><span class="style-control-row">Number font size <span class="style-value" data-style-value="fontSizeSmall">3</span></span><input id="settingFontSizeSmall" type="range" min="2" max="8" step="0.5" value="3"></label>
+        <label class="style-control"><span class="style-control-row">Padding <span class="style-value" data-style-value="padding">10</span></span><input id="settingPadding" type="range" min="0" max="40" step="1" value="10"></label>
+      </section>
+      <section class="style-section">
+        <h3>Display</h3>
+        <label class="style-control">Carbon labels
+          <select id="settingShowCarbons">
+            <option value="default">Default skeletal</option>
+            <option value="none">Hide all plain carbons</option>
+            <option value="terminal">Terminal carbons</option>
+            <option value="acyclic">All acyclic carbons</option>
+            <option value="all">All carbons</option>
+          </select>
+        </label>
+        <label class="toggle-line">Explicit hydrogens <input id="settingExplicitHydrogens" type="checkbox" checked></label>
+        <label class="toggle-line">Compact drawing <input id="settingCompactDrawing" type="checkbox"></label>
+        <label class="toggle-line">Isomeric SMILES <input id="settingIsomeric" type="checkbox" checked></label>
+        <label class="toggle-line">Experimental SSSR <input id="settingExperimentalSssr" type="checkbox"></label>
+      </section>
+      <section class="style-section">
+        <h3>Atoms</h3>
+        <label class="style-control">Atom style
+          <select id="settingAtomVisualization">
+            <option value="default">Default</option>
+            <option value="balls">Balls</option>
+            <option value="none">No atom labels</option>
+          </select>
+        </label>
+      </section>
+      <section class="style-section">
+        <h3>Advanced layout</h3>
+        <label class="style-control"><span class="style-control-row">Overlap sensitivity <span class="style-value" data-style-value="overlapSensitivity">0.42</span></span><input id="settingOverlapSensitivity" type="range" min="0.1" max="1" step="0.01" value="0.42"></label>
+        <label class="style-control"><span class="style-control-row">Overlap iterations <span class="style-value" data-style-value="overlapResolutionIterations">1</span></span><input id="settingOverlapIterations" type="range" min="0" max="5" step="1" value="1"></label>
+        <label class="toggle-line">Debug drawing <input id="settingDebug" type="checkbox"></label>
+      </section>
+      <section class="style-section">
+        <h3>Custom colors</h3>
+        <p>Choose “custom colors” in Theme to apply this palette.</p>
+        <div class="color-grid">
+          <label>Carbon <input id="settingColorC" type="color" value="#222222"></label>
+          <label>Oxygen <input id="settingColorO" type="color" value="#e74c3c"></label>
+          <label>Nitrogen <input id="settingColorN" type="color" value="#3498db"></label>
+          <label>Fluorine <input id="settingColorF" type="color" value="#27ae60"></label>
+          <label>Sulfur <input id="settingColorS" type="color" value="#f1c40f"></label>
+          <label>Halogen <input id="settingColorHalogen" type="color" value="#16a085"></label>
+          <label>Hydrogen <input id="settingColorH" type="color" value="#666666"></label>
+          <label>Background <input id="settingColorBackground" type="color" value="#ffffff"></label>
+        </div>
+      </section>
+    </div>
+    <div class="style-panel-footer">
+      <button id="applyStyleBtn" type="button">Apply style</button>
+      <button id="resetStyleBtn" class="ghost-btn" type="button">Reset defaults</button>
+    </div>
+  </aside>
+
   <script src="https://unpkg.com/smiles-drawer@2.1.1/dist/smiles-drawer.min.js"></script>
   <script>
     const inputEl = document.getElementById('smilesInput');
+    const pubchemQuery = document.getElementById('pubchemQuery');
     const drawBtn = document.getElementById('drawBtn');
     const downloadSvgBtn = document.getElementById('downloadSvgBtn');
     const downloadPngBtn = document.getElementById('downloadPngBtn');
     const downloadJpgBtn = document.getElementById('downloadJpgBtn');
+    const styleBtn = document.getElementById('styleBtn');
     const clearBtn = document.getElementById('clearBtn');
     const sampleBtn = document.getElementById('sampleBtn');
     const statusEl = document.getElementById('statusText');
     const svgSelector = '#svgTarget';
     const sampleSmiles = 'CC(=O)OC1=CC=CC=C1C(=O)O';
+    const structureConverterShell = document.getElementById('structureConverterShell');
+    const stylePanel = document.getElementById('stylePanel');
+    const styleControls = {
+      theme: document.getElementById('settingTheme'),
+      width: document.getElementById('settingWidth'),
+      height: document.getElementById('settingHeight'),
+      bondLength: document.getElementById('settingBondLength'),
+      bondThickness: document.getElementById('settingBondThickness'),
+      shortBondLength: document.getElementById('settingShortBondLength'),
+      bondSpacing: document.getElementById('settingBondSpacing'),
+      fontSizeLarge: document.getElementById('settingFontSizeLarge'),
+      fontSizeSmall: document.getElementById('settingFontSizeSmall'),
+      padding: document.getElementById('settingPadding'),
+      showCarbons: document.getElementById('settingShowCarbons'),
+      explicitHydrogens: document.getElementById('settingExplicitHydrogens'),
+      compactDrawing: document.getElementById('settingCompactDrawing'),
+      isomeric: document.getElementById('settingIsomeric'),
+      experimentalSSSR: document.getElementById('settingExperimentalSssr'),
+      atomVisualization: document.getElementById('settingAtomVisualization'),
+      overlapSensitivity: document.getElementById('settingOverlapSensitivity'),
+      overlapResolutionIterations: document.getElementById('settingOverlapIterations'),
+      debug: document.getElementById('settingDebug'),
+      colorC: document.getElementById('settingColorC'),
+      colorO: document.getElementById('settingColorO'),
+      colorN: document.getElementById('settingColorN'),
+      colorF: document.getElementById('settingColorF'),
+      colorS: document.getElementById('settingColorS'),
+      colorHalogen: document.getElementById('settingColorHalogen'),
+      colorH: document.getElementById('settingColorH'),
+      colorBackground: document.getElementById('settingColorBackground')
+    };
 
-    const moleculeOptions = { width: 520, height: 240 };
+    const defaultStyleSettings = {
+      theme: 'light',
+      width: 520,
+      height: 240,
+      bondLength: 30,
+      bondThickness: 1,
+      shortBondLength: 0.8,
+      bondSpacing: 5.1,
+      fontSizeLarge: 11,
+      fontSizeSmall: 3,
+      padding: 10,
+      showCarbons: 'default',
+      explicitHydrogens: true,
+      compactDrawing: false,
+      isomeric: true,
+      experimentalSSSR: false,
+      atomVisualization: 'default',
+      overlapSensitivity: 0.42,
+      overlapResolutionIterations: 1,
+      debug: false,
+      colors: {
+        C: '#222222',
+        O: '#e74c3c',
+        N: '#3498db',
+        F: '#27ae60',
+        S: '#f1c40f',
+        HALOGEN: '#16a085',
+        H: '#666666',
+        BACKGROUND: '#ffffff'
+      }
+    };
+    let styleSettings = JSON.parse(JSON.stringify(defaultStyleSettings));
     const reactionOptions = {};
-    const drawer = new SmiDrawer(moleculeOptions, reactionOptions);
+    let drawer = new SmiDrawer(buildDrawerOptions(), reactionOptions);
     let lastSmiles = sampleSmiles;
+
+    function toNumber(value, fallback) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function buildDrawerOptions() {
+      const options = {
+        width: styleSettings.width,
+        height: styleSettings.height,
+        bondLength: styleSettings.bondLength,
+        bondThickness: styleSettings.bondThickness,
+        shortBondLength: styleSettings.shortBondLength,
+        bondSpacing: styleSettings.bondSpacing,
+        fontSizeLarge: styleSettings.fontSizeLarge,
+        fontSizeSmall: styleSettings.fontSizeSmall,
+        padding: styleSettings.padding,
+        showCarbons: styleSettings.showCarbons,
+        terminalCarbons: styleSettings.showCarbons === 'terminal',
+        explicitHydrogens: styleSettings.explicitHydrogens,
+        compactDrawing: styleSettings.compactDrawing,
+        isomeric: styleSettings.isomeric,
+        experimentalSSSR: styleSettings.experimentalSSSR,
+        atomVisualization: styleSettings.atomVisualization,
+        overlapSensitivity: styleSettings.overlapSensitivity,
+        overlapResolutionIterations: styleSettings.overlapResolutionIterations,
+        debug: styleSettings.debug
+      };
+      if (styleSettings.theme === 'custom') {
+        options.themes = {
+          custom: {
+            C: styleSettings.colors.C,
+            O: styleSettings.colors.O,
+            N: styleSettings.colors.N,
+            F: styleSettings.colors.F,
+            CL: styleSettings.colors.HALOGEN,
+            BR: styleSettings.colors.HALOGEN,
+            I: styleSettings.colors.HALOGEN,
+            P: '#d35400',
+            S: styleSettings.colors.S,
+            B: '#e67e22',
+            SI: '#e67e22',
+            H: styleSettings.colors.H,
+            BACKGROUND: styleSettings.colors.BACKGROUND
+          }
+        };
+      }
+      return options;
+    }
+
+    function rebuildDrawer() {
+      drawer = new SmiDrawer(buildDrawerOptions(), reactionOptions);
+    }
+
+    function updateStyleValueBadges() {
+      document.querySelector('[data-style-value="width"]').textContent = String(styleSettings.width);
+      document.querySelector('[data-style-value="height"]').textContent = String(styleSettings.height);
+      document.querySelector('[data-style-value="bondLength"]').textContent = String(styleSettings.bondLength);
+      document.querySelector('[data-style-value="bondThickness"]').textContent = String(styleSettings.bondThickness);
+      document.querySelector('[data-style-value="shortBondLength"]').textContent = String(styleSettings.shortBondLength);
+      document.querySelector('[data-style-value="bondSpacing"]').textContent = String(styleSettings.bondSpacing);
+      document.querySelector('[data-style-value="fontSizeLarge"]').textContent = String(styleSettings.fontSizeLarge);
+      document.querySelector('[data-style-value="fontSizeSmall"]').textContent = String(styleSettings.fontSizeSmall);
+      document.querySelector('[data-style-value="padding"]').textContent = String(styleSettings.padding);
+      document.querySelector('[data-style-value="overlapSensitivity"]').textContent = String(styleSettings.overlapSensitivity);
+      document.querySelector('[data-style-value="overlapResolutionIterations"]').textContent = String(styleSettings.overlapResolutionIterations);
+    }
+
+    function syncStyleControls() {
+      styleControls.theme.value = styleSettings.theme;
+      styleControls.width.value = styleSettings.width;
+      styleControls.height.value = styleSettings.height;
+      styleControls.bondLength.value = styleSettings.bondLength;
+      styleControls.bondThickness.value = styleSettings.bondThickness;
+      styleControls.shortBondLength.value = styleSettings.shortBondLength;
+      styleControls.bondSpacing.value = styleSettings.bondSpacing;
+      styleControls.fontSizeLarge.value = styleSettings.fontSizeLarge;
+      styleControls.fontSizeSmall.value = styleSettings.fontSizeSmall;
+      styleControls.padding.value = styleSettings.padding;
+      styleControls.showCarbons.value = styleSettings.showCarbons;
+      styleControls.explicitHydrogens.checked = styleSettings.explicitHydrogens;
+      styleControls.compactDrawing.checked = styleSettings.compactDrawing;
+      styleControls.isomeric.checked = styleSettings.isomeric;
+      styleControls.experimentalSSSR.checked = styleSettings.experimentalSSSR;
+      styleControls.atomVisualization.value = styleSettings.atomVisualization;
+      styleControls.overlapSensitivity.value = styleSettings.overlapSensitivity;
+      styleControls.overlapResolutionIterations.value = styleSettings.overlapResolutionIterations;
+      styleControls.debug.checked = styleSettings.debug;
+      styleControls.colorC.value = styleSettings.colors.C;
+      styleControls.colorO.value = styleSettings.colors.O;
+      styleControls.colorN.value = styleSettings.colors.N;
+      styleControls.colorF.value = styleSettings.colors.F;
+      styleControls.colorS.value = styleSettings.colors.S;
+      styleControls.colorHalogen.value = styleSettings.colors.HALOGEN;
+      styleControls.colorH.value = styleSettings.colors.H;
+      styleControls.colorBackground.value = styleSettings.colors.BACKGROUND;
+      updateStyleValueBadges();
+    }
+
+    function readStyleControls() {
+      styleSettings = {
+        ...styleSettings,
+        theme: styleControls.theme.value,
+        width: toNumber(styleControls.width.value, defaultStyleSettings.width),
+        height: toNumber(styleControls.height.value, defaultStyleSettings.height),
+        bondLength: toNumber(styleControls.bondLength.value, defaultStyleSettings.bondLength),
+        bondThickness: toNumber(styleControls.bondThickness.value, defaultStyleSettings.bondThickness),
+        shortBondLength: toNumber(styleControls.shortBondLength.value, defaultStyleSettings.shortBondLength),
+        bondSpacing: toNumber(styleControls.bondSpacing.value, defaultStyleSettings.bondSpacing),
+        fontSizeLarge: toNumber(styleControls.fontSizeLarge.value, defaultStyleSettings.fontSizeLarge),
+        fontSizeSmall: toNumber(styleControls.fontSizeSmall.value, defaultStyleSettings.fontSizeSmall),
+        padding: toNumber(styleControls.padding.value, defaultStyleSettings.padding),
+        showCarbons: styleControls.showCarbons.value,
+        explicitHydrogens: styleControls.explicitHydrogens.checked,
+        compactDrawing: styleControls.compactDrawing.checked,
+        isomeric: styleControls.isomeric.checked,
+        experimentalSSSR: styleControls.experimentalSSSR.checked,
+        atomVisualization: styleControls.atomVisualization.value,
+        overlapSensitivity: toNumber(styleControls.overlapSensitivity.value, defaultStyleSettings.overlapSensitivity),
+        overlapResolutionIterations: toNumber(styleControls.overlapResolutionIterations.value, defaultStyleSettings.overlapResolutionIterations),
+        debug: styleControls.debug.checked,
+        colors: {
+          C: styleControls.colorC.value,
+          O: styleControls.colorO.value,
+          N: styleControls.colorN.value,
+          F: styleControls.colorF.value,
+          S: styleControls.colorS.value,
+          HALOGEN: styleControls.colorHalogen.value,
+          H: styleControls.colorH.value,
+          BACKGROUND: styleControls.colorBackground.value
+        }
+      };
+      updateStyleValueBadges();
+    }
+
+    function openStylePanel() {
+      stylePanel.classList.add('open');
+      structureConverterShell.classList.add('style-open');
+      stylePanel.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeStylePanel() {
+      stylePanel.classList.remove('open');
+      structureConverterShell.classList.remove('style-open');
+      stylePanel.setAttribute('aria-hidden', 'true');
+    }
+
+    function applyStyleSettings() {
+      readStyleControls();
+      rebuildDrawer();
+      drawSmiles();
+    }
+
+    function pubchemBase(query) {
+      const clean = String(query || '').trim();
+      return /^\d+$/.test(clean)
+        ? `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${encodeURIComponent(clean)}`
+        : `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(clean)}`;
+    }
+
+    async function importFromPubChem() {
+      const query = (pubchemQuery.value || '').trim();
+      if (!query) {
+        statusEl.textContent = 'Enter a compound name or PubChem CID first.';
+        return;
+      }
+      statusEl.textContent = 'Searching PubChem...';
+      try {
+        const res = await fetch(`${pubchemBase(query)}/property/IsomericSMILES,CanonicalSMILES,IUPACName/JSON`);
+        if (!res.ok) throw new Error('PubChem lookup failed');
+        const props = (await res.json())?.PropertyTable?.Properties?.[0];
+        const smiles = props?.IsomericSMILES || props?.CanonicalSMILES || '';
+        if (!smiles) throw new Error('No SMILES returned');
+        inputEl.value = smiles;
+        drawSmiles();
+        statusEl.textContent = `Imported ${props.IUPACName || query} from PubChem and drew the structure.`;
+      } catch {
+        statusEl.textContent = 'PubChem import failed. Try a different name, exact spelling, or CID.';
+      }
+    }
 
     function drawSmiles() {
       const smiles = (inputEl.value || '').trim();
@@ -283,11 +895,11 @@
         return;
       }
       try {
-        drawer.draw(smiles, svgSelector, 'light');
+        drawer.draw(smiles, svgSelector, styleSettings.theme);
         lastSmiles = smiles;
         statusEl.textContent = 'Structure rendered successfully.';
       } catch (err) {
-        statusEl.textContent = 'Could not parse SMILES. Please check your input.';
+        statusEl.textContent = 'Could not draw this structure with the selected style. Check the SMILES or try the light theme.';
       }
     }
 
@@ -327,8 +939,8 @@
       const img = new Image();
       img.onload = function () {
         const canvas = document.createElement('canvas');
-        canvas.width = 900;
-        canvas.height = 450;
+        canvas.width = img.naturalWidth || img.width || styleSettings.width;
+        canvas.height = img.naturalHeight || img.height || styleSettings.height;
         const ctx = canvas.getContext('2d');
         if (type === 'jpg') {
           ctx.fillStyle = '#ffffff';
@@ -352,6 +964,30 @@
     }
 
     drawBtn.addEventListener('click', drawSmiles);
+    structureConverterShell.appendChild(stylePanel);
+    styleBtn.addEventListener('click', openStylePanel);
+    document.getElementById('closeStylePanelBtn').addEventListener('click', closeStylePanel);
+    document.getElementById('applyStyleBtn').addEventListener('click', applyStyleSettings);
+    document.getElementById('resetStyleBtn').addEventListener('click', function () {
+      styleSettings = JSON.parse(JSON.stringify(defaultStyleSettings));
+      syncStyleControls();
+      rebuildDrawer();
+      drawSmiles();
+    });
+    Object.values(styleControls).forEach(function (control) {
+      control.addEventListener('input', applyStyleSettings);
+      control.addEventListener('change', applyStyleSettings);
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeStylePanel();
+    });
+    document.getElementById('pubchemImportBtn').addEventListener('click', importFromPubChem);
+    document.querySelectorAll('[data-example-smiles]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        inputEl.value = button.getAttribute('data-example-smiles');
+        drawSmiles();
+      });
+    });
     downloadSvgBtn.addEventListener('click', downloadSvg);
     downloadPngBtn.addEventListener('click', function () { downloadRaster('png'); });
     downloadJpgBtn.addEventListener('click', function () { downloadRaster('jpg'); });
@@ -365,6 +1001,7 @@
       drawSmiles();
     });
 
+    syncStyleControls();
     drawSmiles();
   </script>
   <script src="/js/site-topbar.js" defer></script>

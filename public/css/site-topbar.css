@@ -78,6 +78,189 @@
   color: #fff;
 }
 
+.tools-page-sticky-nav .top-nav {
+  position: sticky;
+  top: 48px;
+  z-index: 900;
+  padding: 7px 0;
+  background: rgba(248, 250, 252, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.site-scroll-top-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1200;
+  display: none;
+  min-width: 42px;
+  height: 34px;
+  border: 1px solid #2C7A7B;
+  border-radius: 999px;
+  background: #2C7A7B;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+
+.site-scroll-top-btn.visible {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.site-converter-shell {
+  --converter-card-height: 360px;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(92px, auto) minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+  margin: 14px 0 10px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.site-converter-card {
+  min-width: 0;
+  max-width: 100%;
+  height: var(--converter-card-height);
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.site-converter-card-title {
+  margin: 0 !important;
+  color: #0f172a !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+  font-weight: 900 !important;
+}
+
+.site-converter-card textarea,
+.site-converter-card .output,
+.site-converter-card pre,
+.site-converter-card code {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 1 0;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+  resize: none !important;
+  overflow: auto !important;
+}
+
+.site-converter-card .output,
+.site-converter-card textarea[readonly] {
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.site-converter-card input[type="text"],
+.site-converter-card input:not([type]) {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.site-converter-card input,
+.site-converter-card select,
+.site-converter-card button,
+.site-converter-card label {
+  max-width: 100%;
+}
+
+.site-converter-card button,
+.site-converter-middle button {
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.site-converter-card .input-tools,
+.site-converter-card .pubchem-import,
+.site-converter-card .pdb-id-form {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.site-converter-card .input-tools {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+.site-converter-card .pubchem-import,
+.site-converter-card .pdb-id-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 7px !important;
+}
+
+.site-converter-card .pubchem-import input,
+.site-converter-card .pdb-id-form input {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.site-converter-card .file-picker {
+  width: 100%;
+  min-width: 0;
+}
+
+.site-converter-card .example-chips {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.site-converter-middle {
+  min-width: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.site-converter-primary-action {
+  min-width: 0;
+  max-width: 120px;
+  min-height: 40px;
+  height: auto !important;
+  padding: 10px 12px !important;
+  border-radius: 999px !important;
+  box-shadow: 0 10px 22px rgba(44, 122, 123, 0.18);
+}
+
+.site-converter-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.site-converter-card-actions button {
+  height: auto;
+  min-height: 32px;
+  flex: 0 1 auto;
+}
+
+.site-converter-enhanced > .actions,
+.site-converter-enhanced .input-wrap:empty {
+  display: none !important;
+}
+
 @media (max-width: 720px) {
   .site-topbar-inner {
     width: 100%;
@@ -91,6 +274,33 @@
   .site-topbar-link {
     font-size: 11px;
     padding: 0 8px;
+  }
+
+  .tools-page-sticky-nav .top-nav {
+    top: 44px;
+  }
+
+  .site-converter-shell {
+    --converter-card-height: 320px;
+    grid-template-columns: 1fr !important;
+  }
+
+  .site-converter-middle {
+    min-width: 0;
+  }
+
+  .site-converter-primary-action {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .site-converter-card .pubchem-import,
+  .site-converter-card .pdb-id-form {
+    grid-template-columns: 1fr !important;
+  }
+
+  .site-converter-card-actions button {
+    flex: 1 1 140px;
   }
 }
 
@@ -131,6 +341,15 @@
     flex: 0 0 auto;
     height: 32px;
     padding: 0 10px;
+  }
+
+  .tools-page-sticky-nav .top-nav {
+    top: 86px;
+  }
+
+  .site-scroll-top-btn {
+    right: 12px;
+    bottom: 12px;
   }
 
   .container,

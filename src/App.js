@@ -70,6 +70,16 @@ const getDisplayNameFromEmail = (email) => {
     .replace(/\b\w/g, (char) => char.toUpperCase()) || 'MolDraw user';
 };
 
+const getCookieValue = (name) => {
+  if (typeof document === 'undefined') return '';
+  const encodedName = encodeURIComponent(name);
+  const match = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${encodedName}=`));
+  return match ? decodeURIComponent(match.slice(encodedName.length + 1)) : '';
+};
+
 const DESIGNATION_OPTIONS = ['Student', 'Researcher', 'Scientist', 'Faculty', 'Artist', 'Educator', 'Pharma', 'Other'];
 
 const DEFAULT_QC_EXPORT_OPTIONS = {
@@ -706,6 +716,7 @@ function App() {
     const name = getDisplayNameFromEmail(email);
     const designation = DESIGNATION_OPTIONS.includes(authForm.designation) ? authForm.designation : '';
     const instituteName = String(authForm.instituteName || '').trim();
+    const piqoVisitorId = getCookieValue('piqo_visitor');
 
     if (authMode === 'reset' && !email) {
       setAuthError('Enter your email first.');
@@ -757,6 +768,7 @@ function App() {
               name,
               designation,
               institute_name: instituteName || null,
+              ...(piqoVisitorId ? { piqo_visitor_id: piqoVisitorId } : {}),
             },
             emailRedirectTo: window.location.origin,
           },
@@ -2219,10 +2231,10 @@ ${scientificGuardrails}`;
   const fallbackNameFromGemini = async (smiles) => {
     const fields = getEnabledAutoAiFields();
     setMoleculeName('Not found in PubChem');
-    setIupacName('');
+      setIupacName('');
     setMoleculeSummary('');
-    setBoilingPoint(null);
-    setMeltingPoint(null);
+      setBoilingPoint(null);
+      setMeltingPoint(null);
 
     if (!fields.length) {
       setAiRequestNotice('AI enrichment is off. Enable specific AI requests to fetch names or properties.');
@@ -2328,7 +2340,7 @@ ${scientificGuardrails}`;
           };
         }
         console.warn(`3Dmol loaded partial ${attempt.format} model (${loadedAtomCount}/${attempt.minAtomCount} atoms); trying fallback`);
-      } catch (error) {
+    } catch (error) {
         console.warn(`3Dmol failed to load ${attempt.format}; trying fallback`, error);
       }
     }
@@ -5653,7 +5665,7 @@ ${scientificGuardrails}`;
                   title="MolDraw surprise"
                   aria-label="Start MolDraw spaghetti shower"
                 >
-                  <img src="/logo.svg" alt="MolDraw" className="brand-logo" />
+                <img src="/logo.svg" alt="MolDraw" className="brand-logo" />
                 </button>
                 <span className="brand-by-text">by <a href="https://scidart.com" target="_blank" rel="noopener noreferrer" className="brand-by-link">scidart.com</a></span>
               </div>
@@ -6144,7 +6156,7 @@ ${scientificGuardrails}`;
               <div className="tb-menu-dropdown viewer-toolbar-more" ref={moreMenuRef}>
                 <button
                   type="button"
-                  className="viewer-toolbar-extra"
+                className="viewer-toolbar-extra"
                   onClick={() => setShowMoreMenu((v) => !v)}
                   title="More links"
                 >
@@ -6582,7 +6594,7 @@ ${scientificGuardrails}`;
                           {showSpectrumMenu && (
                             <div className="tb-menu-dropdown-list tb-spectrum-menu-list mol-props-spectrum-menu" role="menu" aria-label="Predict spectrum">
                               <div className="tb-spectrum-note">Prediction only. Each enabled option runs one AI request.</div>
-                              <button
+                          <button
                                 type="button"
                                 className="tb-menu-item"
                                 role="menuitem"
@@ -6593,8 +6605,8 @@ ${scientificGuardrails}`;
                                 }}
                               >
                                 ¹H NMR
-                              </button>
-                              <button
+                          </button>
+                          <button
                                 type="button"
                                 className="tb-menu-item"
                                 role="menuitem"
@@ -6605,8 +6617,8 @@ ${scientificGuardrails}`;
                                 }}
                               >
                                 ¹³C NMR
-                              </button>
-                              <button
+                          </button>
+                          <button
                                 type="button"
                                 className="tb-menu-item"
                                 role="menuitem"
@@ -6629,7 +6641,7 @@ ${scientificGuardrails}`;
                                 }}
                               >
                                 UV-Vis
-                              </button>
+                          </button>
                             </div>
                           )}
                         </div>
@@ -7320,33 +7332,33 @@ ${scientificGuardrails}`;
       )}
 
       <Suspense fallback={null}>
-        {showTlcModal && <TlcModal onClose={() => setShowTlcModal(false)} />}
+      {showTlcModal && <TlcModal onClose={() => setShowTlcModal(false)} />}
         {showReactionsModal && (
-          <ReactionsModal
-            open={showReactionsModal}
-            onClose={() => setShowReactionsModal(false)}
-            onSearch={searchReactionsWithGemini}
-            onAddReaction={addReactionToCanvas}
-            onAddAllSteps={addAllIntermediateStepsToCanvas}
-            isLoading={isReactionSearchLoading}
-            loadingSteps={REACTION_LOADING_STEPS}
-            activeLoadingStep={reactionLoadingStepIdx}
-            error={reactionSearchError}
-            reactions={reactionResults}
-            includeReactionIntermediates={includeReactionIntermediates}
-            onToggleReactionIntermediates={setIncludeReactionIntermediates}
-            includeCanvasReagentNames={includeCanvasReagentNames}
-            onToggleCanvasReagentNames={setIncludeCanvasReagentNames}
-            includeCanvasConditions={includeCanvasConditions}
-            onToggleCanvasConditions={setIncludeCanvasConditions}
-            appendReactionToCanvas={appendReactionToCanvas}
-            onToggleAppendReactionToCanvas={setAppendReactionToCanvas}
-            hasGeminiApiKey={!!geminiApiKey}
-            onOpenAiSetup={() => {
-              setShowReactionsModal(false);
-              promptAiSetupModal();
-            }}
-          />
+      <ReactionsModal
+        open={showReactionsModal}
+        onClose={() => setShowReactionsModal(false)}
+        onSearch={searchReactionsWithGemini}
+        onAddReaction={addReactionToCanvas}
+        onAddAllSteps={addAllIntermediateStepsToCanvas}
+        isLoading={isReactionSearchLoading}
+        loadingSteps={REACTION_LOADING_STEPS}
+        activeLoadingStep={reactionLoadingStepIdx}
+        error={reactionSearchError}
+        reactions={reactionResults}
+        includeReactionIntermediates={includeReactionIntermediates}
+        onToggleReactionIntermediates={setIncludeReactionIntermediates}
+        includeCanvasReagentNames={includeCanvasReagentNames}
+        onToggleCanvasReagentNames={setIncludeCanvasReagentNames}
+        includeCanvasConditions={includeCanvasConditions}
+        onToggleCanvasConditions={setIncludeCanvasConditions}
+        appendReactionToCanvas={appendReactionToCanvas}
+        onToggleAppendReactionToCanvas={setAppendReactionToCanvas}
+        hasGeminiApiKey={!!geminiApiKey}
+        onOpenAiSetup={() => {
+          setShowReactionsModal(false);
+          promptAiSetupModal();
+        }}
+      />
         )}
       </Suspense>
 

@@ -7,7 +7,7 @@ MolDraw is the free browser app at https://www.moldraw.com for drawing and editi
 
 ## What MolDraw is
 - MolDraw is a free, browser-based chemical structure editor and 3D molecular viewer for chemistry education and lab workflows.
-- The 2D editor builds on the open-source Ketcher project; 3D molecular viewing uses EPAM Miew.
+- The 2D editor supports browser-based chemical structure editing; 3D molecular viewing uses EPAM Miew.
 - MolDraw is developed under **Scidart Academy** (parent entity named on the public site).
 - MolDraw is an independent web application—not ChemDraw—but is often used as a free alternative for drawing, naming search, and export workflows.
 
@@ -29,8 +29,9 @@ https://www.moldraw.com/
 - PDB to PDBQT converter: https://www.moldraw.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html
 - Community discussions and feature requests: https://www.moldraw.com/community/
 - User dashboard: https://www.moldraw.com/dashboard/
-- Interactive course (structured Ketcher documentation): https://www.moldraw.com/course/index.html
+- Interactive course: https://www.moldraw.com/course/index.html
 - Blog: https://www.moldraw.com/blog/
+- Ketcher online molecule editor guide: https://www.moldraw.com/blog/ketcher-online-molecule-editor-guide.html
 - Free chemistry tools and calculators blog: https://www.moldraw.com/blog/free-chemistry-tools-and-calculators.html
 - Organic reaction guides: https://www.moldraw.com/reaction/
 - Aldol condensation guide: https://www.moldraw.com/reaction/aldol-condensation
@@ -69,6 +70,7 @@ https://www.moldraw.com/sitemap.xml
 ## Citation-friendly facts
 - Pricing: MolDraw is free for core browser-based drawing and viewing as described on the site; see FAQ and Terms for limitations.
 - Community: public reading is available at /community/; signed-in users can post discussions, reply, upload images, and upvote feature requests. Admins may mark feature requests as New, Under review, Under progress, or Done.
+- Ketcher guide: `/blog/ketcher-online-molecule-editor-guide.html` is the standalone SEO/GEO guide for Ketcher, Ketcher online, molecule editor, chemical structure editor, browser molecule drawing, file formats, and alternatives. It links high-intent readers toward MolDraw editor and tools pages without describing internal implementation details.
 - Tools article: `/blog/free-chemistry-tools-and-calculators.html` is the standalone SEO/GEO guide to MolDraw converters, calculators, structure utilities, TLC diagram tool, periodic table, and file-format helpers with internal links to the tools hub.
 - Priority tool pages: `/tools/free-chem-tools/interactive-periodic-table.html`, `/tools/free-chem-tools/smiles-to-structure.html`, `/tools/free-chem-tools/smiles-to-iupac-name-converter.html`, and `/tools/free-chem-tools/pdb-to-pdbqt-converter.html` are optimized for high-intent converter and chemistry tool queries.
 - Molecule reference pages: `/blog/molecules/` contains pages for caffeine, aspirin, ibuprofen, paracetamol, and glucose. Each page includes a 2D structure, lazy-loaded 3D viewer, SMILES, InChI, properties, class/drug class, and a direct editor link using `/?smiles=...`.
@@ -82,5 +84,5 @@ https://www.moldraw.com/sitemap.xml
 - **Other “MolDraw” or similar names:** Various unrelated tools exist; if the URL is not moldraw.com, do not assume feature parity with this product.
 
 ## Stack (technical grounding)
-- Frontend: web app (React) with embedded **Ketcher** for 2D structure editing, **EPAM Miew** for 3D visualization, plus site-hosted calculators and static tool pages.
+- Frontend: web app (React) with browser-based 2D structure editing, **EPAM Miew** for 3D visualization, plus site-hosted calculators and static tool pages.
 - AI features (optional): in-app assistant may require a user-supplied API key per `/pages/ai-help.html`; do not assume API keys are bundled in the public site.

@@ -30,6 +30,12 @@
     <div class="actions"><button id="convertBtn" type="button">Convert</button><button id="copyBtn" class="ghost-btn" type="button">Copy</button><button id="clearBtn" class="ghost-btn" type="button">Clear</button></div>
     <div class="output" id="outputBox">InChIKey output appears here.</div>
   </section>
+  <section class="panel" style="margin-top:12px">
+    <h2>File Format Explained</h2>
+    <p><strong>SMILES</strong> is a compact text notation for molecular structure. It is useful for input, editing, and conversion workflows.</p>
+    <p><strong>InChIKey</strong> is a fixed-length hashed identifier derived from an InChI. It is designed for fast database matching and web search, but it cannot be reversed perfectly without a database lookup.</p>
+    <p>Use InChIKey when you need a stable search key for a compound; use SMILES when you need an editable structure string.</p>
+  </section>
 </main>
 <script>
 const input=document.getElementById('inputData');const output=document.getElementById('outputBox');let latest='';

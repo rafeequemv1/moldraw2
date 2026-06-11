@@ -3,23 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="TLC diagram tool page with quick workflow guide and launch link to MolDraw interactive TLC builder.">
-  <meta name="keywords" content="TLC diagram tool, thin layer chromatography, free chemistry tools, MolDraw TLC">
+  <meta name="description" content="Free TLC diagram maker for thin layer chromatography. Draw TLC plates with lanes, spots, solvent front, baseline, Rf labels, and export SVG or PNG for lab reports.">
+  <meta name="keywords" content="TLC diagram tool, TLC diagram maker, thin layer chromatography diagram, Rf value calculator, chromatography plate diagram, TLC plate drawing, solvent front baseline, free chemistry tools">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/tlc-diagram-tool.html">
-  <title>TLC Diagram Tool | MolDraw</title>
-  <meta property="og:title" content="TLC Diagram Tool | MolDraw" />
-  <meta property="og:description" content="TLC diagram tool page with quick workflow guide and launch link to MolDraw interactive TLC builder." />
+  <title>TLC Diagram Tool Online | Thin Layer Chromatography Plate Maker</title>
+  <meta property="og:title" content="TLC Diagram Tool Online | MolDraw" />
+  <meta property="og:description" content="Create thin layer chromatography plate diagrams online with lanes, spots, Rf labels, solvent front, baseline, and SVG/PNG export." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/tlc-diagram-tool.html" />
   <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "TLC Diagram Tool Online",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/tlc-diagram-tool.html",
+    "description": "Free online TLC diagram maker for drawing thin layer chromatography plates with lanes, spots, Rf labels, solvent front, baseline, and SVG or PNG export.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I draw a TLC plate diagram online?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Use the MolDraw TLC diagram tool to set the plate title, solvent system, stationary phase, lanes, spot positions, colors, and Rf labels. The preview updates in the browser and can be exported as SVG or PNG." }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the Rf value in thin layer chromatography?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Rf is the distance travelled by a compound spot divided by the distance travelled by the solvent front from the baseline. It is usually reported as a value between 0 and 1." }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I export a TLC diagram for a lab report?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. The TLC diagram maker exports clean SVG and PNG files that can be used in lab notebooks, reports, worksheets, presentations, and teaching materials." }
+      }
+    ]
+  }
+  </script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; }
-    .container { width: min(900px, 94vw); margin: 0 auto; padding: 24px 0 40px; }
+    .container { width: min(1140px, 94vw); margin: 0 auto; padding: 24px 0 40px; }
     .top-nav { display: flex; gap: 10px; margin-bottom: 14px; }
     .top-link { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 600; background: #fff; }
     .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px; margin-bottom: 12px; }
@@ -28,21 +63,32 @@
     p { color: #475569; font-size: 14px; margin-bottom: 10px; line-height: 1.65; }
     ul { margin-left: 18px; color: #334155; }
     li { margin-bottom: 7px; }
-    .launch-btn {
-      margin-top: 10px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 36px;
-      border-radius: 8px;
-      border: 1px solid #2C7A7B;
-      background: #2C7A7B;
-      color: #fff;
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 700;
-      padding: 0 12px;
-    }
+    .builder { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 14px; align-items: start; }
+    .controls { display: grid; gap: 10px; }
+    .builder > .controls { max-height: calc(100vh - 132px); overflow-y: auto; padding-right: 4px; }
+    label { display: grid; gap: 4px; color: #334155; font-size: 12px; font-weight: 700; }
+    input { width: 100%; min-height: 34px; border: 1px solid #cfd8e3; border-radius: 8px; padding: 0 9px; color: #0f172a; }
+    input[type="range"] { padding: 0; }
+    input[type="color"] { padding: 2px; }
+    button { height: 34px; border: 1px solid #2C7A7B; border-radius: 8px; background: #2C7A7B; color: #fff; font-size: 12px; font-weight: 800; padding: 0 12px; cursor: pointer; }
+    button.secondary { border-color: #d1d5db; background: #fff; color: #334155; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .checkbox { display: inline-flex; grid-template-columns: auto 1fr; align-items: center; gap: 7px; }
+    .checkbox input { width: auto; min-height: auto; }
+    .lane-card { border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; padding: 10px; display: grid; gap: 8px; }
+    .lane-row, .spot-row, .download-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .spot-row { padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
+    .spot-row label { flex: 1 1 72px; }
+    .preview-wrap { border: 1px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; padding: 12px; overflow: auto; }
+    .preview-column { position: sticky; top: 108px; align-self: start; }
+    #tlcPreview svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+    .muted { color: #64748b; font-size: 12px; margin: 0; }
+    .answer-box { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 11px 12px; margin: 10px 0; font-size: 13px; }
+    .content-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .mini-card { border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; padding: 12px; }
+    .formula { font-family: 'Courier New', monospace; background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 10px 12px; overflow-x: auto; }
+    @media (max-width: 760px) { .builder, .content-grid { grid-template-columns: 1fr; } .grid-2 { grid-template-columns: 1fr; } .builder > .controls { max-height: none; overflow: visible; } .preview-column { position: static; } }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
@@ -50,17 +96,43 @@
   <main class="container">
     <nav class="top-nav" aria-label="Tool navigation">
       <a class="top-link" href="/tools/">Back to Tools Hub</a>
-      <a class="top-link" href="/?openTlc=1">Open MolDraw App (TLC)</a>
+      <a class="top-link" href="/tools/">All Tools</a>
     </nav>
 
     <section class="panel">
       <h1>TLC Diagram Tool</h1>
-      <p>This dedicated page gives a quick TLC workflow reference, while the full interactive editor runs inside the MolDraw app.</p>
-      <a class="launch-btn" href="/?openTlc=1">Launch TLC in MolDraw App</a>
+      <p>Create a thin layer chromatography plate diagram directly on this page. Add lanes, edit Rf spots, show solvent front and baseline labels, then export the plate as SVG or PNG.</p>
+    </section>
+
+    <section class="panel builder" aria-label="Standalone TLC builder">
+      <div class="controls">
+        <label>Title<input id="tlcTitle" value="TLC Plate Diagram"></label>
+        <label>Solvent system<input id="tlcSolvent" value="Hexane : EtOAc (7:3)"></label>
+        <label>Stationary phase<input id="tlcPhase" value="Silica gel"></label>
+        <div class="grid-2">
+          <label>Plate width<input id="tlcWidth" type="number" min="160" max="500" value="260"></label>
+          <label>Plate height<input id="tlcHeight" type="number" min="220" max="700" value="360"></label>
+        </div>
+        <label>Solvent front height (% of run)<input id="tlcFront" type="range" min="8" max="95" value="18"><span class="muted" id="tlcFrontValue">18%</span></label>
+        <label class="checkbox"><input id="tlcRfLabels" type="checkbox" checked> Show Rf labels</label>
+        <div class="lane-row">
+          <button id="addLaneBtn" type="button">Add lane</button>
+          <button id="resetBtn" class="secondary" type="button">Reset sample</button>
+        </div>
+        <div id="laneList" class="controls" aria-label="TLC lanes"></div>
+      </div>
+      <div class="preview-column">
+        <div class="preview-wrap" id="tlcPreview"></div>
+        <div class="download-row" style="margin-top:10px">
+          <button id="downloadSvgBtn" type="button">Download SVG</button>
+          <button id="downloadPngBtn" class="secondary" type="button">Download PNG</button>
+        </div>
+      </div>
     </section>
 
     <section class="panel">
       <h2>Quick TLC Workflow</h2>
+      <div class="answer-box"><strong>Quick answer:</strong> A TLC plate diagram should show the baseline, solvent front, sample lanes, compound spots, lane labels, solvent system, stationary phase, and Rf values when they are known.</div>
       <ul>
         <li>Define plate size and solvent front clearly.</li>
         <li>Add lanes and label samples consistently.</li>
@@ -68,7 +140,188 @@
         <li>Export final plate visualization for notebook and report use.</li>
       </ul>
     </section>
+
+    <section class="panel">
+      <h2>TLC Diagram Maker for Lab Reports</h2>
+      <p>This thin layer chromatography diagram maker is designed for common searches such as <strong>TLC plate drawing</strong>, <strong>chromatography plate diagram</strong>, <strong>Rf value diagram</strong>, and <strong>TLC lab report figure</strong>. It helps students, teachers, and lab teams create a clean visual plate without redrawing the same baseline, solvent front, and spots by hand.</p>
+      <div class="content-grid">
+        <div class="mini-card">
+          <h3>What to include in a TLC plate diagram</h3>
+          <p>Show the origin line or baseline near the bottom, a dashed solvent front near the top, separate sample lanes, visible spots, lane labels, and the solvent system used for the run.</p>
+        </div>
+        <div class="mini-card">
+          <h3>When to show Rf labels</h3>
+          <p>Rf labels are useful for lab reports, teaching slides, and compound comparison. Hide them when you only need a clean qualitative plate illustration.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>How to Calculate Rf Value</h2>
+      <p>In thin layer chromatography, the Rf value compares how far a compound spot moved with how far the solvent front moved from the baseline. The value is unitless and usually falls between 0 and 1.</p>
+      <div class="formula">Rf = distance travelled by compound spot / distance travelled by solvent front</div>
+      <p>For example, if a spot moves 3.2 cm and the solvent front moves 5.0 cm, the Rf value is 0.64. In this diagram tool you can enter that value directly for each spot, and the plate preview places the spot proportionally between the baseline and solvent front.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Common TLC Diagram Uses</h2>
+      <div class="content-grid">
+        <div class="mini-card">
+          <h3>Organic chemistry labs</h3>
+          <p>Use TLC diagrams to compare reactant, product, co-spot, and crude reaction mixture lanes during reaction monitoring.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Teaching and worksheets</h3>
+          <p>Create simple TLC plates for explaining polarity, solvent choice, spot separation, UV visualization, staining, and Rf interpretation.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Purification reports</h3>
+          <p>Illustrate column fractions, purification checks, and before/after comparisons using labeled lanes and colored spots.</p>
+        </div>
+        <div class="mini-card">
+          <h3>Notebook figures</h3>
+          <p>Export SVG for editable vector diagrams or PNG for quick insertion into electronic lab notebooks and reports.</p>
+        </div>
+      </div>
+    </section>
   </main>
+  <script>
+    const DEFAULT_LANES = [
+      { id: 1, label: 'A', spots: [{ id: 1, rf: 0.35, color: '#1f2937', size: 8 }, { id: 2, rf: 0.62, color: '#0f766e', size: 7 }] },
+      { id: 2, label: 'B', spots: [{ id: 1, rf: 0.4, color: '#1f2937', size: 8 }] },
+    ];
+    const state = { lanes: JSON.parse(JSON.stringify(DEFAULT_LANES)) };
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const titleEl = document.getElementById('tlcTitle');
+    const solventEl = document.getElementById('tlcSolvent');
+    const phaseEl = document.getElementById('tlcPhase');
+    const widthEl = document.getElementById('tlcWidth');
+    const heightEl = document.getElementById('tlcHeight');
+    const frontEl = document.getElementById('tlcFront');
+    const frontValueEl = document.getElementById('tlcFrontValue');
+    const labelsEl = document.getElementById('tlcRfLabels');
+    const laneListEl = document.getElementById('laneList');
+    const previewEl = document.getElementById('tlcPreview');
+    let latestSvg = '';
+
+    function esc(value) {
+      return String(value || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function renderSvg() {
+      const title = esc(titleEl.value || 'TLC Plate Diagram');
+      const solvent = esc(solventEl.value || 'Solvent system');
+      const phase = esc(phaseEl.value || 'Stationary phase');
+      const plateWidth = clamp(parseInt(widthEl.value || '260', 10), 160, 500);
+      const plateHeight = clamp(parseInt(heightEl.value || '360', 10), 220, 700);
+      const solventFrontPercent = clamp(parseInt(frontEl.value || '18', 10), 8, 95);
+      const baselineY = plateHeight - 28;
+      const solventFrontY = 24 + ((baselineY - 24) * (solventFrontPercent / 100));
+      const canvasPad = 72;
+      const w = plateWidth + canvasPad * 2;
+      const h = plateHeight + 190;
+      const plateX = canvasPad;
+      const plateY = 64;
+      const laneGap = plateWidth / (Math.max(state.lanes.length, 1) + 1);
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="background:#fff;font-family:Arial,Helvetica,sans-serif">`;
+      svg += `<text x="${w / 2}" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">${title}</text>`;
+      svg += `<text x="${w / 2}" y="34" text-anchor="middle" font-size="11" fill="#4b5563">${phase} | Solvent: ${solvent}</text>`;
+      svg += `<rect x="${plateX}" y="${plateY}" width="${plateWidth}" height="${plateHeight}" fill="#fcfcfd" stroke="#1f2937" stroke-width="1.3"/>`;
+      svg += `<line x1="${plateX + 8}" y1="${plateY + baselineY}" x2="${plateX + plateWidth - 8}" y2="${plateY + baselineY}" stroke="#111827" stroke-width="1.5"/>`;
+      svg += `<line x1="${plateX + 8}" y1="${plateY + solventFrontY}" x2="${plateX + plateWidth - 8}" y2="${plateY + solventFrontY}" stroke="#334155" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+      svg += `<text x="${plateX + plateWidth + 8}" y="${plateY + baselineY + 4}" font-size="9" fill="#374151">Baseline</text>`;
+      svg += `<text x="${plateX + plateWidth + 8}" y="${plateY + solventFrontY + 4}" font-size="9" fill="#374151">Solvent front</text>`;
+      state.lanes.forEach((lane, index) => {
+        const x = plateX + laneGap * (index + 1);
+        svg += `<line x1="${x}" y1="${plateY + baselineY}" x2="${x}" y2="${plateY + baselineY - 6}" stroke="#111827" stroke-width="1"/>`;
+        svg += `<text x="${x}" y="${plateY + baselineY + 18}" text-anchor="middle" font-size="11" font-weight="700" fill="#111827">${esc(lane.label || `L${index + 1}`)}</text>`;
+        lane.spots.forEach((spot) => {
+          const rf = clamp(Number(spot.rf) || 0, 0, 1);
+          const y = plateY + baselineY - rf * (baselineY - solventFrontY);
+          const radius = clamp(Number(spot.size) || 7, 3, 18);
+          const fill = /^#[0-9a-f]{6}$/i.test(spot.color) ? spot.color : '#111827';
+          svg += `<circle cx="${x}" cy="${y}" r="${radius}" fill="${fill}" fill-opacity="0.82" stroke="#0f172a" stroke-opacity="0.2" stroke-width="1"/>`;
+          if (labelsEl.checked) svg += `<text x="${x + radius + 5}" y="${y + 3}" font-size="9" fill="#1f2937">Rf ${rf.toFixed(2)}</text>`;
+        });
+      });
+      latestSvg = svg + '</svg>';
+      previewEl.innerHTML = latestSvg;
+      frontValueEl.textContent = `${solventFrontPercent}%`;
+    }
+
+    function renderLaneControls() {
+      laneListEl.innerHTML = '';
+      state.lanes.forEach((lane, laneIndex) => {
+        const laneCard = document.createElement('div');
+        laneCard.className = 'lane-card';
+        laneCard.innerHTML = `<div class="lane-row"><strong>Lane ${laneIndex + 1}</strong><button class="secondary" type="button" data-remove-lane="${lane.id}" ${state.lanes.length <= 1 ? 'disabled' : ''}>Remove lane</button></div><label>Lane label<input value="${esc(lane.label)}" data-lane-label="${lane.id}"></label><div class="controls" data-spot-list="${lane.id}"></div><button type="button" data-add-spot="${lane.id}">Add spot</button>`;
+        laneListEl.appendChild(laneCard);
+        const spotList = laneCard.querySelector('[data-spot-list]');
+        lane.spots.forEach((spot) => {
+          const spotRow = document.createElement('div');
+          spotRow.className = 'spot-row';
+          spotRow.innerHTML = `<label>Rf<input type="number" min="0" max="1" step="0.01" value="${spot.rf}" data-spot-rf="${lane.id}:${spot.id}"></label><label>Size<input type="number" min="3" max="18" value="${spot.size}" data-spot-size="${lane.id}:${spot.id}"></label><label>Color<input type="color" value="${spot.color}" data-spot-color="${lane.id}:${spot.id}"></label><button class="secondary" type="button" data-remove-spot="${lane.id}:${spot.id}" ${lane.spots.length <= 1 ? 'disabled' : ''}>Remove</button>`;
+          spotList.appendChild(spotRow);
+        });
+      });
+      bindLaneControls();
+    }
+
+    function findLane(laneId) {
+      return state.lanes.find((lane) => lane.id === Number(laneId));
+    }
+
+    function bindLaneControls() {
+      laneListEl.querySelectorAll('[data-lane-label]').forEach((el) => el.addEventListener('input', () => { findLane(el.dataset.laneLabel).label = el.value; renderSvg(); }));
+      laneListEl.querySelectorAll('[data-add-spot]').forEach((el) => el.addEventListener('click', () => { findLane(el.dataset.addSpot).spots.push({ id: Date.now(), rf: 0.5, color: '#1f2937', size: 8 }); renderLaneControls(); renderSvg(); }));
+      laneListEl.querySelectorAll('[data-remove-lane]').forEach((el) => el.addEventListener('click', () => { state.lanes = state.lanes.filter((lane) => lane.id !== Number(el.dataset.removeLane)); renderLaneControls(); renderSvg(); }));
+      laneListEl.querySelectorAll('[data-remove-spot]').forEach((el) => el.addEventListener('click', () => { const [laneId, spotId] = el.dataset.removeSpot.split(':').map(Number); const lane = findLane(laneId); lane.spots = lane.spots.filter((spot) => spot.id !== spotId); renderLaneControls(); renderSvg(); }));
+      laneListEl.querySelectorAll('[data-spot-rf],[data-spot-size],[data-spot-color]').forEach((el) => el.addEventListener('input', () => {
+        const key = el.dataset.spotRf || el.dataset.spotSize || el.dataset.spotColor;
+        const [laneId, spotId] = key.split(':').map(Number);
+        const spot = findLane(laneId).spots.find((item) => item.id === spotId);
+        if (el.dataset.spotRf) spot.rf = clamp(parseFloat(el.value || '0'), 0, 1);
+        if (el.dataset.spotSize) spot.size = clamp(parseInt(el.value || '7', 10), 3, 18);
+        if (el.dataset.spotColor) spot.color = el.value;
+        renderSvg();
+      }));
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadPng() {
+      const svgBlob = new Blob([latestSvg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => blob && downloadBlob(blob, 'tlc-diagram.png'), 'image/png');
+      };
+      img.src = url;
+    }
+
+    [titleEl, solventEl, phaseEl, widthEl, heightEl, frontEl, labelsEl].forEach((el) => el.addEventListener('input', renderSvg));
+    document.getElementById('addLaneBtn').addEventListener('click', () => { state.lanes.push({ id: Date.now(), label: `L${state.lanes.length + 1}`, spots: [{ id: 1, rf: 0.4, color: '#1f2937', size: 8 }] }); renderLaneControls(); renderSvg(); });
+    document.getElementById('resetBtn').addEventListener('click', () => { state.lanes = JSON.parse(JSON.stringify(DEFAULT_LANES)); renderLaneControls(); renderSvg(); });
+    document.getElementById('downloadSvgBtn').addEventListener('click', () => downloadBlob(new Blob([latestSvg], { type: 'image/svg+xml;charset=utf-8' }), 'tlc-diagram.svg'));
+    document.getElementById('downloadPngBtn').addEventListener('click', downloadPng);
+    renderLaneControls();
+    renderSvg();
+  </script>
   <script src="/js/site-topbar.js" defer></script>
 </body>
 </html>

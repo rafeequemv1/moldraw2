@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="PDB to PDBQT converter online by MolDraw. Paste PDB text and generate a docking-ready PDBQT draft for AutoDock-style workflows, ligand prep, and molecular docking checks.">
-  <meta name="keywords" content="pdb to pdbqt converter, convert pdb to pdbqt, pdbqt generator, pdb vs pdbqt, pdbqt to pdb, autodock pdbqt, molecular docking tools">
+  <meta name="description" content="PDB to PDBQT converter online by MolDraw. Paste PDB text, upload a .pdb file, or import by PDB ID to generate a PDBQT draft with AutoDock atom type, charge, torsion, and format guidance.">
+  <meta name="keywords" content="pdb to pdbqt converter, upload pdb to pdbqt, pdb id to pdbqt, convert pdb to pdbqt, pdbqt generator, pdb vs pdbqt, pdbq vs pdbqt, pdbqt format, autodock vina pdbqt, pdbqt atom types charges torsions">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html">
   <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index" />
   <title>PDB to PDBQT Converter Online | AutoDock PDBQT Tool | MolDraw</title>
   <meta property="og:title" content="PDB to PDBQT Converter Online | MolDraw" />
-  <meta property="og:description" content="Paste PDB text and generate a PDBQT draft for AutoDock-style molecular docking workflows in the browser." />
+  <meta property="og:description" content="Paste PDB text, upload a PDB file, or import by PDB ID to generate a PDBQT draft for AutoDock-style workflows." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html" />
   <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="PDB to PDBQT Converter Online | MolDraw" />
-  <meta name="twitter:description" content="Convert PDB structure text to a PDBQT draft for docking workflows and AutoDock-style preparation." />
+  <meta name="twitter:description" content="Convert pasted, uploaded, or PDB ID-imported structures to a PDBQT draft for docking workflows." />
 
   <script type="application/ld+json">
   {
@@ -27,7 +27,7 @@
     "applicationCategory": "ScientificApplication",
     "operatingSystem": "Web",
     "url": "https://www.moldraw.com/tools/free-chem-tools/pdb-to-pdbqt-converter.html",
-    "description": "Convert PDB structure text to PDBQT format for molecular docking workflows.",
+    "description": "Convert pasted PDB text, uploaded PDB files, or Protein Data Bank IDs to PDBQT format for molecular docking workflows with PDBQT format guidance.",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
@@ -51,6 +51,30 @@
           "@type": "Answer",
           "text": "PDB stores atomic coordinates and structure records. PDBQT is a docking-oriented format that extends PDB-style coordinates with partial charge and AutoDock atom type information."
         }
+      },
+      {
+        "@type": "Question",
+        "name": "What does PDBQT format contain?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "PDBQT keeps PDB-like atom coordinates and adds partial charge and AutoDock atom type fields. Ligand PDBQT files may also include ROOT, BRANCH, ENDBRANCH, TORSDOF, and torsion tree records."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I use this PDBQT output directly in AutoDock Vina?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "This browser converter creates a fast PDBQT draft. For production AutoDock Vina docking, review protonation, hydrogens, charges, atom types, receptor cleanup, ligand rotatable bonds, and torsion definitions in a docking preparation workflow."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I convert PDBQT back to PDB?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A PDBQT file can often be reduced to PDB-like coordinate records by removing docking-specific charge, atom type, and torsion metadata, but PDB cannot preserve AutoDock torsion tree information."
+        }
       }
     ]
   }
@@ -67,16 +91,32 @@
     p { color: #475569; font-size: 14px; margin-bottom: 10px; line-height: 1.65; }
     .io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     textarea { width: 100%; min-height: 260px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #0f172a; font-family: 'Courier New', monospace; resize: vertical; background: #fff; }
+    .input-tools { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-bottom: 8px; min-width: 0; max-width: 100%; }
+    .file-picker { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; border: 1px dashed #2C7A7B; border-radius: 10px; color: #0f766e; background: #f0fdfa; font-size: 12px; font-weight: 800; cursor: pointer; padding: 0 12px; text-align: center; }
+    .file-picker input { display: none; }
+    .pdb-id-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; min-width: 0; max-width: 100%; }
+    .pdb-id-form input { min-width: 0; width: 100%; height: 36px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 0 10px; font-size: 12px; color: #0f172a; text-transform: uppercase; }
+    .pdb-id-form button { max-width: 100%; white-space: normal; line-height: 1.15; }
+    .source-note { min-height: 18px; margin: -2px 0 8px; font-size: 12px; color: #64748b; line-height: 1.45; }
     .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; height: 34px; padding: 0 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
     .ghost-btn { border-color: #d1d5db; background: #fff; color: #334155; }
     .status { margin-top: 10px; font-size: 12px; color: #334155; min-height: 20px; }
     ul { padding-left: 18px; color: #475569; font-size: 14px; line-height: 1.6; }
+    ol { padding-left: 18px; color: #475569; font-size: 14px; line-height: 1.6; }
     h3 { font-size: 15px; color: #0f172a; margin: 14px 0 6px; }
     .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; line-height: 1.55; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
+    .info-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: #f8fafc; }
+    .info-card h3 { margin-top: 0; }
+    .format-table { width: 100%; border-collapse: collapse; margin: 10px 0 12px; font-size: 13px; }
+    .format-table th, .format-table td { border: 1px solid #e5e7eb; padding: 9px; text-align: left; vertical-align: top; }
+    .format-table th { background: #f8fafc; color: #0f172a; }
+    .code-sample { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 10px; background: #0f172a; color: #e2e8f0; padding: 10px; font-size: 12px; line-height: 1.55; }
+    .note-box { border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 13px; line-height: 1.55; }
     .related-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .related-links a { display: inline-flex; align-items: center; min-height: 30px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 9px; background: #f8fafc; color: #334155; text-decoration: none; font-size: 12px; font-weight: 700; }
-    @media (max-width: 860px) { .io-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 860px) { .io-grid, .input-tools, .info-grid, .pdb-id-form { grid-template-columns: 1fr; } }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
@@ -90,11 +130,22 @@
 
     <section class="panel">
       <h1>PDB to PDBQT Converter Online</h1>
-      <p>Paste a PDB structure and convert it into PDBQT for docking pipelines. This browser tool adds element and charge/type columns in PDBQT layout for fast preparation.</p>
-      <div class="quick-answer"><strong>Quick answer:</strong> PDB stores structure coordinates, while PDBQT is a docking format that includes PDB-style coordinates plus partial charge and AutoDock atom type fields. Use this tool for a quick PDBQT draft before deeper ligand or receptor preparation.</div>
+      <p>Paste a PDB structure, upload a .pdb file, or import a structure by PDB ID from the Protein Data Bank, then convert it into PDBQT for docking pipelines. This browser tool adds element and charge/type columns in PDBQT layout for fast preparation.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> PDB stores structure coordinates, while PDBQT is a docking format that includes PDB-style coordinates plus partial charge and AutoDock atom type fields. Use this tool for a quick PDBQT draft from pasted text, a local PDB file, or an RCSB PDB ID before deeper ligand or receptor preparation.</div>
       <div class="io-grid">
         <div>
           <h2>PDB Input</h2>
+          <div class="input-tools" aria-label="PDB input options">
+            <label class="file-picker">
+              Upload .pdb file
+              <input id="pdbFileInput" type="file" accept=".pdb,.ent,chemical/x-pdb,text/plain">
+            </label>
+            <div class="pdb-id-form">
+              <input id="pdbIdInput" type="text" maxlength="8" autocomplete="off" spellcheck="false" placeholder="PDB ID, e.g. 1CRN" aria-label="PDB ID">
+              <button id="fetchPdbBtn" type="button">Import PDB ID</button>
+            </div>
+          </div>
+          <p class="source-note" id="sourceNote">Paste PDB text, upload a local PDB file, or enter a 4-character PDB ID.</p>
           <textarea id="pdbInput" placeholder="Paste PDB content here..."></textarea>
         </div>
         <div>
@@ -118,8 +169,41 @@
         <li>For production docking runs, you can further refine protonation state and torsion definitions in your docking suite.</li>
         <li>Use this page as a quick conversion utility when you need a fast PDBQT draft structure.</li>
       </ul>
+      <h3>How to convert PDB to PDBQT online</h3>
+      <ol>
+        <li>Paste PDB text, upload a local <strong>.pdb</strong> file, or type a 4-character PDB ID such as <strong>1CRN</strong>.</li>
+        <li>Click <strong>Convert to PDBQT</strong>. The converter keeps ATOM/HETATM coordinates and writes PDBQT-style charge and AutoDock atom type fields.</li>
+        <li>Copy or download the generated <strong>.pdbqt</strong> file for docking preparation, quick checks, or teaching examples.</li>
+        <li>Before a real docking run, review hydrogens, protonation, charges, atom types, flexible bonds, and receptor cleanup in your docking workflow.</li>
+      </ol>
       <h3>PDB vs PDBQT</h3>
       <p>PDB is a general structural biology coordinate format. PDBQT is commonly used by AutoDock-style docking tools because it carries atom typing and partial charge information needed during docking calculations.</p>
+      <table class="format-table">
+        <thead>
+          <tr>
+            <th>Format</th>
+            <th>What it stores</th>
+            <th>Common use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PDB</td>
+            <td>Atom names, residue names, chains, coordinates, occupancy, B-factor, and element symbols.</td>
+            <td>Protein structures, ligands, crystallography files, visualization, and structural biology exchange.</td>
+          </tr>
+          <tr>
+            <td>PDBQ</td>
+            <td>PDB-like coordinates plus partial charge information.</td>
+            <td>Older docking preparation workflows where charge is needed but AutoDock atom type is not stored as in PDBQT.</td>
+          </tr>
+          <tr>
+            <td>PDBQT</td>
+            <td>PDB-like coordinates plus partial charge and AutoDock atom type fields. Ligands may include torsion tree records.</td>
+            <td>AutoDock, AutoDock Vina, docking pipelines, ligand/receptor preparation, and docking tutorials.</td>
+          </tr>
+        </tbody>
+      </table>
       <h3>Related docking and structure tools</h3>
       <div class="related-links" aria-label="Related docking converter tools">
         <a href="/tools/free-chem-tools/smiles-to-pdbqt-converter.html">SMILES to PDBQT</a>
@@ -128,13 +212,72 @@
         <a href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">SMILES to 3D</a>
       </div>
     </section>
+
+    <section class="panel">
+      <h2>PDBQT Format Explained</h2>
+      <p>A PDBQT file looks similar to a PDB file, but docking tools read extra fields near the end of each atom line. The <strong>Q</strong> part represents partial charge, and the <strong>T</strong> part represents the AutoDock atom type.</p>
+      <div class="code-sample" aria-label="Example PDBQT atom records"><pre>ATOM      1  N   ALA A   1      11.104  13.207   9.142  1.00 20.00    -0.346  N
+ATOM      2  CA  ALA A   1      12.560  13.320   9.420  1.00 20.00     0.186  C
+HETATM    3  O   LIG L   1      10.440  11.980   8.500  1.00 20.00    -0.508 OA</pre></div>
+      <div class="info-grid">
+        <div class="info-card">
+          <h3>Atom types</h3>
+          <p>AutoDock atom types such as <strong>C</strong>, <strong>N</strong>, <strong>OA</strong>, <strong>SA</strong>, <strong>HD</strong>, <strong>Cl</strong>, and <strong>Zn</strong> tell docking software how each atom should be interpreted during scoring.</p>
+        </div>
+        <div class="info-card">
+          <h3>Charges</h3>
+          <p>PDBQT stores partial charges. This quick browser converter writes a neutral draft charge field, so production docking should still assign appropriate charges with a dedicated preparation tool.</p>
+        </div>
+        <div class="info-card">
+          <h3>Torsions</h3>
+          <p>Flexible ligand PDBQT files can include <strong>ROOT</strong>, <strong>BRANCH</strong>, <strong>ENDBRANCH</strong>, and <strong>TORSDOF</strong> records to describe rotatable bonds and torsion degrees of freedom.</p>
+        </div>
+        <div class="info-card">
+          <h3>Receptors vs ligands</h3>
+          <p>Receptor PDBQT preparation usually focuses on cleanup, hydrogens, charges, and atom types. Ligand PDBQT preparation also needs rotatable bond and torsion tree handling.</p>
+        </div>
+      </div>
+      <div class="note-box"><strong>Important:</strong> MolDraw's browser output is a fast PDBQT draft. For AutoDock Vina production work, validate the protonation state, missing atoms, alternate locations, waters, metals, cofactors, charge model, atom typing, and ligand flexibility.</div>
+    </section>
+
+    <section class="panel">
+      <h2>AutoDock Vina PDBQT Checklist</h2>
+      <p>Use this checklist when preparing PDBQT files for AutoDock, AutoDock Vina, or related docking workflows.</p>
+      <ul>
+        <li><strong>Clean the PDB:</strong> remove irrelevant waters, duplicated chains, alternate conformations, and non-target ligands unless they are needed.</li>
+        <li><strong>Add hydrogens:</strong> docking scores are sensitive to hydrogen placement, especially polar hydrogens and hydrogen-bond donors.</li>
+        <li><strong>Check protonation:</strong> choose the protonation state expected at your assay pH or biological condition.</li>
+        <li><strong>Assign charges:</strong> use a docking preparation workflow for realistic partial charges before final docking.</li>
+        <li><strong>Review atom types:</strong> metals, halogens, sulfur, phosphorus, and charged atoms may need careful atom typing.</li>
+        <li><strong>Handle torsions:</strong> ligand PDBQT files should define rotatable bonds correctly; receptor files are usually rigid unless flexible side chains are prepared separately.</li>
+        <li><strong>Validate the output:</strong> open the PDBQT in your docking or visualization tool before launching a long batch job.</li>
+      </ul>
+      <h3>PDBQT to PDB: what happens in reverse?</h3>
+      <p>Searches such as <strong>PDBQT to PDB converter</strong> usually mean the user wants a simple coordinate file for viewing. A PDBQT file can often be reduced back to PDB-like ATOM/HETATM records by removing charge, atom type, and torsion tree metadata. However, PDB cannot preserve AutoDock-specific records such as ROOT, BRANCH, ENDBRANCH, and TORSDOF.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Common Questions</h2>
+      <h3>Is PDBQT the same as PDB?</h3>
+      <p>No. PDB is a general coordinate format. PDBQT is a docking format that adds partial charge and AutoDock atom type fields, and may include torsion tree information for flexible ligands.</p>
+      <h3>Why do AutoDock and Vina need PDBQT?</h3>
+      <p>Docking programs need atom typing and charge information for scoring and interaction evaluation. PDB alone usually does not contain enough docking-specific information.</p>
+      <h3>Does this tool calculate real Gasteiger charges?</h3>
+      <p>No. This page creates a quick browser-side PDBQT draft with a neutral charge field. Use a full docking preparation workflow for final charge assignment.</p>
+      <h3>Can I import directly from the Protein Data Bank?</h3>
+      <p>Yes. Enter a 4-character PDB ID, such as 1CRN, and the tool imports the PDB file from RCSB before generating the PDBQT draft.</p>
+    </section>
   </main>
 
   <script>
     const pdbInput = document.getElementById('pdbInput');
     const pdbqtOutput = document.getElementById('pdbqtOutput');
+    const pdbFileInput = document.getElementById('pdbFileInput');
+    const pdbIdInput = document.getElementById('pdbIdInput');
+    const sourceNote = document.getElementById('sourceNote');
     const statusText = document.getElementById('statusText');
     let latestPdbqt = '';
+    let latestSourceName = 'structure';
 
     function normalizeElement(raw) {
       const token = String(raw || '').replace(/[^A-Za-z]/g, '').toUpperCase();
@@ -192,20 +335,91 @@
 
     function setStatus(text) { statusText.textContent = text; }
 
-    document.getElementById('convertBtn').addEventListener('click', () => {
+    function setSourceNote(text) { sourceNote.textContent = text; }
+
+    function safeFileBaseName(value) {
+      return String(value || 'structure')
+        .replace(/\.[^.]+$/, '')
+        .replace(/[^a-z0-9_-]/gi, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '') || 'structure';
+    }
+
+    function convertCurrentPdb(successMessage = 'PDBQT generated successfully.') {
       const pdb = (pdbInput.value || '').trim();
       if (!pdb) {
-        setStatus('Paste a PDB structure first.');
-        return;
+        setStatus('Paste, upload, or import a PDB structure first.');
+        return false;
       }
       const pdbqt = convertPdbToPdbqt(pdb);
       if (!pdbqt) {
+        latestPdbqt = '';
+        pdbqtOutput.value = '';
         setStatus('No ATOM/HETATM records were found in the provided PDB text.');
-        return;
+        return false;
       }
       latestPdbqt = pdbqt;
       pdbqtOutput.value = pdbqt;
-      setStatus('PDBQT generated successfully.');
+      setStatus(successMessage);
+      return true;
+    }
+
+    function loadPdbText(pdbText, sourceName, sourceLabel) {
+      pdbInput.value = pdbText;
+      pdbqtOutput.value = '';
+      latestPdbqt = '';
+      latestSourceName = safeFileBaseName(sourceName);
+      setSourceNote(sourceLabel);
+      convertCurrentPdb(`Loaded ${sourceLabel.toLowerCase()} and generated PDBQT.`);
+    }
+
+    document.getElementById('convertBtn').addEventListener('click', () => {
+      latestSourceName = latestSourceName || 'structure';
+      convertCurrentPdb();
+    });
+
+    pdbInput.addEventListener('input', () => {
+      latestPdbqt = '';
+      pdbqtOutput.value = '';
+      latestSourceName = 'structure';
+      setSourceNote('Manual PDB text edited. Convert again to refresh the PDBQT output.');
+    });
+
+    pdbFileInput.addEventListener('change', async () => {
+      const file = pdbFileInput.files?.[0];
+      if (!file) return;
+      if (file.size > 20 * 1024 * 1024) {
+        setStatus('PDB file is too large for this browser converter. Use a file under 20 MB.');
+        pdbFileInput.value = '';
+        return;
+      }
+      try {
+        setStatus(`Reading ${file.name}...`);
+        const text = await file.text();
+        loadPdbText(text, file.name, `Uploaded file: ${file.name}`);
+      } catch {
+        setStatus('Could not read this PDB file.');
+      } finally {
+        pdbFileInput.value = '';
+      }
+    });
+
+    document.getElementById('fetchPdbBtn').addEventListener('click', async () => {
+      const pdbId = pdbIdInput.value.trim().toUpperCase();
+      if (!/^[A-Z0-9]{4}$/.test(pdbId)) {
+        setStatus('Enter a valid 4-character PDB ID, for example 1CRN.');
+        return;
+      }
+      try {
+        setStatus(`Importing ${pdbId} from the Protein Data Bank...`);
+        const response = await fetch(`https://files.rcsb.org/download/${encodeURIComponent(pdbId)}.pdb`);
+        if (!response.ok) throw new Error('PDB fetch failed');
+        const text = await response.text();
+        if (!/^(ATOM|HETATM)/m.test(text)) throw new Error('No atom records');
+        loadPdbText(text, pdbId, `Imported from RCSB PDB: ${pdbId}`);
+      } catch {
+        setStatus(`Could not import ${pdbId}. Check the PDB ID or paste/upload the PDB file manually.`);
+      }
     });
 
     document.getElementById('copyBtn').addEventListener('click', async () => {
@@ -230,7 +444,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'structure.pdbqt';
+      link.download = `${safeFileBaseName(latestSourceName)}.pdbqt`;
       link.click();
       URL.revokeObjectURL(url);
       setStatus('PDBQT download started.');
@@ -240,6 +454,10 @@
       pdbInput.value = '';
       pdbqtOutput.value = '';
       latestPdbqt = '';
+      latestSourceName = 'structure';
+      pdbIdInput.value = '';
+      pdbFileInput.value = '';
+      setSourceNote('Paste PDB text, upload a local PDB file, or enter a 4-character PDB ID.');
       setStatus('Cleared.');
     });
   </script>

@@ -83,6 +83,13 @@
       </div>
       <div class="output" id="resultBox">PDB output appears here.</div>
     </section>
+
+    <section class="panel">
+      <h2>File Format Explained</h2>
+      <p><strong>SMILES</strong> is a compact text identifier for molecular connectivity. It is easy to paste and store, but it does not contain explicit 3D coordinates.</p>
+      <p><strong>PDB</strong> stores atom coordinates in a structural biology format. PDB is useful for 3D visualization, molecular modeling, and workflows that expect coordinate files.</p>
+      <p>A SMILES to PDB conversion generates a coordinate draft from connectivity. Validate stereochemistry, protonation, and conformer geometry before using the PDB in docking or computational chemistry.</p>
+    </section>
   </main>
   <script>
     const smilesInput = document.getElementById('smilesInput');

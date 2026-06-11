@@ -1446,6 +1446,15 @@
         .replace(/\b\w/g, (char) => char.toUpperCase()) || 'Community member';
     };
 
+    const getCookie = (name) => {
+      const encodedName = encodeURIComponent(name);
+      const match = document.cookie
+        .split(';')
+        .map((part) => part.trim())
+        .find((part) => part.startsWith(`${encodedName}=`));
+      return match ? decodeURIComponent(match.slice(encodedName.length + 1)) : '';
+    };
+
     function renderImages(imageUrls, altText = 'Community attachment', className = 'card-images') {
       const images = Array.isArray(imageUrls) ? imageUrls : [];
       if (!images.length) return '';
@@ -1699,6 +1708,22 @@
       }
     }
 
+    async function deletePost(postId) {
+      if (!requireAuth()) return;
+      if (!window.confirm('Delete this post and its replies?')) return;
+      statusEl.textContent = 'Deleting post...';
+      const { error } = await client
+        .from('community_posts')
+        .delete()
+        .eq('id', postId);
+      if (error) {
+        statusEl.textContent = error.message || 'Could not delete post.';
+        return;
+      }
+      statusEl.textContent = '';
+      await loadDiscussions();
+    }
+
     async function togglePostVote(postId, active) {
       if (!requireAuth()) return;
       if (active) {
@@ -1769,6 +1794,21 @@
       await loadDiscussions(false);
     }
 
+    async function deleteComment(commentId, postId) {
+      if (!requireAuth()) return;
+      if (!window.confirm('Delete this reply?')) return;
+      const { error } = await client
+        .from('community_comments')
+        .delete()
+        .eq('id', commentId);
+      if (error) {
+        statusEl.textContent = error.message || 'Could not delete reply. Delete nested replies first if any.';
+        return;
+      }
+      await openComments(postId);
+      await loadDiscussions(false);
+    }
+
     function buildCommentTree(comments) {
       const byId = new Map();
       const roots = [];
@@ -1792,7 +1832,8 @@
       const reportLabel = options.reportLabel || 'comment';
       const replyThreads = options.expandedReplyThreads || expandedReplyThreads;
       const ownerTools = isOwn(comment.user_id)
-        ? `<button class="comment-tool" type="button" data-edit-comment="${escapeHtml(comment.id)}">Edit</button>`
+        ? `<button class="comment-tool" type="button" data-edit-comment="${escapeHtml(comment.id)}">Edit</button>
+           <button class="comment-tool" type="button" data-delete-comment="${escapeHtml(comment.id)}">Delete</button>`
         : '';
       const allReplies = comment.replies || [];
       const repliesExpanded = replyThreads.has(comment.id);
@@ -1909,6 +1950,12 @@
           editInput.focus();
         });
       });
+      wrap.querySelectorAll('[data-delete-comment]').forEach((deleteButton) => {
+        deleteButton.addEventListener('click', () => {
+          const commentId = deleteButton.getAttribute('data-delete-comment');
+          deleteComment(commentId, postId);
+        });
+      });
       wrap.querySelectorAll('[data-report-type]').forEach((reportButton) => {
         reportButton.addEventListener('click', () => {
           openReportModal(
@@ -1989,6 +2036,21 @@
       await loadFeatureRequests();
     }
 
+    async function deleteFeatureComment(commentId, requestId) {
+      if (!requireAuth()) return;
+      if (!window.confirm('Delete this reply?')) return;
+      const { error } = await client
+        .from('feature_request_comments')
+        .delete()
+        .eq('id', commentId);
+      if (error) {
+        statusEl.textContent = error.message || 'Could not delete reply. Delete nested replies first if any.';
+        return;
+      }
+      await openFeatureComments(requestId);
+      await loadFeatureRequests();
+    }
+
     function bindFeatureCommentThread(wrap, requestId) {
       const mainForm = wrap.querySelector('[data-comment-form="main"]');
       const input = mainForm?.querySelector('textarea');
@@ -2047,6 +2109,12 @@
           slot.querySelector('.btn-primary').addEventListener('click', () => updateFeatureComment(commentId, requestId, editInput.value));
           slot.querySelector('[data-cancel-edit]').addEventListener('click', () => { slot.innerHTML = ''; });
           editInput.focus();
+        });
+      });
+      wrap.querySelectorAll('[data-delete-comment]').forEach((deleteButton) => {
+        deleteButton.addEventListener('click', () => {
+          const commentId = deleteButton.getAttribute('data-delete-comment');
+          deleteFeatureComment(commentId, requestId);
         });
       });
       wrap.querySelectorAll('[data-report-type]').forEach((reportButton) => {
@@ -2129,8 +2197,9 @@
         const voted = myVotes.has(post.id);
         const comments = commentsByPost.get(post.id) || [];
         commentTotalCache.set(post.id, post.comment_count || comments.length);
-        const editAction = isOwn(post.user_id)
-          ? `<button class="pill" type="button" data-edit-post="${escapeHtml(post.id)}">Edit post</button>`
+        const ownerActions = isOwn(post.user_id)
+          ? `<button class="pill" type="button" data-edit-post="${escapeHtml(post.id)}">Edit post</button>
+             <button class="pill" type="button" data-delete-post="${escapeHtml(post.id)}">Delete post</button>`
           : '';
         return `
           <article class="community-card">
@@ -2150,7 +2219,7 @@
               <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-post="${escapeHtml(post.id)}" data-voted="${voted ? '1' : '0'}">▲ ${post.upvote_count || 0}</button>
               <button class="pill" type="button" data-open-comments="${escapeHtml(post.id)}">Reply ${post.comment_count || 0}</button>
               <button class="pill" type="button" data-report-type="post" data-report-id="${escapeHtml(post.id)}" data-report-label="post">Report</button>
-              ${editAction}
+              ${ownerActions}
             </div>
             <div class="comments visible" data-comments="${escapeHtml(post.id)}">${renderCommentThread(post.id, comments, post.comment_count || comments.length)}</div>
           </article>
@@ -2175,6 +2244,9 @@
           const post = (data || []).find((item) => item.id === btn.getAttribute('data-edit-post'));
           if (post) openPostModal(null, post);
         });
+      });
+      feed.querySelectorAll('[data-delete-post]').forEach((btn) => {
+        btn.addEventListener('click', () => deletePost(btn.getAttribute('data-delete-post')));
       });
       feed.querySelectorAll('[data-report-type="post"]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -2437,7 +2509,12 @@
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
       const name = displayNameFromEmail(email);
-      const { data, error } = await client.auth.signUp({ email, password, options: { data: { name } } });
+      const visitor = getCookie('piqo_visitor');
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: { data: { name, ...(visitor ? { piqo_visitor_id: visitor } : {}) } }
+      });
       if (error) {
         authMessage.textContent = error.message;
         return;

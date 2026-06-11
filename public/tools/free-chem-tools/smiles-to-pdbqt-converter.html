@@ -79,6 +79,10 @@
         <li>Step 2: PDB atom lines are rewritten into PDBQT-style records with atom type and charge columns.</li>
         <li>Use this quick converter for drafts; fine-tune protonation and torsion settings in docking software when needed.</li>
       </ul>
+      <h2>File Format Explained</h2>
+      <p><strong>SMILES</strong> is a compact connectivity string. It is good for describing a ligand quickly, but it does not contain docking atom types, charges, torsions, or 3D coordinates.</p>
+      <p><strong>PDBQT</strong> is an AutoDock-style docking format. It stores PDB-like coordinates plus partial charge and AutoDock atom type fields, and ligand files may include torsion tree records such as ROOT, BRANCH, ENDBRANCH, and TORSDOF.</p>
+      <p>This converter creates a browser-side PDBQT draft. For production AutoDock Vina docking, review hydrogens, protonation, charge model, atom typing, and rotatable bonds.</p>
     </section>
   </main>
 
