@@ -123,6 +123,171 @@
     });
   }
 
+  function findPrimaryConverterInput(panel) {
+    var textarea = panel.querySelector('textarea:not([readonly])');
+    if (textarea) return textarea;
+    return Array.from(panel.querySelectorAll('input[type="text"], input:not([type])')).find(function (input) {
+      return !input.closest('.pubchem-import, .pdb-id-form');
+    });
+  }
+
+  function pubChemBase(query) {
+    var clean = String(query || '').trim();
+    return /^\d+$/.test(clean)
+      ? 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + encodeURIComponent(clean)
+      : 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + encodeURIComponent(clean);
+  }
+
+  function getPubChemSmiles(props) {
+    return props?.IsomericSMILES || props?.CanonicalSMILES || props?.SMILES || props?.ConnectivitySMILES || '';
+  }
+
+  function setConverterFeedback(panel, text) {
+    var target = panel.querySelector('.status, #statusText, #outputBox, #resultBox, textarea[readonly], .output');
+    if (!target) return;
+    if ('value' in target && target.tagName === 'TEXTAREA') target.value = text;
+    else target.textContent = text;
+  }
+
+  var sampleValues = {
+    smiles: [
+      { label: 'Aspirin', value: 'CC(=O)OC1=CC=CC=C1C(=O)O' },
+      { label: 'Caffeine', value: 'Cn1cnc2c1c(=O)n(C)c(=O)n2C' },
+      { label: 'Methanol', value: 'CO' },
+      { label: 'Glucose', value: 'C(C1C(C(C(C(O1)O)O)O)O)O' }
+    ],
+    name: [
+      { label: 'Aspirin IUPAC', value: '2-acetyloxybenzoic acid' },
+      { label: 'Caffeine', value: 'caffeine' },
+      { label: 'Ibuprofen', value: 'ibuprofen' },
+      { label: 'Paracetamol', value: 'paracetamol' }
+    ],
+    cid: [
+      { label: 'Aspirin CID', value: '2244' },
+      { label: 'Caffeine CID', value: '2519' },
+      { label: 'Methanol CID', value: '887' },
+      { label: 'Glucose CID', value: '5793' }
+    ],
+    inchi: [
+      { label: 'Aspirin', value: 'InChI=1S/C9H8O4/c1-6(10)13-8-5-3-2-4-7(8)9(11)12/h2-5H,1H3,(H,11,12)' },
+      { label: 'Caffeine', value: 'InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3' },
+      { label: 'Methanol', value: 'InChI=1S/CH4O/c1-2/h2H,1H3' }
+    ],
+    inchikey: [
+      { label: 'Aspirin', value: 'BSYNRYMUTXBXSQ-UHFFFAOYSA-N' },
+      { label: 'Caffeine', value: 'RYYVLZVUVIJVGH-UHFFFAOYSA-N' },
+      { label: 'Methanol', value: 'OKKJLVBELUTLKV-UHFFFAOYSA-N' }
+    ],
+    mol: [
+      { label: 'Methanol MOL', value: '\n  MolDraw sample\n\n  2  1  0  0  0  0            999 V2000\n    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.4300    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n  1  2  1  0  0  0  0\nM  END' }
+    ],
+    sdf: [
+      { label: 'Methanol SDF', value: '\n  MolDraw sample\n\n  2  1  0  0  0  0            999 V2000\n    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.4300    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n  1  2  1  0  0  0  0\nM  END\n$$$$' }
+    ],
+    mol2: [
+      { label: 'Methanol MOL2', value: '@<TRIPOS>MOLECULE\nMethanol\n2 1 1 0 0\nSMALL\nUSER_CHARGES\n\n@<TRIPOS>ATOM\n      1 C1          0.0000    0.0000    0.0000 C.3       1 MET       0.0000\n      2 O1          1.4300    0.0000    0.0000 O.3       1 MET       0.0000\n@<TRIPOS>BOND\n     1    1    2 1\n@<TRIPOS>SUBSTRUCTURE\n     1 MET         1 TEMP              0 ****  ****    0 ROOT' }
+    ],
+    pdb: [
+      { label: 'Methanol PDB', value: 'HETATM    1  C1  MET A   1       0.000   0.000   0.000  1.00 20.00           C\nHETATM    2  O1  MET A   1       1.430   0.000   0.000  1.00 20.00           O\nCONECT    1    2\nCONECT    2    1\nEND' },
+      { label: 'Tiny peptide PDB', value: 'ATOM      1  N   GLY A   1       0.000   0.000   0.000  1.00 20.00           N\nATOM      2  CA  GLY A   1       1.450   0.000   0.000  1.00 20.00           C\nATOM      3  C   GLY A   1       2.050   1.360   0.000  1.00 20.00           C\nATOM      4  O   GLY A   1       1.450   2.420   0.000  1.00 20.00           O\nTER\nEND' }
+    ]
+  };
+
+  function sampleTypeForPath(pathname) {
+    var name = pathname.split('/').pop() || '';
+    if (/^smiles-to-|smiles-to-structure/.test(name)) return 'smiles';
+    if (/^iupac-name-to-/.test(name)) return 'name';
+    if (/^cid-to-/.test(name)) return 'cid';
+    if (/^inchi-to-/.test(name)) return 'inchi';
+    if (/^inchikey-to-/.test(name)) return 'inchikey';
+    if (/^mol2-to-/.test(name)) return 'mol2';
+    if (/^mol-to-/.test(name)) return 'mol';
+    if (/^sdf-to-/.test(name)) return 'sdf';
+    if (/^pdb-to-/.test(name)) return 'pdb';
+    return '';
+  }
+
+  function addConverterSamplePresets() {
+    if (window.location.pathname.indexOf('/tools/free-chem-tools/') !== 0) return;
+    var panel = document.querySelector('main .panel');
+    if (!panel || panel.querySelector('.example-chips')) return;
+    var input = findPrimaryConverterInput(panel);
+    if (!input) return;
+    var type = sampleTypeForPath(window.location.pathname);
+    var samples = sampleValues[type];
+    if (!samples || !samples.length) return;
+
+    var chips = document.createElement('div');
+    chips.className = 'example-chips site-sample-presets';
+    chips.setAttribute('aria-label', 'Sample presets');
+    samples.forEach(function (sample) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = sample.label;
+      button.addEventListener('click', function () {
+        input.value = sample.value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        setConverterFeedback(panel, 'Loaded ' + sample.label + ' sample. Click Convert to run it.');
+      });
+      chips.appendChild(button);
+    });
+
+    var insertTarget = input.closest('.input-row') || input;
+    insertTarget.parentNode.insertBefore(chips, insertTarget);
+  }
+
+  function addSmilesPubChemImport() {
+    if (!/\/tools\/free-chem-tools\/smiles-to-/.test(window.location.pathname)) return;
+    var panel = document.querySelector('main .panel');
+    if (!panel || panel.querySelector('#pubchemImportBtn, [data-site-pubchem-import]')) return;
+    var input = findPrimaryConverterInput(panel);
+    if (!input) return;
+
+    var importWrap = document.createElement('div');
+    importWrap.className = 'pubchem-import';
+    importWrap.setAttribute('data-site-pubchem-import', 'true');
+    importWrap.setAttribute('aria-label', 'PubChem SMILES import');
+    importWrap.innerHTML = [
+      '<input type="text" placeholder="Search PubChem by name or CID, e.g. methanol, aspirin, 2244" aria-label="PubChem compound name or CID">',
+      '<button type="button">Import from PubChem</button>'
+    ].join('');
+
+    var queryInput = importWrap.querySelector('input');
+    var button = importWrap.querySelector('button');
+    var insertTarget = input.closest('.input-row') || input;
+    insertTarget.parentNode.insertBefore(importWrap, insertTarget);
+
+    async function importSmiles() {
+      var query = (queryInput.value || '').trim();
+      if (!query) {
+        setConverterFeedback(panel, 'Enter a compound name or PubChem CID first.');
+        return;
+      }
+      setConverterFeedback(panel, 'Searching PubChem...');
+      try {
+        var response = await fetch(pubChemBase(query) + '/property/SMILES,ConnectivitySMILES,CanonicalSMILES,IsomericSMILES,IUPACName/JSON');
+        if (!response.ok) throw new Error('PubChem lookup failed');
+        var props = (await response.json())?.PropertyTable?.Properties?.[0];
+        var smiles = getPubChemSmiles(props);
+        if (!smiles) throw new Error('No SMILES returned');
+        input.value = smiles;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        var action = panel.querySelector('#convertBtn, #renderBtn, #drawBtn, .site-converter-primary-action');
+        if (action) action.click();
+        setConverterFeedback(panel, 'Imported ' + (props?.IUPACName || query) + ' from PubChem.');
+      } catch (err) {
+        setConverterFeedback(panel, 'PubChem import failed. Try a different name, exact spelling, or CID.');
+      }
+    }
+
+    button.addEventListener('click', importSmiles);
+    queryInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') importSmiles();
+    });
+  }
+
   function enhanceExistingIoGrid(panel) {
     var grid = panel.querySelector('.io-grid');
     if (!grid || grid.classList.contains('site-converter-shell')) return false;
@@ -159,7 +324,7 @@
       panel.classList.add('site-converter-enhanced');
       return;
     }
-    var input = panel.querySelector('textarea:not([readonly]), input[type="text"], input:not([type])');
+    var input = findPrimaryConverterInput(panel);
     var output = panel.querySelector('.output, #outputBox, #resultBox, textarea[readonly]');
     var actions = panel.querySelector(':scope > .actions, .input-wrap > .actions');
     var helperActions = panel.querySelector(':scope > .input-row');
@@ -189,6 +354,8 @@
 
   if (window.location.pathname.indexOf('/tools/free-chem-tools/') === 0) {
     document.body.classList.add('site-free-tools-page');
+    addSmilesPubChemImport();
+    addConverterSamplePresets();
     Array.from(document.querySelectorAll('main .panel')).forEach(enhanceSimpleConverter);
   }
 

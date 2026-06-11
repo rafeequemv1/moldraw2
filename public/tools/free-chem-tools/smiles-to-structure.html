@@ -156,13 +156,44 @@
       display: flex;
       flex-wrap: wrap;
       gap: 7px;
-      margin-top: auto;
+      flex: 0 0 auto;
+      margin-top: 0;
     }
     .structure-card-actions button {
       height: auto;
       min-height: 32px;
       white-space: normal;
       line-height: 1.2;
+    }
+    .copy-export-panel {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 7px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+    .copy-export-label {
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .copy-export-panel button {
+      min-height: 28px;
+      padding: 0 9px;
+      border-color: #dbe4ef;
+      background: #fff;
+      color: #334155;
+      font-size: 11px;
+      box-shadow: none;
+    }
+    .copy-export-panel button:hover {
+      border-color: #99f6e4;
+      color: #0f766e;
     }
     textarea {
       width: 100%;
@@ -226,13 +257,13 @@
       border: 1px dashed #cbd5e1;
       background: #f8fafc;
       border-radius: 10px;
-      min-height: 300px;
-      flex: 1 1 auto;
+      min-height: 0;
+      flex: 1 1 0;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 12px;
-      overflow: auto;
+      overflow: hidden;
     }
     .structure-card textarea {
       flex: 1 1 0;
@@ -241,9 +272,12 @@
       overflow: auto;
     }
     #svgTarget {
-      width: auto;
+      display: block;
+      width: 100%;
+      height: 100%;
       max-width: 100%;
-      min-height: 240px;
+      max-height: 100%;
+      min-height: 0;
       background: #fff;
       border-radius: 8px;
     }
@@ -501,6 +535,12 @@
           <div class="render-area" aria-label="Rendered structure area">
             <svg id="svgTarget"></svg>
           </div>
+          <div class="copy-export-panel" aria-label="Copy rendered structure">
+            <span class="copy-export-label">Copy</span>
+            <button id="copySvgBtn" class="ghost-btn" type="button">SVG</button>
+            <button id="copyPngBtn" class="ghost-btn" type="button">PNG</button>
+            <button id="copyJpgBtn" class="ghost-btn" type="button">JPG</button>
+          </div>
           <div class="structure-card-actions">
             <button id="downloadSvgBtn" class="ghost-btn" type="button">Download SVG</button>
             <button id="downloadPngBtn" class="ghost-btn" type="button">Download PNG</button>
@@ -634,6 +674,9 @@
     const downloadSvgBtn = document.getElementById('downloadSvgBtn');
     const downloadPngBtn = document.getElementById('downloadPngBtn');
     const downloadJpgBtn = document.getElementById('downloadJpgBtn');
+    const copySvgBtn = document.getElementById('copySvgBtn');
+    const copyPngBtn = document.getElementById('copyPngBtn');
+    const copyJpgBtn = document.getElementById('copyJpgBtn');
     const styleBtn = document.getElementById('styleBtn');
     const clearBtn = document.getElementById('clearBtn');
     const sampleBtn = document.getElementById('sampleBtn');
@@ -761,6 +804,19 @@
       drawer = new SmiDrawer(buildDrawerOptions(), reactionOptions);
     }
 
+    function fitRenderedSvgToPreview() {
+      const svgEl = document.querySelector(svgSelector);
+      if (!svgEl) return;
+      const width = parseFloat(svgEl.getAttribute('width')) || styleSettings.width;
+      const height = parseFloat(svgEl.getAttribute('height')) || styleSettings.height;
+      if (!svgEl.getAttribute('viewBox')) {
+        svgEl.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      }
+      svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      svgEl.style.width = '100%';
+      svgEl.style.height = '100%';
+    }
+
     function updateStyleValueBadges() {
       document.querySelector('[data-style-value="width"]').textContent = String(styleSettings.width);
       document.querySelector('[data-style-value="height"]').textContent = String(styleSettings.height);
@@ -867,6 +923,10 @@
         : `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(clean)}`;
     }
 
+    function getPubChemSmiles(props) {
+      return props?.IsomericSMILES || props?.CanonicalSMILES || props?.SMILES || props?.ConnectivitySMILES || '';
+    }
+
     async function importFromPubChem() {
       const query = (pubchemQuery.value || '').trim();
       if (!query) {
@@ -875,10 +935,10 @@
       }
       statusEl.textContent = 'Searching PubChem...';
       try {
-        const res = await fetch(`${pubchemBase(query)}/property/IsomericSMILES,CanonicalSMILES,IUPACName/JSON`);
+        const res = await fetch(`${pubchemBase(query)}/property/SMILES,ConnectivitySMILES,IsomericSMILES,CanonicalSMILES,IUPACName/JSON`);
         if (!res.ok) throw new Error('PubChem lookup failed');
         const props = (await res.json())?.PropertyTable?.Properties?.[0];
-        const smiles = props?.IsomericSMILES || props?.CanonicalSMILES || '';
+        const smiles = getPubChemSmiles(props);
         if (!smiles) throw new Error('No SMILES returned');
         inputEl.value = smiles;
         drawSmiles();
@@ -896,6 +956,7 @@
       }
       try {
         drawer.draw(smiles, svgSelector, styleSettings.theme);
+        fitRenderedSvgToPreview();
         lastSmiles = smiles;
         statusEl.textContent = 'Structure rendered successfully.';
       } catch (err) {
@@ -912,10 +973,69 @@
       URL.revokeObjectURL(url);
     }
 
-    function getRenderedSvgMarkup() {
+    function getRenderedSvgClone() {
       const svgEl = document.querySelector(svgSelector);
       if (!svgEl || !svgEl.innerHTML.trim()) return null;
-      return svgEl.outerHTML;
+      const clone = svgEl.cloneNode(true);
+      const viewBox = clone.getAttribute('viewBox');
+      let width = parseFloat(clone.getAttribute('width')) || styleSettings.width;
+      let height = parseFloat(clone.getAttribute('height')) || styleSettings.height;
+      if ((!width || !height) && viewBox) {
+        const parts = viewBox.split(/\s+/).map(Number);
+        width = width || parts[2] || styleSettings.width;
+        height = height || parts[3] || styleSettings.height;
+      }
+      clone.setAttribute('width', String(width));
+      clone.setAttribute('height', String(height));
+      if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      if (!clone.getAttribute('viewBox')) clone.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      clone.style.width = '';
+      clone.style.height = '';
+      clone.style.maxWidth = '';
+      clone.style.maxHeight = '';
+      return clone;
+    }
+
+    function getRenderedSvgMarkup() {
+      const clone = getRenderedSvgClone();
+      if (!clone) return null;
+      return new XMLSerializer().serializeToString(clone);
+    }
+
+    function makeRasterBlob(type) {
+      return new Promise((resolve, reject) => {
+        const svgMarkup = getRenderedSvgMarkup();
+        if (!svgMarkup) {
+          reject(new Error('No SVG markup'));
+          return;
+        }
+        const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width || styleSettings.width;
+          canvas.height = img.naturalHeight || img.height || styleSettings.height;
+          const ctx = canvas.getContext('2d');
+          if (type === 'jpg') {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(svgUrl);
+          const mime = type === 'png' ? 'image/png' : 'image/jpeg';
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Raster export failed'));
+          }, mime, 0.95);
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(svgUrl);
+          reject(new Error('Failed to render SVG'));
+        };
+        img.src = svgUrl;
+      });
     }
 
     function downloadSvg() {
@@ -928,39 +1048,47 @@
       statusEl.textContent = 'SVG download started.';
     }
 
-    function downloadRaster(type) {
-      const svgMarkup = getRenderedSvgMarkup();
-      if (!svgMarkup) {
+    async function downloadRaster(type) {
+      if (!getRenderedSvgMarkup()) {
         statusEl.textContent = 'Draw a structure before downloading.';
         return;
       }
-      const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml' });
-      const svgUrl = URL.createObjectURL(svgBlob);
-      const img = new Image();
-      img.onload = function () {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth || img.width || styleSettings.width;
-        canvas.height = img.naturalHeight || img.height || styleSettings.height;
-        const ctx = canvas.getContext('2d');
-        if (type === 'jpg') {
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(svgUrl);
-        const mime = type === 'png' ? 'image/png' : 'image/jpeg';
-        const dataUrl = canvas.toDataURL(mime, 0.95);
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = type === 'png' ? 'smiles-structure.png' : 'smiles-structure.jpg';
-        link.click();
+      try {
+        const blob = await makeRasterBlob(type);
+        downloadBlob(blob, type === 'png' ? 'smiles-structure.png' : 'smiles-structure.jpg');
         statusEl.textContent = (type === 'png' ? 'PNG' : 'JPG') + ' download started.';
-      };
-      img.onerror = function () {
-        URL.revokeObjectURL(svgUrl);
+      } catch {
         statusEl.textContent = 'Failed to prepare image download.';
-      };
-      img.src = svgUrl;
+      }
+    }
+
+    async function copySvg() {
+      const svgMarkup = getRenderedSvgMarkup();
+      if (!svgMarkup) {
+        statusEl.textContent = 'Draw a structure before copying.';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(svgMarkup);
+        statusEl.textContent = 'SVG copied to clipboard.';
+      } catch {
+        statusEl.textContent = 'Clipboard copy failed. Try downloading the SVG instead.';
+      }
+    }
+
+    async function copyRaster(type) {
+      if (!navigator.clipboard || !window.ClipboardItem) {
+        statusEl.textContent = 'Image clipboard is not supported in this browser. Use download instead.';
+        return;
+      }
+      try {
+        const blob = await makeRasterBlob(type);
+        const mime = type === 'png' ? 'image/png' : 'image/jpeg';
+        await navigator.clipboard.write([new ClipboardItem({ [mime]: blob })]);
+        statusEl.textContent = (type === 'png' ? 'PNG' : 'JPG') + ' image copied to clipboard.';
+      } catch {
+        statusEl.textContent = 'Image copy failed in this browser. Use download instead.';
+      }
     }
 
     drawBtn.addEventListener('click', drawSmiles);
@@ -991,6 +1119,9 @@
     downloadSvgBtn.addEventListener('click', downloadSvg);
     downloadPngBtn.addEventListener('click', function () { downloadRaster('png'); });
     downloadJpgBtn.addEventListener('click', function () { downloadRaster('jpg'); });
+    copySvgBtn.addEventListener('click', copySvg);
+    copyPngBtn.addEventListener('click', function () { copyRaster('png'); });
+    copyJpgBtn.addEventListener('click', function () { copyRaster('jpg'); });
     clearBtn.addEventListener('click', function () {
       inputEl.value = '';
       document.querySelector(svgSelector).innerHTML = '';

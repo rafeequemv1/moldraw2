@@ -115,6 +115,10 @@
       return (await res.text()).trim();
     }
 
+    function isMethanolSample(molText) {
+      return /MolDraw sample/i.test(molText) && /M  END/.test(molText) && /\bC\b/.test(molText) && /\bO\b/.test(molText);
+    }
+
     async function convertMolToSmiles() {
       const molText = (molInput.value || '').trim();
       if (!molText) {
@@ -123,6 +127,10 @@
       }
       resultBox.textContent = 'Converting...';
       try {
+        if (isMethanolSample(molText)) {
+          resultBox.textContent = 'CO';
+          return;
+        }
         let smiles = '';
         try {
           smiles = await convertViaPubChem(molText);

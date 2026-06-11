@@ -219,9 +219,23 @@
   min-width: 0;
 }
 
+.site-sample-presets,
 .site-converter-card .example-chips {
+  display: flex;
+  gap: 6px;
   max-width: 100%;
   flex-wrap: wrap;
+}
+
+.site-sample-presets button,
+.site-converter-card .example-chips button {
+  height: auto;
+  min-height: 28px;
+  border-color: #d1d5db;
+  background: #fff;
+  color: #334155;
+  font-size: 11px;
+  padding: 5px 10px;
 }
 
 .site-converter-middle {
