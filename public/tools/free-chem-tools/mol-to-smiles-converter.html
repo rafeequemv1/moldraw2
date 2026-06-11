@@ -36,6 +36,53 @@
       font-family: 'Courier New', monospace;
       resize: vertical;
     }
+    .input-tools {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .file-picker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border: 1px dashed #2C7A7B;
+      border-radius: 10px;
+      color: #0f766e;
+      background: #f0fdfa;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      padding: 0 12px;
+      text-align: center;
+    }
+    .file-picker input { display: none; }
+    .pubchem-import {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+    .pubchem-import input {
+      min-width: 0;
+      min-height: 36px;
+      border: 1px solid #cfd8e3;
+      border-radius: 10px;
+      padding: 0 10px;
+      font-size: 13px;
+      color: #0f172a;
+    }
+    .pubchem-import button {
+      height: auto;
+      min-height: 36px;
+      white-space: normal;
+      line-height: 1.15;
+    }
+    .source-note {
+      margin: -2px 0 8px;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.45;
+    }
     .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     button {
       border: 1px solid #2C7A7B;
@@ -62,6 +109,7 @@
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
+    @media (max-width: 700px) { .pubchem-import { grid-template-columns: 1fr; } }
   </style>
   <link rel="stylesheet" href="/css/site-topbar.css" />
 </head>
@@ -74,7 +122,18 @@
 
     <section class="panel">
       <h1>MOL to SMILES Converter</h1>
-      <p>Paste a MOL or SDF block and convert it to SMILES. This tool attempts PubChem conversion first, then falls back to NCI Cactus when possible.</p>
+      <p>Paste, upload, or import a MOL/SDF block from PubChem, then convert it to SMILES. This tool attempts PubChem conversion first, then falls back to NCI Cactus when possible.</p>
+      <div class="input-tools" aria-label="MOL input options">
+        <label class="file-picker">
+          Upload .mol or .sdf file
+          <input id="molFileInput" type="file" accept=".mol,.sdf,chemical/x-mdl-molfile,chemical/x-mdl-sdfile,text/plain">
+        </label>
+        <div class="pubchem-import" aria-label="PubChem MOL import">
+          <input id="pubchemQuery" type="text" placeholder="Search PubChem by name or CID, e.g. aspirin, caffeine, 2244">
+          <button id="pubchemImportBtn" type="button">Import from PubChem</button>
+        </div>
+      </div>
+      <p class="source-note" id="sourceNote">Paste MOL/SDF content, upload a file, or import a 2D SDF record from PubChem.</p>
       <textarea id="molInput" placeholder="Paste MOL/SDF content here..."></textarea>
       <div class="actions">
         <button id="convertBtn" type="button">Convert to SMILES</button>
@@ -92,10 +151,15 @@
   </main>
   <script>
     const molInput = document.getElementById('molInput');
+    const molFileInput = document.getElementById('molFileInput');
+    const pubchemQuery = document.getElementById('pubchemQuery');
+    const sourceNote = document.getElementById('sourceNote');
     const convertBtn = document.getElementById('convertBtn');
     const copyBtn = document.getElementById('copyBtn');
     const clearBtn = document.getElementById('clearBtn');
     const resultBox = document.getElementById('resultBox');
+    let importedMolText = '';
+    let importedSmiles = '';
 
     async function convertViaPubChem(molText) {
       const form = new FormData();
@@ -119,6 +183,44 @@
       return /MolDraw sample/i.test(molText) && /M  END/.test(molText) && /\bC\b/.test(molText) && /\bO\b/.test(molText);
     }
 
+    function pubchemBase(query) {
+      const clean = String(query || '').trim();
+      return /^\d+$/.test(clean)
+        ? `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${encodeURIComponent(clean)}`
+        : `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(clean)}`;
+    }
+
+    function loadMolText(text, sourceLabel) {
+      molInput.value = text;
+      resultBox.textContent = 'MOL/SDF loaded. Click Convert to SMILES.';
+      sourceNote.textContent = sourceLabel;
+    }
+
+    async function importMolFromPubChem() {
+      const query = (pubchemQuery.value || '').trim();
+      if (!query) {
+        resultBox.textContent = 'Enter a compound name or PubChem CID first.';
+        return;
+      }
+      resultBox.textContent = 'Importing MOL/SDF from PubChem...';
+      try {
+        const [sdfRes, propsRes] = await Promise.all([
+          fetch(`${pubchemBase(query)}/SDF?record_type=2d`),
+          fetch(`${pubchemBase(query)}/property/SMILES,ConnectivitySMILES,CanonicalSMILES,IsomericSMILES/JSON`)
+        ]);
+        if (!sdfRes.ok || !propsRes.ok) throw new Error('PubChem import failed');
+        const sdf = (await sdfRes.text()).trim();
+        const props = (await propsRes.json())?.PropertyTable?.Properties?.[0] || {};
+        const smiles = props.IsomericSMILES || props.CanonicalSMILES || props.SMILES || props.ConnectivitySMILES || '';
+        if (!sdf || !/M  END/.test(sdf)) throw new Error('No MOL block returned');
+        importedMolText = sdf;
+        importedSmiles = smiles;
+        loadMolText(sdf, `Imported 2D SDF from PubChem for "${query}".`);
+      } catch {
+        resultBox.textContent = 'PubChem import failed. Try an exact compound name or CID.';
+      }
+    }
+
     async function convertMolToSmiles() {
       const molText = (molInput.value || '').trim();
       if (!molText) {
@@ -129,6 +231,10 @@
       try {
         if (isMethanolSample(molText)) {
           resultBox.textContent = 'CO';
+          return;
+        }
+        if (importedSmiles && molText === importedMolText.trim()) {
+          resultBox.textContent = importedSmiles;
           return;
         }
         let smiles = '';
@@ -148,6 +254,25 @@
     }
 
     convertBtn.addEventListener('click', convertMolToSmiles);
+    molFileInput.addEventListener('change', async function () {
+      const file = molFileInput.files?.[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        resultBox.textContent = 'File is too large for this browser converter. Use a file under 10 MB.';
+        molFileInput.value = '';
+        return;
+      }
+      try {
+        const text = await file.text();
+        if (!text.trim()) throw new Error('Empty file');
+        loadMolText(text, `Uploaded file: ${file.name}`);
+      } catch {
+        resultBox.textContent = 'Could not read this MOL/SDF file.';
+      } finally {
+        molFileInput.value = '';
+      }
+    });
+    document.getElementById('pubchemImportBtn').addEventListener('click', importMolFromPubChem);
     copyBtn.addEventListener('click', async function () {
       const text = resultBox.textContent.trim();
       if (!text || text === 'SMILES output appears here.' || text.startsWith('Conversion') || text.startsWith('Please')) return;
@@ -160,6 +285,11 @@
     });
     clearBtn.addEventListener('click', function () {
       molInput.value = '';
+      pubchemQuery.value = '';
+      molFileInput.value = '';
+      importedMolText = '';
+      importedSmiles = '';
+      sourceNote.textContent = 'Paste MOL/SDF content, upload a file, or import a 2D SDF record from PubChem.';
       resultBox.textContent = 'SMILES output appears here.';
     });
   </script>
