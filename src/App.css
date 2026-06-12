@@ -528,6 +528,35 @@
   color: #111;
 }
 
+.tb-btn-tools {
+  order: 100;
+  margin-left: auto;
+  min-height: 26px;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid rgba(44, 122, 123, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2C7A7B 0%, #0f766e 100%);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 3px 8px rgba(44, 122, 123, 0.18);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.tb-btn-tools:hover {
+  background: linear-gradient(135deg, #245f60 0%, #115e59 100%);
+  color: #ffffff;
+  transform: translateY(-0.5px);
+  box-shadow: 0 5px 12px rgba(44, 122, 123, 0.24);
+}
+
+.tb-btn-tools:focus-visible {
+  outline: 3px solid rgba(45, 212, 191, 0.5);
+  outline-offset: 2px;
+}
+
 .tb-btn-active {
   background: #eef6f6;
   color: #1a5a5b;

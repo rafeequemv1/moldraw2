@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="XYZ to SMILES converter by MolDraw. Paste or upload an XYZ coordinate file, infer bonds, load the structure into an editable 2D canvas, and copy best-effort SMILES.">
+  <meta name="keywords" content="xyz to smiles, xyz file to smiles, coordinate to smiles, xyz smiles converter, xyz to molecule, xyz converter, MolDraw">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/xyz-to-smiles-converter.html">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
+  <title>XYZ to SMILES Converter | Coordinate File to SMILES | MolDraw</title>
+  <meta property="og:title" content="XYZ to SMILES Converter | MolDraw">
+  <meta property="og:description" content="Convert XYZ coordinate files to best-effort SMILES with inferred bonds and an editable 2D cleanup canvas.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/xyz-to-smiles-converter.html">
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "XYZ to SMILES Converter",
+    "applicationCategory": "ScientificApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/xyz-to-smiles-converter.html",
+    "description": "Convert XYZ coordinate files to best-effort SMILES by inferring bonds, loading an editable 2D canvas, and reading the resulting SMILES.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Can XYZ files be converted to SMILES?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, but XYZ files usually contain only atom coordinates. This tool infers likely bonds from distances, then uses the editable structure to generate best-effort SMILES."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Will XYZ to SMILES preserve bond orders and stereochemistry?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Usually not automatically. XYZ files rarely store bond order, aromaticity, charge, or stereochemistry, so the generated SMILES should be reviewed and cleaned in the 2D editor."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(1180px, 95vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav, .toolbar, .preset-row, .download-row, .related-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .top-nav { margin-bottom: 14px; }
+    .top-link, .related-links a { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 800; background: #fff; }
+    .tool-panel, .info-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.12; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    h3 { font-size: 15px; color: #0f172a; margin-bottom: 6px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; margin-bottom: 10px; }
+    textarea { width: 100%; min-height: 240px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 10px 12px; font-family: 'Courier New', monospace; font-size: 12px; resize: vertical; background: #fff; color: #0f172a; }
+    input[type="file"] { width: 100%; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px; background: #fff; color: #334155; font-size: 12px; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn, .preset-row button { border-color: #d1d5db; background: #fff; color: #334155; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .converter-layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 12px; align-items: stretch; margin-top: 14px; }
+    .converter-card { min-width: 0; border: 1px solid #e2e8f0; border-radius: 14px; background: #f8fafc; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .editor-status-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .status-pill { display: inline-flex; align-items: center; min-height: 24px; border: 1px solid #dbe4ee; border-radius: 999px; padding: 0 8px; background: #fff; color: #64748b; font-size: 12px; font-weight: 800; }
+    .status-pill.ready { border-color: #99f6e4; color: #0f766e; background: #f0fdfa; }
+    .status-pill.error { border-color: #fecaca; color: #b91c1c; background: #fef2f2; }
+    .editor-frame-wrap { min-height: 410px; border: 1px solid #dbe4ee; border-radius: 12px; overflow: hidden; background: #fff; }
+    .editor-frame { width: 100%; height: 410px; border: 0; display: block; background: #fff; }
+    .status { min-height: 34px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; padding: 8px 10px; font-size: 12px; }
+    .meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .meta-card { border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 10px; }
+    .meta-card span { display: block; color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .meta-card strong { display: block; color: #0f172a; font-size: 17px; overflow-wrap: anywhere; }
+    .output-row { display: grid; gap: 8px; }
+    .smiles-output { min-height: 86px; font-size: 14px; overflow-wrap: anywhere; }
+    .mol-output { min-height: 88px; max-height: 150px; overflow: auto; white-space: pre; font-size: 11px; }
+    .warning { border: 1px solid #fde68a; background: #fffbeb; color: #92400e; border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+    ul { padding-left: 18px; }
+    @media (max-width: 900px) { .converter-layout { grid-template-columns: 1fr; } .editor-frame, .editor-frame-wrap { min-height: 380px; height: 380px; } .meta-grid { grid-template-columns: 1fr; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css">
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/xyz-gaussian-to-2d-structure.html">XYZ / Gaussian to 2D</a>
+      <a class="top-link" href="/tools/free-chem-tools/structure-to-smiles-converter.html">Structure to SMILES</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="tool-panel">
+      <h1>XYZ to SMILES Converter</h1>
+      <p>Paste or upload an XYZ coordinate file, infer likely bonds, load the result into an editable 2D canvas, and copy a best-effort SMILES string.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> XYZ files do not store bond orders, so this tool builds an inferred MOL file first, lets Ketcher clean the 2D layout, and then reads SMILES from the editable structure.</div>
+      <div class="converter-layout">
+        <div class="converter-card">
+          <h2>Input XYZ Coordinates</h2>
+          <label>Upload XYZ file
+            <input id="fileInput" type="file" accept=".xyz,.txt">
+          </label>
+          <label>Paste XYZ text
+            <textarea id="inputData" spellcheck="false">9
+Ethanol
+C -0.7480 0.0150 0.0240
+C 0.7480 -0.0150 -0.0240
+O 1.3490 1.2000 0.0880
+H -1.1420 0.9400 -0.4200
+H -1.1270 -0.8340 -0.5550
+H -1.1290 -0.0220 1.0530
+H 1.1420 -0.9400 0.4200
+H 1.1270 0.8340 0.5550
+H 2.3000 1.1400 0.0500</textarea>
+          </label>
+          <div class="toolbar">
+            <button id="convertBtn" type="button">Convert XYZ to SMILES</button>
+            <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+          </div>
+          <div class="preset-row">
+            <button type="button" data-example="water">Water XYZ</button>
+            <button type="button" data-example="ethanol">Ethanol XYZ</button>
+            <button type="button" data-example="benzene">Benzene XYZ</button>
+          </div>
+          <div id="statusBox" class="status">Ready. Paste XYZ coordinates and convert.</div>
+        </div>
+
+        <div class="converter-card">
+          <div class="editor-status-row">
+            <h2>SMILES Output and Editable Structure</h2>
+            <span id="editorStatus" class="status-pill">Loading editor...</span>
+          </div>
+          <div id="metaGrid" class="meta-grid"></div>
+          <div class="output-row">
+            <label>Generated SMILES
+              <textarea id="smilesOutput" class="smiles-output" readonly spellcheck="false" placeholder="SMILES appears here after conversion."></textarea>
+            </label>
+            <div class="download-row">
+              <button id="copySmilesBtn" type="button">Copy SMILES</button>
+              <button id="downloadSmilesBtn" class="ghost-btn" type="button">Download .smi</button>
+              <button id="downloadMolBtn" class="ghost-btn" type="button">Download inferred MOL</button>
+              <a id="openAppLink" class="top-link" href="/" target="_blank" rel="noopener noreferrer">Open SMILES in MolDraw</a>
+            </div>
+          </div>
+          <div class="editor-frame-wrap">
+            <iframe id="editorFrame" class="editor-frame" src="/ketcher-bridge.html" title="Editable structure inferred from XYZ coordinates"></iframe>
+          </div>
+          <h3>Inferred MOL block</h3>
+          <textarea id="molOutput" class="mol-output" readonly spellcheck="false" placeholder="MOL output appears here."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-panel">
+      <h2>XYZ to SMILES Notes</h2>
+      <p><strong>XYZ</strong> files normally store atom symbols and 3D coordinates only. They usually do not include bond orders, formal charges, aromaticity, or stereochemistry.</p>
+      <p class="warning">Use this as a best-effort converter. Review the inferred bonds in the 2D editor before using the SMILES in databases, modeling tools, publications, or assignments.</p>
+      <ul>
+        <li>Carbon-bound hydrogens are hidden before SMILES generation so the editor can use normal implicit hydrogens.</li>
+        <li>Bond orders are inferred as single bonds; fix double bonds, aromatic rings, charges, and stereochemistry manually when needed.</li>
+        <li>For a visual editable structure first, use the XYZ / Gaussian to 2D Structure converter.</li>
+      </ul>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/xyz-gaussian-to-2d-structure.html">XYZ / Gaussian to 2D structure</a>
+        <a href="/tools/free-chem-tools/structure-to-smiles-converter.html">Structure to SMILES</a>
+        <a href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to structure</a>
+        <a href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">SMILES to 3D</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const inputData = document.getElementById('inputData');
+    const fileInput = document.getElementById('fileInput');
+    const statusBox = document.getElementById('statusBox');
+    const editorFrame = document.getElementById('editorFrame');
+    const editorStatus = document.getElementById('editorStatus');
+    const metaGrid = document.getElementById('metaGrid');
+    const smilesOutput = document.getElementById('smilesOutput');
+    const molOutput = document.getElementById('molOutput');
+    const openAppLink = document.getElementById('openAppLink');
+    let latestMol = '';
+    let latestSmiles = '';
+    let latestName = 'xyz-to-smiles';
+    let editorReady = false;
+
+    const covalentRadii = {
+      H: 0.31, B: 0.84, C: 0.76, N: 0.71, O: 0.66, F: 0.57, P: 1.07, S: 1.05, Cl: 1.02, Br: 1.20, I: 1.39,
+      Si: 1.11, Na: 1.66, K: 2.03, Li: 1.28, Mg: 1.41, Ca: 1.76, Fe: 1.24, Zn: 1.22, Cu: 1.32, Al: 1.21
+    };
+    const atomicNumbers = {
+      1: 'H', 3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N', 8: 'O', 9: 'F', 11: 'Na', 12: 'Mg', 13: 'Al', 14: 'Si',
+      15: 'P', 16: 'S', 17: 'Cl', 19: 'K', 20: 'Ca', 26: 'Fe', 29: 'Cu', 30: 'Zn', 35: 'Br', 53: 'I'
+    };
+    const examples = {
+      water: `3
+Water
+O 0.0000 0.0000 0.0000
+H 0.7586 0.0000 0.5043
+H -0.7586 0.0000 0.5043`,
+      ethanol: inputData.value,
+      benzene: `12
+Benzene
+C 0.0000 1.4027 0.0000
+H 0.0000 2.4903 0.0000
+C -1.2148 0.7014 0.0000
+H -2.1567 1.2451 0.0000
+C -1.2148 -0.7014 0.0000
+H -2.1567 -1.2451 0.0000
+C 0.0000 -1.4027 0.0000
+H 0.0000 -2.4903 0.0000
+C 1.2148 -0.7014 0.0000
+H 2.1567 -1.2451 0.0000
+C 1.2148 0.7014 0.0000
+H 2.1567 1.2451 0.0000`
+    };
+
+    function normalizeElement(value) {
+      const raw = (String(value || '').match(/[A-Za-z]{1,2}/) || [''])[0];
+      if (!raw) return '';
+      return raw.length >= 2 ? `${raw[0].toUpperCase()}${raw[1].toLowerCase()}` : raw[0].toUpperCase();
+    }
+
+    function parseAtomicNumber(value) {
+      const n = Number.parseInt(String(value || '').trim(), 10);
+      return atomicNumbers[n] || '';
+    }
+
+    function parseCoordinateLine(line) {
+      const parts = String(line || '').trim().split(/\s+/);
+      if (parts.length < 4) return null;
+      let element = normalizeElement(parts[0]);
+      let x = Number(parts[1]);
+      let y = Number(parts[2]);
+      let z = Number(parts[3]);
+      if (!element && parts.length >= 4) {
+        element = parseAtomicNumber(parts[0]);
+        x = Number(parts[1]);
+        y = Number(parts[2]);
+        z = Number(parts[3]);
+      }
+      if (!element || !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return null;
+      return { element, x, y, z };
+    }
+
+    function parseXyz(text) {
+      const lines = String(text || '').split(/\r?\n/);
+      const first = Number.parseInt((lines[0] || '').trim(), 10);
+      if (Number.isFinite(first) && first > 0) {
+        const atoms = lines.slice(2, 2 + first).map(parseCoordinateLine).filter(Boolean);
+        if (atoms.length === first) return atoms;
+      }
+      return lines.map(parseCoordinateLine).filter(Boolean);
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+    }
+
+    function inferBonds(atoms) {
+      const bonds = [];
+      for (let i = 0; i < atoms.length; i += 1) {
+        for (let j = i + 1; j < atoms.length; j += 1) {
+          const a = atoms[i];
+          const b = atoms[j];
+          if (a.element === 'H' && b.element === 'H') continue;
+          const r1 = covalentRadii[a.element] || 0.77;
+          const r2 = covalentRadii[b.element] || 0.77;
+          const d = distance(a, b);
+          const cutoff = (r1 + r2) * 1.28 + 0.12;
+          if (d > 0.25 && d <= cutoff) bonds.push({ a: i, b: j, order: 1 });
+        }
+      }
+      return bonds;
+    }
+
+    function getCleanDisplayModel(atoms, bonds) {
+      const keepAtom = atoms.map((atom, index) => {
+        if (atom.element !== 'H') return true;
+        const neighbor = bonds
+          .filter((bond) => bond.a === index || bond.b === index)
+          .map((bond) => atoms[bond.a === index ? bond.b : bond.a])[0];
+        return !neighbor || neighbor.element !== 'C';
+      });
+      const indexMap = new Map();
+      const cleanAtoms = atoms.filter((_, index) => keepAtom[index]);
+      atoms.forEach((_, index) => {
+        if (keepAtom[index]) indexMap.set(index, indexMap.size);
+      });
+      const cleanBonds = bonds
+        .filter((bond) => keepAtom[bond.a] && keepAtom[bond.b])
+        .map((bond) => ({ ...bond, a: indexMap.get(bond.a), b: indexMap.get(bond.b) }));
+      return { atoms: cleanAtoms, bonds: cleanBonds };
+    }
+
+    function projectAtoms(atoms) {
+      const axes = ['x', 'y', 'z'];
+      const means = Object.fromEntries(axes.map((axis) => [axis, atoms.reduce((sum, atom) => sum + atom[axis], 0) / atoms.length]));
+      const variances = axes.map((axis) => ({
+        axis,
+        variance: atoms.reduce((sum, atom) => sum + ((atom[axis] - means[axis]) ** 2), 0) / atoms.length
+      })).sort((a, b) => b.variance - a.variance);
+      const ax = variances[0]?.axis || 'x';
+      const ay = variances[1]?.axis || 'y';
+      return atoms.map((atom) => ({ ...atom, px: atom[ax], py: atom[ay] }));
+    }
+
+    function fitPoints(points) {
+      const minX = Math.min(...points.map((p) => p.px));
+      const maxX = Math.max(...points.map((p) => p.px));
+      const minY = Math.min(...points.map((p) => p.py));
+      const maxY = Math.max(...points.map((p) => p.py));
+      const spanX = Math.max(0.1, maxX - minX);
+      const spanY = Math.max(0.1, maxY - minY);
+      const scale = 6 / Math.max(spanX, spanY);
+      return points.map((p) => ({ ...p, mx: (p.px - (minX + maxX) / 2) * scale, my: ((minY + maxY) / 2 - p.py) * scale }));
+    }
+
+    function makeMolfile(atoms, bonds) {
+      const fitted = fitPoints(projectAtoms(atoms));
+      const atomCount = String(atoms.length).padStart(3, ' ');
+      const bondCount = String(bonds.length).padStart(3, ' ');
+      const atomLines = fitted.map((atom) => {
+        const x = atom.mx.toFixed(4).padStart(10, ' ');
+        const y = atom.my.toFixed(4).padStart(10, ' ');
+        const z = '0.0000'.padStart(10, ' ');
+        return `${x}${y}${z} ${atom.element.padEnd(3, ' ')} 0  0  0  0  0  0  0  0  0  0  0  0`;
+      });
+      const bondLines = bonds.map((bond) => `${String(bond.a + 1).padStart(3, ' ')}${String(bond.b + 1).padStart(3, ' ')}${String(1).padStart(3, ' ')}  0  0  0  0`);
+      return ['MolDraw XYZ to SMILES', '  MolDraw', '', `${atomCount}${bondCount}  0  0  0  0            999 V2000`, ...atomLines, ...bondLines, 'M  END'].join('\n');
+    }
+
+    function formulaFromAtoms(atoms) {
+      const counts = {};
+      atoms.forEach((atom) => { counts[atom.element] = (counts[atom.element] || 0) + 1; });
+      const order = Object.keys(counts).sort((a, b) => {
+        if (a === 'C') return -1;
+        if (b === 'C') return 1;
+        if (a === 'H') return counts.C ? -1 : a.localeCompare(b);
+        if (b === 'H') return counts.C ? 1 : a.localeCompare(b);
+        return a.localeCompare(b);
+      });
+      return order.map((el) => `${el}${counts[el] === 1 ? '' : counts[el]}`).join('');
+    }
+
+    function setEditorStatus(text, state = '') {
+      editorStatus.textContent = text;
+      editorStatus.classList.toggle('ready', state === 'ready');
+      editorStatus.classList.toggle('error', state === 'error');
+    }
+
+    function editorWindow() {
+      return editorFrame && editorFrame.contentWindow;
+    }
+
+    function updateSmiles(smiles) {
+      latestSmiles = String(smiles || '').trim();
+      smilesOutput.value = latestSmiles;
+      openAppLink.href = latestSmiles ? `/?smiles=${encodeURIComponent(latestSmiles)}` : '/';
+    }
+
+    function loadMolfileIntoEditor() {
+      if (!latestMol || !editorReady || !editorWindow()) return false;
+      editorWindow().postMessage({ type: 'set-molecule', molfile: latestMol, clean2d: true }, '*');
+      setEditorStatus('Generating SMILES...', '');
+      return true;
+    }
+
+    function convert() {
+      const atoms = parseXyz(inputData.value);
+      if (!atoms.length) {
+        latestMol = '';
+        updateSmiles('');
+        molOutput.value = '';
+        metaGrid.innerHTML = '';
+        statusBox.textContent = 'Could not find an XYZ coordinate block.';
+        setEditorStatus(editorReady ? 'Editor ready' : 'Editor loading...', editorReady ? 'ready' : '');
+        return;
+      }
+      const bonds = inferBonds(atoms);
+      const cleanModel = getCleanDisplayModel(atoms, bonds);
+      latestMol = makeMolfile(cleanModel.atoms, cleanModel.bonds);
+      molOutput.value = latestMol;
+      updateSmiles('');
+      metaGrid.innerHTML = `
+        <div class="meta-card"><span>Atoms parsed</span><strong>${atoms.length}</strong></div>
+        <div class="meta-card"><span>Bonds inferred</span><strong>${bonds.length}</strong></div>
+        <div class="meta-card"><span>Formula</span><strong>${formulaFromAtoms(atoms) || 'N/A'}</strong></div>`;
+      statusBox.textContent = `Parsed ${atoms.length} atoms and inferred ${bonds.length} bonds. Review the structure before using the SMILES.`;
+      if (!loadMolfileIntoEditor()) setEditorStatus('Editor loading...', '');
+    }
+
+    function downloadText(filename, text, type) {
+      if (!text) return;
+      const blob = new Blob([text], { type });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    window.addEventListener('message', (event) => {
+      const data = event.data || {};
+      if (data.type === 'ketcher-ready') {
+        editorReady = true;
+        setEditorStatus('Editor ready', 'ready');
+        if (latestMol) loadMolfileIntoEditor();
+      } else if (data.type === 'molecule-set') {
+        if (data.success) {
+          latestMol = data.molfile || latestMol;
+          molOutput.value = latestMol;
+          updateSmiles(data.smiles || '');
+          setEditorStatus(data.smiles ? 'SMILES generated' : 'Structure loaded', 'ready');
+        } else {
+          setEditorStatus('Conversion failed', 'error');
+          statusBox.textContent = data.error || 'Could not load inferred MOL into the editor.';
+        }
+      } else if (data.type === 'editor-change') {
+        latestMol = data.molfile || latestMol;
+        molOutput.value = latestMol;
+        updateSmiles(data.smiles || latestSmiles);
+        setEditorStatus(latestSmiles ? 'Edited SMILES updated' : 'Edited structure loaded', 'ready');
+      } else if (data.type === 'smiles-response') {
+        updateSmiles(data.smiles || latestSmiles);
+      } else if (data.type === 'smiles-error') {
+        statusBox.textContent = data.error || 'Could not generate SMILES.';
+      }
+    });
+
+    document.getElementById('convertBtn').addEventListener('click', convert);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      inputData.value = '';
+      latestMol = '';
+      updateSmiles('');
+      molOutput.value = '';
+      metaGrid.innerHTML = '';
+      statusBox.textContent = 'Cleared.';
+      if (editorReady && editorWindow()) editorWindow().postMessage({ type: 'clear-editor' }, '*');
+      setEditorStatus(editorReady ? 'Editor ready' : 'Editor loading...', editorReady ? 'ready' : '');
+    });
+    document.getElementById('copySmilesBtn').addEventListener('click', async () => {
+      if (!latestSmiles) {
+        statusBox.textContent = 'No SMILES to copy yet.';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(latestSmiles);
+        statusBox.textContent = 'SMILES copied.';
+      } catch {
+        window.prompt('Copy this SMILES:', latestSmiles);
+      }
+    });
+    document.getElementById('downloadSmilesBtn').addEventListener('click', () => downloadText(`${latestName}.smi`, `${latestSmiles}\n`, 'chemical/x-daylight-smiles;charset=utf-8'));
+    document.getElementById('downloadMolBtn').addEventListener('click', () => downloadText(`${latestName}.mol`, latestMol, 'chemical/x-mdl-molfile;charset=utf-8'));
+    document.querySelectorAll('[data-example]').forEach((button) => button.addEventListener('click', () => {
+      inputData.value = examples[button.dataset.example] || '';
+      latestName = button.dataset.example || latestName;
+      convert();
+    }));
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      latestName = file.name.replace(/\.[^.]+$/, '') || latestName;
+      inputData.value = await file.text();
+      convert();
+    });
+    convert();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

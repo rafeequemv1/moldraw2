@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chemical reaction drawer by MolDraw. Draw chemical reactions online, open reaction SMILES examples, sketch reactants and products, and export reaction structures from a free browser chemistry drawing app.">
+  <meta name="keywords" content="chemical reaction drawer, chemical reaction drawing, chemical reactions drawing, draw chemical reaction, draw chemical reactions, drawing chemical reactions, chemical equation drawer, reaction drawing software, online reaction drawer">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/chemical-reaction-drawer.html">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
+  <title>Chemical Reaction Drawer Online | Draw Chemical Reactions Free | MolDraw</title>
+  <meta property="og:title" content="Chemical Reaction Drawer Online | MolDraw">
+  <meta property="og:description" content="Draw chemical reactions online with MolDraw. Open reaction examples, sketch reactants and products, and export reaction structures.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/chemical-reaction-drawer.html">
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Chemical Reaction Drawer Online",
+    "applicationCategory": "ScientificApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/chemical-reaction-drawer.html",
+    "description": "Draw chemical reactions online, open reaction SMILES examples, sketch reactants and products, and export reaction structures with MolDraw.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Can I draw chemical reactions online for free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. MolDraw is a free browser-based chemical reaction drawer for sketching reactants, products, arrows, labels, and reaction examples."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is a chemical reaction drawer?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A chemical reaction drawer is a chemistry drawing tool for arranging reactants, products, arrows, reagents, conditions, and annotations in a reaction scheme."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I open reaction examples in MolDraw?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. This page links common organic reaction examples that open directly in the MolDraw editor as reaction SMILES scenes."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; line-height: 1.65; }
+    .container { width: min(1120px, 94vw); margin: 0 auto; padding: 24px 0 44px; }
+    .top-nav, .link-row, .example-grid, .workflow-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+    .top-nav { margin-bottom: 14px; }
+    a { color: inherit; }
+    .top-link, .pill-link, .cta-link { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; border: 1px solid #d1d5db; border-radius: 9px; padding: 0 12px; background: #fff; color: #334155; text-decoration: none; font-size: 12px; font-weight: 800; }
+    .hero, .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr); gap: 18px; align-items: center; }
+    h1 { font-size: clamp(30px, 4vw, 46px); line-height: 1.08; letter-spacing: -0.04em; margin-bottom: 10px; }
+    h2 { font-size: 23px; margin-bottom: 10px; }
+    h3 { font-size: 17px; margin-bottom: 6px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    ul { padding-left: 18px; }
+    .eyebrow { color: #0f766e; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .cta-link { min-height: 42px; border-color: #2C7A7B; background: #2C7A7B; color: #fff; font-size: 14px; }
+    .cta-link.secondary { background: #f0fdfa; color: #134e4a; border-color: #99f6e4; }
+    .answer-box { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 12px; padding: 12px; font-size: 14px; margin: 12px 0; }
+    .preview-card { border: 1px solid #dbe4ee; border-radius: 14px; background: #f8fafc; padding: 16px; }
+    .reaction-line { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin: 10px 0; color: #0f172a; font-weight: 900; }
+    .reaction-box { border: 1px solid #cbd5e1; border-radius: 12px; background: #fff; padding: 16px 10px; text-align: center; min-height: 62px; display: grid; place-items: center; }
+    .arrow { color: #0f766e; font-size: 24px; }
+    .example-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .example-card, .workflow-card { border: 1px solid #e2e8f0; border-radius: 14px; background: #f8fafc; padding: 14px; }
+    .example-card a { color: #0f766e; font-size: 13px; font-weight: 900; text-decoration: none; }
+    .workflow-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .workflow-card strong { display: block; color: #0f172a; margin-bottom: 4px; }
+    @media (max-width: 860px) { .hero, .example-grid, .workflow-grid { grid-template-columns: 1fr; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css">
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+      <a class="top-link" href="/reaction/">Reaction Guides</a>
+      <a class="top-link" href="/course/chapters/drawing-reactions.html">Drawing Reactions Course</a>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Free online reaction drawing</div>
+        <h1>Chemical Reaction Drawer Online</h1>
+        <p>Use MolDraw as a free chemical reaction drawer to sketch reactants, products, arrows, reagents, conditions, and reaction examples in your browser.</p>
+        <div class="answer-box"><strong>Quick answer:</strong> open MolDraw, draw chemical structures on each side of a reaction arrow, add labels or conditions, and export the reaction drawing for reports, slides, lab notes, or teaching.</div>
+        <div class="link-row">
+          <a class="cta-link" href="/" target="_blank" rel="noopener noreferrer">Open MolDraw editor</a>
+          <a class="cta-link secondary" href="/?reaction=CC%3DO.CC%3DO%3E%3EC%2FC%3DC%2FC%3DO" target="_blank" rel="noopener noreferrer">Open reaction example</a>
+        </div>
+      </div>
+      <div class="preview-card" aria-label="Reaction drawing preview">
+        <h2>Reaction Drawing Preview</h2>
+        <div class="reaction-line">
+          <div class="reaction-box">Reactants</div>
+          <div class="arrow">→</div>
+          <div class="reaction-box">Products</div>
+        </div>
+        <p>Add reagents, conditions, atom labels, structures, and export-ready reaction schemes using MolDraw’s browser editor.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Open Common Chemical Reaction Examples</h2>
+      <p>These examples open directly in MolDraw so you can edit, annotate, export, or use them as a starting point.</p>
+      <div class="example-grid">
+        <article class="example-card">
+          <h3>Aldol Condensation</h3>
+          <p>Carbonyl condensation example with enal/enone-style product drawing.</p>
+          <a href="/?reaction=CC%3DO.CC%3DO%3E%3EC%2FC%3DC%2FC%3DO" target="_blank" rel="noopener noreferrer">Draw aldol reaction</a>
+        </article>
+        <article class="example-card">
+          <h3>Wittig Reaction</h3>
+          <p>Convert aldehyde/ketone reaction ideas into alkene reaction schemes.</p>
+          <a href="/?reaction=O%3DCc1ccccc1.C%3DP(c1ccccc1)(c1ccccc1)c1ccccc1%3E%3EC%3DCc1ccccc1" target="_blank" rel="noopener noreferrer">Draw Wittig reaction</a>
+        </article>
+        <article class="example-card">
+          <h3>Suzuki Coupling</h3>
+          <p>Sketch boronic acid and aryl halide coupling examples for reports.</p>
+          <a href="/?reaction=B(O)(O)c1ccccc1.Brc1ccccc1%3E%3Ec1ccc(-c2ccccc2)cc1" target="_blank" rel="noopener noreferrer">Draw Suzuki reaction</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>How to Draw Chemical Reactions Online</h2>
+      <div class="workflow-grid">
+        <div class="workflow-card"><strong>1. Add reactants</strong><span>Draw or paste molecules on the left side of your reaction.</span></div>
+        <div class="workflow-card"><strong>2. Add products</strong><span>Place product structures on the right side and check atom labels.</span></div>
+        <div class="workflow-card"><strong>3. Annotate conditions</strong><span>Add arrows, reagents, solvent, temperature, catalysts, or notes.</span></div>
+        <div class="workflow-card"><strong>4. Export</strong><span>Copy SVG or download an image/structure file for your destination.</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Related Chemistry Drawing Resources</h2>
+      <div class="link-row">
+        <a class="pill-link" href="/reaction/">Organic reaction guides</a>
+        <a class="pill-link" href="/blog/chemistry-drawing-keyword-guide.html">Chemistry drawing guide</a>
+        <a class="pill-link" href="/blog/chemdraw-vs-moldraw-free-alternative-guide.html">ChemDraw online alternative</a>
+        <a class="pill-link" href="/tools/free-chem-tools/chemical-equation-balancer.html">Chemical equation balancer</a>
+        <a class="pill-link" href="/tools/free-chem-tools/tlc-diagram-tool.html">TLC diagram tool</a>
+      </div>
+    </section>
+  </main>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>
