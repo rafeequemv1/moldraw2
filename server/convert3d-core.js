@@ -181,10 +181,6 @@ const tryPublicSources = async (smiles) => {
   const encoded = encodeURIComponent(smiles);
   const sources = [
     {
-      name: 'pubchem',
-      url: `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/record/SDF/?record_type=3d`,
-    },
-    {
       name: 'nci-cactus',
       url: `https://cactus.nci.nih.gov/chemical/structure/${encoded}/file?format=sdf&get3d=true`,
     },
@@ -224,26 +220,8 @@ const generate3DStructure = async ({ smiles, molfile }) => {
   }
 
   const tried = [];
-  if (shouldAttemptLocalChemEngines()) {
-    const localGenerators = [
-      ['rdkit', () => tryRdkit(cleanSmiles, cleanMolfile)],
-      ['openbabel', () => tryOpenBabel(cleanSmiles, cleanMolfile)],
-    ];
-
-    for (const [name, generator] of localGenerators) {
-      try {
-        const result = await generator();
-        if (result?.sdf) {
-          return { status: 200, body: { ...result, tier: 'local' } };
-        }
-        tried.push(`${name}:unavailable`);
-      } catch (error) {
-        tried.push(`${name}:${error?.name || 'error'}`);
-      }
-    }
-  } else {
-    tried.push('local-engines:disabled');
-  }
+  tried.push('local-engines:disabled-by-policy');
+  tried.push('pubchem:disabled-by-policy');
 
   if (cleanSmiles) {
     const publicResult = await tryPublicSources(cleanSmiles);
@@ -263,8 +241,10 @@ const generate3DStructure = async ({ smiles, molfile }) => {
   }
 
   return {
-    status: 404,
+    status: 200,
     body: {
+      sdf: null,
+      source: 'frontend-estimate',
       error: 'No 3D conformer could be generated for this structure.',
       code: 'NO_3D_CONFORMER',
       tried,
