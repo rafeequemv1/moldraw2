@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="XYZ and Gaussian file to 2D structure converter by MolDraw. Paste or upload XYZ, Gaussian .gjf, .com, or coordinate text and generate an editable 2D molecular structure canvas with inferred bonds.">
+  <meta name="keywords" content="xyz to 2d structure, gaussian to 2d structure, gjf to structure, gaussian input to molecule, xyz file converter, coordinate to molecular structure">
+  <meta name="author" content="Scidart Academy">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://www.moldraw.com/tools/free-chem-tools/xyz-gaussian-to-2d-structure.html">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
+  <title>XYZ / Gaussian to 2D Structure Converter | MolDraw</title>
+  <meta property="og:title" content="XYZ / Gaussian to 2D Structure Converter | MolDraw">
+  <meta property="og:description" content="Convert XYZ or Gaussian coordinate files into a 2D structure image with inferred bonds.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.moldraw.com/tools/free-chem-tools/xyz-gaussian-to-2d-structure.html">
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "XYZ / Gaussian to 2D Structure Converter",
+    "applicationCategory": "ScientificApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.moldraw.com/tools/free-chem-tools/xyz-gaussian-to-2d-structure.html",
+    "description": "Convert XYZ and Gaussian coordinate text into an editable 2D molecular structure canvas with inferred bonds.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Can XYZ files be converted back to 2D structures?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, the coordinates can be projected into 2D and bonds can be inferred from interatomic distances. Bond orders, aromaticity, charge, and stereochemistry may need manual cleanup because XYZ files usually do not store them."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which Gaussian files are supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "This browser tool supports Gaussian input-style coordinate blocks such as .gjf and .com files. It can also extract simple Cartesian coordinate blocks from pasted text."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #111827; line-height: 1.6; }
+    .container { width: min(1180px, 95vw); margin: 0 auto; padding: 24px 0 42px; }
+    .top-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .top-link { display: inline-flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 10px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 800; background: #fff; }
+    .tool-panel, .info-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.12; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+    h3 { font-size: 15px; color: #0f172a; margin-bottom: 6px; }
+    p, li { color: #475569; font-size: 14px; margin-bottom: 10px; }
+    label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; margin-bottom: 10px; }
+    textarea { width: 100%; min-height: 300px; border: 1px solid #cfd8e3; border-radius: 10px; padding: 10px 12px; font-family: 'Courier New', monospace; font-size: 12px; resize: vertical; background: #fff; color: #0f172a; }
+    input[type="file"] { width: 100%; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px; background: #fff; color: #334155; font-size: 12px; }
+    button { border: 1px solid #2C7A7B; background: #2C7A7B; color: #fff; border-radius: 8px; min-height: 34px; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .ghost-btn, .preset-row button, .related-links a { border-color: #d1d5db; background: #fff; color: #334155; }
+    .quick-answer { border: 1px solid #99f6e4; background: #f0fdfa; color: #134e4a; border-radius: 10px; padding: 10px 12px; margin: 12px 0; font-size: 13px; }
+    .converter-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(96px, auto) minmax(0, 1fr); gap: 12px; align-items: stretch; margin-top: 14px; }
+    .converter-card { min-width: 0; border: 1px solid #e2e8f0; border-radius: 14px; background: #f8fafc; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .middle-actions { min-width: 96px; display: flex; align-items: center; justify-content: center; }
+    .editor-status-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .status-pill { display: inline-flex; align-items: center; min-height: 24px; border: 1px solid #dbe4ee; border-radius: 999px; padding: 0 8px; background: #fff; color: #64748b; font-size: 12px; font-weight: 800; }
+    .status-pill.ready { border-color: #99f6e4; color: #0f766e; background: #f0fdfa; }
+    .status-pill.error { border-color: #fecaca; color: #b91c1c; background: #fef2f2; }
+    .editor-frame-wrap { min-height: 430px; border: 1px solid #dbe4ee; border-radius: 12px; overflow: hidden; background: #fff; }
+    .editor-frame { width: 100%; height: 430px; border: 0; display: block; background: #fff; }
+    .static-preview { border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 8px 10px; }
+    .static-preview summary { cursor: pointer; color: #334155; font-size: 12px; font-weight: 800; }
+    .preview-box { flex: 1 1 auto; min-height: 260px; display: grid; place-items: center; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 10px; overflow: hidden; margin-top: 8px; }
+    .preview-box svg { display: block; width: 100%; height: auto; max-height: 520px; }
+    .toolbar, .preset-row, .download-row, .related-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .status { min-height: 34px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; padding: 8px 10px; font-size: 12px; }
+    .meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .meta-card { border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 10px; }
+    .meta-card span { display: block; color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .meta-card strong { display: block; color: #0f172a; font-size: 17px; overflow-wrap: anywhere; }
+    .mol-output { min-height: 92px; max-height: 160px; overflow: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; color: #0f172a; padding: 9px; white-space: pre; font-family: 'Courier New', monospace; font-size: 11px; }
+    .warning { border: 1px solid #fde68a; background: #fffbeb; color: #92400e; border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+    ul { padding-left: 18px; }
+    @media (max-width: 900px) { .converter-layout { grid-template-columns: 1fr; } .middle-actions { justify-content: flex-start; } .editor-frame, .editor-frame-wrap { min-height: 380px; height: 380px; } }
+  </style>
+  <link rel="stylesheet" href="/css/site-topbar.css">
+</head>
+<body>
+  <main class="container">
+    <nav class="top-nav" aria-label="Tool navigation">
+      <a class="top-link" href="/tools/">Back to Tools Hub</a>
+      <a class="top-link" href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to Structure</a>
+      <a class="top-link" href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">SMILES to 3D</a>
+      <a class="top-link" href="/">Open MolDraw App</a>
+    </nav>
+
+    <section class="tool-panel">
+      <h1>XYZ / Gaussian to 2D Structure Converter</h1>
+      <p>Paste or upload XYZ, Gaussian input, or Cartesian coordinate text and generate an editable 2D structure canvas with inferred bonds.</p>
+      <div class="quick-answer"><strong>Quick answer:</strong> this tool reads atom coordinates, infers likely bonds from covalent radii, projects the 3D geometry into 2D, loads the result into the embedded editor, and exports SVG, PNG, or an inferred MOL file.</div>
+      <div class="converter-layout">
+        <div class="converter-card">
+          <h2>Input Coordinates</h2>
+          <label>Upload XYZ / Gaussian file
+            <input id="fileInput" type="file" accept=".xyz,.gjf,.com,.g16,.gau,.txt,.log">
+          </label>
+          <label>Paste XYZ, Gaussian input, or coordinate block
+            <textarea id="inputData" spellcheck="false">9
+Aspirin fragment example
+C     0.0000    0.0000    0.0000
+C     1.3970    0.0000    0.0000
+C     2.0955    1.2098    0.0000
+C     1.3970    2.4196    0.0000
+C     0.0000    2.4196    0.0000
+C    -0.6985    1.2098    0.0000
+O     3.4850    1.2098    0.0000
+C    -2.0800    1.2098    0.0000
+O    -2.7600    0.0300    0.0000</textarea>
+          </label>
+          <div class="toolbar">
+            <button id="clearBtn" class="ghost-btn" type="button">Clear</button>
+          </div>
+          <div class="preset-row">
+            <button type="button" data-example="water">Water XYZ</button>
+            <button type="button" data-example="ethanol">Ethanol XYZ</button>
+            <button type="button" data-example="gaussian">Gaussian input</button>
+          </div>
+          <div id="statusBox" class="status">Ready. Paste coordinates and convert.</div>
+        </div>
+
+        <div class="middle-actions">
+          <button id="convertBtn" type="button">Convert to 2D</button>
+        </div>
+
+        <div class="converter-card">
+          <div class="editor-status-row">
+            <h2>Editable 2D Structure</h2>
+            <span id="editorStatus" class="status-pill">Loading editor...</span>
+          </div>
+          <div id="metaGrid" class="meta-grid"></div>
+          <div class="editor-frame-wrap">
+            <iframe id="editorFrame" class="editor-frame" src="/ketcher-bridge.html" title="Editable 2D structure from XYZ or Gaussian coordinates"></iframe>
+          </div>
+          <details class="static-preview">
+            <summary>Static inferred SVG preview</summary>
+            <div id="previewBox" class="preview-box">2D structure preview appears here.</div>
+          </details>
+          <div class="download-row">
+            <button id="loadCanvasBtn" class="ghost-btn" type="button">Reload 2D canvas</button>
+            <button id="downloadSvgBtn" class="ghost-btn" type="button">Download SVG</button>
+            <button id="downloadPngBtn" class="ghost-btn" type="button">Download PNG</button>
+            <button id="downloadMolBtn" class="ghost-btn" type="button">Download MOL</button>
+            <button id="copySvgBtn" class="ghost-btn" type="button">Copy SVG</button>
+          </div>
+          <h3>Inferred MOL block</h3>
+          <pre id="molOutput" class="mol-output">MOL output appears here.</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-panel">
+      <h2>File Format Explained</h2>
+      <p><strong>XYZ</strong> stores atom symbols and 3D coordinates, usually without bond orders, charges, aromaticity, or stereochemistry. It is common in computational chemistry and quantum chemistry workflows.</p>
+      <p><strong>Gaussian input files</strong> such as <strong>.gjf</strong> and <strong>.com</strong> often contain a charge/multiplicity line followed by Cartesian coordinates. This tool extracts those coordinate blocks when possible.</p>
+      <p class="warning">Because XYZ and Gaussian coordinate files usually do not store bond order, the output is a best-effort 2D structure. Use the embedded 2D canvas to fix inferred bonds before publication, docking, or downstream cheminformatics.</p>
+      <div class="related-links">
+        <a href="/tools/free-chem-tools/smiles-to-structure.html">SMILES to structure</a>
+        <a href="/tools/free-chem-tools/structure-to-smiles-converter.html">Structure to SMILES</a>
+        <a href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">SMILES to 3D</a>
+        <a href="/tools/free-chem-tools/mass-spectrum-predictor.html">Mass spectrum predictor</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const inputData = document.getElementById('inputData');
+    const fileInput = document.getElementById('fileInput');
+    const statusBox = document.getElementById('statusBox');
+    const previewBox = document.getElementById('previewBox');
+    const editorFrame = document.getElementById('editorFrame');
+    const editorStatus = document.getElementById('editorStatus');
+    const metaGrid = document.getElementById('metaGrid');
+    const molOutput = document.getElementById('molOutput');
+    let latestSvg = '';
+    let latestMol = '';
+    let latestName = 'xyz-gaussian-2d-structure';
+    let editorReady = false;
+
+    const covalentRadii = {
+      H: 0.31, B: 0.84, C: 0.76, N: 0.71, O: 0.66, F: 0.57, P: 1.07, S: 1.05, Cl: 1.02, Br: 1.20, I: 1.39,
+      Si: 1.11, Na: 1.66, K: 2.03, Li: 1.28, Mg: 1.41, Ca: 1.76, Fe: 1.24, Zn: 1.22, Cu: 1.32, Al: 1.21
+    };
+    const atomicNumbers = {
+      1: 'H', 3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N', 8: 'O', 9: 'F', 11: 'Na', 12: 'Mg', 13: 'Al', 14: 'Si',
+      15: 'P', 16: 'S', 17: 'Cl', 19: 'K', 20: 'Ca', 26: 'Fe', 29: 'Cu', 30: 'Zn', 35: 'Br', 53: 'I'
+    };
+    const atomColors = { H: '#64748b', C: '#0f172a', N: '#2563eb', O: '#dc2626', S: '#ca8a04', P: '#f97316', F: '#16a34a', Cl: '#16a34a', Br: '#92400e', I: '#7c3aed' };
+    const examples = {
+      water: `3
+Water
+O 0.0000 0.0000 0.0000
+H 0.7586 0.0000 0.5043
+H -0.7586 0.0000 0.5043`,
+      ethanol: `9
+Ethanol
+C -0.7480 0.0150 0.0240
+C 0.7480 -0.0150 -0.0240
+O 1.3490 1.2000 0.0880
+H -1.1420 0.9400 -0.4200
+H -1.1270 -0.8340 -0.5550
+H -1.1290 -0.0220 1.0530
+H 1.1420 -0.9400 0.4200
+H 1.1270 0.8340 0.5550
+H 2.3000 1.1400 0.0500`,
+      gaussian: `%chk=ethanol.chk
+#p opt b3lyp/6-31g(d)
+
+Ethanol Gaussian input example
+
+0 1
+C -0.7480 0.0150 0.0240
+C 0.7480 -0.0150 -0.0240
+O 1.3490 1.2000 0.0880
+H -1.1420 0.9400 -0.4200
+H -1.1270 -0.8340 -0.5550
+H -1.1290 -0.0220 1.0530
+H 1.1420 -0.9400 0.4200
+H 1.1270 0.8340 0.5550
+H 2.3000 1.1400 0.0500`
+    };
+
+    function normalizeElement(value) {
+      const raw = (String(value || '').match(/[A-Za-z]{1,2}/) || [''])[0];
+      if (!raw) return '';
+      if (raw.length >= 2) return `${raw[0].toUpperCase()}${raw[1].toLowerCase()}`;
+      return raw[0].toUpperCase();
+    }
+
+    function parseAtomicNumber(value) {
+      const n = Number.parseInt(String(value || '').trim(), 10);
+      return atomicNumbers[n] || '';
+    }
+
+    function parseCoordinateLine(line) {
+      const parts = String(line || '').trim().split(/\s+/);
+      if (parts.length < 4) return null;
+      let element = normalizeElement(parts[0]);
+      let x = Number(parts[1]);
+      let y = Number(parts[2]);
+      let z = Number(parts[3]);
+      if (!element && parts.length >= 6 && parseAtomicNumber(parts[1]) && Number.isFinite(Number(parts[3])) && Number.isFinite(Number(parts[4])) && Number.isFinite(Number(parts[5]))) {
+        element = parseAtomicNumber(parts[1]);
+        x = Number(parts[3]);
+        y = Number(parts[4]);
+        z = Number(parts[5]);
+      }
+      if (!element && parts.length >= 4) {
+        element = parseAtomicNumber(parts[0]);
+        x = Number(parts[1]);
+        y = Number(parts[2]);
+        z = Number(parts[3]);
+      }
+      if (!element || !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return null;
+      return { element, x, y, z };
+    }
+
+    function parseXyz(text) {
+      const lines = String(text || '').split(/\r?\n/);
+      const first = Number.parseInt((lines[0] || '').trim(), 10);
+      if (!Number.isFinite(first) || first <= 0) return null;
+      const atoms = lines.slice(2, 2 + first).map(parseCoordinateLine).filter(Boolean);
+      return atoms.length === first ? atoms : null;
+    }
+
+    function parseCoordinateBlocks(text) {
+      const lines = String(text || '').split(/\r?\n/);
+      const blocks = [];
+      let current = [];
+      lines.forEach((line) => {
+        const atom = parseCoordinateLine(line);
+        if (atom) {
+          current.push(atom);
+        } else if (current.length) {
+          blocks.push(current);
+          current = [];
+        }
+      });
+      if (current.length) blocks.push(current);
+      return blocks.sort((a, b) => b.length - a.length)[0] || [];
+    }
+
+    function parseAtoms(text) {
+      return parseXyz(text) || parseCoordinateBlocks(text);
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+    }
+
+    function inferBonds(atoms) {
+      const bonds = [];
+      for (let i = 0; i < atoms.length; i += 1) {
+        for (let j = i + 1; j < atoms.length; j += 1) {
+          const a = atoms[i];
+          const b = atoms[j];
+          if (a.element === 'H' && b.element === 'H') continue;
+          const r1 = covalentRadii[a.element] || 0.77;
+          const r2 = covalentRadii[b.element] || 0.77;
+          const cutoff = (r1 + r2) * 1.28 + 0.12;
+          const d = distance(a, b);
+          if (d > 0.25 && d <= cutoff) bonds.push({ a: i, b: j, order: 1, distance: d });
+        }
+      }
+      return bonds;
+    }
+
+    function projectAtoms(atoms) {
+      const axes = ['x', 'y', 'z'];
+      const means = Object.fromEntries(axes.map((axis) => [axis, atoms.reduce((sum, atom) => sum + atom[axis], 0) / atoms.length]));
+      const variances = axes.map((axis) => ({
+        axis,
+        variance: atoms.reduce((sum, atom) => sum + ((atom[axis] - means[axis]) ** 2), 0) / atoms.length
+      })).sort((a, b) => b.variance - a.variance);
+      const ax = variances[0]?.axis || 'x';
+      const ay = variances[1]?.axis || 'y';
+      return atoms.map((atom) => ({ ...atom, px: atom[ax], py: atom[ay] }));
+    }
+
+    function fitPoints(points, width, height) {
+      const pad = 45;
+      const minX = Math.min(...points.map((p) => p.px));
+      const maxX = Math.max(...points.map((p) => p.px));
+      const minY = Math.min(...points.map((p) => p.py));
+      const maxY = Math.max(...points.map((p) => p.py));
+      const spanX = Math.max(0.1, maxX - minX);
+      const spanY = Math.max(0.1, maxY - minY);
+      const scale = Math.min((width - pad * 2) / spanX, (height - pad * 2) / spanY);
+      return points.map((p) => ({
+        ...p,
+        sx: pad + (p.px - minX) * scale + ((width - pad * 2) - spanX * scale) / 2,
+        sy: height - (pad + (p.py - minY) * scale + ((height - pad * 2) - spanY * scale) / 2)
+      }));
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function editorWindow() {
+      return editorFrame && editorFrame.contentWindow;
+    }
+
+    function setEditorStatus(text, state = '') {
+      editorStatus.textContent = text;
+      editorStatus.classList.toggle('ready', state === 'ready');
+      editorStatus.classList.toggle('error', state === 'error');
+    }
+
+    function postToEditor(message) {
+      if (!editorReady || !editorWindow()) return false;
+      editorWindow().postMessage(message, '*');
+      return true;
+    }
+
+    function loadMolfileIntoEditor() {
+      if (!latestMol) return false;
+      const posted = postToEditor({ type: 'set-molecule', molfile: latestMol });
+      setEditorStatus(posted ? 'Loading structure...' : 'Editor loading...');
+      return posted;
+    }
+
+    function renderSvg(atoms, bonds) {
+      const width = 640;
+      const height = 430;
+      const fitted = fitPoints(projectAtoms(atoms), width, height);
+      const bondSvg = bonds.map((bond) => {
+        const a = fitted[bond.a];
+        const b = fitted[bond.b];
+        return `<line x1="${a.sx.toFixed(2)}" y1="${a.sy.toFixed(2)}" x2="${b.sx.toFixed(2)}" y2="${b.sy.toFixed(2)}" stroke="#334155" stroke-width="3" stroke-linecap="round" />`;
+      }).join('');
+      const atomSvg = fitted.map((atom) => {
+        const color = atomColors[atom.element] || '#0f172a';
+        const label = atom.element === 'C' ? '' : `<text x="${atom.sx.toFixed(2)}" y="${(atom.sy + 5).toFixed(2)}" text-anchor="middle" font-size="16" font-weight="800" fill="${color}">${escapeHtml(atom.element)}</text>`;
+        const circle = atom.element === 'C'
+          ? `<circle cx="${atom.sx.toFixed(2)}" cy="${atom.sy.toFixed(2)}" r="4.2" fill="${color}" />`
+          : `<circle cx="${atom.sx.toFixed(2)}" cy="${atom.sy.toFixed(2)}" r="14" fill="#fff" stroke="${color}" stroke-width="2" />`;
+        return `${circle}${label}`;
+      }).join('');
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Inferred 2D molecular structure">
+  <rect width="${width}" height="${height}" rx="16" fill="#ffffff"/>
+  ${bondSvg}
+  ${atomSvg}
+</svg>`;
+    }
+
+    function makeMolfile(atoms, bonds) {
+      const fitted = fitPoints(projectAtoms(atoms), 8, 8);
+      const atomCount = String(atoms.length).padStart(3, ' ');
+      const bondCount = String(bonds.length).padStart(3, ' ');
+      const atomLines = fitted.map((atom) => {
+        const x = ((atom.sx - 4) / 1.25).toFixed(4).padStart(10, ' ');
+        const y = ((4 - atom.sy) / 1.25).toFixed(4).padStart(10, ' ');
+        const z = '0.0000'.padStart(10, ' ');
+        return `${x}${y}${z} ${atom.element.padEnd(3, ' ')} 0  0  0  0  0  0  0  0  0  0  0  0`;
+      });
+      const bondLines = bonds.map((bond) => `${String(bond.a + 1).padStart(3, ' ')}${String(bond.b + 1).padStart(3, ' ')}${String(1).padStart(3, ' ')}  0  0  0  0`);
+      return ['MolDraw inferred 2D', '  MolDraw', '', `${atomCount}${bondCount}  0  0  0  0            999 V2000`, ...atomLines, ...bondLines, 'M  END'].join('\n');
+    }
+
+    function updateMeta(atoms, bonds) {
+      const formulaCounts = {};
+      atoms.forEach((atom) => { formulaCounts[atom.element] = (formulaCounts[atom.element] || 0) + 1; });
+      const formula = Object.entries(formulaCounts).sort(([a], [b]) => a.localeCompare(b)).map(([el, n]) => `${el}${n === 1 ? '' : n}`).join('');
+      metaGrid.innerHTML = `
+        <div class="meta-card"><span>Atoms</span><strong>${atoms.length}</strong></div>
+        <div class="meta-card"><span>Bonds inferred</span><strong>${bonds.length}</strong></div>
+        <div class="meta-card"><span>Formula from file</span><strong>${formula || 'N/A'}</strong></div>`;
+    }
+
+    function convert() {
+      const atoms = parseAtoms(inputData.value);
+      if (!atoms.length) {
+        latestSvg = '';
+        latestMol = '';
+        previewBox.textContent = 'No coordinate block found.';
+        molOutput.textContent = 'MOL output appears here.';
+        metaGrid.innerHTML = '';
+        statusBox.textContent = 'Could not find XYZ or Gaussian-style coordinates.';
+        return;
+      }
+      const bonds = inferBonds(atoms);
+      latestSvg = renderSvg(atoms, bonds);
+      latestMol = makeMolfile(atoms, bonds);
+      previewBox.innerHTML = latestSvg;
+      molOutput.textContent = latestMol;
+      updateMeta(atoms, bonds);
+      loadMolfileIntoEditor();
+      statusBox.textContent = `Converted ${atoms.length} atoms with ${bonds.length} inferred bonds. Review bond order manually if needed.`;
+    }
+
+    function downloadText(filename, text, type) {
+      if (!text) return;
+      const blob = new Blob([text], { type });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function downloadPng() {
+      if (!latestSvg) return;
+      const blob = new Blob([latestSvg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1280;
+        canvas.height = 860;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((pngBlob) => {
+          if (!pngBlob) return;
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(pngBlob);
+          link.download = `${latestName}.png`;
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }, 'image/png');
+      };
+      image.src = url;
+    }
+
+    window.addEventListener('message', (event) => {
+      const data = event.data || {};
+      if (data.type === 'ketcher-ready') {
+        editorReady = true;
+        setEditorStatus('Editor ready', 'ready');
+        if (latestMol) loadMolfileIntoEditor();
+      } else if (data.type === 'molecule-set') {
+        if (data.success) {
+          latestMol = data.molfile || latestMol;
+          molOutput.textContent = latestMol || 'MOL output appears here.';
+          setEditorStatus('Editable canvas loaded', 'ready');
+        } else {
+          setEditorStatus('Canvas load failed', 'error');
+          statusBox.textContent = data.error || 'Could not load inferred structure into the 2D canvas.';
+        }
+      } else if (data.type === 'editor-change') {
+        latestMol = data.molfile || latestMol;
+        latestSvg = data.svg || latestSvg;
+        if (latestMol) molOutput.textContent = latestMol;
+        setEditorStatus('Edited in canvas', 'ready');
+      } else if (data.type === 'svg-response') {
+        latestSvg = data.svg || latestSvg;
+      }
+    });
+
+    document.getElementById('convertBtn').addEventListener('click', convert);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      inputData.value = '';
+      latestSvg = '';
+      latestMol = '';
+      previewBox.textContent = '2D structure preview appears here.';
+      molOutput.textContent = 'MOL output appears here.';
+      metaGrid.innerHTML = '';
+      postToEditor({ type: 'clear-editor' });
+      setEditorStatus(editorReady ? 'Editor ready' : 'Editor loading...', editorReady ? 'ready' : '');
+      statusBox.textContent = 'Cleared.';
+    });
+    document.getElementById('loadCanvasBtn').addEventListener('click', () => {
+      if (!latestMol) {
+        statusBox.textContent = 'Convert a coordinate block first.';
+        return;
+      }
+      loadMolfileIntoEditor();
+    });
+    document.getElementById('downloadSvgBtn').addEventListener('click', () => downloadText(`${latestName}.svg`, latestSvg, 'image/svg+xml;charset=utf-8'));
+    document.getElementById('downloadMolBtn').addEventListener('click', () => downloadText(`${latestName}.mol`, latestMol, 'chemical/x-mdl-molfile;charset=utf-8'));
+    document.getElementById('downloadPngBtn').addEventListener('click', downloadPng);
+    document.getElementById('copySvgBtn').addEventListener('click', async () => { if (latestSvg) { try { await navigator.clipboard.writeText(latestSvg); } catch {} } });
+    document.querySelectorAll('[data-example]').forEach((button) => button.addEventListener('click', () => {
+      inputData.value = examples[button.dataset.example] || '';
+      convert();
+    }));
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      latestName = file.name.replace(/\.[^.]+$/, '') || latestName;
+      inputData.value = await file.text();
+      convert();
+    });
+    convert();
+  </script>
+  <script src="/js/site-topbar.js" defer></script>
+</body>
+</html>

@@ -25,7 +25,7 @@
     "@type": "CollectionPage",
     "name": "Free Chemistry Tools by MolDraw",
     "url": "https://www.moldraw.com/tools/",
-    "description": "Free MolDraw chemistry tools including name to structure, formula to structure, spectroscopy tools, mass spectrum prediction, structure to SMILES, SMILES, IUPAC, InChI, PDB, PDBQT, MOL, SDF, MOL2 converters, 3D viewers, calculators, pKa, percent yield, grams to moles, Lipinski, druglikeness, LogP, TPSA, Lewis structures, periodic table, equation balancer, and TLC support.",
+    "description": "Free MolDraw chemistry tools including name to structure, formula to structure, spectroscopy tools, mass spectrum prediction, XYZ/Gaussian to 2D structure, structure to SMILES, SMILES, IUPAC, InChI, PDB, PDBQT, MOL, SDF, MOL2 converters, 3D viewers, calculators, pKa, percent yield, grams to moles, Lipinski, druglikeness, LogP, TPSA, Lewis structures, periodic table, equation balancer, and TLC support.",
     "publisher": {
       "@type": "Organization",
       "name": "Scidart Academy"
@@ -76,7 +76,8 @@
         { "@type": "ListItem", "position": 41, "name": "Grams to Moles Calculator" },
         { "@type": "ListItem", "position": 42, "name": "Percent Yield Calculator" },
         { "@type": "ListItem", "position": 43, "name": "pKa Calculator" },
-        { "@type": "ListItem", "position": 44, "name": "Mass Spectrum Predictor" }
+        { "@type": "ListItem", "position": 44, "name": "Mass Spectrum Predictor" },
+        { "@type": "ListItem", "position": 45, "name": "XYZ / Gaussian to 2D Structure Converter" }
       ]
     }
   }
@@ -562,7 +563,7 @@
 
     <section class="hero">
       <h1>Free Chemistry Tools, Converters and Calculators</h1>
-      <p>Practical chemistry utilities for everyday lab work, learning, and structure workflows. Browse name to structure, formula to structure, spectroscopy tools, mass spectrum predictor, structure to SMILES, SMILES, IUPAC, InChI, CAS, PDB, PDBQT, MOL, SDF, and MOL2 converters plus pH, pKa, percent yield, grams to moles, molecular weight, Lipinski, druglikeness, LogP, TPSA, Lewis structure, periodic table, TLC, equation, and 3D structure tools.</p>
+      <p>Practical chemistry utilities for everyday lab work, learning, and structure workflows. Browse name to structure, formula to structure, spectroscopy tools, mass spectrum predictor, XYZ/Gaussian to 2D structure, structure to SMILES, SMILES, IUPAC, InChI, CAS, PDB, PDBQT, MOL, SDF, and MOL2 converters plus pH, pKa, percent yield, grams to moles, molecular weight, Lipinski, druglikeness, LogP, TPSA, Lewis structure, periodic table, TLC, equation, and 3D structure tools.</p>
     </section>
 
     <div class="tools-layout">
@@ -598,6 +599,8 @@
             <option value="inchi">InChI</option>
             <option value="inchikey">InChIKey</option>
             <option value="mol2">MOL2</option>
+            <option value="xyz">XYZ</option>
+            <option value="gaussian">Gaussian</option>
             <option value="cid">PubChem CID</option>
             <option value="cas">CAS number</option>
             <option value="iupac">IUPAC name</option>
@@ -696,6 +699,11 @@
         <h2>SMILES to 3D Structure</h2>
         <p>Render molecules in 3D and download common chemistry and model formats.</p>
         <a href="/tools/free-chem-tools/smiles-to-3d-structure-converter.html">Open tool</a>
+      </article>
+      <article class="tool-card" data-tool-type="conversion" data-tool-search="xyz gaussian gjf com coordinate file to 2d structure inferred bonds svg png mol">
+        <h2>XYZ / Gaussian to 2D Structure</h2>
+        <p>Paste or upload XYZ and Gaussian coordinate files, infer bonds, and export a 2D structure image.</p>
+        <a href="/tools/free-chem-tools/xyz-gaussian-to-2d-structure.html">Open tool</a>
       </article>
       <article class="tool-card" data-tool-type="viewer" data-tool-search="protein pdb id 3dmol viewer">
         <h2>Protein Viewer</h2>
@@ -948,6 +956,8 @@
       'sdf:smiles': '/tools/free-chem-tools/mol-to-smiles-converter.html',
       'sdf:inchi': '/tools/free-chem-tools/sdf-to-inchi-converter.html',
       'sdf:inchikey': '/tools/free-chem-tools/sdf-to-inchikey-converter.html',
+      'xyz:structure': '/tools/free-chem-tools/xyz-gaussian-to-2d-structure.html',
+      'gaussian:structure': '/tools/free-chem-tools/xyz-gaussian-to-2d-structure.html',
       'pdb:smiles': '/tools/free-chem-tools/pdb-to-smiles-converter.html',
       'pdb:3d': '/tools/protein-viewer/index.html',
       'pdb:pdbqt': '/tools/free-chem-tools/pdb-to-pdbqt-converter.html',
@@ -964,8 +974,50 @@
       'name:structure': '/tools/free-chem-tools/name-to-structure.html',
       'formula:structure': '/tools/free-chem-tools/molecular-formula-to-structure.html'
     };
+    const conversionOutputOptions = Array.from(conversionOutput.options).map((option) => ({
+      value: option.value,
+      label: option.textContent
+    }));
     let selectedType = 'all';
     let activeToolUrl = '';
+
+    function getPossibleConversionOutputs(input) {
+      if (!input) return [];
+      const allowedOutputs = new Set(
+        Object.keys(conversionRoutes)
+          .filter((key) => key.startsWith(`${input}:`))
+          .map((key) => key.split(':')[1])
+      );
+      return conversionOutputOptions.filter((option) => option.value && allowedOutputs.has(option.value));
+    }
+
+    function syncConversionOutputOptions() {
+      const input = conversionInput.value;
+      const currentOutput = conversionOutput.value;
+      const possibleOutputs = getPossibleConversionOutputs(input);
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = input ? 'Select output' : 'Select input first';
+
+      conversionOutput.replaceChildren(placeholder);
+      possibleOutputs.forEach((optionDefinition) => {
+        const option = document.createElement('option');
+        option.value = optionDefinition.value;
+        option.textContent = optionDefinition.label;
+        conversionOutput.appendChild(option);
+      });
+
+      if (input && possibleOutputs.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No outputs available yet';
+        option.disabled = true;
+        conversionOutput.appendChild(option);
+      }
+
+      conversionOutput.disabled = !input || possibleOutputs.length === 0;
+      conversionOutput.value = possibleOutputs.some((option) => option.value === currentOutput) ? currentOutput : '';
+    }
 
     function getSelectedConversionRoute() {
       const input = conversionInput.value;
@@ -1036,7 +1088,10 @@
       syncConversionOpenLink('');
       applyToolFilters();
     });
-    conversionInput.addEventListener('change', updateConversionRoute);
+    conversionInput.addEventListener('change', () => {
+      syncConversionOutputOptions();
+      updateConversionRoute();
+    });
     conversionOutput.addEventListener('change', updateConversionRoute);
     conversionOpenBtn.addEventListener('click', (event) => {
       const { input, output, route } = getSelectedConversionRoute();
@@ -1068,6 +1123,7 @@
       });
     });
 
+    syncConversionOutputOptions();
     applyToolFilters();
   </script>
   <footer class="site-footer-root" role="contentinfo">
