@@ -309,6 +309,29 @@
             throw lastError || new Error('No structure payload provided');
           };
 
+          const cleanKetcherStructureLayout = async () => {
+            const editor = ketcher.editor || ketcherFrame.contentWindow.editor || null;
+            const candidates = [
+              () => typeof ketcher.layout === 'function' && ketcher.layout(),
+              () => typeof ketcher.clean === 'function' && ketcher.clean(),
+              () => editor && typeof editor.layout === 'function' && editor.layout(),
+              () => editor && typeof editor.clean === 'function' && editor.clean(),
+              () => editor && typeof editor.cleanUp === 'function' && editor.cleanUp(),
+              () => editor && typeof editor.layoutSelection === 'function' && editor.layoutSelection(),
+            ];
+
+            for (const candidate of candidates) {
+              try {
+                const result = candidate();
+                if (result) {
+                  await result;
+                  return true;
+                }
+              } catch (_) { /* try next layout API */ }
+            }
+            return false;
+          };
+
           const clearKetcherEditor = async () => {
             if (typeof ketcher.clear === 'function') {
               await ketcher.clear();
@@ -533,6 +556,9 @@
                 console.log('Setting molecule with payload:', event.data);
 
                 await setKetcherStructure(event.data);
+                if (event.data.clean2d) {
+                  await cleanKetcherStructureLayout();
+                }
 
                 console.log('Molecule set successfully');
                 let molfile = '';

@@ -374,9 +374,29 @@ H 2.3000 1.1400 0.0500`
 
     function loadMolfileIntoEditor() {
       if (!latestMol) return false;
-      const posted = postToEditor({ type: 'set-molecule', molfile: latestMol });
+      const posted = postToEditor({ type: 'set-molecule', molfile: latestMol, clean2d: true });
       setEditorStatus(posted ? 'Loading structure...' : 'Editor loading...');
       return posted;
+    }
+
+    function getCleanDisplayModel(atoms, bonds) {
+      const keepAtom = atoms.map((atom, index) => {
+        if (atom.element !== 'H') return true;
+        const neighbor = bonds
+          .filter((bond) => bond.a === index || bond.b === index)
+          .map((bond) => atoms[bond.a === index ? bond.b : bond.a])[0];
+        return !neighbor || neighbor.element !== 'C';
+      });
+      if (!keepAtom.some(Boolean)) return { atoms, bonds };
+      const indexMap = new Map();
+      const cleanAtoms = atoms.filter((_, index) => keepAtom[index]);
+      atoms.forEach((_, index) => {
+        if (keepAtom[index]) indexMap.set(index, indexMap.size);
+      });
+      const cleanBonds = bonds
+        .filter((bond) => keepAtom[bond.a] && keepAtom[bond.b])
+        .map((bond) => ({ ...bond, a: indexMap.get(bond.a), b: indexMap.get(bond.b) }));
+      return { atoms: cleanAtoms, bonds: cleanBonds };
     }
 
     function renderSvg(atoms, bonds) {
@@ -439,13 +459,14 @@ H 2.3000 1.1400 0.0500`
         return;
       }
       const bonds = inferBonds(atoms);
-      latestSvg = renderSvg(atoms, bonds);
-      latestMol = makeMolfile(atoms, bonds);
+      const displayModel = getCleanDisplayModel(atoms, bonds);
+      latestSvg = renderSvg(displayModel.atoms, displayModel.bonds);
+      latestMol = makeMolfile(displayModel.atoms, displayModel.bonds);
       previewBox.innerHTML = latestSvg;
       molOutput.textContent = latestMol;
       updateMeta(atoms, bonds);
       loadMolfileIntoEditor();
-      statusBox.textContent = `Converted ${atoms.length} atoms with ${bonds.length} inferred bonds. Review bond order manually if needed.`;
+      statusBox.textContent = `Converted ${atoms.length} atoms with ${bonds.length} inferred bonds. Carbon-bound hydrogens are hidden in the 2D canvas for a cleaner line drawing.`;
     }
 
     function downloadText(filename, text, type) {
