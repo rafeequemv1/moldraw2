@@ -173,8 +173,8 @@ const encodeGlb = (parts) => {
     name: part.name,
     pbrMetallicRoughness: {
       baseColorFactor: [...part.color, 1],
-      metallicFactor: 0.65,
-      roughnessFactor: 0.18,
+      metallicFactor: 0,
+      roughnessFactor: 0.55,
     },
     doubleSided: true,
   }));
