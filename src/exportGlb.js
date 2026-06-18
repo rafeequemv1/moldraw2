@@ -64,9 +64,9 @@ const pushVertex = (bucket, x, y, z, nx, ny, nz) => {
   return index;
 };
 
-const SPHERE_LAT_BANDS = 24;
-const SPHERE_LONG_BANDS = 24;
-const CYLINDER_RADIAL_SEGMENTS = 16;
+const SPHERE_LAT_BANDS = 10;
+const SPHERE_LONG_BANDS = 10;
+const CYLINDER_RADIAL_SEGMENTS = 8;
 
 const addSphere = (bucket, cx, cy, cz, radius) => {
   const latBands = SPHERE_LAT_BANDS;
@@ -173,8 +173,8 @@ const encodeGlb = (parts) => {
     name: part.name,
     pbrMetallicRoughness: {
       baseColorFactor: [...part.color, 1],
-      metallicFactor: 0,
-      roughnessFactor: 0.45,
+      metallicFactor: 0.65,
+      roughnessFactor: 0.18,
     },
     doubleSided: true,
   }));
