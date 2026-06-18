@@ -2,16 +2,18 @@ const { execFile } = require('child_process');
 
 const MAX_SMILES_LENGTH = 2000;
 const MAX_MOLFILE_LENGTH = 250000;
+const MAX_CACTUS_URL_LENGTH = 7500;
+
 const shouldAttemptLocalChemEngines = () => {
   const flag = String(process.env.MOLDRAW_ENABLE_LOCAL_3D || '').trim().toLowerCase();
   return flag === '1' || flag === 'true' || !process.env.VERCEL;
 };
 
-const fetchText = async (url, timeoutMs = 45000) => {
+const fetchText = async (url, options = {}, timeoutMs = 45000) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(url, { signal: controller.signal });
+    const response = await fetch(url, { ...options, signal: controller.signal });
     const text = await response.text();
     return { ok: response.ok, status: response.status, text };
   } finally {
@@ -46,10 +48,33 @@ const getSdf3DStats = (text) => {
 
 const isValid3DSdf = (text) => {
   const stats = getSdf3DStats(text);
-  // Some truly planar molecules are valid 3D conformers, but 2D service output
-  // must not be treated as quantum-ready coordinates.
-  return Boolean(stats && (stats.headerSays3D || stats.zDepth > 0.05));
+  return Boolean(stats && (stats.headerSays3D || stats.zDepth > 0.01));
 };
+
+const getPdb3DStats = (text) => {
+  if (typeof text !== 'string') return null;
+  const atomLines = text.split(/\r?\n/).filter((line) => /^(ATOM|HETATM)\s/.test(line));
+  if (!atomLines.length) return null;
+
+  const zValues = atomLines
+    .map((line) => Number.parseFloat(line.slice(46, 54)))
+    .filter((value) => Number.isFinite(value));
+  if (!zValues.length) return null;
+
+  const minZ = Math.min(...zValues);
+  const maxZ = Math.max(...zValues);
+  return {
+    atomCount: atomLines.length,
+    zDepth: maxZ - minZ,
+  };
+};
+
+const isValid3DPdb = (text) => {
+  const stats = getPdb3DStats(text);
+  return Boolean(stats && stats.zDepth > 0.01);
+};
+
+const isHtmlErrorPage = (text) => /<!DOCTYPE html|<html/i.test(String(text || '').slice(0, 200));
 
 const runCommand = (command, args, input, timeoutMs = 35000) => new Promise((resolve) => {
   const child = execFile(command, args, {
@@ -177,34 +202,95 @@ const tryOpenBabel = async (smiles, molfile) => {
   return null;
 };
 
-const tryPublicSources = async (smiles) => {
-  const encoded = encodeURIComponent(smiles);
-  const sources = [
-    {
-      name: 'nci-cactus',
-      url: `https://cactus.nci.nih.gov/chemical/structure/${encoded}/file?format=sdf&get3d=true`,
-    },
-  ];
+const uniqueSmilesCandidates = (smiles) => {
+  const clean = String(smiles || '').trim();
+  if (!clean) return [];
+  const candidates = [clean];
+  clean.split('.').map((part) => part.trim()).filter(Boolean).forEach((part) => {
+    candidates.push(part);
+  });
+  return [...new Set(candidates)];
+};
 
+const tryCactusStructure = async (structure, format = 'sdf') => {
+  const encoded = encodeURIComponent(structure);
+  if (!encoded || encoded.length > MAX_CACTUS_URL_LENGTH) return null;
+
+  const get3d = format === 'sdf' || format === 'pdb' ? '&get3d=true' : '';
+  const url = `https://cactus.nci.nih.gov/chemical/structure/${encoded}/file?format=${format}${get3d}`;
+
+  try {
+    const result = await fetchText(url);
+    if (!result.ok || isHtmlErrorPage(result.text)) return null;
+    if (format === 'sdf' && isValid3DSdf(result.text)) {
+      return {
+        sdf: result.text,
+        source: 'nci-cactus',
+        stats: getSdf3DStats(result.text),
+      };
+    }
+    if (format === 'pdb' && isValid3DPdb(result.text)) {
+      return {
+        pdb: result.text,
+        source: 'nci-cactus-pdb',
+        stats: getPdb3DStats(result.text),
+      };
+    }
+    return null;
+  } catch (error) {
+    return { error: error?.name || 'error' };
+  }
+};
+
+const tryCactusForSmiles = async (smiles) => {
   const errors = [];
-  for (const source of sources) {
-    try {
-      const result = await fetchText(source.url);
-      if (result.ok && isValid3DSdf(result.text)) {
-        return {
-          sdf: result.text,
-          source: source.name,
-          stats: getSdf3DStats(result.text),
-          errors,
-        };
-      }
-      errors.push(`${source.name}:${result.status}`);
-    } catch (error) {
-      errors.push(`${source.name}:${error?.name || 'error'}`);
+  const candidates = uniqueSmilesCandidates(smiles);
+  for (const candidate of candidates) {
+    for (const format of ['sdf', 'pdb']) {
+      const result = await tryCactusStructure(candidate, format);
+      if (result?.sdf || result?.pdb) return { ...result, errors };
+      if (result?.error) errors.push(`nci-cactus:${candidate}:${format}:${result.error}`);
     }
   }
   return { errors };
 };
+
+const tryPubChem3D = async (smiles) => {
+  const candidates = uniqueSmilesCandidates(smiles);
+  const errors = [];
+  for (const candidate of candidates) {
+    const encoded = encodeURIComponent(candidate);
+    const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/SDF?record_type=3d`;
+    try {
+      const result = await fetchText(url);
+      if (result.ok && isValid3DSdf(result.text)) {
+        return {
+          sdf: result.text,
+          source: 'pubchem-3d',
+          stats: getSdf3DStats(result.text),
+          errors,
+        };
+      }
+      errors.push(`pubchem-3d:${candidate}:${result.status}`);
+    } catch (error) {
+      errors.push(`pubchem-3d:${candidate}:${error?.name || 'error'}`);
+    }
+  }
+  return { errors };
+};
+
+const buildSuccessBody = (result, tier, tried) => ({
+  status: 200,
+  body: {
+    sdf: result.sdf || null,
+    pdb: result.pdb || null,
+    format: result.sdf ? 'sdf' : (result.pdb ? 'pdb' : null),
+    source: result.source,
+    stats: result.stats || null,
+    tier,
+    tried,
+  },
+});
 
 const generate3DStructure = async ({ smiles, molfile }) => {
   const cleanSmiles = String(smiles || '').trim();
@@ -220,30 +306,43 @@ const generate3DStructure = async ({ smiles, molfile }) => {
   }
 
   const tried = [];
-  tried.push('local-engines:disabled-by-policy');
-  tried.push('pubchem:disabled-by-policy');
 
   if (cleanSmiles) {
-    const publicResult = await tryPublicSources(cleanSmiles);
-    if (publicResult?.sdf) {
-      return {
-        status: 200,
-        body: {
-          sdf: publicResult.sdf,
-          source: publicResult.source,
-          stats: publicResult.stats,
-          tier: 'public',
-          tried,
-        },
-      };
+    const cactusResult = await tryCactusForSmiles(cleanSmiles);
+    if (cactusResult?.sdf || cactusResult?.pdb) {
+      return buildSuccessBody(cactusResult, 'public', tried);
     }
-    tried.push(...(publicResult.errors || []));
+    tried.push(...(cactusResult.errors || []));
+
+    const pubchemResult = await tryPubChem3D(cleanSmiles);
+    if (pubchemResult?.sdf) {
+      return buildSuccessBody(pubchemResult, 'public', tried);
+    }
+    tried.push(...(pubchemResult.errors || []));
+  }
+
+  if (shouldAttemptLocalChemEngines()) {
+    const rdkitResult = await tryRdkit(cleanSmiles, cleanMolfile);
+    if (rdkitResult?.sdf) {
+      return buildSuccessBody(rdkitResult, 'local', tried);
+    }
+    tried.push('rdkit:unavailable-or-failed');
+
+    const openBabelResult = await tryOpenBabel(cleanSmiles, cleanMolfile);
+    if (openBabelResult?.sdf) {
+      return buildSuccessBody(openBabelResult, 'local', tried);
+    }
+    tried.push('openbabel:unavailable-or-failed');
+  } else {
+    tried.push('local-engines:disabled-by-policy');
   }
 
   return {
     status: 200,
     body: {
       sdf: null,
+      pdb: null,
+      format: null,
       source: 'frontend-estimate',
       error: 'No 3D conformer could be generated for this structure.',
       code: 'NO_3D_CONFORMER',
@@ -256,4 +355,5 @@ module.exports = {
   generate3DStructure,
   getSdf3DStats,
   isValid3DSdf,
+  isValid3DPdb,
 };

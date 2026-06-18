@@ -4210,6 +4210,18 @@ a.viewer-toolbar-course:hover {
   color: #1a5a5b;
 }
 
+.compact-export-btn-free {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.compact-export-btn-free:hover {
+  background: #059669;
+  color: white;
+  border-color: transparent;
+}
+
 .compact-status {
   display: flex;
   align-items: center;
