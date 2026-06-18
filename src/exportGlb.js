@@ -64,9 +64,13 @@ const pushVertex = (bucket, x, y, z, nx, ny, nz) => {
   return index;
 };
 
+const SPHERE_LAT_BANDS = 24;
+const SPHERE_LONG_BANDS = 24;
+const CYLINDER_RADIAL_SEGMENTS = 16;
+
 const addSphere = (bucket, cx, cy, cz, radius) => {
-  const latBands = 8;
-  const longBands = 8;
+  const latBands = SPHERE_LAT_BANDS;
+  const longBands = SPHERE_LONG_BANDS;
   const startVertex = bucket.positions.length / 3;
   const ringStride = longBands + 1;
 
@@ -137,7 +141,7 @@ const addCylinder = (bucket, start, end, radius) => {
     }
   }
 
-  const radialSegments = 6;
+  const radialSegments = CYLINDER_RADIAL_SEGMENTS;
   const startVertex = bucket.positions.length / 3;
   const midX = (start.x + end.x) / 2;
   const midY = (start.y + end.y) / 2;
@@ -145,18 +149,14 @@ const addCylinder = (bucket, start, end, radius) => {
 
   for (let i = 0; i <= radialSegments; i += 1) {
     const theta = (i * 2 * Math.PI) / radialSegments;
-    const x = radius * Math.cos(theta);
-    const z = radius * Math.sin(theta);
-    const top = rotatePoint({ x, y: height / 2, z }, axis, angle);
-    const bottom = rotatePoint({ x, y: -height / 2, z }, axis, angle);
+    const radialX = Math.cos(theta);
+    const radialZ = Math.sin(theta);
+    const top = rotatePoint({ x: radius * radialX, y: height / 2, z: radius * radialZ }, axis, angle);
+    const bottom = rotatePoint({ x: radius * radialX, y: -height / 2, z: radius * radialZ }, axis, angle);
+    const normal = rotatePoint({ x: radialX, y: 0, z: radialZ }, axis, angle);
 
-    const topNx = top.x - midX;
-    const topNy = top.y - midY;
-    const topNz = top.z - midZ;
-    const topLen = Math.sqrt(topNx * topNx + topNy * topNy + topNz * topNz) || 1;
-
-    pushVertex(bucket, top.x + midX, top.y + midY, top.z + midZ, topNx / topLen, topNy / topLen, topNz / topLen);
-    pushVertex(bucket, bottom.x + midX, bottom.y + midY, bottom.z + midZ, topNx / topLen, topNy / topLen, topNz / topLen);
+    pushVertex(bucket, top.x + midX, top.y + midY, top.z + midZ, normal.x, normal.y, normal.z);
+    pushVertex(bucket, bottom.x + midX, bottom.y + midY, bottom.z + midZ, normal.x, normal.y, normal.z);
   }
 
   for (let i = 0; i < radialSegments; i += 1) {
@@ -174,7 +174,7 @@ const encodeGlb = (parts) => {
     pbrMetallicRoughness: {
       baseColorFactor: [...part.color, 1],
       metallicFactor: 0,
-      roughnessFactor: 0.65,
+      roughnessFactor: 0.45,
     },
     doubleSided: true,
   }));
