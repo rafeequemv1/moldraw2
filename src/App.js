@@ -5581,6 +5581,9 @@ ${scientificGuardrails}`;
 
   return (
     <div className="App">
+      <p className="sr-only" id="app-page-title">
+        MolDraw editor for chemical structures, reactions, SMILES, and 3D molecules.
+      </p>
       {luckyShowerItems.length > 0 && (
         <div className="lucky-shower" aria-hidden="true">
           {luckyShowerItems.map((item) => (
@@ -5837,7 +5840,7 @@ ${scientificGuardrails}`;
         )}
 
         {/* Left: Ketcher 2D Editor */}
-        <section className="panel ketcher-panel" data-testid="ketcher-panel">
+        <section className="panel ketcher-panel" data-testid="ketcher-panel" aria-label="Chemical structure editor">
           {/* Brand Header */}
           <header className="brand-header">
             <div className="brand-top-row">
@@ -6241,6 +6244,7 @@ ${scientificGuardrails}`;
         <section
           className={`panel viewer-panel ${!is3DPanelOpen ? 'minimized' : ''}${is3DPanelOpen && viewerMode === 'protein' ? ' viewer-panel--protein-ui' : ''}`}
           data-testid="viewer-panel"
+          aria-label="3D molecular viewer"
         >
           {/* Toggle Button */}
           <button

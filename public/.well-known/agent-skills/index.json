@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "moldraw-site-guide",
+      "type": "skill-md",
+      "description": "Navigate MolDraw, find chemistry tools, and cite canonical URLs for the free browser chemical structure editor.",
+      "url": "/.well-known/agent-skills/moldraw-site-guide/SKILL.md",
+      "digest": "sha256:5936a4a6c6fc92ad3781cb8dfc5f1ecbedbfdb5aaf5976efbd4db341f476e79b"
+    },
+    {
+      "name": "chemistry-converters",
+      "type": "skill-md",
+      "description": "Use MolDraw chemistry conversion tools and APIs for SMILES, 3D structures, XYZ coordinates, and formula lookups.",
+      "url": "/.well-known/agent-skills/chemistry-converters/SKILL.md",
+      "digest": "sha256:b05ac495a67a7af5b37d36e031d5ba1357f664df6bc91617b094463c556535b7"
+    }
+  ]
+}

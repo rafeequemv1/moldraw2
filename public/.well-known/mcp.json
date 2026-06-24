@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
+  "version": "1.0",
+  "protocolVersion": "2025-11-25",
+  "serverInfo": {
+    "name": "moldraw",
+    "title": "MolDraw Chemistry Tools",
+    "version": "1.0.0",
+    "description": "Read-only discovery for MolDraw chemistry drawing, converters, calculators, and 3D structure APIs.",
+    "homepage": "https://www.moldraw.com/"
+  },
+  "documentationUrl": "https://www.moldraw.com/llms.txt",
+  "transport": {
+    "type": "streamable-http",
+    "endpoint": "https://www.moldraw.com/api/mcp"
+  },
+  "capabilities": {
+    "tools": {
+      "listChanged": false
+    },
+    "resources": {
+      "subscribe": false,
+      "listChanged": false
+    },
+    "prompts": {
+      "listChanged": false
+    }
+  },
+  "authentication": {
+    "required": false
+  },
+  "instructions": "Use read-only tools to look up MolDraw pages, chemistry converters, and generate 3D structures from SMILES. The in-app AI assistant requires a user-supplied Gemini API key; see https://www.moldraw.com/pages/ai-help.html."
+}

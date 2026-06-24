@@ -1,0 +1,58 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://www.moldraw.com/.well-known/api-catalog",
+      "item": [
+        { "href": "https://www.moldraw.com/api/convert-3d" },
+        { "href": "https://www.moldraw.com/api/gemini-chat" },
+        { "href": "https://www.moldraw.com/api/mcp" }
+      ],
+      "api-catalog": "https://www.moldraw.com/.well-known/api-catalog"
+    },
+    {
+      "anchor": "https://www.moldraw.com/api/convert-3d",
+      "service-desc": [
+        {
+          "href": "https://www.moldraw.com/.well-known/openapi/convert-3d.openapi.json",
+          "type": "application/json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://www.moldraw.com/tools/free-chem-tools/smiles-to-3d-structure-converter.html",
+          "type": "text/html"
+        }
+      ]
+    },
+    {
+      "anchor": "https://www.moldraw.com/api/gemini-chat",
+      "service-desc": [
+        {
+          "href": "https://www.moldraw.com/.well-known/openapi/gemini-chat.openapi.json",
+          "type": "application/json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://www.moldraw.com/pages/ai-help.html",
+          "type": "text/html"
+        }
+      ]
+    },
+    {
+      "anchor": "https://www.moldraw.com/api/mcp",
+      "service-desc": [
+        {
+          "href": "https://www.moldraw.com/.well-known/mcp.json",
+          "type": "application/json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://www.moldraw.com/llms.txt",
+          "type": "text/plain"
+        }
+      ]
+    }
+  ]
+}

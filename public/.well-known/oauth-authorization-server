@@ -1,0 +1,17 @@
+{
+  "issuer": "https://www.moldraw.com",
+  "authorization_endpoint": "https://accounts.google.com/o/oauth2/v2/auth",
+  "token_endpoint": "https://oauth2.googleapis.com/token",
+  "jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+  "registration_endpoint": "https://www.moldraw.com/pages/ai-help.html",
+  "scopes_supported": [
+    "https://www.googleapis.com/auth/generative-language"
+  ],
+  "response_types_supported": ["code"],
+  "grant_types_supported": ["authorization_code", "refresh_token"],
+  "token_endpoint_auth_methods_supported": ["client_secret_post", "client_secret_basic"],
+  "code_challenge_methods_supported": ["S256", "plain"],
+  "service_documentation": "https://www.moldraw.com/pages/ai-help.html",
+  "op_policy_uri": "https://www.moldraw.com/pages/privacy-policy.html",
+  "op_tos_uri": "https://www.moldraw.com/pages/terms-of-service.html"
+}

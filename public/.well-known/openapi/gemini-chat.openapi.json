@@ -1,0 +1,53 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MolDraw Gemini Chat API",
+    "version": "1.0.0",
+    "description": "Chemistry assistant endpoint for MolDraw. Requires a user-supplied Gemini API key."
+  },
+  "servers": [
+    { "url": "https://www.moldraw.com" }
+  ],
+  "paths": {
+    "/api/gemini-chat": {
+      "post": {
+        "summary": "Chat with MolDraw chemistry assistant",
+        "operationId": "geminiChat",
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["prompt", "apiKey"],
+                "properties": {
+                  "prompt": { "type": "string" },
+                  "apiKey": { "type": "string", "description": "User Gemini API key" },
+                  "smiles": { "type": ["string", "null"] },
+                  "molfile": { "type": ["string", "null"] },
+                  "history": { "type": "array", "items": { "type": "object" } },
+                  "model": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Assistant JSON response" },
+          "400": { "description": "Missing API key or invalid request" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "body",
+        "name": "apiKey",
+        "description": "Bring-your-own Gemini API key. See /pages/ai-help.html"
+      }
+    }
+  }
+}

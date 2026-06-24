@@ -584,21 +584,41 @@
     }
     .card-images {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 8px;
+      gap: 3px;
       margin-top: 12px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #0b0f14;
     }
     .card-images a {
       display: block;
-      border: 1px solid #dbe4ee;
-      border-radius: 12px;
+      border: none;
+      border-radius: 0;
       overflow: hidden;
-      background: #f8fafc;
+      background: #0b0f14;
     }
     .card-images img {
       width: 100%;
-      height: 120px;
+      height: auto;
+      max-height: min(560px, 72vh);
       display: block;
+      object-fit: contain;
+      background: #0b0f14;
+    }
+    .card-images:has(a:nth-child(2)) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .card-images:has(a:nth-child(2)) img {
+      height: 280px;
+      max-height: none;
+      object-fit: cover;
+    }
+    .card-images:has(a:nth-child(3)) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .card-images:has(a:nth-child(3)) img {
+      height: 220px;
+      max-height: none;
       object-fit: cover;
     }
     .card-actions {
@@ -683,13 +703,19 @@
       padding: 0 9px;
     }
     .comment-images {
-      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+      grid-template-columns: 1fr;
       gap: 6px;
-      margin-top: 6px;
-      max-width: 360px;
+      margin-top: 8px;
+      max-width: none;
+      border-radius: 10px;
+      background: #0b0f14;
     }
     .comment-images img {
-      height: 70px;
+      width: 100%;
+      height: auto;
+      max-height: min(420px, 60vh);
+      object-fit: contain;
+      background: #0b0f14;
     }
     .comment-tools {
       display: flex;
@@ -1123,10 +1149,17 @@
         line-height: 1.55;
       }
       .card-images {
-        grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+        grid-template-columns: 1fr;
       }
-      .card-images img {
-        height: 104px;
+      .card-images:has(a:nth-child(2)) {
+        grid-template-columns: 1fr;
+      }
+      .card-images img,
+      .card-images:has(a:nth-child(2)) img,
+      .card-images:has(a:nth-child(3)) img {
+        height: auto;
+        max-height: min(480px, 68vh);
+        object-fit: contain;
       }
       .card-actions {
         gap: 6px;

@@ -11,26 +11,27 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background: #f8fafc;
-      color: #0f172a;
+      background: #f3f4f6;
+      color: #111827;
       font-family: 'Libre Franklin', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
     .dashboard-layout {
-      width: min(1180px, 94vw);
+      width: min(1080px, 92vw);
       margin: 0 auto;
-      padding: 28px 0 48px;
+      padding: 18px 0 36px;
       display: grid;
-      grid-template-columns: 220px 1fr;
-      gap: 18px;
+      grid-template-columns: 188px 1fr;
+      gap: 14px;
     }
     .dashboard-sidebar {
       display: none;
       background: #fff;
       border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 10px;
+      border-radius: 10px;
+      padding: 8px;
       height: fit-content;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
     .dashboard-sidebar.visible { display: block; }
     .dashboard-nav-item {
@@ -39,30 +40,35 @@
       align-items: center;
       justify-content: flex-start;
       border: 1px solid transparent;
-      border-radius: 10px;
-      background: #fff;
-      color: #334155;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-weight: 800;
+      border-radius: 8px;
+      background: transparent;
+      color: #4b5563;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .dashboard-nav-item:hover {
+      background: #f9fafb;
+      color: #111827;
     }
     .dashboard-nav-item.active {
-      border-color: #2C7A7B;
-      background: #2C7A7B;
-      color: #fff;
+      border-color: #d1e7e8;
+      background: #f0fafa;
+      color: #1a5a5b;
     }
     .dashboard-main {
       min-width: 0;
     }
     .dashboard-card {
-      min-height: 360px;
+      min-height: 320px;
       border: 1px solid #e5e7eb;
-      border-radius: 18px;
+      border-radius: 10px;
       background: #fff;
-      box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
-      padding: 24px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      padding: 18px;
     }
     .dashboard-blank {
       min-height: 300px;
@@ -72,14 +78,17 @@
       text-align: center;
     }
     .dashboard-title {
-      margin: 0 0 8px;
-      font-size: clamp(28px, 4vw, 44px);
-      letter-spacing: -0.04em;
+      margin: 0 0 6px;
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: #111827;
     }
     .dashboard-subtitle {
       margin: 0;
-      color: #64748b;
-      font-size: 14px;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.5;
     }
     .requests-head {
       display: flex;
@@ -90,13 +99,15 @@
     }
     .requests-head h1 {
       margin: 0;
-      font-size: 24px;
-      letter-spacing: -0.03em;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #111827;
     }
     .requests-status {
-      color: #64748b;
-      font-size: 12px;
-      font-weight: 700;
+      color: #6b7280;
+      font-size: 11px;
+      font-weight: 600;
     }
     .request-list {
       display: grid;
@@ -174,25 +185,35 @@
       white-space: pre-wrap;
     }
     .request-images {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+      display: grid;
+      gap: 6px;
       margin-top: 10px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #0b0f14;
     }
     .request-images a {
       display: block;
-      width: 86px;
-      height: 66px;
-      border-radius: 10px;
+      border: none;
+      border-radius: 0;
       overflow: hidden;
-      border: 1px solid #dbe4ee;
-      background: #fff;
+      background: #0b0f14;
     }
     .request-images img {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: auto;
+      max-height: min(420px, 60vh);
+      object-fit: contain;
       display: block;
+      background: #0b0f14;
+    }
+    .request-images:has(a:nth-child(2)) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .request-images:has(a:nth-child(2)) img {
+      height: 200px;
+      max-height: none;
+      object-fit: cover;
     }
     .dashboard-table-wrap {
       overflow-x: auto;
@@ -393,14 +414,15 @@
       display: block;
     }
     .local-warning {
-      margin: 0 0 18px;
-      padding: 12px 14px;
-      border: 1px solid #fed7aa;
-      border-radius: 14px;
-      background: #fff7ed;
-      color: #9a3412;
-      font-size: 13px;
-      font-weight: 700;
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-left: 3px solid #d97706;
+      border-radius: 8px;
+      background: #fffbeb;
+      color: #92400e;
+      font-size: 12px;
+      font-weight: 500;
       line-height: 1.45;
     }
     .projects-head {
@@ -408,83 +430,102 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f3f4f6;
     }
     .projects-head h1 {
       margin: 0;
-      font-size: 24px;
-      letter-spacing: -0.03em;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #111827;
     }
     .project-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+      gap: 10px;
     }
     .project-card {
       border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      background: #fbfdff;
+      border-radius: 10px;
+      background: #fff;
       overflow: hidden;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .project-card:hover {
+      border-color: #d1d5db;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
     }
     .project-preview {
-      height: 132px;
+      height: 118px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #ffffff;
-      border-bottom: 1px solid #e5e7eb;
+      background: #fafafa;
+      border-bottom: 1px solid #f3f4f6;
     }
     .project-preview img {
-      max-width: 94%;
-      max-height: 112px;
+      max-width: 92%;
+      max-height: 100px;
       display: block;
     }
     .project-preview-empty {
-      color: #94a3b8;
-      font-size: 12px;
-      font-weight: 800;
+      color: #9ca3af;
+      font-size: 11px;
+      font-weight: 600;
     }
     .project-body {
-      padding: 12px;
+      padding: 10px;
     }
     .project-body h2 {
-      margin: 0 0 6px;
-      color: #0f172a;
-      font-size: 15px;
+      margin: 0 0 4px;
+      color: #111827;
+      font-size: 13px;
+      font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .project-meta {
-      margin: 0 0 10px;
-      color: #64748b;
-      font-size: 11px;
+      margin: 0 0 8px;
+      color: #6b7280;
+      font-size: 10px;
       line-height: 1.4;
     }
     .project-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
     }
     .project-action {
       flex: 1;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 30px;
-      border: 1px solid #dbe4ee;
-      border-radius: 9px;
+      min-height: 28px;
+      border: 1px solid #e5e7eb;
+      border-radius: 7px;
       background: #fff;
-      color: #334155;
-      font-size: 12px;
-      font-weight: 800;
+      color: #374151;
+      font-size: 11px;
+      font-weight: 600;
       text-decoration: none;
       cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .project-action:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
     }
     .project-action-primary {
       border-color: #2C7A7B;
       background: #2C7A7B;
       color: #fff;
+    }
+    .project-action-primary:hover {
+      background: #256a6b;
+      border-color: #256a6b;
     }
     @media (max-width: 760px) {
       .dashboard-layout {
