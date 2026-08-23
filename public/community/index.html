@@ -2402,7 +2402,7 @@
       }
       statusEl.textContent = data?.length ? '' : 'No feature requests yet.';
       const requestCards = (data || []).map((request) => {
-        const images = Array.isArray(request.image_urls) ? request.image_urls : [];
+        const images = Array.isArray(request.image_urls) ? request.image_urls.filter(isSafeRemoteUrl) : [];
         const voted = myVotes.has(request.id);
         const comments = commentsByRequest.get(request.id) || [];
         const commentTotal = comments.length;

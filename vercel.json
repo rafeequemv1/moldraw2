@@ -103,6 +103,16 @@
       "permanent": true
     },
     {
+      "source": "/community/index.html",
+      "destination": "/community/",
+      "permanent": true
+    },
+    {
+      "source": "/reaction/index.html",
+      "destination": "/reaction/",
+      "permanent": true
+    },
+    {
       "source": "/course/",
       "destination": "/course/index.html",
       "permanent": true

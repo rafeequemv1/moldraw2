@@ -627,7 +627,7 @@
             <option value="iupac">IUPAC name</option>
           </select>
         </label>
-        <a id="conversionOpenBtn" class="conversion-open-btn" href="#" aria-disabled="true">Open tool</a>
+        <button id="conversionOpenBtn" type="button" class="conversion-open-btn" aria-disabled="true">Open tool</button>
       </div>
       <div id="conversionRouterNote" class="conversion-router-note"></div>
     </section>
@@ -1049,11 +1049,10 @@
     }
 
     function syncConversionOpenLink(route) {
+      conversionOpenBtn.dataset.route = route || '';
       if (route) {
-        conversionOpenBtn.setAttribute('href', route);
         conversionOpenBtn.setAttribute('aria-disabled', 'false');
       } else {
-        conversionOpenBtn.setAttribute('href', '#');
         conversionOpenBtn.setAttribute('aria-disabled', 'true');
       }
     }
@@ -1112,19 +1111,17 @@
       updateConversionRoute();
     });
     conversionOutput.addEventListener('change', updateConversionRoute);
-    conversionOpenBtn.addEventListener('click', (event) => {
+    conversionOpenBtn.addEventListener('click', () => {
       const { input, output, route } = getSelectedConversionRoute();
       if (!input || !output) {
-        event.preventDefault();
         updateConversionRoute();
         return;
       }
       if (!route) {
-        event.preventDefault();
         updateConversionRoute();
         return;
       }
-      syncConversionOpenLink(route);
+      window.location.assign(route);
     });
 
     categoryButtons.forEach((btn) => {

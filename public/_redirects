@@ -1,1 +1,3 @@
-/* /index.html 200
+# Do not use /* -> index.html SPA fallback.
+# Unknown paths should 404 instead of serving the editor homepage (wrong canonical for SEO).
+# Static HTML under public/ and build/index.html at / are served directly by Vercel.
