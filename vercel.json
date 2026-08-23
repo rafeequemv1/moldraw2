@@ -72,6 +72,12 @@
   ],
   "redirects": [
     {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "moldraw.com" }],
+      "destination": "https://www.moldraw.com/:path*",
+      "permanent": true
+    },
+    {
       "source": "/index.php",
       "destination": "/",
       "permanent": true
@@ -94,6 +100,51 @@
     {
       "source": "/documentation/index.html",
       "destination": "/documentation/",
+      "permanent": true
+    },
+    {
+      "source": "/course/",
+      "destination": "/course/index.html",
+      "permanent": true
+    },
+    {
+      "source": "/course",
+      "destination": "/course/index.html",
+      "permanent": true
+    },
+    {
+      "source": "/reaction/aldol-condensation/",
+      "destination": "/reaction/aldol-condensation",
+      "permanent": true
+    },
+    {
+      "source": "/reaction/wittig-reaction/",
+      "destination": "/reaction/wittig-reaction",
+      "permanent": true
+    },
+    {
+      "source": "/reaction/grignard-reaction/",
+      "destination": "/reaction/grignard-reaction",
+      "permanent": true
+    },
+    {
+      "source": "/reaction/suzuki-coupling/",
+      "destination": "/reaction/suzuki-coupling",
+      "permanent": true
+    },
+    {
+      "source": "/reaction/heck-reaction/",
+      "destination": "/reaction/heck-reaction",
+      "permanent": true
+    },
+    {
+      "source": "/reaction/friedel-crafts-acylation/",
+      "destination": "/reaction/friedel-crafts-acylation",
+      "permanent": true
+    },
+    {
+      "source": "/reaction/diels-alder-reaction/",
+      "destination": "/reaction/diels-alder-reaction",
       "permanent": true
     }
   ]

@@ -1488,8 +1488,13 @@
       return match ? decodeURIComponent(match.slice(encodedName.length + 1)) : '';
     };
 
+    function isSafeRemoteUrl(url) {
+      const value = String(url || '').trim();
+      return /^https?:\/\//i.test(value) && !value.includes('${');
+    }
+
     function renderImages(imageUrls, altText = 'Community attachment', className = 'card-images') {
-      const images = Array.isArray(imageUrls) ? imageUrls : [];
+      const images = Array.isArray(imageUrls) ? imageUrls.filter(isSafeRemoteUrl) : [];
       if (!images.length) return '';
       return `<div class="${className}">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="${escapeHtml(altText)}"></a>`).join('')}</div>`;
     }

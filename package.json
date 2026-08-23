@@ -19,7 +19,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "ai-server": "node gemini-server.js"
+    "ai-server": "node gemini-server.js",
+    "sitemap": "node scripts/generate-sitemap.js"
   },
   "eslintConfig": {
     "extends": [
