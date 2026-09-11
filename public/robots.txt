@@ -7,6 +7,12 @@ Allow: /pages/
 Allow: /reaction/
 Allow: /community/
 Allow: /documentation/
+Allow: /chemsketch
+Allow: /chemsketch-free
+Allow: /chemsketch-download
+Allow: /llms.txt
+Allow: /llm.text
+Allow: /.well-known/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 Sitemap: https://www.moldraw.com/sitemap.xml

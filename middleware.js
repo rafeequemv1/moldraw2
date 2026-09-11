@@ -58,14 +58,29 @@ export default function middleware(request) {
     return Response.redirect(url.toString(), 301);
   }
 
-  const accept = request.headers.get('accept');
-  if (!wantsMarkdown(accept)) return;
-  if (url.pathname.startsWith('/api/')
-    || url.pathname.startsWith('/md/')
-    || url.pathname.startsWith('/.well-known/')
-    || url.pathname.startsWith('/static/')) {
+  // Never content-negotiate machine-readable discovery / static assets through /api/markdown
+  const path = url.pathname;
+  if (
+    path === '/sitemap.xml'
+    || path === '/robots.txt'
+    || path === '/llms.txt'
+    || path === '/llm.text'
+    || path === '/favicon.ico'
+    || path.startsWith('/api/')
+    || path.startsWith('/md/')
+    || path.startsWith('/.well-known/')
+    || path.startsWith('/static/')
+    || path.startsWith('/css/')
+    || path.startsWith('/js/')
+    || path.startsWith('/fonts/')
+    || path.startsWith('/images/')
+    || /\.(?:xml|txt|json|css|js|mjs|map|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot|pdf)$/i.test(path)
+  ) {
     return;
   }
+
+  const accept = request.headers.get('accept');
+  if (!wantsMarkdown(accept)) return;
 
   const apiUrl = new URL('/api/markdown', url.origin);
   apiUrl.searchParams.set('path', url.pathname);

@@ -45,6 +45,16 @@ function isNoindex(html) {
 
 function priorityFor(url) {
   if (url === `${BASE}/`) return "1.0";
+  if (
+    url === `${BASE}/chemsketch`
+    || url === `${BASE}/chemsketch/`
+    || url === `${BASE}/chemsketch-free`
+    || url === `${BASE}/chemsketch-free/`
+    || url === `${BASE}/chemsketch-download`
+    || url === `${BASE}/chemsketch-download/`
+  ) {
+    return "0.9";
+  }
   if (url === `${BASE}/tools/` || url === `${BASE}/blog/`) return "0.8";
   if (url.startsWith(`${BASE}/tools/free-chem-tools/`)) return "0.72";
   if (url.startsWith(`${BASE}/blog/`)) return "0.74";
