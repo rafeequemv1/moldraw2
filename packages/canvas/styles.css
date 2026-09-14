@@ -1,0 +1,477 @@
+/* Canvas surface, status bar, generic menus, and the floating inline text editor. */
+
+.status-bar {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--chrome-bg-elevated, #ffffff);
+  border: 1px solid var(--chrome-border, #e2e8f0);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  z-index: 10;
+  display: flex;
+  gap: 16px;
+}
+
+.canvas-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+canvas:active {
+  cursor: grabbing;
+}
+
+/* Drawing surface: PointerEvents + touch/pen (iOS / Android / tablets). */
+.moldraw-canvas-surface {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  width: 100%;
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-main, #0f172a);
+  border-radius: 0px;
+}
+.menu-item:hover {
+  background: var(--chrome-hover, #f1f5f9);
+}
+.menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Floating inline editor over canvas text */
+.canvas-inline-text {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* In-place functional-group / alias edit — text stays pinned; panel drops below */
+.alias-inline-editor {
+  position: fixed;
+  z-index: 621;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.alias-inline-editor__anchor {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.alias-inline-editor__row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  max-width: min(280px, 70vw);
+  border-radius: 2px;
+  background: transparent;
+}
+
+.alias-inline-editor__row--focus {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.55);
+}
+
+.alias-inline-editor__input-wrap {
+  position: relative;
+  display: inline-grid;
+  align-items: center;
+  max-width: 240px;
+}
+
+.alias-inline-editor__mirror {
+  grid-area: 1 / 1;
+  padding: 1px 4px;
+  font-weight: 600;
+  font-family: Inter, system-ui, sans-serif;
+  color: #0f172a;
+  white-space: pre;
+  line-height: 1.2;
+  pointer-events: none;
+  user-select: none;
+  text-align: center;
+  min-width: 1.5ch;
+}
+
+.alias-inline-editor__mirror sub {
+  font-size: 0.72em;
+  vertical-align: baseline;
+  position: relative;
+  top: 0.12em;
+}
+
+.alias-inline-editor__mirror-placeholder {
+  opacity: 0;
+}
+
+.alias-inline-editor__input {
+  min-width: 1.5ch;
+  max-width: 240px;
+  margin: 0;
+  padding: 1px 4px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  font-weight: 600;
+  font-family: Inter, system-ui, sans-serif;
+  color: #0f172a;
+  text-align: center;
+  caret-color: #0f172a;
+  line-height: 1.2;
+}
+
+.alias-inline-editor__input--overlay {
+  grid-area: 1 / 1;
+  width: 100%;
+  color: transparent !important;
+  background: transparent;
+}
+
+.alias-inline-editor__caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0 2px 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: opacity 0.12s ease, color 0.12s ease, transform 0.12s ease;
+}
+
+.alias-inline-editor__row:hover .alias-inline-editor__caret,
+.alias-inline-editor__row--focus .alias-inline-editor__caret {
+  opacity: 1;
+}
+
+.alias-inline-editor__caret:hover {
+  color: #475569;
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.alias-inline-editor__caret--open {
+  color: #334155;
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.alias-inline-editor__panel {
+  min-width: 132px;
+  max-width: 220px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.alias-inline-editor__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 132px;
+  max-width: 220px;
+}
+
+.alias-inline-editor__error {
+  max-width: 220px;
+  padding: 4px 8px;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  background: #fff1f2;
+  color: #b91c1c;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: normal;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.alias-inline-editor__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: Inter, system-ui, sans-serif;
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.alias-inline-editor__option:hover,
+.alias-inline-editor__option--active {
+  background: #f1f5f9;
+}
+
+.alias-inline-editor__option-label {
+  font-weight: 600;
+}
+
+.alias-inline-editor__option-meta {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.alias-inline-editor__preview {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Multi-molecule align toolbar (fixed above selection bbox) */
+.selection-align-toolbar {
+  position: fixed;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  transform: translate(-50%, calc(-100% - 10px));
+  pointer-events: auto;
+}
+
+.selection-align-toolbar__item {
+  display: flex;
+  align-items: center;
+}
+
+.selection-align-toolbar__sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: #e2e8f0;
+}
+
+.selection-align-toolbar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+}
+
+.selection-align-toolbar__btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.selection-align-toolbar__btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.selection-align-toolbar__radius {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 2px;
+}
+
+.selection-align-toolbar__radius-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.selection-align-toolbar__radius-prefix {
+  opacity: 0.7;
+  user-select: none;
+}
+
+.selection-align-toolbar__radius-input {
+  width: 36px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+
+.selection-align-toolbar__radius-input::-webkit-outer-spin-button,
+.selection-align-toolbar__radius-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.selection-align-toolbar__radius-input:disabled {
+  opacity: 0.45;
+}
+
+.selection-align-toolbar__radius-input--n {
+  width: 28px;
+}
+
+.selection-align-toolbar__radius-input--deg {
+  width: 40px;
+}
+
+.selection-align-toolbar__circle-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.selection-align-toolbar__btn--active {
+  color: #0f172a;
+  background: #e2e8f0;
+}
+
+.selection-align-toolbar__array-btn {
+  height: 22px;
+  margin-left: 2px;
+  padding: 0 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.selection-align-toolbar__array-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.selection-align-toolbar__array-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.selection-align-toolbar__array-btn--active {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+/* Reflect / Duplicate / Delete — compact chips above selection */
+.selection-action-toolbar-host {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  /* Clip any mis-anchored bar so it never bleeds into the 3D pane. */
+  overflow: hidden;
+}
+
+.selection-action-toolbar {
+  position: absolute;
+  z-index: 21;
+  display: none; /* shown by rAF after a valid anchor is computed */
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+}
+
+.selection-action-toolbar__chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.selection-action-toolbar__chip:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.selection-action-toolbar__chip:active {
+  background: #e2e8f0;
+}
+
+.selection-action-toolbar__chip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

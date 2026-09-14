@@ -1,0 +1,204 @@
+/**
+ * Generate graphene: gapless hexagonal close-packed (honeycomb) carbon lattice.
+ * Default shape is a rectangular flake; optional circular mask.
+ */
+import type { Atom, Bond, Molecule } from '@moldraw/domain';
+import { collectAtomsAsObjectCollection } from './arrayCollection';
+import { ensureFragmentIds } from './fragmentIds';
+import { mergeGeneratedLattice } from './latticeMerge';
+
+const newId = () => Math.random().toString(36).slice(2, 11);
+
+/**
+ * Deterministic ids: `gr<sheetId>.v<key>` / `gr<sheetId>.b<keyA>-<keyB>` where
+ * `key` is the vertex position relative to the sheet anchor. Growing the sheet
+ * re-emits identical ids for existing vertices, so `generateGrapheneInMolecule`
+ * merges incrementally (no jump, no new random ids).
+ */
+const GRAPHENE_ID_RE = /^gr([0-9a-z]+)\./;
+
+const sheetIdFromAtomIds = (ids: readonly string[]): string | null => {
+  for (const id of ids) {
+    const m = GRAPHENE_ID_RE.exec(id);
+    if (m) return m[1]!;
+  }
+  return null;
+};
+
+const relKey = (dx: number, dy: number) => {
+  const f = (v: number) => {
+    const n = Math.round(v * 50);
+    return n < 0 ? `m${-n}` : `${n}`;
+  };
+  return `${f(dx)}_${f(dy)}`;
+};
+
+export type GrapheneShape = 'rectangular' | 'circular';
+
+export type GrapheneSheetOptions = {
+  /**
+   * Hexagon columns (zigzag width). For circular, used as diameter in hex cells.
+   */
+  cols: number;
+  /** Hexagon rows (armchair height). Ignored for circular (uses cols as diameter). */
+  rows: number;
+  /** C–C bond length (= hexagon center-to-vertex distance). */
+  bondLength: number;
+  shape: GrapheneShape;
+  cx: number;
+  cy: number;
+};
+
+const SIZE_MIN = 1;
+const SIZE_MAX = 12;
+
+const clampSize = (n: number) => Math.max(SIZE_MIN, Math.min(SIZE_MAX, Math.round(n)));
+
+/**
+ * Flat-top hex layout: `size` is center → vertex (bond length).
+ * Adjacent hexes share edges with no gaps.
+ */
+const axialToWorld = (q: number, r: number, size: number): { x: number; y: number } => ({
+  x: size * ((3 / 2) * q),
+  y: size * ((Math.sqrt(3) / 2) * q + Math.sqrt(3) * r),
+});
+
+const vertKey = (x: number, y: number) => `${Math.round(x * 50)},${Math.round(y * 50)}`;
+
+/** Rectangular grid of hex cells via odd-q offset → axial (flat-top, no gaps). */
+const rectangularHexCenters = (cols: number, rows: number): Array<{ q: number; r: number }> => {
+  const out: Array<{ q: number; r: number }> = [];
+  const col0 = -Math.floor((cols - 1) / 2);
+  const row0 = -Math.floor((rows - 1) / 2);
+  for (let ci = 0; ci < cols; ci++) {
+    for (let ri = 0; ri < rows; ri++) {
+      const col = col0 + ci;
+      const row = row0 + ri;
+      // odd-q vertical layout → axial
+      const q = col;
+      const r = row - (col - (col & 1)) / 2;
+      out.push({ q, r });
+    }
+  }
+  return out;
+};
+
+/** Hex centers with cube distance ≤ radius (circular flake). */
+const circularHexCenters = (diameter: number): Array<{ q: number; r: number }> => {
+  const max = Math.max(0, Math.floor((diameter - 1) / 2));
+  const out: Array<{ q: number; r: number }> = [];
+  for (let q = -max; q <= max; q++) {
+    const r1 = Math.max(-max, -q - max);
+    const r2 = Math.min(max, -q + max);
+    for (let r = r1; r <= r2; r++) out.push({ q, r });
+  }
+  return out;
+};
+
+/**
+ * Build a graphene flake: fused aromatic hexagons, HCP honeycomb (no gaps).
+ *
+ * The (0,0) hex cell is anchored at `(cx, cy)`; extra columns / rows are added
+ * on alternating sides. Existing vertices therefore never move when the sheet
+ * grows, and with `sheetId` set their ids are reproducible.
+ */
+export function buildGrapheneSheet(
+  options: GrapheneSheetOptions & { sheetId?: string },
+): {
+  atoms: Atom[];
+  bonds: Bond[];
+  atomIds: string[];
+} {
+  const cols = clampSize(options.cols);
+  const rows = clampSize(options.rows);
+  const a = Math.max(16, options.bondLength);
+  const shape = options.shape === 'circular' ? 'circular' : 'rectangular';
+  const { cx, cy } = options;
+  const prefix = `gr${options.sheetId ?? newId()}`;
+
+  const centers =
+    shape === 'circular' ? circularHexCenters(cols) : rectangularHexCenters(cols, rows);
+
+  const idByKey = new Map<string, string>();
+  const atoms: Atom[] = [];
+  const bondKeys = new Set<string>();
+  const bonds: Bond[] = [];
+
+  const ensureVertex = (x: number, y: number): string => {
+    const key = vertKey(x, y);
+    let id = idByKey.get(key);
+    if (id) return id;
+    id = `${prefix}.v${relKey(x - cx, y - cy)}`;
+    idByKey.set(key, id);
+    atoms.push({ id, element: 'C', x, y, charge: 0 });
+    return id;
+  };
+
+  const addBond = (from: string, to: string) => {
+    if (from === to) return;
+    const key = from < to ? `${from}|${to}` : `${to}|${from}`;
+    if (bondKeys.has(key)) return;
+    bondKeys.add(key);
+    const [lo, hi] = from < to ? [from, to] : [to, from];
+    bonds.push({
+      id: `${prefix}.b${lo.slice(prefix.length + 2)}-${hi.slice(prefix.length + 2)}`,
+      fromAtomId: from,
+      toAtomId: to,
+      order: 1,
+      aromatic: true,
+    });
+  };
+
+  // Flat-top hex vertices at 0°, 60°, … with radius = bond length (edge-sharing HCP).
+  for (const { q, r } of centers) {
+    const c = axialToWorld(q, r, a);
+    const hx = cx + c.x;
+    const hy = cy + c.y;
+    const vids: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const ang = (i * Math.PI) / 3;
+      vids.push(ensureVertex(hx + a * Math.cos(ang), hy + a * Math.sin(ang)));
+    }
+    for (let i = 0; i < 6; i++) addBond(vids[i]!, vids[(i + 1) % 6]!);
+  }
+
+  return { atoms, bonds, atomIds: atoms.map(x => x.id) };
+}
+
+export type GenerateGrapheneOptions = GrapheneSheetOptions & {
+  replaceAtomIds?: string[];
+};
+
+/**
+ * Generate or grow a graphene sheet. When `replaceAtomIds` belong to a sheet
+ * built here before, the same sheet id is reused and growth is an incremental
+ * merge (existing carbons keep id + position; only the new rim is appended and
+ * any now-interior stubs dropped).
+ */
+export function generateGrapheneInMolecule(
+  prev: Molecule,
+  options: GenerateGrapheneOptions,
+): { molecule: Molecule; newAtomIds: string[]; allAtomIds: string[] } {
+  const present = new Set(prev.atoms.map(a => a.id));
+  const replace = (options.replaceAtomIds ?? []).filter(id => present.has(id));
+  const sheetId = sheetIdFromAtomIds(replace) ?? newId();
+
+  const sheet = buildGrapheneSheet({ ...options, sheetId });
+  const merged = mergeGeneratedLattice(prev, replace, sheet);
+  let next = merged.molecule;
+  if (!merged.unchanged || replace.length === 0) {
+    next = ensureFragmentIds(next);
+    next = collectAtomsAsObjectCollection(next, sheet.atomIds, 'Graphene');
+  }
+  return {
+    molecule: next,
+    newAtomIds: merged.addedAtomIds,
+    allAtomIds: sheet.atomIds,
+  };
+}
+
+/** @deprecated Prefer cols/rows; kept for callers that still pass rings. */
+export const GRAPHENE_RINGS_MIN = SIZE_MIN;
+export const GRAPHENE_RINGS_MAX = SIZE_MAX;
+export const GRAPHENE_COLS_MIN = SIZE_MIN;
+export const GRAPHENE_COLS_MAX = SIZE_MAX;

@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@moldraw/domain": ["./domain/src"],
+      "@moldraw/engine": ["./engine/src"],
+      "@moldraw/core": ["./core/src"],
+      "@moldraw/canvas": ["./canvas/src"],
+      "@moldraw/engine-2d": ["./engine-2d/src"],
+      "@moldraw/engine-3d": ["./engine-3d/src"],
+      "@moldraw/viewer-3d": ["./viewer-3d/src"],
+      "@moldraw/ai": ["./ai/src"],
+      "@moldraw/ai/*": ["./ai/src/*"],
+      "@moldraw/templates": ["./templates/src"]
+    }
+  },
+  "exclude": ["**/dist/**", "**/__tests__/**", "**/node_modules/**"]
+}

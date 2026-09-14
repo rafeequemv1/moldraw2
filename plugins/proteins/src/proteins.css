@@ -1,0 +1,597 @@
+.protein-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--viewer3d-bg, #f8fafc);
+  color: var(--text-primary, #0f172a);
+}
+
+.protein-viewer__file-input {
+  display: none;
+}
+
+/* Toolbar */
+.protein-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--chrome-border, #e2e8f0);
+  background: var(--chrome-bg-elevated, #fff);
+  flex-shrink: 0;
+}
+
+.protein-toolbar__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+}
+
+.protein-toolbar__open:hover:not(:disabled) {
+  background: var(--chrome-hover, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+  border-color: var(--chrome-border, #e2e8f0);
+}
+
+.protein-toolbar__open:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.protein-toolbar__pdb-id {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.protein-toolbar__pdb-id input {
+  width: 3.2rem;
+  padding: 3px 6px;
+  font-size: 11px;
+  border: 1px solid var(--chrome-border, #e2e8f0);
+  border-radius: 5px;
+  text-transform: uppercase;
+  background: var(--input-bg, #fff);
+  color: inherit;
+}
+
+.protein-toolbar__fetch {
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid var(--chrome-border, #e2e8f0);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+}
+
+.protein-toolbar__fetch:hover:not(:disabled) {
+  background: var(--chrome-hover, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+
+.protein-toolbar__fetch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.protein-toolbar__menus {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.protein-toolbar__title {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+/* Compact menu */
+.protein-menu {
+  position: relative;
+}
+
+.protein-menu__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+}
+
+.protein-menu__btn:hover:not(:disabled),
+.protein-menu__btn.is-open {
+  background: var(--chrome-hover, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+
+.protein-menu__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.protein-menu__panel {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  z-index: 30;
+  min-width: 9.5rem;
+  max-width: 11rem;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--chrome-border, #e2e8f0);
+  background: var(--chrome-bg-elevated, #fff);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.protein-menu--export .protein-menu__panel {
+  left: auto;
+  right: 0;
+  min-width: 8.5rem;
+  max-width: 9.5rem;
+}
+
+.protein-menu__item {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 11px;
+  text-align: left;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.protein-menu__item:hover {
+  background: var(--chrome-hover, #f1f5f9);
+}
+
+.protein-menu__item.is-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.protein-menu__divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--chrome-border, #f1f5f9);
+}
+
+.protein-menu__slider {
+  display: block;
+  padding: 4px 8px;
+  font-size: 10px;
+  color: var(--text-muted, #64748b);
+}
+
+.protein-menu__slider input[type='range'] {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.protein-menu__export-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.protein-menu__export-chip {
+  padding: 4px 2px;
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid var(--chrome-border, #e2e8f0);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+}
+
+.protein-menu__export-chip:hover {
+  background: var(--chrome-hover, #f1f5f9);
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.protein-menu__check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 4px;
+  font-size: 10px;
+  color: var(--text-muted, #64748b);
+}
+
+.protein-menu__error {
+  margin: 0;
+  padding: 2px 8px 4px;
+  font-size: 10px;
+  color: #dc2626;
+}
+
+/* Custom color sub-dropdown */
+.protein-color-custom {
+  margin: 2px 0;
+}
+
+.protein-color-custom__summary {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  list-style: none;
+  border-radius: 4px;
+}
+
+.protein-color-custom__summary::-webkit-details-marker {
+  display: none;
+}
+
+.protein-color-custom__summary:hover {
+  background: var(--chrome-hover, #f1f5f9);
+}
+
+.protein-color-custom[open] .protein-color-custom__summary {
+  color: var(--text-primary, #0f172a);
+  font-weight: 500;
+}
+
+.protein-color-custom__body {
+  padding: 4px 8px 6px;
+}
+
+.protein-color-custom__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.protein-color-custom__swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.protein-color-custom__swatch.is-active {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 1px #fff;
+}
+
+.protein-color-custom__picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-muted, #64748b);
+}
+
+.protein-color-custom__picker input[type='color'] {
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--chrome-border, #e2e8f0);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.protein-color-custom__reset {
+  margin-top: 4px;
+  padding: 0;
+  font-size: 10px;
+  border: none;
+  background: none;
+  color: var(--text-muted, #94a3b8);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.protein-viewer__error {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+}
+
+.protein-viewer__stage-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.protein-viewer__stage {
+  position: absolute;
+  inset: 0;
+}
+
+.protein-viewer__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+  pointer-events: none;
+}
+
+.protein-viewer__placeholder-hint {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.protein-viewer__loading {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.protein-seq-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Sequence strip */
+.protein-seq {
+  max-height: 120px;
+  overflow: auto;
+  border-top: 1px solid var(--chrome-border, #e2e8f0);
+  background: var(--chrome-bg-elevated, #fff);
+  padding: 6px 8px;
+}
+
+.protein-seq--empty {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  padding: 10px;
+}
+
+.protein-seq__chain {
+  margin-bottom: 6px;
+}
+
+.protein-seq__chain-label {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  padding-left: 4px;
+  border-left: 3px solid #2563eb;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.protein-seq__chain-len {
+  font-weight: 400;
+  color: var(--text-muted, #64748b);
+}
+
+.protein-seq__residues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  user-select: none;
+}
+
+.protein-seq__res {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 18px;
+  padding: 2px 1px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  font-family: ui-monospace, monospace;
+}
+
+.protein-seq__res-num {
+  font-size: 8px;
+  line-height: 1;
+  height: 9px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.protein-seq__res-letter {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.protein-seq__res:hover,
+.protein-seq__res--hover {
+  background: #e0f2fe;
+}
+
+.protein-seq__res--selected {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.protein-seq__res--selected .protein-seq__res-num {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.protein-seq__hint {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+}
+
+/* Selection style popup */
+.protein-sel-popup {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: min(260px, calc(100vw - 24px));
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--chrome-border, #cbd5e1);
+  background: var(--chrome-bg-elevated, #fff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.protein-sel-popup__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.protein-sel-popup__close {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted, #64748b);
+}
+
+.protein-sel-popup__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3px;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.protein-sel-popup__row select {
+  font-size: 11px;
+  padding: 4px 6px;
+  border: 1px solid var(--chrome-border, #cbd5e1);
+  border-radius: 4px;
+}
+
+.protein-sel-popup__row--slider input[type='range'] {
+  width: 100%;
+}
+
+.protein-sel-popup__row--check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.protein-sel-popup__actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.protein-sel-popup__clear {
+  flex: 1;
+  padding: 3px 6px;
+  font-size: 10px;
+  border: 1px dashed var(--chrome-border, #e2e8f0);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted, #64748b);
+}
+
+@media (max-width: 1024px) {
+  .protein-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .protein-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .protein-menu__panel {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 80;
+    min-width: 0;
+    max-width: none;
+    max-height: none;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+    border-radius: 12px 12px 0 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .protein-menu--export .protein-menu__panel {
+    left: 0;
+    right: 0;
+  }
+
+  .protein-menu__item {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 40px;
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+
+  .protein-menu__divider {
+    flex: 0 0 1px;
+    width: 1px;
+    height: 28px;
+    margin: 0 2px;
+  }
+
+  .protein-menu__slider,
+  .protein-menu__export-grid {
+    flex: 0 0 auto;
+    min-width: 140px;
+  }
+}

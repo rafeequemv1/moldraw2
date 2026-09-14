@@ -1,0 +1,310 @@
+/**
+ * Import modal + batch SMILES→XYZ — design-system chrome (no purple gradients).
+ */
+
+.md-import-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.md-import-modal {
+  width: min(96vw, 1280px);
+  height: min(88vh, 920px);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--md-surface-elevated);
+  border: 1px solid var(--md-border-strong);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+  font-family: var(--md-font);
+  color: var(--md-text);
+}
+
+.md-import-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--md-border);
+  flex-shrink: 0;
+  background: var(--md-surface);
+}
+
+.md-import-modal__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.md-import-modal__mark {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--md-radius);
+  background: var(--text-main);
+  color: var(--bg-color);
+  flex-shrink: 0;
+}
+
+.md-import-modal__title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--md-text);
+  line-height: 1.2;
+}
+
+.md-import-modal__subtitle {
+  font-size: 11px;
+  color: var(--md-text-muted);
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+.md-import-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--md-radius);
+  background: transparent;
+  color: var(--md-text-muted);
+  cursor: pointer;
+}
+
+.md-import-modal__close:hover {
+  background: var(--md-hover);
+  border-color: var(--md-border);
+  color: var(--md-text);
+}
+
+.md-import-modal__tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--md-border);
+  flex-shrink: 0;
+  background: var(--md-surface);
+}
+
+.md-import-modal__tab {
+  margin: 0;
+  padding: 9px 12px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  font-family: var(--md-font);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-text-muted);
+  cursor: pointer;
+}
+
+.md-import-modal__tab:hover {
+  color: var(--md-text);
+}
+
+.md-import-modal__tab.is-active {
+  color: var(--md-text);
+  font-weight: 700;
+  border-bottom-color: var(--text-main);
+}
+
+.md-import-modal__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--md-surface-elevated);
+}
+
+.md-import-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--md-border-strong);
+  border-radius: var(--md-radius);
+  background: var(--md-surface-elevated);
+  color: var(--md-text);
+  font-family: var(--md-font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.md-import-btn:hover:not(:disabled) {
+  background: var(--md-hover);
+}
+
+.md-import-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.md-import-btn--primary {
+  background: var(--text-main);
+  border-color: var(--text-main);
+  color: var(--bg-color);
+}
+
+.md-import-btn--primary:hover:not(:disabled) {
+  background: var(--text-muted);
+  border-color: var(--text-muted);
+  color: var(--bg-color);
+}
+
+.md-import-btn--ghost {
+  background: transparent;
+}
+
+.md-import-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--md-border-strong);
+  border-radius: var(--md-radius);
+  background: var(--md-surface-elevated);
+}
+
+.md-import-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--md-font);
+  font-size: 13px;
+  color: var(--md-text);
+}
+
+/* Batch panel */
+.md-batch-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: var(--md-font);
+  color: var(--md-text);
+}
+
+.md-batch-panel__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--md-text-muted);
+  line-height: 1.45;
+  flex-shrink: 0;
+}
+
+.md-batch-panel__hint strong {
+  color: var(--md-text);
+  font-weight: 600;
+}
+
+.md-batch-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.md-batch-panel__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.md-batch-panel label {
+  font-size: 12px;
+  color: var(--md-text);
+}
+
+.md-batch-panel textarea,
+.md-batch-panel input[type='text'] {
+  font-family: var(--font-mono);
+}
+
+.md-batch-panel__table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--md-border);
+  border-radius: var(--md-radius);
+  background: var(--chrome-bg-elevated);
+}
+
+.md-batch-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.md-batch-panel thead tr {
+  background: var(--md-surface);
+}
+
+.md-batch-panel th,
+.md-batch-panel td {
+  border-bottom: 1px solid var(--md-border);
+  border-right: 1px solid var(--md-border);
+}
+
+.md-batch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--md-border-strong);
+  border-radius: var(--md-radius);
+  background: var(--md-surface);
+  color: var(--md-text);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.md-batch-chip:hover:not(:disabled) {
+  background: var(--md-hover);
+}
+
+.md-batch-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.md-batch-chip--accent {
+  background: var(--text-main);
+  border-color: var(--text-main);
+  color: var(--bg-color);
+}
+
+.md-batch-chip--accent:hover:not(:disabled) {
+  background: var(--text-muted);
+}

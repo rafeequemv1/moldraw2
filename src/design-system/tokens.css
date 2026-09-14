@@ -1,0 +1,67 @@
+/**
+ * Moldraw design-system tokens — Windows / Fluent-flat chrome (light defaults).
+ * Theme overrides (elegant-dark / ink-dark) live in `src/styles/theme.css` —
+ * edit that file to control UI chrome, fonts, canvas surface, and structure ink.
+ * Import via `design-system/index.css` (see README.md).
+ */
+
+:root {
+  /* Canvas / document */
+  --bg-color: #ffffff;
+  --grid-color: rgba(0, 0, 0, 0.05);
+  --glass-bg: #f3f4f6;
+  --glass-border: #e5e7eb;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+
+  /* Fluent-flat chrome surfaces (Win11-like) */
+  --chrome-bg: #f3f4f6;
+  --chrome-bg-elevated: #ffffff;
+  --chrome-border: #e5e7eb;
+  --chrome-border-strong: #d1d5db;
+  --chrome-hover: #e5e7eb;
+  --chrome-active: #d1d5db;
+  --chrome-input-bg: #ffffff;
+  --radius-control: 3px;
+  --radius-panel: 4px;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Design-system aliases */
+  --md-font: var(--font-ui);
+  --md-text: var(--text-main);
+  --md-text-muted: var(--text-muted);
+  --md-surface: var(--chrome-bg);
+  --md-surface-elevated: var(--chrome-bg-elevated);
+  --md-border: var(--chrome-border);
+  --md-border-strong: var(--chrome-border-strong);
+  --md-hover: var(--chrome-hover);
+  --md-active: var(--chrome-active);
+  --md-radius: var(--radius-control);
+  --md-control-h: 22px;
+  --md-icon-size: 26px;
+
+  /* Soft danger — Clear and similar (clearer red, not alarm-block) */
+  --md-danger-soft: #ef4444;
+  --md-danger-soft-hover: #dc2626;
+  --md-danger-soft-active: #b91c1c;
+  --md-danger-soft-muted: #fecaca;
+
+  /* App chrome geometry */
+  --app-top-bar-main-height: 32px;
+  --app-top-bar-tools-row: 32px;
+  --app-top-bar-context-row: 40px;
+  --app-top-bar-height: calc(var(--app-top-bar-main-height) + var(--app-top-bar-tools-row));
+  --app-status-bar-height: 26px;
+  --app-tool-island-inset: 6px;
+  --app-tool-rail-width: 38px;
+  --app-draw-panel-width: 0px;
+  --app-element-rail-width: 30px;
+  --app-tool-bottom-height: 38px;
+}
+
+html.app-draw-tools-open {
+  --app-draw-panel-width: 38px;
+}

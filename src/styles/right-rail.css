@@ -1,0 +1,309 @@
+/* Right rail: text appearance / style panel. */
+
+.text-style-panel {
+  position: fixed;
+  top: 72px;
+  width: min(240px, calc(100vw - 32px));
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+  z-index: 600;
+  padding: 12px 14px;
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-elevated);
+  font-family: var(--font-ui);
+  color: hsl(222 47% 11%);
+}
+
+.text-style-panel--docked {
+  position: static;
+  top: auto;
+  width: 228px;
+  max-height: min(440px, calc(100vh - 140px));
+  z-index: auto;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.text-style-panel--minimal {
+  width: 196px;
+  padding: 8px 10px 10px;
+  max-height: min(360px, calc(100vh - 140px));
+}
+
+.text-style-panel--minimal .text-style-panel-header {
+  margin-bottom: 2px;
+}
+
+.text-style-panel-desc--tight {
+  margin-bottom: 6px;
+  font-size: 0.625rem;
+}
+
+.text-style-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.text-style-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: hsl(222 47% 11%);
+}
+
+.text-style-panel-title svg {
+  color: hsl(215 16% 47%);
+}
+
+.text-style-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: hsl(215 16% 47%);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.text-style-panel-close:hover {
+  background: hsl(210 40% 96%);
+  color: hsl(222 47% 11%);
+}
+
+.text-style-panel-desc {
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: hsl(215 16% 47%);
+  margin-bottom: 12px;
+}
+
+.text-style-section {
+  margin-bottom: 12px;
+}
+
+.text-style-section:last-child {
+  margin-bottom: 0;
+}
+
+.text-style-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(215 16% 47%);
+  margin-bottom: 8px;
+}
+
+.text-style-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.text-style-label-row .text-style-label {
+  margin-bottom: 0;
+}
+
+.text-style-value {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: hsl(215 16% 47%);
+}
+
+.text-style-color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid hsl(214 32% 91%);
+  background: hsl(210 40% 98%);
+}
+
+.text-style-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid hsl(214 32% 88%);
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px hsl(0 0% 100% / 0.35);
+}
+
+.text-style-color-native {
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.text-style-color-native::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.text-style-color-native::-webkit-color-swatch {
+  border-radius: 6px;
+  border: 1px solid hsl(214 32% 88%);
+}
+
+.text-style-hex-read {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: hsl(222 47% 11%);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-style-range {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  appearance: none;
+  background: hsl(214 32% 91%);
+  cursor: pointer;
+}
+
+.text-style-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: hsl(222 47% 11%);
+  border: 2px solid hsl(0 0% 100%);
+  box-shadow: 0 1px 3px hsl(222 47% 11% / 0.2);
+}
+
+.text-style-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: hsl(222 47% 11%);
+  border: 2px solid hsl(0 0% 100%);
+  box-shadow: 0 1px 3px hsl(222 47% 11% / 0.2);
+}
+
+.text-style-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: hsl(222 47% 11%);
+  cursor: pointer;
+  user-select: none;
+}
+
+.text-style-toggle input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  accent-color: hsl(222 47% 11%);
+  cursor: pointer;
+}
+
+.text-style-type-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.text-style-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid hsl(214 24% 88%);
+  background: hsl(0 0% 100% / 0.7);
+  color: hsl(215 16% 42%);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.text-style-chip:hover {
+  background: hsl(210 40% 97%);
+  color: hsl(222 47% 11%);
+}
+
+.text-style-chip-on {
+  border-color: hsl(214 32% 78%);
+  background: hsl(210 40% 96%);
+  color: hsl(222 47% 11%);
+}
+
+/* Docked under the 2D workspace header when 3D split is open */
+.text-style-panel--workspace {
+  position: relative;
+  top: auto;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  padding: 6px 10px 8px;
+  border-radius: 8px;
+  box-shadow: none;
+  border: 1px solid hsl(214 24% 90%);
+  background: hsl(0 0% 100% / 0.96);
+}
+
+.text-style-panel--workspace .text-style-panel-header {
+  margin-bottom: 4px;
+}
+
+.text-style-panel-body--row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+
+.text-style-panel-body--row .text-style-section {
+  margin-bottom: 0;
+  flex: 0 1 auto;
+  min-width: 72px;
+}
+
+.text-style-panel-body--row .text-style-section .text-style-label {
+  margin-bottom: 4px;
+}
+
+.text-style-color-row--single {
+  padding: 4px 8px;
+}
+
+.text-style-font-select {
+  width: 100%;
+  min-width: 108px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid hsl(214 32% 88%);
+  background: hsl(0 0% 100%);
+  font-size: 0.75rem;
+  color: hsl(222 47% 11%);
+  cursor: pointer;
+}

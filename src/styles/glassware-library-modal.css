@@ -1,0 +1,94 @@
+.glassware-library-dialog {
+  width: min(920px, calc(100vw - 24px));
+  height: min(80vh, 640px);
+  max-height: min(80vh, 640px);
+}
+
+.glassware-library-dialog .template-library-header__title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.glassware-library-dialog .template-library-header__subtitle {
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.glassware-library-dialog .template-library-main__head {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.glassware-library-dialog .template-library-category__label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.glassware-library-grid {
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 8px;
+}
+
+.glassware-library-card {
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  padding: 8px 6px 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.glassware-library-card--on {
+  border-color: var(--chrome-border-strong);
+  background: var(--chrome-hover);
+}
+
+.glassware-library-card__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+  border-radius: var(--radius-control);
+  background: var(--chrome-bg);
+  border: 1px solid var(--chrome-border);
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.glassware-library-card__canvas {
+  display: block;
+  width: 56px;
+  height: 56px;
+}
+
+/* Compact labels — never leak outside the card */
+.glassware-library-card__label {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-main, #334155);
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.glassware-library-card__cat {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 9px;
+  font-weight: 400;
+  color: #94a3b8;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

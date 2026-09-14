@@ -1,0 +1,201 @@
+/* Atom palette — right full-height dock (Fluent-flat).
+   plus ring-style controls that sit alongside it. */
+
+.element-island {
+  position: static;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 4px;
+  width: auto;
+  border-radius: var(--radius-control);
+  background: var(--chrome-bg-elevated);
+  border: 1px solid var(--chrome-border);
+  box-shadow: none;
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+}
+
+.element-island--dock {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: var(--app-tool-island-inset, 6px);
+  left: auto;
+  z-index: 10;
+  width: var(--app-element-rail-width, 30px);
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1px;
+  padding: 4px 2px;
+  border-radius: 0;
+  border: none;
+  border-left: 1px solid var(--chrome-border);
+  background: var(--chrome-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  pointer-events: auto;
+}
+
+.element-island--dock .element-island-divider {
+  width: 18px;
+  height: 1px;
+  margin: 3px auto;
+}
+
+.element-island--canvas {
+  /* legacy alias — prefer --dock */
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  max-height: none;
+  overflow-y: auto;
+  z-index: 10;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 2px;
+  border-radius: 0;
+  pointer-events: auto;
+}
+
+.element-island--canvas .element-island-divider {
+  width: 18px;
+  height: 1px;
+  margin: 3px auto;
+}
+
+.ring-style-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text-main);
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 8px;
+}
+
+.ring-style-toggle input {
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.ring-style-fill-block {
+  margin-bottom: 8px;
+}
+
+.ring-style-fill-block-off {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.ring-style-fill-block .text-style-label {
+  margin-bottom: 4px;
+}
+
+.ring-style-hint {
+  font-size: 0.55rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+.element-island-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: var(--chrome-border);
+  flex-shrink: 0;
+}
+
+.element-island-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  min-width: 24px;
+  width: 26px;
+  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  cursor: pointer;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.element-island-btn:hover {
+  background: var(--chrome-hover);
+}
+
+.element-island-btn-active {
+  background: var(--chrome-active) !important;
+  border-color: var(--chrome-border-strong) !important;
+}
+
+.element-island-symbol {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.element-island-symbol-sm {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.element-island-btn--periodic {
+  flex-direction: column;
+  gap: 1px;
+  min-height: 28px;
+  color: var(--text-muted);
+}
+
+.element-island-btn--periodic svg {
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.element-island-btn--3d-toggle {
+  margin-top: 2px;
+  min-height: 28px;
+  min-width: 26px;
+  width: 26px;
+  color: #0f172a;
+  background: #e2e8f0;
+  border: 1px solid var(--chrome-border-strong, #cbd5e1);
+  border-radius: 4px;
+}
+
+.element-island-btn--3d-toggle:hover {
+  background: #cbd5e1;
+  color: #020617;
+}
+
+.element-island-btn--3d-toggle.is-open {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #f8fafc;
+}
+
+.element-island-btn--3d-toggle svg {
+  flex-shrink: 0;
+}
+
+/* H/C use dark ink in light theme; swap to theme text on dark chrome */
+[data-theme='elegant-dark'] .element-island-btn[data-el='H'],
+[data-theme='elegant-dark'] .element-island-btn[data-el='C'],
+[data-theme='ink-dark'] .element-island-btn[data-el='H'],
+[data-theme='ink-dark'] .element-island-btn[data-el='C'] {
+  color: var(--text-main) !important;
+}

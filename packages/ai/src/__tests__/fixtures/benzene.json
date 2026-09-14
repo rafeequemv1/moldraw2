@@ -1,0 +1,7 @@
+{
+  "atomCount": 6,
+  "bondCount": 6,
+  "elements": ["C", "C", "C", "C", "C", "C"],
+  "bonds": ["C-C:1a", "C-C:1a", "C-C:1a", "C-C:1a", "C-C:1a", "C-C:1a"],
+  "arrows": []
+}

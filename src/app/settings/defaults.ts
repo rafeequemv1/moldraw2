@@ -1,0 +1,53 @@
+import type { AppSettings } from './types';
+
+/** ChemDraw-style defaults (reference UI screenshots). */
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  general: {
+    theme: 'light',
+    structureThemeId: 'skeletal',
+    structureDrawMode: 'skeletal',
+    showImplicitHydrogens: false,
+    colorAtomLabels: false,
+    applyAtomColorsToBonds: false,
+    colorTargets: {
+      atomLabels: false,
+      bonds: true,
+      ringFill: false,
+      text: true,
+      arrowLine: true,
+      arrowReagent: false,
+      strokes: true,
+      canvasShapes: true,
+      ringFillOpacity: 0.22,
+    },
+    condensedGroupLabels: false,
+    autoLayoutAfterBondBurst: true,
+    preferIndigo2d: true,
+    snapToGrid: false,
+    showGrid: true,
+    touchPanOnEmptyCanvas: false,
+    touchLoupe: true,
+    pointerDebugHud: false,
+    localSessionEnabled: false,
+    localSessionUrl: 'http://127.0.0.1:8787',
+    showCipLabels: false,
+    fontFamily: 'Times New Roman',
+    boldAtomLabels: false,
+    fontSizePt: 20,
+    subFontSizePt: 16,
+    reactionComponentMarginPt: 1.6,
+    imageResolution: 'high',
+  },
+  bonds: {
+    bondLengthPx: 45,
+    bondSpacingPercent: 35,
+    bondThicknessPx: 2,
+    stereoWedgeWidthPx: 10,
+    hashSpacingPx: 3.5,
+    bondAngleSnapDeg: 30,
+  },
+  shortcuts: {
+    bindings: {},
+  },
+  lastPresetId: 'default',
+};

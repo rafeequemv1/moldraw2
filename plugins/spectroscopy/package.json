@@ -1,0 +1,35 @@
+{
+  "name": "@moldraw/plugin-spectroscopy",
+  "version": "1.0.0",
+  "description": "AI spectroscopy predictions for Moldraw",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "moldrawPlugin": {
+    "id": "spectroscopy",
+    "name": "Spectroscopy",
+    "version": "1.0.0",
+    "description": "NMR, MS, and UV spectrum prediction via AI",
+    "capabilities": ["ai", "panel"],
+    "engine": "^1.0.0"
+  },
+  "dependencies": {
+    "@moldraw/plugin-sdk": "workspace:^",
+    "zod": "^4.3.6",
+    "lucide-react": "^1.11.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@moldraw/viewer-3d",
+  "version": "0.1.0",
+  "description": "Optional 3dmol molecule viewer panel for Moldraw (React peer)",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": ["./conformer-gallery.css", "**/*.css"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./conformer-gallery.css": "./conformer-gallery.css",
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "conformer-gallery.css"],
+  "scripts": {
+    "build": "tsup --config tsup.config.ts",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@moldraw/core": "workspace:^",
+    "@moldraw/domain": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "3dmol": "^2.5.4",
+    "openchemlib": "^9.24.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

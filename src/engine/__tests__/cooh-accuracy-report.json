@@ -1,0 +1,330 @@
+{
+  "generatedAt": "2026-07-09T07:08:39.287Z",
+  "bondLengthPx": 45,
+  "angleTargetDeg": 120,
+  "method": "Scramble → cleanupStructure → score carbonyl/COOH O geometry",
+  "summary": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "avgScore": 100,
+    "passRatePct": 100
+  },
+  "cases": [
+    {
+      "name": "formic acid",
+      "smiles": "O=CO",
+      "atoms": 3,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "acetic acid",
+      "smiles": "CC(=O)O",
+      "atoms": 4,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "propionic acid",
+      "smiles": "CCC(=O)O",
+      "atoms": 5,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "benzoic acid",
+      "smiles": "c1ccccc1C(=O)O",
+      "atoms": 9,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "aspirin",
+      "smiles": "CC(=O)Oc1ccccc1C(=O)O",
+      "atoms": 13,
+      "topologyOk": true,
+      "carbonylCount": 2,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [
+        120
+      ],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "salicylic acid",
+      "smiles": "O=C(O)c1ccccc1O",
+      "atoms": 10,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "phthalic acid",
+      "smiles": "O=C(O)c1ccccc1C(=O)O",
+      "atoms": 12,
+      "topologyOk": true,
+      "carbonylCount": 2,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "methyl acetate",
+      "smiles": "CC(=O)OC",
+      "atoms": 5,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [
+        120
+      ],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "ethyl acetate",
+      "smiles": "CC(=O)OCC",
+      "atoms": 6,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [
+        120
+      ],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "acetone",
+      "smiles": "CC(=O)C",
+      "atoms": 4,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "acetaldehyde",
+      "smiles": "CC=O",
+      "atoms": 3,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "benzaldehyde",
+      "smiles": "O=Cc1ccccc1",
+      "atoms": 8,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "acetic anhydride",
+      "smiles": "CC(=O)OC(=O)C",
+      "atoms": 7,
+      "topologyOk": true,
+      "carbonylCount": 2,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [
+        120
+      ],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "ibuprofen",
+      "smiles": "CC(C)Cc1ccc(cc1)C(C)C(=O)O",
+      "atoms": 15,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "lactic acid",
+      "smiles": "CC(O)C(=O)O",
+      "atoms": 6,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    },
+    {
+      "name": "glycine zwitterion-ish",
+      "smiles": "NCC(=O)O",
+      "atoms": 5,
+      "topologyOk": true,
+      "carbonylCount": 1,
+      "carbonylOk": true,
+      "carbonylAngles": [
+        120,
+        120,
+        120
+      ],
+      "esterOk": true,
+      "esterAngles": [],
+      "bondLenOk": true,
+      "avgBondLen": 45,
+      "score": 100,
+      "pass": true
+    }
+  ]
+}

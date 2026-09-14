@@ -1,50 +1,50 @@
 {
-  "name": "ketcher-molecule-drawer",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@supabase/supabase-js": "^2.106.1",
-    "3dmol": "^2.5.3",
-    "ketcher-core": "^2.7.2",
-    "ketcher-react": "^2.7.2",
-    "ketcher-standalone": "^2.7.2",
-    "posthog-js": "^1.374.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "smiles-drawer": "^2.1.7"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "node scripts/generate-sitemap.js && react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "ai-server": "node gemini-server.js",
-    "sitemap": "node scripts/generate-sitemap.js"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "devDependencies": {
-    "gh-pages": "^6.3.0"
-  },
-  "optionalDependencies": {
-    "cors": "^2.8.6",
-    "express": "^4.22.1",
-    "node-fetch": "^2.7.0"
-  }
+    "name":  "moldraw",
+    "private":  true,
+    "version":  "0.0.0",
+    "type":  "module",
+    "packageManager":  "pnpm@10.11.0",
+    "scripts":  {
+                    "dev":  "vite",
+                    "build":  "node scripts/generate-sitemap.js \u0026\u0026 vite build",
+                    "sitemap":  "node scripts/generate-sitemap.js",
+                    "preview":  "vite preview"
+                },
+    "dependencies":  {
+                         "3dmol":  "^2.5.4",
+                         "@google/generative-ai":  "^0.24.1",
+                         "indigo-ketcher":  "^1.43.0",
+                         "katex":  "^0.16.45",
+                         "lucide-react":  "^1.11.0",
+                         "openchemlib":  "^9.24.0",
+                         "react":  "^19.2.5",
+                         "react-dom":  "^19.2.5",
+                         "react-markdown":  "^10.1.0",
+                         "remark-gfm":  "^4.0.1",
+                         "zod":  "^4.3.6",
+                         "zod-to-json-schema":  "^3.25.2",
+                         "@moldraw/plugin-host":  "workspace:^",
+                         "@moldraw/plugin-proteins":  "workspace:^",
+                         "@moldraw/plugin-smart-draw":  "workspace:^",
+                         "@moldraw/plugin-themes":  "workspace:^",
+                         "@moldraw/plugin-sdk":  "workspace:^"
+                     },
+    "devDependencies":  {
+                            "@eslint/js":  "^10.0.1",
+                            "@modelcontextprotocol/sdk":  "^1.29.0",
+                            "@types/node":  "^24.12.2",
+                            "@types/react":  "^19.2.14",
+                            "@types/react-dom":  "^19.2.3",
+                            "@vitejs/plugin-react":  "^6.0.1",
+                            "@xmldom/xmldom":  "^0.9.10",
+                            "eslint":  "^10.2.1",
+                            "eslint-plugin-react-hooks":  "^7.1.1",
+                            "eslint-plugin-react-refresh":  "^0.5.2",
+                            "globals":  "^17.5.0",
+                            "tsup":  "^8.5.1",
+                            "tsx":  "^4.21.0",
+                            "typescript":  "~6.0.2",
+                            "typescript-eslint":  "^8.58.2",
+                            "vite":  "^8.0.10"
+                        }
 }

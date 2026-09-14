@@ -1,0 +1,349 @@
+/* In-app documentation viewer — uses theme tokens from theme.css */
+
+.doc-page {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-ui, Inter, system-ui, sans-serif);
+}
+
+.doc-page__header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  min-height: 44px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-elevated);
+  flex-shrink: 0;
+}
+
+.doc-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-control, 6px);
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+
+.doc-page__back:hover {
+  color: var(--text-main);
+  background: var(--chrome-hover);
+}
+
+.doc-page__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.doc-page__path {
+  margin-left: auto;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+.doc-page__copy-md {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+  background: var(--chrome-hover);
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--radius-control, 6px);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.doc-page__copy-md:hover:not(:disabled) {
+  background: var(--bg-color);
+}
+
+.doc-page__copy-md:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.doc-page__chips {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.doc-page__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--chrome-border);
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-page__chip:hover {
+  color: var(--text-main);
+  background: var(--chrome-hover);
+}
+
+.doc-page__loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.doc-page__loading-icon {
+  animation: doc-spin 0.8s linear infinite;
+}
+
+@keyframes doc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.doc-page__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.doc-page__nav {
+  width: 220px;
+  flex-shrink: 0;
+  padding: 20px 12px 24px 16px;
+  border-right: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-elevated);
+  overflow-y: auto;
+}
+
+.doc-page__nav-group + .doc-page__nav-group {
+  margin-top: 20px;
+}
+
+.doc-page__nav-heading {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 0 10px 8px;
+}
+
+.doc-page__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.doc-page__nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  margin: 1px 0;
+  font-size: 13px;
+  font-weight: 450;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-control, 6px);
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+}
+
+.doc-page__nav-item:hover {
+  color: var(--text-main);
+  background: var(--chrome-hover);
+}
+
+.doc-page__nav-item--active {
+  color: var(--text-main);
+  font-weight: 500;
+  background: var(--chrome-active);
+}
+
+.doc-page__main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 48px 64px;
+  background: var(--bg-color);
+}
+
+.doc-prose {
+  max-width: 720px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-main);
+}
+
+.doc-prose h1 {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.doc-prose h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 32px 0 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--chrome-border);
+}
+
+.doc-prose h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.doc-prose h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 24px 0 8px;
+}
+
+.doc-prose p {
+  margin: 0 0 12px;
+}
+
+.doc-prose ul,
+.doc-prose ol {
+  margin: 0 0 14px;
+  padding-left: 1.35em;
+}
+
+.doc-prose li {
+  margin: 4px 0;
+}
+
+.doc-prose li > p {
+  margin: 0;
+}
+
+.doc-prose code {
+  font-family: var(--font-mono, ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace);
+  font-size: 0.88em;
+  padding: 0.15em 0.4em;
+  background: var(--chrome-hover);
+  border-radius: 4px;
+  color: var(--text-main);
+}
+
+.doc-prose pre {
+  margin: 12px 0 16px;
+  padding: 14px 16px;
+  background: var(--chrome-input-bg);
+  border: 1px solid var(--chrome-border);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.doc-prose pre code {
+  padding: 0;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.doc-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0 18px;
+  font-size: 13px;
+}
+
+.doc-prose th,
+.doc-prose td {
+  border: 1px solid var(--chrome-border);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.doc-prose th {
+  background: var(--chrome-bg-elevated);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.doc-prose hr {
+  border: none;
+  border-top: 1px solid var(--chrome-border);
+  margin: 28px 0;
+}
+
+.doc-prose a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.doc-prose a:hover {
+  text-decoration: underline;
+}
+
+.doc-prose__inline-link {
+  display: inline;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.doc-prose__inline-link:hover {
+  color: var(--primary-hover);
+}
+
+.doc-prose blockquote {
+  margin: 12px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--chrome-border-strong);
+  color: var(--text-muted);
+  background: var(--chrome-bg-elevated);
+  border-radius: 0 6px 6px 0;
+}
+
+@media (max-width: 768px) {
+  .doc-page__nav {
+    width: 180px;
+    padding-left: 12px;
+  }
+
+  .doc-page__main {
+    padding: 24px 20px 48px;
+  }
+}

@@ -1,0 +1,283 @@
+{
+  "bondLengthPx": 45,
+  "method": "PubChem 2D SDF reference vs native certifyLayout (minimize2D + repairCrossings + multi-start)",
+  "generatedAt": "2026-07-09T12:17:50.948Z",
+  "summary": {
+    "done": 10,
+    "pass": 10,
+    "warn": 0,
+    "fail": 0
+  },
+  "rows": [
+    {
+      "name": "ethanol",
+      "tier": "A",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 44.99999999999999,
+        "minBond": 44.99805147051345,
+        "maxBond": 45.00194852948653,
+        "bondRatio": 1.0000866050605688,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "nat": {
+        "avgBond": 45,
+        "minBond": 45,
+        "maxBond": 45.00000000000001,
+        "bondRatio": 1.0000000000000002,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "rmsdPx": 0.0010557171063057854,
+      "natMs": 6,
+      "statusNote": "ok",
+      "layoutStatus": "certified"
+    },
+    {
+      "name": "benzene",
+      "tier": "A",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 45,
+        "minBond": 44.998370972175024,
+        "maxBond": 45.002268058818586,
+        "bondRatio": 1.0000866050605692,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "nat": {
+        "avgBond": 45.00000000000001,
+        "minBond": 45,
+        "maxBond": 45.00000000000003,
+        "bondRatio": 1.0000000000000007,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "rmsdPx": 47.58353735488773,
+      "natMs": 4,
+      "statusNote": "ok",
+      "layoutStatus": "certified"
+    },
+    {
+      "name": "aspirin",
+      "tier": "A",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 44.999999999999986,
+        "minBond": 44.99939559593252,
+        "maxBond": 45.00329277131374,
+        "bondRatio": 1.0000866050605703,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "nat": {
+        "avgBond": 45,
+        "minBond": 44.99999999999999,
+        "maxBond": 45.00000000000003,
+        "bondRatio": 1.0000000000000009,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "rmsdPx": 30.57149883347796,
+      "natMs": 5,
+      "statusNote": "ok",
+      "layoutStatus": "certified"
+    },
+    {
+      "name": "caffeine",
+      "tier": "A",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 45,
+        "minBond": 44.80286419628407,
+        "maxBond": 45.075076301377656,
+        "bondRatio": 1.006075774617913,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "nat": {
+        "avgBond": 45,
+        "minBond": 44.999999999999986,
+        "maxBond": 45.00000000000002,
+        "bondRatio": 1.0000000000000009,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "rmsdPx": 0.11868055573715465,
+      "natMs": 5,
+      "statusNote": "ok",
+      "layoutStatus": "certified"
+    },
+    {
+      "name": "naphthalene",
+      "tier": "A",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 44.99999999999999,
+        "minBond": 44.16277820088437,
+        "maxBond": 46.004774672528946,
+        "bondRatio": 1.0417092526033087,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "nat": {
+        "avgBond": 45,
+        "minBond": 44.99999999999997,
+        "maxBond": 45.00000000000005,
+        "bondRatio": 1.0000000000000018,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "rmsdPx": 79.67029816942613,
+      "natMs": 2,
+      "statusNote": "ok",
+      "layoutStatus": "certified"
+    },
+    {
+      "name": "ibuprofen",
+      "tier": "A",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 44.99999999999999,
+        "minBond": 44.99856477198121,
+        "maxBond": 45.002461875408855,
+        "bondRatio": 1.0000866050605701,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "nat": {
+        "avgBond": 45,
+        "minBond": 44.99999999999999,
+        "maxBond": 45.00000000000003,
+        "bondRatio": 1.0000000000000009,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0
+      },
+      "rmsdPx": 57.62293493359011,
+      "natMs": 3,
+      "statusNote": "ok",
+      "layoutStatus": "certified"
+    },
+    {
+      "name": "cholesterol",
+      "tier": "A",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 45,
+        "minBond": 43.86964652748711,
+        "maxBond": 47.88603715347895,
+        "bondRatio": 1.0915528376431143,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0.23529411764705882
+      },
+      "nat": {
+        "avgBond": 45,
+        "minBond": 44.99999999999997,
+        "maxBond": 45.000000000000036,
+        "bondRatio": 1.0000000000000013,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0.23529411764705882
+      },
+      "rmsdPx": 79.2404498821848,
+      "natMs": 16,
+      "statusNote": "ok",
+      "layoutStatus": "certified"
+    },
+    {
+      "name": "penicillinG",
+      "tier": "A",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 44.99999999999999,
+        "minBond": 44.95153340672316,
+        "maxBond": 45.32856894722365,
+        "bondRatio": 1.0083876013102615,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0.2857142857142857
+      },
+      "nat": {
+        "avgBond": 45.265928091846014,
+        "minBond": 43.538426899400854,
+        "maxBond": 48.75334865721008,
+        "bondRatio": 1.1197774501558988,
+        "overlaps": 0,
+        "crossings": 0,
+        "badCccFraction": 0.2857142857142857
+      },
+      "rmsdPx": 59.027706104028766,
+      "natMs": 291,
+      "statusNote": "ok",
+      "layoutStatus": "certified"
+    },
+    {
+      "name": "paclitaxel-like",
+      "tier": "poly",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 45.000000000000014,
+        "minBond": 44.559600814415326,
+        "maxBond": 51.248980255096605,
+        "bondRatio": 1.150122068385254,
+        "overlaps": 0,
+        "crossings": 2,
+        "badCccFraction": 0.2777777777777778
+      },
+      "nat": {
+        "avgBond": 46.5124553608391,
+        "minBond": 37.522894786855716,
+        "maxBond": 65.6079252610527,
+        "bondRatio": 1.7484771799652084,
+        "overlaps": 0,
+        "crossings": 3,
+        "badCccFraction": 0.2222222222222222
+      },
+      "rmsdPx": 131.37304134746236,
+      "natMs": 7996,
+      "statusNote": "ok",
+      "layoutStatus": "degraded"
+    },
+    {
+      "name": "paclitaxel-CID36314",
+      "tier": "poly",
+      "status": "PASS",
+      "pc": {
+        "avgBond": 45.00000000000001,
+        "minBond": 44.561122835039534,
+        "maxBond": 51.24876935450647,
+        "bondRatio": 1.1500780522121017,
+        "overlaps": 0,
+        "crossings": 2,
+        "badCccFraction": 0.2777777777777778
+      },
+      "nat": {
+        "avgBond": 46.188634767489155,
+        "minBond": 37.044285432325154,
+        "maxBond": 64.85617937909157,
+        "bondRatio": 1.7507742050410162,
+        "overlaps": 0,
+        "crossings": 2,
+        "badCccFraction": 0.2777777777777778
+      },
+      "rmsdPx": 129.17258819677127,
+      "natMs": 8714,
+      "statusNote": "ok",
+      "layoutStatus": "degraded"
+    }
+  ]
+}

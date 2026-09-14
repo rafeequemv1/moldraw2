@@ -1,0 +1,39 @@
+{
+  "name": "@moldraw/core",
+  "version": "0.1.0",
+  "description": "Moldraw editor store, commands, mutations, and molecule I/O",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup --config tsup.config.ts",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@moldraw/domain": "workspace:^",
+    "@moldraw/engine": "workspace:^",
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@moldraw/engine-2d": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@moldraw/engine-2d": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

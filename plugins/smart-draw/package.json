@@ -1,0 +1,35 @@
+{
+  "name": "@moldraw/plugin-smart-draw",
+  "version": "1.0.0",
+  "description": "Offline Smart Draw: pencil strokes become bonds, rings, and atoms",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "moldrawPlugin": {
+    "id": "smart-draw",
+    "name": "Smart Draw",
+    "version": "1.0.0",
+    "description": "Draw with a pencil; strokes become bonds, rings, and atom labels (offline)",
+    "capabilities": ["canvas"],
+    "engine": "^1.0.0",
+    "defaultInstalled": false
+  },
+  "dependencies": {
+    "@moldraw/domain": "workspace:^",
+    "@moldraw/plugin-sdk": "workspace:^",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  }
+}

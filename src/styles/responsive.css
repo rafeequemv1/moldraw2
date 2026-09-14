@@ -1,0 +1,666 @@
+/* Portrait phone/tablet chrome. Landscape phones use desktop structure
+   (html.app-phone-landscape) instead of these compact rules. */
+
+html.app-mobile-compact {
+    --app-mobile-tool-strip-height: 52px;
+    --app-mobile-category-height: 48px;
+    /* Rings live inside the active tool strip (category dock), not a second bar */
+    --app-mobile-rings-height: 0px;
+    /* Default: category dock only (tool strip closed). Opens via .app-mobile-strip-open */
+    --app-mobile-bottom-chrome: calc(
+      var(--app-status-bar-height, 26px) + var(--app-mobile-category-height)
+    );
+}
+
+html.app-mobile-compact.app-mobile-strip-open {
+    --app-mobile-bottom-chrome: calc(
+      var(--app-status-bar-height, 26px) + var(--app-mobile-tool-strip-height) +
+        var(--app-mobile-category-height)
+    );
+}
+
+html.app-mobile-compact {
+
+  /* ── Top bar: exactly two rows (main + tools) ─────────────────────────── */
+  .app-top-bar,
+  .app-top-bar--compact {
+    height: auto;
+    min-height: 0;
+  }
+
+  .app-top-bar--compact .app-top-bar__main {
+    flex-wrap: nowrap;
+    align-items: center;
+    row-gap: 0;
+    column-gap: 4px;
+    min-height: 40px;
+    height: 40px;
+    padding: 4px 6px;
+    overflow: hidden;
+  }
+
+  .app-top-bar--compact .app-top-bar__left {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    row-gap: 0;
+    column-gap: 4px;
+    min-width: 0;
+    max-width: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .app-top-bar--compact .app-top-bar__left::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-top-bar--compact .app-top-bar__right {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+
+  .app-top-bar--compact .app-top-bar__tools-row {
+    flex-wrap: nowrap;
+    align-items: center;
+    min-height: 40px;
+    height: 40px;
+    padding: 2px 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .app-top-bar--compact .app-top-bar__tools-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-top-bar--compact .app-top-bar__context-row,
+  .app-top-bar--compact .app-top-bar__chem-icons {
+    display: none !important;
+  }
+
+  .app-top-bar--compact .app-top-bar__brand {
+    font-size: 13px;
+    margin-right: 2px;
+  }
+
+  .app-top-bar--compact .app-top-bar__rotate-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .app-top-bar--compact .md-btn--danger-soft {
+    padding: 0 8px;
+    min-height: 28px;
+    font-size: 11px;
+  }
+
+  .app-top-bar__main {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 2px;
+    column-gap: 4px;
+    min-height: 0;
+    height: auto;
+    padding: 4px 8px;
+  }
+
+  .app-top-bar__left {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    row-gap: 2px;
+    column-gap: 4px;
+    max-width: 100%;
+  }
+
+  .app-top-bar__clip {
+    margin-right: 2px;
+  }
+
+  .app-top-bar__brand {
+    flex: 0 0 auto;
+  }
+
+  .app-top-bar__fill {
+    display: none;
+  }
+
+  .app-top-bar__tools-row {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    min-height: 0;
+    height: auto;
+    padding: 0 4px;
+  }
+
+  /* Top tools: chem icons in two full-width rows; annotate strip on its own row */
+  .app-top-bar__chem-icons {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .app-top-bar__chem-icons-row {
+    flex: 1 1 auto;
+    width: 100%;
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .toolbar-top-strip {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .app-top-bar__3d-label {
+    font-size: 11px;
+  }
+
+  /* ── Workspace: category dock; tool strip only when open ─ */
+  .workspace-split {
+    flex-direction: column;
+    bottom: var(--app-status-bar-height, 26px);
+    padding-bottom: var(--app-mobile-category-height);
+  }
+
+  &.app-mobile-strip-open .workspace-split {
+    padding-bottom: calc(
+      var(--app-mobile-tool-strip-height) + var(--app-mobile-category-height)
+    );
+  }
+
+  /* Chat is a bottom sheet on compact — never a column under the header */
+  .workspace-pane-chat {
+    display: none !important;
+  }
+
+  .workspace-main,
+  .workspace-pane-2d,
+  .workspace-pane-3d {
+    width: 100%;
+    flex: none;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .workspace-main {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .workspace-main__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  /* 2D fills body; 3D is a full-screen sheet (phone + tablet) when toggled on */
+  .workspace-pane-2d {
+    order: 1;
+    height: 100%;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .workspace-split--single .workspace-main,
+  .workspace-split--no-3d .workspace-main {
+    height: 100%;
+  }
+
+  .workspace-pane-3d,
+  .workspace-pane-3d--sheet {
+    display: none !important;
+  }
+
+  .viewer3d-island {
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    max-width: none;
+    width: auto;
+  }
+
+  /* ── Active tool strip: above category dock ─── */
+  .toolbar,
+  .toolbar--mobile-strip {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: calc(
+      var(--app-status-bar-height, 26px) + var(--app-mobile-category-height)
+    );
+    width: auto;
+    height: var(--app-mobile-tool-strip-height);
+    max-height: none;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
+    z-index: 50;
+    background: var(--chrome-bg);
+    border: none;
+    border-top: 1px solid var(--chrome-border);
+    box-sizing: border-box;
+  }
+
+  .toolbar-mobile-categories {
+    display: flex;
+  }
+
+  .toolbar-mobile-categories__btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .toolbar-mobile-categories__caret {
+    opacity: 0.7;
+  }
+
+  .toolbar--mobile-strip__close {
+    margin-left: auto;
+  }
+
+  /* Rings no longer a permanent second dock — shown only in Rings category strip */
+  .toolbar-bottom--rings {
+    display: none !important;
+  }
+
+  .selection-align-toolbar__arrange-label {
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+
+  .selection-align-toolbar--compact .app-top-bar__file-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding-inline: 10px;
+    width: auto;
+    min-height: 36px;
+  }
+
+  .toolbar-group {
+    display: contents;
+  }
+
+  .toolbar-group--chat {
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    height: auto;
+    border: none;
+    display: contents;
+  }
+
+  .toolbar-spacer {
+    display: none;
+  }
+
+  .toolbar::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .toolbar::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.22);
+    border-radius: 999px;
+  }
+
+  .toolbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .tool-btn {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+  }
+
+  .tool-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tool-icon-smart-draw {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tool-btn .tool-icon-smart-draw svg:last-child {
+    width: 9px;
+    height: 9px;
+  }
+
+  .toolbar-split-tool {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+  }
+
+  .toolbar-split-tool__icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .toolbar-chat-btn {
+    width: 44px !important;
+    height: 44px !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+
+  .toolbar-chat-btn__label {
+    font-size: 9px;
+  }
+
+  .selection-align-toolbar__btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  /*
+   * Pane content already ends above the fixed category dock + tool strip.
+   */
+  .element-island--dock {
+    bottom: 0;
+  }
+
+  .molecule-status-bar {
+    z-index: 55;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .objects-panel {
+    bottom: 0;
+    left: 0;
+  }
+}
+
+/* Phone: same chrome as tablet; only tighten top-bar density here */
+@media (max-width: 768px) {
+  html.app-mobile-compact {
+    --app-mobile-tool-strip-height: 52px;
+    --app-mobile-category-height: 52px;
+  }
+
+  html.app-mobile-compact .app-top-bar__main {
+    padding: 1px 6px;
+  }
+
+  html.app-mobile-compact .app-top-bar__tools-row {
+    padding: 0 4px;
+  }
+
+  html.app-mobile-compact .app-top-bar__clip-btn span:not(.app-top-bar__chem-btn-label) {
+    display: none;
+  }
+
+  html.app-mobile-compact .app-top-bar__chem-btn-label {
+    display: none;
+  }
+
+  html.app-mobile-compact .app-top-bar__search-input {
+    width: 88px;
+    max-width: 28vw;
+  }
+
+  html.app-mobile-compact .selection-align-toolbar__arrange-label {
+    display: none;
+  }
+
+  html.app-mobile-compact .toolbar {
+    padding: 4px 6px;
+    gap: 4px;
+  }
+
+  html.app-mobile-compact .tool-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+  }
+
+  html.app-mobile-compact .toolbar-split-tool {
+    width: 44px;
+    height: 44px;
+  }
+
+  html.app-mobile-compact .app-top-bar__3d-toggle .app-top-bar__3d-label {
+    max-width: 4.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Phone landscape: desktop-like left rail, bottom rings, side panes. */
+html.app-phone-landscape {
+  --app-mobile-category-height: 0px;
+  --app-mobile-tool-strip-height: 0px;
+  --app-mobile-rings-height: var(--app-tool-bottom-height, 40px);
+  --app-mobile-bottom-chrome: var(--app-status-bar-height, 26px);
+}
+
+html.app-phone-landscape .app-top-bar__main {
+  flex-wrap: nowrap;
+  min-height: 28px;
+  padding: 1px 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+html.app-phone-landscape .app-top-bar__main::-webkit-scrollbar {
+  display: none;
+}
+
+html.app-phone-landscape .app-top-bar__left {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+html.app-phone-landscape .app-top-bar__left::-webkit-scrollbar {
+  display: none;
+}
+
+html.app-phone-landscape .app-top-bar__tools-row {
+  flex-wrap: nowrap;
+  min-height: 28px;
+  padding: 0 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+html.app-phone-landscape .app-top-bar__tools-row::-webkit-scrollbar {
+  display: none;
+}
+
+html.app-phone-landscape .toolbar-mobile-categories {
+  display: none;
+}
+
+html.app-phone-landscape .toolbar {
+  overflow-y: auto;
+}
+
+html.app-phone-landscape .toolbar .tool-btn {
+  width: 32px;
+  height: 28px;
+}
+
+html.app-phone-landscape .toolbar-split-tool {
+  width: 32px;
+  height: 28px;
+}
+
+html.app-phone-landscape .workspace-split {
+  flex-direction: row;
+  padding-bottom: 0;
+}
+
+html.app-phone-landscape .workspace-pane-chat,
+html.app-phone-landscape .workspace-pane-3d {
+  display: flex;
+}
+
+html.app-phone-landscape .toolbar-bottom--rings {
+  display: flex;
+}
+
+/* Software landscape while the device is still physically portrait. */
+html.app-force-landscape,
+html.app-force-landscape body {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  overflow: hidden;
+  margin: 0;
+}
+
+html.app-force-landscape #root {
+  position: fixed;
+  top: 0;
+  left: 100vw;
+  width: 100vh;
+  height: 100vw;
+  transform: rotate(90deg);
+  transform-origin: top left;
+  overflow: hidden;
+}
+
+@supports (width: 100dvh) {
+  html.app-force-landscape #root {
+    left: 100dvw;
+    width: 100dvh;
+    height: 100dvw;
+  }
+}
+
+/*
+ * Touch UI (coarse primary pointer / no hover) — set by useAppLayout from
+ * `(pointer: coarse)` / `(hover: none)`, independent of viewport width so
+ * tablets in landscape get finger-sized targets too.
+ */
+html.touch-ui,
+html.touch-ui body {
+  /* No rubber-band / pull-to-refresh while dragging on the canvas. */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html.touch-ui .tool-btn,
+html.touch-ui .toolbar-split-tool,
+html.touch-ui .toolbar-chat-btn,
+html.touch-ui .selection-align-toolbar__btn,
+html.touch-ui .selection-action-toolbar button,
+html.touch-ui .toolbar-fg-item,
+html.touch-ui .toolbar-option-preview {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+html.touch-ui .tool-btn svg,
+html.touch-ui .toolbar-split-tool__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+html.touch-ui .toolbar,
+html.touch-ui .toolbar-bottom {
+  gap: 6px;
+}
+
+/* Hover styling is meaningless (and sticky) on touch — only show pressed/active. */
+html.touch-ui .tool-btn:hover:not(.active):not(:active) {
+  background: transparent;
+}
+
+/* Context menus / popovers: finger-sized rows. */
+html.touch-ui .menu-item,
+html.touch-ui .context-menu-flyout button {
+  min-height: 44px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* ── Safe areas (notch / home indicator) ─────────────────────────────────
+   index.html sets viewport-fit=cover so installed PWAs and full-screen Safari
+   draw under the notch. Grow the fixed bottom status bar by the inset (every
+   bottom-anchored dock keys off --app-status-bar-height), pad the top bar
+   (content-driven height, measured by ResizeObserver), and keep the workspace
+   clear of the rounded corners in landscape. All of this collapses to 0 on
+   devices without insets. */
+html.touch-ui {
+  --app-status-bar-height: calc(26px + env(safe-area-inset-bottom, 0px));
+}
+
+html.touch-ui .molecule-status-bar {
+  box-sizing: border-box;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: calc(12px + env(safe-area-inset-left, 0px));
+  padding-right: calc(12px + env(safe-area-inset-right, 0px));
+}
+
+html.touch-ui .app-top-bar {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+html.touch-ui .workspace-split {
+  left: env(safe-area-inset-left, 0px);
+  right: env(safe-area-inset-right, 0px);
+}
+
+/* The category dock sits above the status bar, which now owns the inset. */
+html.touch-ui .toolbar-mobile-categories {
+  padding-bottom: 0;
+}
+
+/* 3D pane: finger-sized island controls (desktop density is 26 px). */
+html.touch-ui .viewer3d-island__toggle,
+html.touch-ui .viewer3d-toolbar > button,
+html.touch-ui .viewer3d-toolbar .viewer3d-rebuild,
+html.touch-ui .viewer3d-toolbar select {
+  min-height: 40px;
+  font-size: 12px;
+}
+
+html.touch-ui .viewer3d-toolbar {
+  flex-wrap: wrap;
+  gap: 8px;
+  row-gap: 6px;
+}

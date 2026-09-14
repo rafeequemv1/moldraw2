@@ -1,0 +1,119 @@
+/**
+ * Loaded after `@moldraw/canvas/styles.css` so the multi-molecule align
+ * toolbar stays docked in the top bar (canvas package defaults to position:fixed).
+ */
+.selection-align-toolbar.selection-align-toolbar--topbar {
+  position: static !important;
+  transform: none !important;
+  left: auto !important;
+  top: auto !important;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  z-index: auto;
+  pointer-events: auto;
+}
+
+/* Beat later toolbar.css `.tool-btn` 34×30 so Draw matches AI / 3D / Objects. */
+.app-top-bar .app-top-bar__tools-row .action-btn.icon-only {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+
+.app-top-bar .app-top-bar__tools-row .action-btn.icon-only svg {
+  width: 16px;
+  height: 16px;
+}
+
+.app-top-bar .app-top-bar__tools-row .app-top-bar__ai-toggle,
+.app-top-bar .app-top-bar__tools-row .app-top-bar__3d-toggle {
+  width: auto;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 3px !important;
+}
+
+.app-top-bar .app-top-bar__tools-row .app-top-bar__history-btn {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 !important;
+}
+
+.app-top-bar__tools-row .toolbar-top-strip,
+.app-top-bar__tools-row .toolbar-shape-strip {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+
+.app-top-bar__tools-row .toolbar-top-strip .tool-btn,
+.app-top-bar__tools-row .toolbar-top-strip .toolbar-fg-tool,
+.app-top-bar__tools-row .toolbar-shape-strip .tool-btn,
+.app-top-bar__tools-row .toolbar-top-strip .toolbar-split-tool {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.app-top-bar__tools-row .toolbar-top-strip .toolbar-split-tool__icon {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+
+.app-top-bar__tools-row .toolbar-top-strip .tool-btn svg,
+.app-top-bar__tools-row .toolbar-top-strip .toolbar-split-tool__icon svg,
+.app-top-bar__tools-row .toolbar-shape-strip .tool-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.app-top-bar .app-top-bar__tools-row .app-top-bar__clear-icon {
+  width: 24px;
+  height: 24px;
+  color: #dc2626;
+}
+
+.app-top-bar .app-top-bar__tools-row .app-top-bar__clear-icon:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.app-top-bar__tools-row .app-top-bar__clip {
+  margin-left: 4px;
+  gap: 2px;
+}
+
+.app-top-bar__tools-row .app-top-bar__clip-btn {
+  height: 24px;
+}
+
+.app-top-bar__tools-row .app-top-bar__select-trigger {
+  height: 24px;
+}
+
+.app-top-bar__tools-cluster--with-style {
+  align-items: center;
+  min-height: 24px;
+  padding: 0 6px;
+}
+
+.toolbar-shape-strip {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+
+.toolbar-shape-strip__preview {
+  width: 16px;
+  height: 16px;
+  display: block;
+}

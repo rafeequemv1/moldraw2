@@ -1,0 +1,134 @@
+/**
+ * Shared button / link-button variants (Windows-native, quiet chrome).
+ * Prefer these over one-off filled pills in the top bar.
+ */
+
+.md-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--md-text);
+  font-family: var(--md-font);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.md-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.md-btn:focus-visible {
+  outline: 1px solid var(--md-border-strong);
+  outline-offset: 1px;
+}
+
+/* Quiet labeled control (File-like), optional light border */
+.md-btn--ghost {
+  height: var(--md-control-h);
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: var(--md-radius);
+  color: var(--md-text);
+  background: transparent;
+}
+
+.md-btn--ghost:hover:not(:disabled) {
+  background: var(--md-hover);
+  border-color: var(--md-border);
+}
+
+.md-btn--ghost.is-open,
+.md-btn--ghost[aria-expanded='true'] {
+  background: var(--md-hover);
+  border-color: var(--md-border-strong);
+}
+
+/* Underlined text control (Select / Docs) */
+.md-btn--link {
+  height: auto;
+  padding: 0;
+  color: var(--md-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--md-border-strong);
+  font-weight: 500;
+}
+
+.md-btn--link:hover:not(:disabled) {
+  color: #475569;
+  text-decoration-color: #94a3b8;
+}
+
+.md-btn--link.is-active {
+  color: var(--md-text);
+  font-weight: 600;
+}
+
+/**
+ * Destructive soft — Clear canvas, etc.
+ * Simple light-red text; no filled red pill / big button.
+ */
+.md-btn--danger-soft {
+  height: auto;
+  padding: 0;
+  color: var(--md-danger-soft);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  background: transparent;
+  border: none;
+}
+
+.md-btn--danger-soft:hover:not(:disabled) {
+  color: var(--md-danger-soft-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.md-btn--danger-soft:active:not(:disabled) {
+  color: var(--md-danger-soft-active);
+}
+
+/* Icon-only square (toolbar peer) */
+.md-btn--icon {
+  width: var(--md-icon-size);
+  height: var(--md-icon-size);
+  padding: 0;
+  border-radius: var(--md-radius);
+  color: var(--md-text);
+  background: transparent;
+}
+
+.md-btn--icon:hover:not(:disabled) {
+  background: var(--md-hover);
+}
+
+.md-btn--icon.is-active,
+.md-btn--icon[aria-pressed='true'] {
+  background: var(--md-active);
+}
+
+/* Rare filled primary — avoid in top chrome */
+.md-btn--primary {
+  height: var(--md-control-h);
+  padding: 0 10px;
+  border-radius: var(--md-radius);
+  background: #0f172a;
+  color: #fff;
+  font-weight: 600;
+}
+
+.md-btn--primary:hover:not(:disabled) {
+  background: #1e293b;
+}

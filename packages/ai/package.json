@@ -1,0 +1,68 @@
+{
+  "name": "@moldraw/ai",
+  "version": "0.2.0",
+  "description": "AI/MCP tool registry, session kernel and stdio MCP server for Moldraw (same commands as the canvas)",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+  "bin": {
+    "moldraw-mcp": "./dist/mcp/cli.js"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
+    },
+    "./mcp/cli": {
+      "types": "./dist/mcp/cli.d.ts",
+      "import": "./dist/mcp/cli.js"
+    },
+    "./http": {
+      "types": "./dist/http/index.d.ts",
+      "import": "./dist/http/index.js"
+    },
+    "./chat": {
+      "types": "./dist/chat/index.d.ts",
+      "import": "./dist/chat/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup --config tsup.config.ts",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@moldraw/canvas": "workspace:^",
+    "@moldraw/core": "workspace:^",
+    "@moldraw/domain": "workspace:^",
+    "@moldraw/engine": "workspace:^",
+    "@moldraw/plugin-host": "workspace:^",
+    "@moldraw/plugin-sdk": "workspace:^",
+    "@moldraw/templates": "workspace:^",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "zod-to-json-schema": "^3.25.0"
+  },
+  "peerDependenciesMeta": {
+    "@google/generative-ai": {
+      "optional": true
+    },
+    "zod-to-json-schema": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

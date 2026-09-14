@@ -1,0 +1,63 @@
+/* Right dock: popout panels (the atom palette itself lives in .app-top-bar). */
+
+.right-dock-outer {
+  position: fixed;
+  right: calc(var(--app-element-rail-width, 30px) + 8px);
+  top: calc(var(--app-top-bar-height) + 10px);
+  transform: none;
+  z-index: 538;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 8px;
+  max-height: calc(100vh - var(--app-top-bar-height) - var(--app-status-bar-height) - 24px);
+  pointer-events: none;
+}
+
+.right-dock-popouts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+  max-height: inherit;
+  overflow-y: auto;
+}
+
+.right-dock-outer > * {
+  pointer-events: auto;
+}
+
+.right-dock-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+  flex-shrink: 0;
+  max-height: inherit;
+  overflow-y: auto;
+}
+
+.dock-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-elevated);
+  color: hsl(222 47% 11%);
+  cursor: pointer;
+}
+
+.dock-tool-btn:hover {
+  background: var(--chrome-hover);
+}
+
+.dock-tool-btn-active {
+  background: var(--chrome-active) !important;
+  border-color: var(--chrome-border-strong) !important;
+}

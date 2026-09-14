@@ -1,0 +1,201 @@
+/* Compact molecule color popout (left of atom palette) and its side panel. */
+
+.mol-color-compact {
+  width: 118px;
+  padding: 6px 8px 8px;
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-elevated);
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.mol-color-compact-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.mol-color-compact-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: hsl(215 16% 42%);
+}
+
+.mol-color-compact-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  color: hsl(215 16% 48%);
+  padding: 0 2px;
+  border-radius: 4px;
+}
+
+.mol-color-compact-close:hover {
+  color: hsl(222 47% 11%);
+  background: hsl(210 40% 96%);
+}
+
+.mol-color-compact-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mol-color-swatch-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  border: 1px solid var(--chrome-border);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: block;
+}
+
+.mol-color-swatch-wrap:focus-within {
+  outline: 1px solid var(--chrome-border-strong);
+  outline-offset: 1px;
+}
+
+.mol-color-swatch-input {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  display: block;
+}
+
+.mol-color-swatch-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.mol-color-reset-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px dashed hsl(214 28% 72%);
+  background: hsl(210 40% 98%);
+  color: hsl(215 16% 36%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.mol-color-reset-btn:hover:not(:disabled) {
+  background: hsl(210 40% 94%);
+  color: hsl(222 47% 11%);
+}
+
+.mol-color-reset-btn:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.mol-color-compact-opacity {
+  margin-top: 6px;
+}
+
+.mol-color-opacity-range {
+  width: 100%;
+  height: 6px;
+  accent-color: hsl(222 47% 36%);
+}
+
+.mol-color-side-panel {
+  width: 212px;
+  max-height: min(480px, calc(100vh - 120px));
+  overflow-y: auto;
+  padding: 8px 8px 6px;
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-elevated);
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+  align-self: flex-start;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+}
+
+.mol-color-side-panel-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: hsl(222 47% 18%);
+  margin-bottom: 6px;
+}
+
+.mol-color-side-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.mol-color-side-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: hsl(215 16% 40%);
+  flex: 0 0 52px;
+}
+
+.mol-color-side-note {
+  font-size: 0.6rem;
+  line-height: 1.35;
+  color: hsl(215 16% 48%);
+  margin: 0 0 4px;
+}
+
+.mol-color-side-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.mol-color-side-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  padding-top: 6px;
+  margin-top: 6px;
+  border-top: 1px solid hsl(214 24% 92%);
+}
+
+.mol-color-side-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.62rem;
+  font-weight: 500;
+  text-align: left;
+  padding: 2px 0;
+  border: none;
+  background: transparent;
+  color: hsl(215 16% 42%);
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 3px;
+}
+
+.mol-color-side-link:hover:not(:disabled) {
+  color: hsl(222 47% 11%);
+  background: hsl(210 40% 97%);
+}
+
+.mol-color-side-link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

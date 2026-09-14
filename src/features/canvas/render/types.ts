@@ -1,0 +1,223 @@
+/**
+ * Shared `RenderContext` passed to every draw submodule. Bundling everything
+ * into one snapshot lets `InfiniteCanvas` build it once per frame and pass it
+ * to a handful of focused `drawXxx(ctx, R)` functions instead of threading 30+
+ * positional args through the call site.
+ */
+import type { ResolvedCanvasPreferences } from '@moldraw/core/canvasPreferences';
+import type { FragmentPlacementSession } from '@moldraw/core/molecule/fragmentPlacement';
+import type {
+  CanvasShapeKind,
+  CanvasText,
+  Molecule,
+  ReactionArrow,
+  ReactionArrowKind,
+} from '@moldraw/domain';
+import type { Point, Viewport } from '../geometry';
+
+export type DragActionState =
+  | { type: 'move_selection'; startX: number; startY: number; currentX: number; currentY: number }
+  | { type: 'box_select'; startX: number; startY: number; currentX: number; currentY: number }
+  | { type: 'lasso_select'; points: Point[]; currentX: number; currentY: number }
+  | {
+      type: 'move_canvas_text';
+      textId: string;
+      startX: number;
+      startY: number;
+      currentX: number;
+      currentY: number;
+      origX: number;
+      origY: number;
+    }
+  | {
+      type: 'resize_canvas_text';
+      textId: string;
+      startX: number;
+      startY: number;
+      currentX: number;
+      currentY: number;
+      origText: CanvasText;
+      anchorLeft: number;
+      anchorTop: number;
+    }
+  | {
+      type: 'move_reaction_arrow';
+      arrowId: string;
+      startX: number;
+      startY: number;
+      currentX: number;
+      currentY: number;
+      /** Snapshot at pointer-down (all coordinates preserved for preview/commit). */
+      origArrow: ReactionArrow;
+    }
+  | {
+      type: 'resize_reaction_arrow';
+      arrowId: string;
+      endpoint: 'tail' | 'head' | 'curve';
+      startX: number;
+      startY: number;
+      currentX: number;
+      currentY: number;
+      origArrow: ReactionArrow;
+    }
+  | {
+      type: 'rotate_selection';
+      cx: number;
+      cy: number;
+      snap: Record<string, { x: number; y: number }>;
+      startPointerAngle: number;
+      currentPointerAngle: number;
+    };
+
+export interface DrawingBondState {
+  startAtomId?: string;
+  startPos: Point;
+  currentPos: Point;
+}
+
+export interface DrawingChainState {
+  startAtomId?: string;
+  /** When attached to an existing atom, anchor first segment outward from that atom. */
+  preferredFirstBondAngle?: number;
+  startPos: Point;
+  currentPos: Point;
+}
+
+export interface DrawingRingState {
+  startAtomId?: string;
+  currentPos: Point;
+}
+
+export interface DrawingReactionArrowState {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  kind: ReactionArrowKind;
+}
+
+export interface DrawingCanvasShapeState {
+  kind: CanvasShapeKind;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+/**
+ * Frame-scoped snapshot of everything render submodules need. Built once per
+ * frame inside `InfiniteCanvas#render`. Treat as immutable.
+ */
+export interface RenderContext {
+  /** The original molecule from props. */
+  molecule: Molecule;
+  /** Same molecule with in-progress drag/rotate applied to selected atoms. */
+  renderedMolecule: Molecule;
+  /** Sum of bond orders incident on each atom, computed from `renderedMolecule`. */
+  valencyMap: Map<string, number>;
+
+  /** Viewport (pan/zoom) at the time this frame started. */
+  viewport: Viewport;
+  /** Display scale factor (e.g. shrunk panes). */
+  displayScale: number;
+
+  /** Typography + bond metrics from app settings (resolved once per frame). */
+  displayPrefs: ResolvedCanvasPreferences;
+
+  /** Active drawing/selection tool. */
+  activeTool: string;
+  /** Whether the active tool is one of the ring tools. */
+  isRingTool: boolean;
+  /** Number of sides for the active ring tool (or 6 by default). */
+  numSides: number;
+  /** Aromatic visualization (benzene / cyclopentadiene). */
+  isBenzene: boolean;
+  /** Whether the active tool is the boat-cyclohexane tool. */
+  isBoatTool: boolean;
+  /** Whether the active tool is the chair cyclohexane tool. */
+  isChairTool: boolean;
+
+  /** Selection sets. */
+  selectedAtomIds: string[];
+  /** Individually selected bonds (select tool). */
+  selectedBondIds: string[];
+  selectedCanvasTextId: string | null;
+  selectedReactionArrowId: string | null;
+
+  /** Hover state. */
+  hoveredComponentIds: string[];
+  hoveredAtomCircleId: string | null;
+  hoveredBondHighlightId: string | null;
+  hoverAtomId: string | null;
+  hoverBondId: string | null;
+  /** Ring-select tool: atoms of the ring under the cursor (preview highlight). */
+  hoverRingAtomIds: string[] | null;
+  /** Last-known mouse world position (used for ring-tool ghost). */
+  mouseWorldPos: Point | null;
+
+  /** Atom flagged with the brief red error indicator. */
+  errorAtomId: string | null;
+  /** Atoms with stereochemistry warnings (ambiguous center or wedge/hash conflict). */
+  stereoWarningAtomIds: ReadonlySet<string>;
+
+  /** Indigo CIP R/S labels keyed by atom id (when showCipLabels). */
+  cipAtomLabels: ReadonlyMap<string, string> | null;
+  /** Indigo CIP E/Z labels keyed by bond id. */
+  cipBondLabels: ReadonlyMap<string, string> | null;
+  /** Draw CIP descriptors on the canvas. */
+  showCipLabels: boolean;
+
+  /** Toggles. */
+  showHydrogens: boolean;
+  /** Teaching: show CH₃ / NH₂ / OH style condensed labels on terminal groups (see `condensedGroupLabelForAtom`). */
+  condensedGroupLabels: boolean;
+  /** Heteroatom labels use element palette colors when true; otherwise black (unless custom atom.color). */
+  colorAtomLabels: boolean;
+  /** Bond strokes inherit endpoint label colors when the bond has no explicit color. */
+  applyAtomColorsToBonds: boolean;
+  /** Atoms whose label is being edited inline; skip drawing the body. */
+  omitAtomAliasBodyId: string | null;
+  /** Canvas text whose body is being edited inline; skip drawing the body. */
+  omitCanvasTextBodyId: string | null;
+
+  /** Pencil tool style. */
+  activeColor: string;
+  activeThickness: number;
+
+  /**
+   * Element symbol used when the next click would create a new atom (bond
+   * empty-canvas, atom-label drop, hover-affordance preview). Mirrors
+   * `App.activePlacementElement`.
+   */
+  placementElement: string;
+
+  /** In-progress drawing previews. */
+  drawingBond: DrawingBondState | null;
+  drawingChain: DrawingChainState | null;
+  drawingRing: DrawingRingState | null;
+  drawingStroke: Point[] | null;
+  drawingReactionArrow: DrawingReactionArrowState | null;
+  drawingCanvasShape: DrawingCanvasShapeState | null;
+
+  /** Current drag action (selection move, box select, lasso, rotate, etc.). */
+  dragAction: DragActionState | null;
+  /** Live rotation delta (radians) during a `rotate_selection` drag. */
+  rotatePreviewDelta: number;
+  /**
+   * Cumulative rotation applied to the current selection. Used so atom labels
+   * and lone-pair dots stay upright relative to the canvas while bonds rotate.
+   */
+  labelCounterRad: number;
+
+  /** Whether the parent supplied `onRotateSelectionCommit` (used to gate the rotate handle). */
+  hasRotateCommit: boolean;
+
+  /** Wraps a draw callback in a counter-rotate so labels stay upright. */
+  applyLabelUpright: (atomId: string, draw: () => void) => void;
+
+  /** Offscreen canvas reused across frames for selection-highlight compositing. */
+  offscreenCanvas: HTMLCanvasElement | null;
+
+  /** Preview for click/drag fragment placement (functional groups, templates). */
+  fragmentPlacement: FragmentPlacementSession | null;
+}

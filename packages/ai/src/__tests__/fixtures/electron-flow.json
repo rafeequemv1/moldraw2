@@ -1,0 +1,7 @@
+{
+  "atomCount": 3,
+  "bondCount": 2,
+  "elements": ["C", "H", "N"],
+  "bonds": ["C-H:1", "C-N:3"],
+  "arrows": ["electron_flow"]
+}

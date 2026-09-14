@@ -1,0 +1,7 @@
+{
+  "atomCount": 2,
+  "bondCount": 1,
+  "elements": ["C", "O"],
+  "bonds": ["C-O:1"],
+  "arrows": []
+}

@@ -1,0 +1,39 @@
+{
+  "name": "@moldraw/canvas",
+  "version": "0.1.0",
+  "description": "Embeddable 2D molecule canvas for Moldraw (React peer)",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": ["./styles.css"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./export/renderMoleculeSvgHeadless": {
+      "types": "./dist/export/renderMoleculeSvgHeadless.d.ts",
+      "import": "./dist/export/renderMoleculeSvgHeadless.js"
+    },
+    "./styles.css": "./styles.css",
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "styles.css"],
+  "scripts": {
+    "build": "tsup --config tsup.config.ts",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@moldraw/core": "workspace:^",
+    "@moldraw/domain": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,294 @@
+/* OpenChemLib conformer gallery modal (3D viewer) */
+
+.conformer-gallery-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 8500;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.conformer-gallery-modal {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: min(88vh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: var(--chrome-bg-elevated);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.conformer-gallery-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.conformer-gallery-modal__header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  color: #0f172a;
+}
+
+.conformer-gallery-modal__subtitle {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #64748b;
+  max-width: 52ch;
+}
+
+.conformer-gallery-modal__close {
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.conformer-gallery-modal__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+}
+
+.conformer-gallery-modal__field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.conformer-gallery-modal__field select {
+  font-size: 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 6px;
+  background: var(--chrome-bg-elevated);
+}
+
+.conformer-gallery-modal__btn {
+  font-size: 11px;
+  font-weight: 550;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 5px 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.conformer-gallery-modal__btn:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.conformer-gallery-modal__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.conformer-gallery-modal__btn--ghost {
+  background: transparent;
+}
+
+.conformer-gallery-modal__btn--primary {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
+}
+
+.conformer-gallery-modal__btn--primary:hover:not(:disabled) {
+  background: #1e293b;
+}
+
+.conformer-gallery-modal__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 16px 10px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.conformer-gallery-modal__progress-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.conformer-gallery-modal__progress-bar > div {
+  height: 100%;
+  background: #2563eb;
+  transition: width 0.15s ease;
+}
+
+.conformer-gallery-modal__error {
+  margin: 0 16px 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 12px;
+}
+
+.conformer-gallery-modal__unsupported {
+  margin: 0 16px 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.conformer-gallery-modal__unsupported strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #7c2d12;
+}
+
+.conformer-gallery-modal__unsupported p {
+  margin: 0;
+}
+
+.conformer-gallery-modal__unsupported b {
+  font-weight: 700;
+}
+
+.conformer-gallery-modal__body {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  padding: 0 16px;
+  min-height: 260px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.conformer-gallery-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.conformer-gallery-modal__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: var(--chrome-bg-elevated);
+  cursor: pointer;
+}
+
+.conformer-gallery-modal__item.is-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.conformer-gallery-modal__item-idx {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.conformer-gallery-modal__item-meta {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.conformer-gallery-modal__preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  isolation: isolate;
+}
+
+.conformer-gallery-modal__canvas {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 240px;
+  height: 260px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+/* 3Dmol injects an absolutely positioned canvas — pin it to this host only */
+.conformer-gallery-modal__canvas canvas {
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+.conformer-gallery-modal__hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.conformer-gallery-modal__empty {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.conformer-gallery-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+@media (max-width: 560px) {
+  .conformer-gallery-modal__body {
+    grid-template-columns: 1fr;
+    min-height: 320px;
+  }
+
+  .conformer-gallery-modal__list {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .conformer-gallery-modal__item {
+    min-width: 72px;
+  }
+}
