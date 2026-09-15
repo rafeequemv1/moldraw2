@@ -19,9 +19,9 @@
   --bg-color: #ffffff;
   --canvas-bg: #ffffff;
   --viewer3d-bg: #f8fafc;
-  --grid-color: rgba(15, 23, 42, 0.05);
-  --grid-major: rgba(15, 23, 42, 0.08);
-  --grid-axis: rgba(15, 23, 42, 0.14);
+  --grid-color: rgba(15, 23, 42, 0.1);
+  --grid-major: rgba(15, 23, 42, 0.18);
+  --grid-axis: rgba(15, 23, 42, 0.28);
   --glass-bg: #f3f4f6;
   --glass-border: #e5e7eb;
 
@@ -72,9 +72,9 @@
   --bg-color: #212121;
   --canvas-bg: #1a1a1a;
   --viewer3d-bg: #1a1a1a;
-  --grid-color: rgba(255, 255, 255, 0.05);
-  --grid-major: rgba(255, 255, 255, 0.09);
-  --grid-axis: rgba(255, 255, 255, 0.16);
+  --grid-color: rgba(255, 255, 255, 0.1);
+  --grid-major: rgba(255, 255, 255, 0.18);
+  --grid-axis: rgba(255, 255, 255, 0.28);
   --glass-bg: #2f2f2f;
   --glass-border: #3f3f46;
 
@@ -118,9 +118,9 @@
   --bg-color: #000000;
   --canvas-bg: #000000;
   --viewer3d-bg: #000000;
-  --grid-color: rgba(255, 255, 255, 0.06);
-  --grid-major: rgba(255, 255, 255, 0.1);
-  --grid-axis: rgba(255, 255, 255, 0.2);
+  --grid-color: rgba(255, 255, 255, 0.12);
+  --grid-major: rgba(255, 255, 255, 0.2);
+  --grid-axis: rgba(255, 255, 255, 0.32);
   --glass-bg: #0a0a0a;
   --glass-border: #27272a;
 

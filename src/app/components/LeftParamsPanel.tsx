@@ -1,14 +1,14 @@
 /**
  * Closable parameter panel for generators (graphene / COF / MOF / arrays…).
- * Desktop: docked at the left edge like the Color & style panel (stacks under
- * it when that panel is open). Compact: a short, undimmed bottom sheet so the
- * canvas stays visible while sliders are scrubbed.
+ * Desktop: docked at the left edge like the Color & style panel.
+ * Compact: a short, undimmed bottom sheet so the canvas stays visible.
  */
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { useCompactViewport } from '../hooks/useCompactViewport';
+import { useLeftDockExclusive } from '../leftDockExclusive';
 
 export interface LeftParamsPanelProps {
   title: string;
@@ -43,6 +43,7 @@ export function LeftParamsPanel({
   className = '',
 }: LeftParamsPanelProps) {
   const isCompact = useCompactViewport();
+  useLeftDockExclusive('params', !isCompact, onClose);
 
   useEffect(() => {
     if (isCompact) return undefined;

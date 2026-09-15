@@ -468,13 +468,11 @@ export function useViewer3DSync({
     const chemKey = `${structureKeyFor3D(focusNow.fragment)}>${structureKeyFor3D(molFor3D)}`;
     poseCacheRef.current.delete(chemKey);
     const keepOnScreen = hasOptimized3DRef.current && !!lastGood3DMolblockRef.current;
-    holdViewerUntilDoneRef.current = keepOnScreen;
+    holdViewerUntilDoneRef.current = true;
     if (!keepOnScreen) {
-      commitViewerMolblock(expandedMolBlock);
-      lastGood3DMolblockRef.current = expandedMolBlock;
       hasOptimized3DRef.current = false;
       setViewer3DSource(
-        `preview-flat-seed${focusSourceSuffix(focusNow.reason, focusNow.componentCount)}`,
+        `computing${focusSourceSuffix(focusNow.reason, focusNow.componentCount)}`,
       );
     }
     setViewer3DEnergy(null);
@@ -550,7 +548,7 @@ export function useViewer3DSync({
           const pending = pendingProgressive3DRef.current;
           if (!pending) return;
           pendingProgressive3DRef.current = null;
-          if (holdViewerUntilDoneRef.current && !pending.done) {
+          if (holdViewerUntilDoneRef.current && !pending.done && (pending.shell ?? 0) < 2) {
             setViewer3DComputeStatus('computing');
             return;
           }
@@ -844,17 +842,12 @@ export function useViewer3DSync({
       setViewer3DComputeStatus('large');
       hasOptimized3DRef.current = false;
     } else if (useProgressive) {
-      if (hasOptimized3DRef.current && lastGood3DMolblockRef.current) {
-        holdViewerUntilDoneRef.current = true;
-        setViewer3DComputeStatus('computing');
-      } else {
-        holdViewerUntilDoneRef.current = false;
-        commitViewerMolblock(expandedMolBlock);
-        lastGood3DMolblockRef.current = expandedMolBlock;
+      holdViewerUntilDoneRef.current = true;
+      setViewer3DComputeStatus('computing');
+      if (!(hasOptimized3DRef.current && lastGood3DMolblockRef.current)) {
         hasOptimized3DRef.current = false;
-        setViewer3DSource(`preview-flat-seed${suffix}`);
+        setViewer3DSource(`computing${suffix}`);
         setViewer3DEnergy(null);
-        setViewer3DComputeStatus('computing');
       }
     }
 

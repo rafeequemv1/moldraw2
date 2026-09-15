@@ -14,7 +14,7 @@ function settingsForFirstVisit(): AppSettings {
 
 const STORAGE_KEY = 'moldraw-app-settings-v1';
 /** Bumped when a one-shot default migration must run for existing localStorage. */
-const SETTINGS_SCHEMA_VERSION = 10;
+const SETTINGS_SCHEMA_VERSION = 11;
 const SCHEMA_VERSION_KEY = 'moldraw-app-settings-schema';
 
 function deepMerge<T extends Record<string, unknown>>(base: T, patch: Partial<T>): T {
@@ -91,6 +91,10 @@ export function loadAppSettings(): AppSettings {
       // One-shot: background grid on (older saves may have turned it off).
       if (schema < 10) {
         nextGeneral.showGrid = true;
+      }
+      // One-shot: dotted grid is the visible default.
+      if (schema < 11) {
+        nextGeneral.gridPattern = 'dots';
       }
       merged.general = nextGeneral;
       window.localStorage.setItem(SCHEMA_VERSION_KEY, String(SETTINGS_SCHEMA_VERSION));

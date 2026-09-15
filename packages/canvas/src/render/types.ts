@@ -34,6 +34,10 @@ export type StructureThemeColors = {
   gridMinor: string;
   gridMajor: string;
   gridAxis: string;
+  /** Filled-dot grid (stronger than line-grid alphas). */
+  gridDotMinor?: string;
+  gridDotMajor?: string;
+  gridDotAxis?: string;
   selectionHoverFill?: string;
   selectionFill?: string;
   selectionHoverStroke?: string;
@@ -55,9 +59,12 @@ export type StructureThemeColors = {
 export const DEFAULT_STRUCTURE_THEME: StructureThemeColors = {
   ink: DEFAULT_ATOM_INK,
   hydrogen: EXPLICIT_HYDROGEN_COLOR,
-  gridMinor: 'rgba(15, 23, 42, 0.055)',
-  gridMajor: 'rgba(15, 23, 42, 0.11)',
-  gridAxis: 'rgba(15, 23, 42, 0.14)',
+  gridMinor: 'rgba(15, 23, 42, 0.1)',
+  gridMajor: 'rgba(15, 23, 42, 0.18)',
+  gridAxis: 'rgba(15, 23, 42, 0.28)',
+  gridDotMinor: 'rgba(15, 23, 42, 0.78)',
+  gridDotMajor: 'rgba(15, 23, 42, 0.94)',
+  gridDotAxis: 'rgba(2, 6, 23, 1)',
   selectionHoverFill: 'rgba(125, 211, 252, 0.22)',
   selectionFill: 'rgba(56, 189, 248, 0.38)',
   selectionHoverStroke: 'rgba(14, 165, 233, 0.85)',

@@ -61,6 +61,8 @@ export const drawGrid = (
   theme: StructureThemeColors = DEFAULT_STRUCTURE_THEME,
   gridSizePx: number = DEFAULT_GRID_SIZE,
   gridPattern: GridPattern = 'lines',
+  /** Device pixels per CSS pixel (canvas backing-store scale). */
+  pixelRatio: number = 1,
 ): void => {
   if (!(width >= 1 && height >= 1)) return;
   const { left, right, top, bottom } = worldBounds(width, height, viewport);
@@ -82,19 +84,23 @@ export const drawGrid = (
   const z = Math.max(1e-6, viewport.zoom);
 
   if (gridPattern === 'dots') {
-    // World radius = screen px / zoom so dots stay the same size on screen
-    // (same idea as lineWidth = 1 / z). A world-space floor would grow dots
-    // when zooming in.
-    const minorRadius = 1.35 / z;
-    const majorRadius = 2.05 / z;
+    // `z` is the canvas transform scale (zoom × displayScale). Radius is in
+    // world units so on-screen size stays constant. Use CSS-pixel size × dpr
+    // so 1× and retina backing stores both land ~4px dots.
+    const dpr = Math.max(1, pixelRatio);
+    const minorRadius = (4.2 * dpr) / z;
+    const majorRadius = (5.4 * dpr) / z;
+    const minorFill = theme.gridDotMinor ?? 'rgba(15, 23, 42, 0.78)';
+    const majorFill = theme.gridDotMajor ?? 'rgba(15, 23, 42, 0.94)';
+    const axisFill = theme.gridDotAxis ?? 'rgba(2, 6, 23, 1)';
     for (let i = iMin; i <= iMax; i++) {
       for (let j = jMin; j <= jMax; j++) {
         const x = i * step;
         const y = j * step;
         const isOrigin = i === 0 && j === 0;
         const isMajor = i % MAJOR_STEP === 0 && j % MAJOR_STEP === 0;
-        ctx.fillStyle = isOrigin ? theme.gridAxis : isMajor ? theme.gridMajor : theme.gridMinor;
-        const r = isOrigin ? majorRadius * 1.2 : isMajor ? majorRadius : minorRadius;
+        ctx.fillStyle = isOrigin ? axisFill : isMajor ? majorFill : minorFill;
+        const r = isOrigin ? majorRadius * 1.15 : isMajor ? majorRadius : minorRadius;
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fill();

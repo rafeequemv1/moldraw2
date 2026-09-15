@@ -3,6 +3,8 @@
  * CSS variables live in `src/styles/theme.css` — keep hexes in sync.
  */
 
+import './leftDockCoordinator';
+
 export type UiThemeId = 'light' | 'elegant-dark' | 'ink-dark';
 
 export const UI_THEME_OPTIONS: {
@@ -33,6 +35,9 @@ export type StructureThemeInk = {
   gridMinor: string;
   gridMajor: string;
   gridAxis: string;
+  gridDotMinor?: string;
+  gridDotMajor?: string;
+  gridDotAxis?: string;
   /** Selection wash (canvas highlight). */
   selectionHoverFill: string;
   selectionFill: string;
@@ -81,9 +86,12 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
       return {
         ink: '#ececec',
         hydrogen: '#a1a1aa',
-        gridMinor: 'rgba(255, 255, 255, 0.05)',
-        gridMajor: 'rgba(255, 255, 255, 0.09)',
-        gridAxis: 'rgba(255, 255, 255, 0.16)',
+        gridMinor: 'rgba(255, 255, 255, 0.1)',
+        gridMajor: 'rgba(255, 255, 255, 0.18)',
+        gridAxis: 'rgba(255, 255, 255, 0.28)',
+        gridDotMinor: 'rgba(226, 232, 240, 0.72)',
+        gridDotMajor: 'rgba(248, 250, 252, 0.9)',
+        gridDotAxis: 'rgba(255, 255, 255, 1)',
         selectionHoverFill: 'rgba(45, 212, 191, 0.28)',
         selectionFill: 'rgba(56, 189, 248, 0.38)',
         selectionHoverStroke: 'rgba(125, 211, 252, 0.85)',
@@ -95,9 +103,12 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
       return {
         ink: '#ffffff',
         hydrogen: '#d4d4d8',
-        gridMinor: 'rgba(255, 255, 255, 0.06)',
-        gridMajor: 'rgba(255, 255, 255, 0.1)',
-        gridAxis: 'rgba(255, 255, 255, 0.2)',
+        gridMinor: 'rgba(255, 255, 255, 0.12)',
+        gridMajor: 'rgba(255, 255, 255, 0.2)',
+        gridAxis: 'rgba(255, 255, 255, 0.32)',
+        gridDotMinor: 'rgba(226, 232, 240, 0.74)',
+        gridDotMajor: 'rgba(248, 250, 252, 0.92)',
+        gridDotAxis: 'rgba(255, 255, 255, 1)',
         selectionHoverFill: 'rgba(45, 212, 191, 0.3)',
         selectionFill: 'rgba(56, 189, 248, 0.4)',
         selectionHoverStroke: 'rgba(125, 211, 252, 0.9)',
@@ -110,9 +121,12 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
       return {
         ink: '#0f172a',
         hydrogen: '#94a3b8',
-        gridMinor: 'rgba(15, 23, 42, 0.035)',
-        gridMajor: 'rgba(15, 23, 42, 0.07)',
-        gridAxis: 'rgba(15, 23, 42, 0.14)',
+        gridMinor: 'rgba(15, 23, 42, 0.1)',
+        gridMajor: 'rgba(15, 23, 42, 0.18)',
+        gridAxis: 'rgba(15, 23, 42, 0.28)',
+        gridDotMinor: 'rgba(15, 23, 42, 0.78)',
+        gridDotMajor: 'rgba(15, 23, 42, 0.94)',
+        gridDotAxis: 'rgba(2, 6, 23, 1)',
         selectionHoverFill: 'rgba(125, 211, 252, 0.28)',
         selectionFill: 'rgba(56, 189, 248, 0.42)',
         selectionHoverStroke: 'rgba(14, 165, 233, 0.7)',

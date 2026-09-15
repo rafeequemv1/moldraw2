@@ -87,16 +87,13 @@ self.onmessage = e => {
           ok = true;
         }
       } else if (payload.progressive !== false) {
-        // Single-structure progressive UFF — taper iterations for large molecules.
-        // Multi-conformer sampling is a separate path (kept for smaller molecules).
+        // Wait for the finished UFF pose before painting 3D (no flat/shell flash).
         const shellIterations =
           heavyCount > 350 ? 8 : heavyCount > 250 ? 12 : heavyCount > 160 ? 20 : heavyCount > 50 ? 28 : heavyCount > 25 ? 32 : 40;
         const finalIterations =
           heavyCount > 350 ? 24 : heavyCount > 250 ? 36 : heavyCount > 160 ? 56 : heavyCount > 50 ? 72 : heavyCount > 25 ? 80 : 100;
-        // Insulin-scale: heavy-only UFF then place H is much faster than full-H UFF.
         const progressiveIncludeH = includeHydrogens && heavyCount <= 220;
         try {
-          let lastProgressAt = 0;
           const result = embed3DProgressive(source, {
             includeHydrogens: progressiveIncludeH,
             shellIterations,
@@ -104,12 +101,7 @@ self.onmessage = e => {
             shellBuffer: 2,
             seed3D,
             onProgress: update => {
-              const now =
-                typeof performance !== 'undefined' ? performance.now() : Date.now();
-              if (!update.done && update.shell > 0 && now - lastProgressAt < 120) {
-                return;
-              }
-              lastProgressAt = now;
+              if (!update.done) return;
               self.postMessage({
                 type: 'GENERATE_3D_PROGRESS',
                 payload: {
@@ -159,8 +151,6 @@ self.onmessage = e => {
           ok = true;
         }
       } else {
-        // Conformer sampling discards the starting geometry — skip it when the
-        // caller asked to re-minimize an existing conformer (seed3D).
         if (!seed3D) {
           try {
             const sampleCount = heavyCount > 25 ? 12 : 16;
@@ -199,7 +189,6 @@ self.onmessage = e => {
         sourceLabel = 'native-3d-fallback';
       }
 
-      // Hard-correct chirality / E–Z vs 2D wedges (heavy atoms first in molblock).
       if (moleculeHasStereoConstraints(source) && molBlock3D) {
         const heavyIds = source.atoms.filter(a => a.element !== 'H').map(a => a.id);
         const stereoFixed = enforceStereoOnMolblock3D(source, molBlock3D, heavyIds);

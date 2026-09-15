@@ -1,0 +1,70 @@
+/*
+ * Shared geometry for every desktop left dock (style, settings, objects,
+ * graphene/COF params). Same top as the Color & style panel; height follows
+ * content up to the leftover viewport. Compact sheets are unchanged.
+ */
+html:has(.canvas-document-tabs) {
+  --app-left-dock-top: calc(
+    var(--app-top-bar-height, 96px) + 2px + var(--canvas-tab-stack-height, 28px) + 2px
+  );
+}
+
+html:not(.app-mobile-compact) .format-left-panel:not(.format-left-panel--sheet) {
+  top: var(--app-left-dock-top) !important;
+  left: var(--app-left-dock-left) !important;
+  bottom: auto !important;
+  max-height: var(--app-left-dock-max-height) !important;
+  height: auto;
+}
+
+html:not(.app-mobile-compact) .left-params-dock {
+  top: var(--app-left-dock-top) !important;
+  left: var(--app-left-dock-left) !important;
+  bottom: auto !important;
+  max-height: var(--app-left-dock-max-height) !important;
+  height: auto;
+}
+
+html.format-left-panel-open .left-params-dock {
+  left: var(--app-left-dock-left) !important;
+}
+
+html:not(.app-mobile-compact) .objects-panel:not(.objects-panel--sheet) {
+  position: fixed !important;
+  top: var(--app-left-dock-top) !important;
+  left: var(--app-left-dock-left) !important;
+  bottom: auto !important;
+  max-height: var(--app-left-dock-max-height) !important;
+  height: auto;
+  z-index: 12;
+}
+
+html:not(.app-mobile-compact) .app-settings-modal {
+  inset: auto !important;
+  top: var(--app-left-dock-top) !important;
+  left: var(--app-left-dock-left) !important;
+  right: auto !important;
+  bottom: auto !important;
+  padding: 0 !important;
+  background: transparent !important;
+  display: block !important;
+  width: min(440px, calc(100vw - 72px));
+  max-height: var(--app-left-dock-max-height);
+  z-index: 13 !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
+html:not(.app-mobile-compact) .app-settings-modal__panel {
+  width: 100% !important;
+  max-width: none !important;
+  height: auto !important;
+  max-height: var(--app-left-dock-max-height) !important;
+  border-radius: 0 var(--radius-panel, 4px) var(--radius-panel, 4px) 0 !important;
+}
+
+html:not(.app-mobile-compact) .app-settings-modal__panel > div:last-child {
+  max-height: calc(var(--app-left-dock-max-height) - 64px) !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
