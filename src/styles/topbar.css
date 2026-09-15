@@ -65,6 +65,18 @@
   margin-right: 2px;
 }
 
+.app-top-bar__brand-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.app-top-bar__brand-cluster .app-top-bar__file-wrap {
+  flex-shrink: 0;
+}
+
 .app-top-bar__brand-name {
   font-size: 13px;
   font-weight: 600;
@@ -1071,6 +1083,10 @@ html.app-top-rows-3 {
   margin-left: 4px;
 }
 
+.app-top-bar__tools-cluster .app-top-bar__tools-link {
+  margin-left: 4px;
+}
+
 .toolbar-top-strip .toolbar-split-tool__menu,
 .toolbar-top-strip .toolbar-fg-tool__panel {
   top: calc(100% + 4px);
@@ -1485,6 +1501,11 @@ html.app-top-rows-3 {
 .app-top-bar__select-trigger:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.app-top-bar__tools-link {
+  text-decoration: none;
+  margin-left: 4px;
 }
 
 .app-top-bar__select-menu {

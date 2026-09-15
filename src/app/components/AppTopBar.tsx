@@ -447,6 +447,7 @@ export function AppTopBar(props: AppTopBarProps) {
     >
       <div className="app-top-bar__main">
         <div className="app-top-bar__left">
+          <div className="app-top-bar__brand-cluster">
           <button
             type="button"
             className="app-top-bar__brand app-top-bar__brand-btn app-top-bar__brand--inline"
@@ -456,6 +457,8 @@ export function AppTopBar(props: AppTopBarProps) {
             <MolDrawLogoMark size={isCompact ? 22 : 24} />
             <span className="app-top-bar__brand-name">MolDraw</span>
           </button>
+          {isCompact ? fileMenu : null}
+          </div>
           {isCompact ? null : (
             <HeaderInlineSearch
               quickSearch={quickSearch}
@@ -479,18 +482,6 @@ export function AppTopBar(props: AppTopBarProps) {
             >
               <Home size={13} strokeWidth={2} aria-hidden />
               {t('topBar.home')}
-            </button>
-          ) : null}
-          {onOpenLibrary && isCompact ? (
-            <button
-              type="button"
-              className="app-top-bar__designs-btn"
-              onClick={onOpenLibrary}
-              title={t('topBar.designsCompactTitle')}
-              aria-label={t('topBar.designs')}
-            >
-              <Library size={13} strokeWidth={2} aria-hidden />
-              {t('topBar.designs')}
             </button>
           ) : null}
           {onToggleDrawTools && !isCompact ? (
@@ -621,6 +612,7 @@ export function AppTopBar(props: AppTopBarProps) {
             downloadMenu={
               <ExportMenu
                 open={exportOpen}
+                preferSheet={false}
                 onToggle={() => setExportOpen(v => !v)}
                 onSaveAs={format => {
                   setExportOpen(false);
@@ -633,7 +625,7 @@ export function AppTopBar(props: AppTopBarProps) {
       ) : (
         <div className="app-top-bar__site-row app-top-bar__site-row--compact">
           <HeaderSiteNav
-            fileMenu={fileMenu}
+            compactLayout
             onOpenMyDesigns={() => onOpenLibrary?.()}
             onCopySmiles={() => onCopySmiles?.()}
             onCopySvg={() => onCopySvg?.()}
@@ -649,6 +641,7 @@ export function AppTopBar(props: AppTopBarProps) {
             downloadMenu={
               <ExportMenu
                 open={exportOpen}
+                preferSheet
                 onToggle={() => setExportOpen(v => !v)}
                 onSaveAs={format => {
                   setExportOpen(false);

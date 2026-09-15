@@ -755,44 +755,62 @@ export function CanvasContextMenu({
 
       <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
 
-      <div
-        ref={exportAnchorRef}
-        style={{ width: '100%' }}
-        onMouseEnter={() => openFlyout('export')}
-        onMouseLeave={() => scheduleCloseFlyout('export')}
-      >
-        <div
-          className="menu-item"
-          onClick={e => {
-            e.stopPropagation();
-            openFlyout('export');
-          }}
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default' }}
-        >
-          <span>Export</span>
-          <ChevronRight size={14} color="#64748b" />
-        </div>
-        <ContextMenuFlyout
-          open={exportOpen}
-          anchorRef={exportAnchorRef}
-          onKeepOpen={() => openFlyout('export')}
-          onRequestClose={() => scheduleCloseFlyout('export')}
-          minWidth={192}
+      {asSheet ? (
+        <>
+          <div className="app-top-bar__file-menu-section">Export</div>
+          {EXPORT_ITEMS.map(({ key, label, ext, icon }) => (
+            <button
+              key={key}
+              type="button"
+              className="mobile-sheet-list__btn"
+              onClick={() => onDownload(key)}
             >
-              {EXPORT_ITEMS.map(({ key, label, icon }) => (
-                <button
-                  key={key}
-                  type="button"
-                  className="menu-item"
-                  onClick={() => onDownload(key)}
-                  style={{ width: '100%', justifyContent: 'flex-start', gap: '10px' }}
-                >
-              {icon(16)}
-                  {label}
-                </button>
-              ))}
-        </ContextMenuFlyout>
-      </div>
+              {icon(14)}
+              <span className="app-top-bar__file-menu-flyout-label">{label}</span>
+              <span className="app-top-bar__file-submenu-ext">{ext}</span>
+            </button>
+          ))}
+        </>
+      ) : (
+        <div
+          ref={exportAnchorRef}
+          style={{ width: '100%' }}
+          onMouseEnter={() => openFlyout('export')}
+          onMouseLeave={() => scheduleCloseFlyout('export')}
+        >
+          <div
+            className="menu-item"
+            onClick={e => {
+              e.stopPropagation();
+              openFlyout('export');
+            }}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default' }}
+          >
+            <span>Export</span>
+            <ChevronRight size={14} color="#64748b" />
+          </div>
+          <ContextMenuFlyout
+            open={exportOpen}
+            anchorRef={exportAnchorRef}
+            onKeepOpen={() => openFlyout('export')}
+            onRequestClose={() => scheduleCloseFlyout('export')}
+            minWidth={192}
+          >
+            {EXPORT_ITEMS.map(({ key, label, icon }) => (
+              <button
+                key={key}
+                type="button"
+                className="menu-item"
+                onClick={() => onDownload(key)}
+                style={{ width: '100%', justifyContent: 'flex-start', gap: '10px' }}
+              >
+                {icon(16)}
+                {label}
+              </button>
+            ))}
+          </ContextMenuFlyout>
+        </div>
+      )}
     </div>
   );
 

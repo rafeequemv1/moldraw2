@@ -60,6 +60,12 @@ export interface HeaderSiteNavProps {
    */
   accountInMoreMenu?: boolean;
 
+  /**
+   * Phone/tablet site row: keep Community + auth visible, fold the rest into More.
+   * File is rendered next to the logo by AppTopBar, not here.
+   */
+  compactLayout?: boolean;
+
 }
 
 
@@ -681,190 +687,230 @@ export function HeaderInlineSearch({
 /** Row 2: Community, designs, auth, Download. */
 
 export function HeaderSiteNav({
-
   onOpenMyDesigns,
-
   onCopySmiles,
-
   onCopySvg,
-
   smilesCopied,
-
   svgCopied,
-
   svgCopyError,
-
   onRequestFeature,
-
   onSignIn,
-
   onSignUp,
-
   onSignOut,
-
   signedIn,
-
   authDisplayName,
-
   downloadMenu,
-
   fileMenu,
-
   accountInMoreMenu = false,
-
+  compactLayout = false,
 }: HeaderSiteNavProps) {
-
   const { t } = useI18n();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreMenuPos, setMoreMenuPos] = useState<AnchoredMenuPos | null>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!compactLayout || !moreOpen || !moreRef.current) {
+      setMoreMenuPos(null);
+      return;
+    }
+    const rect = moreRef.current.getBoundingClientRect();
+    setMoreMenuPos(
+      placeAnchoredMenu(rect, {
+        menuWidth: 180,
+        menuHeight: 280,
+        align: 'right',
+        offsetX: MORE_MENU_NUDGE_X,
+      }),
+    );
+  }, [compactLayout, moreOpen]);
+
+  useEffect(() => {
+    if (!compactLayout || !moreOpen) return undefined;
+    const onDoc = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (moreRef.current?.contains(target) || moreMenuRef.current?.contains(target)) return;
+      setMoreOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [compactLayout, moreOpen]);
+
+  const compactMoreItems: MoreMenuItem[] = [
+    {
+      kind: 'action',
+      label: t('nav.myDesigns'),
+      title: t('nav.openSavedDesigns'),
+      onClick: onOpenMyDesigns,
+    },
+    {
+      kind: 'action',
+      label: smilesCopied ? t('nav.copied') : t('nav.copySmiles'),
+      title: t('nav.copySmilesTitle'),
+      onClick: onCopySmiles,
+    },
+    {
+      kind: 'action',
+      label: svgCopied ? t('nav.copiedSvg') : svgCopyError ? t('nav.copyFailed') : t('nav.copySvg'),
+      title: t('nav.copySvgTitle'),
+      onClick: onCopySvg,
+    },
+    {
+      kind: 'action',
+      label: t('nav.requestFeature'),
+      title: t('nav.requestFeatureTitle'),
+      onClick: onRequestFeature,
+    },
+    {
+      kind: 'link',
+      href: '/tools/',
+      label: t('nav.tools'),
+      title: t('nav.toolsTitle'),
+    },
+  ];
 
   return (
-
-    <nav className="header-links header-links--actions" aria-label={t('nav.editorActionsAria')}>
-
+    <nav
+      className={`header-links header-links--actions${compactLayout ? ' header-links--compact' : ''}`}
+      aria-label={t('nav.editorActionsAria')}
+    >
       <div className="header-links__lead">
-
-      {fileMenu}
-
-      <a
-
-        className="tb-btn tb-btn-community"
-
-        href="/community/"
-
-        target="_blank"
-
-        rel="noopener noreferrer"
-
-        title={t('nav.openCommunity')}
-
-      >
-
-        {t('nav.community')}
-
-      </a>
-
-      <button type="button" className="tb-btn tb-btn-my-designs" onClick={onOpenMyDesigns} title={t('nav.openSavedDesigns')}>
-
-        <FolderOpen size={11} strokeWidth={2} aria-hidden />
-
-        {t('nav.myDesigns')}
-
-      </button>
-
-      <button
-
-        type="button"
-
-        className={`tb-btn tb-btn-clip${smilesCopied ? ' tb-copied' : ''}`}
-
-        onClick={onCopySmiles}
-
-        title={t('nav.copySmilesTitle')}
-
-      >
-
-        <Copy size={11} strokeWidth={2} aria-hidden />
-
-        {smilesCopied ? t('nav.copied') : t('nav.copySmiles')}
-
-      </button>
-
-      <button
-
-        type="button"
-
-        className={`tb-btn tb-btn-clip${svgCopied ? ' tb-copied' : ''}${svgCopyError ? ' tb-copy-error' : ''}`}
-
-        onClick={onCopySvg}
-
-        title={t('nav.copySvgTitle')}
-
-      >
-
-        <Image size={11} strokeWidth={2} aria-hidden />
-
-        {svgCopied ? t('nav.copiedSvg') : svgCopyError ? t('nav.copyFailed') : t('nav.copySvg')}
-
-      </button>
-
-      <button
-
-        type="button"
-
-        className="tb-btn tb-btn-feature-request"
-
-        onClick={onRequestFeature}
-
-        title={t('nav.requestFeatureTitle')}
-
-      >
-
-        {t('nav.requestFeature')}
-
-      </button>
-
+        {compactLayout ? null : fileMenu}
+        <a
+          className="tb-btn tb-btn-community"
+          href="/community/"
+          target="_blank"
+          rel="noopener noreferrer"
+          title={t('nav.openCommunity')}
+        >
+          {t('nav.community')}
+        </a>
+        {compactLayout ? null : (
+          <>
+            <button
+              type="button"
+              className="tb-btn tb-btn-my-designs"
+              onClick={onOpenMyDesigns}
+              title={t('nav.openSavedDesigns')}
+            >
+              <FolderOpen size={11} strokeWidth={2} aria-hidden />
+              {t('nav.myDesigns')}
+            </button>
+            <button
+              type="button"
+              className={`tb-btn tb-btn-clip${smilesCopied ? ' tb-copied' : ''}`}
+              onClick={onCopySmiles}
+              title={t('nav.copySmilesTitle')}
+            >
+              <Copy size={11} strokeWidth={2} aria-hidden />
+              {smilesCopied ? t('nav.copied') : t('nav.copySmiles')}
+            </button>
+            <button
+              type="button"
+              className={`tb-btn tb-btn-clip${svgCopied ? ' tb-copied' : ''}${svgCopyError ? ' tb-copy-error' : ''}`}
+              onClick={onCopySvg}
+              title={t('nav.copySvgTitle')}
+            >
+              <Image size={11} strokeWidth={2} aria-hidden />
+              {svgCopied ? t('nav.copiedSvg') : svgCopyError ? t('nav.copyFailed') : t('nav.copySvg')}
+            </button>
+            <button
+              type="button"
+              className="tb-btn tb-btn-feature-request"
+              onClick={onRequestFeature}
+              title={t('nav.requestFeatureTitle')}
+            >
+              {t('nav.requestFeature')}
+            </button>
+          </>
+        )}
       </div>
-
       <span className="header-links__trailing">
-
-      {signedIn ? (
-
-        accountInMoreMenu ? null : (
-
-          <button
-
-            type="button"
-
-            className="tb-btn tb-btn-auth tb-btn-auth-signed tb-btn-auth-signed--right"
-
-            onClick={() => void onSignOut()}
-
-            title={t('nav.signedInTitle', { name: authDisplayName })}
-
-          >
-
-            {t('nav.signOut')}
-
-          </button>
-
-        )
-
-      ) : (
-
-        <>
-
-          <button type="button" className="tb-btn tb-btn-auth" onClick={onSignIn} title={t('nav.signInTitle')}>
-
-            {t('nav.signIn')}
-
-          </button>
-
-          <button
-
-            type="button"
-
-            className="tb-btn tb-btn-auth tb-btn-auth-cta"
-
-            onClick={onSignUp}
-
-            title={t('nav.signUpTitle')}
-
-          >
-
-            {t('nav.signUp')}
-
-          </button>
-
-        </>
-
-      )}
-
-      {downloadMenu}
-
+        {signedIn ? (
+          accountInMoreMenu ? null : (
+            <button
+              type="button"
+              className="tb-btn tb-btn-auth tb-btn-auth-signed tb-btn-auth-signed--right"
+              onClick={() => void onSignOut()}
+              title={t('nav.signedInTitle', { name: authDisplayName })}
+            >
+              {t('nav.signOut')}
+            </button>
+          )
+        ) : (
+          <>
+            <button type="button" className="tb-btn tb-btn-auth" onClick={onSignIn} title={t('nav.signInTitle')}>
+              {t('nav.signIn')}
+            </button>
+            <button
+              type="button"
+              className="tb-btn tb-btn-auth tb-btn-auth-cta"
+              onClick={onSignUp}
+              title={t('nav.signUpTitle')}
+            >
+              {t('nav.signUp')}
+            </button>
+          </>
+        )}
+        {compactLayout ? null : downloadMenu}
+        {compactLayout ? (
+          <div className="tb-menu-dropdown viewer-toolbar-more" ref={moreRef}>
+            <button
+              type="button"
+              className="viewer-toolbar-extra"
+              onClick={() => setMoreOpen(v => !v)}
+              title={t('nav.moreLinksTitle')}
+              aria-expanded={moreOpen}
+            >
+              {t('nav.more')}
+            </button>
+            {moreOpen && moreMenuPos
+              ? createPortal(
+                  <div
+                    ref={moreMenuRef}
+                    className="tb-menu-dropdown-list tb-menu-dropdown-list--portal tb-menu-dropdown-list--compact"
+                    role="menu"
+                    aria-label={t('nav.moreLinksTitle')}
+                    style={anchoredMenuStyle(moreMenuPos)}
+                    onMouseDown={e => e.stopPropagation()}
+                  >
+                    {compactMoreItems.map(item =>
+                      item.kind === 'link' ? (
+                        <a
+                          key={item.href}
+                          className="tb-menu-item"
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={item.title}
+                          onClick={() => setMoreOpen(false)}
+                        >
+                          {item.label}
+                        </a>
+                      ) : item.kind === 'action' ? (
+                        <button
+                          key={item.label}
+                          type="button"
+                          className="tb-menu-item"
+                          title={item.title}
+                          onClick={() => {
+                            setMoreOpen(false);
+                            item.onClick();
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      ) : null,
+                    )}
+                  </div>,
+                  document.body,
+                )
+              : null}
+          </div>
+        ) : null}
       </span>
-
     </nav>
-
   );
-
 }
 

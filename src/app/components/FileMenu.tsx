@@ -278,11 +278,21 @@ export function FileMenu({
 
       {onSaveAs ? (
         preferSheet ? (
-          <>
-            <div className="app-top-bar__file-menu-sep" role="separator" />
-            <div className="app-top-bar__file-menu-section">{t('file.saveAs')}</div>
-            {saveAsItems}
-          </>
+          <button
+            type="button"
+            className={itemClass}
+            role="menuitem"
+            aria-haspopup="dialog"
+            aria-expanded={saveAsOpen}
+            onClick={() => setSaveAsOpen(true)}
+          >
+            <FileDown size={14} strokeWidth={2} aria-hidden />
+            <span className="app-top-bar__file-menu-text">
+              <span className="app-top-bar__file-menu-label">{t('file.saveAs')}</span>
+              <span className="app-top-bar__file-menu-hint">{t('file.saveAsHint')}</span>
+            </span>
+            <ChevronRight size={14} className="app-top-bar__file-menu-chevron" aria-hidden />
+          </button>
         ) : (
           <div
             className={`app-top-bar__file-menu-flyout-wrap${saveAsOpen ? ' is-open' : ''}`}
@@ -354,7 +364,10 @@ export function FileMenu({
         <button
           type="button"
           className={`app-top-bar__file-btn app-top-bar__clip-btn--icon${menuOpen ? ' app-top-bar__file-btn--open' : ''}`}
-          onClick={() => setMenuOpen(v => !v)}
+          onClick={() => {
+            if (menuOpen) close();
+            else setMenuOpen(true);
+          }}
           title={t('file.menu')}
           aria-label={t('file.menu')}
           aria-expanded={menuOpen}
@@ -364,7 +377,7 @@ export function FileMenu({
           {t('file.menu')}
         </button>
         <MobileBottomSheet
-          open={menuOpen}
+          open={menuOpen && !saveAsOpen}
           onClose={close}
           title={t('file.menu')}
           size="auto"
@@ -372,6 +385,17 @@ export function FileMenu({
         >
           <div className="mobile-sheet-list" role="menu" aria-label={t('file.menu')}>
             {menuItems}
+          </div>
+        </MobileBottomSheet>
+        <MobileBottomSheet
+          open={menuOpen && saveAsOpen}
+          onClose={() => setSaveAsOpen(false)}
+          title={t('file.saveAs')}
+          size="auto"
+          className="mobile-sheet--menu"
+        >
+          <div className="mobile-sheet-list" role="menu" aria-label={t('file.saveAs')}>
+            {saveAsItems}
           </div>
         </MobileBottomSheet>
         {hiddenInputs}

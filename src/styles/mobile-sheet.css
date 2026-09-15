@@ -229,6 +229,21 @@
   min-width: 0;
 }
 
+.mobile-sheet-list__btn .app-top-bar__file-menu-flyout-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mobile-sheet-list__btn .app-top-bar__file-submenu-ext {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.mobile-sheet-list__btn svg {
+  flex-shrink: 0;
+}
+
 .mobile-sheet-search {
   display: flex;
   flex-direction: column;

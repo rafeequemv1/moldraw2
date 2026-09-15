@@ -24,6 +24,22 @@
   overflow-x: auto;
 }
 
+.header-links--compact,
+.header-links--compact.header-links--actions {
+  overflow-x: hidden;
+  overflow-y: visible;
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.header-links--compact .header-links__lead,
+.header-links--compact .header-links__trailing {
+  overflow-x: hidden;
+  overflow-y: visible;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
 .header-links__trailing {
   display: inline-flex;
   align-items: center;

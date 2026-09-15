@@ -26,6 +26,9 @@ html.app-mobile-compact {
   .app-top-bar--compact {
     height: auto;
     min-height: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .app-top-bar--compact .app-top-bar__main {
@@ -36,7 +39,9 @@ html.app-mobile-compact {
     min-height: 36px;
     height: 36px;
     padding: 3px 4px;
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
+    max-width: 100%;
   }
 
   .app-top-bar--compact .app-top-bar__left {
@@ -47,7 +52,8 @@ html.app-mobile-compact {
     column-gap: 3px;
     min-width: 0;
     max-width: none;
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .app-top-bar--compact .app-top-bar__right {
@@ -112,6 +118,12 @@ html.app-mobile-compact {
   .app-top-bar--compact .app-top-bar__file-btn {
     height: 26px;
     padding: 0 6px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .app-top-bar--compact .app-top-bar__brand-cluster {
+    max-width: 100%;
   }
 
   .toolbar-mobile-categories {
@@ -132,10 +144,12 @@ html.app-mobile-compact {
   .app-top-bar__site-row,
   .app-top-bar__site-row--compact {
     flex-wrap: wrap;
-    align-items: stretch;
+    align-items: center;
     height: auto;
     min-height: 0;
-    overflow: visible;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
     padding: 3px 6px 4px;
     row-gap: 3px;
   }
@@ -150,7 +164,9 @@ html.app-mobile-compact {
     row-gap: 3px;
     column-gap: 3px;
     width: 100%;
-    overflow: visible;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .app-top-bar__site-row--compact .tb-btn {
