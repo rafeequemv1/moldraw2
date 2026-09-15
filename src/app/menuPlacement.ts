@@ -51,6 +51,8 @@ export function placeAnchoredMenu(
     pad?: number;
     forceUp?: boolean;
     align?: 'left' | 'right';
+    /** Extra shift after align (negative = left). Applied before viewport clamp. */
+    offsetX?: number;
   },
 ): AnchoredMenuPos {
   const gap = opts?.gap ?? 4;
@@ -70,6 +72,7 @@ export function placeAnchoredMenu(
   const maxHeight = Math.max(96, (openUp ? spaceAbove : spaceBelow) - gap);
 
   let left = opts?.align === 'right' ? anchor.right - menuW : anchor.left;
+  left += opts?.offsetX ?? 0;
   if (left + menuW > vw - pad) left = Math.max(pad, vw - pad - menuW);
   if (left < pad) left = pad;
 

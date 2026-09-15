@@ -5,7 +5,17 @@ import { createPortal } from 'react-dom';
 import { ChevronRight, Copy, FolderOpen, Image, Search } from 'lucide-react';
 
 import { useI18n } from '../i18n';
-import { anchoredMenuStyle, placeAnchoredMenu, type AnchoredMenuPos } from '../menuPlacement';
+import {
+  anchoredMenuStyle,
+  placeAnchoredMenu,
+  placeSideFlyout,
+  sideFlyoutStyle,
+  type AnchoredMenuPos,
+  type SideFlyoutPos,
+} from '../menuPlacement';
+
+/** Keep the More trigger put; shift the portal panel slightly left of the right edge. */
+const MORE_MENU_NUDGE_X = -20;
 
 
 
@@ -41,6 +51,9 @@ export interface HeaderSiteNavProps {
 
   downloadMenu: ReactNode;
 
+  /** File dropdown — rendered immediately left of Community. */
+  fileMenu?: ReactNode;
+
   /**
    * Desktop: the signed-in account (name + Sign out) lives in the right-hand
    * "More" menu instead of this row. Compact rows keep it here, pushed right.
@@ -75,7 +88,7 @@ type MoreMenuItem =
 
   | { kind: 'link'; href: string; label: string; title: string }
 
-  | { kind: 'action'; label: string; title: string; onClick: () => void }
+  | { kind: 'action'; label: string; title: string; onClick: () => void; className?: string }
 
   | { kind: 'disabled'; label: string; title: string; hint: string }
 
@@ -87,7 +100,13 @@ function buildMoreItems(
   t: (key: string, vars?: Record<string, string>) => string,
   onOpenAdvancedSearch: () => void,
   onOpenShortcuts: () => void,
-  account?: { signedIn: boolean; displayName: string; onSignOut: () => void },
+  account?: {
+    signedIn: boolean;
+    displayName: string;
+    onSignOut: () => void;
+    onSignIn?: () => void;
+    onSignUp?: () => void;
+  },
 ): MoreMenuItem[] {
 
   const accountItems: MoreMenuItem[] =
@@ -106,7 +125,23 @@ function buildMoreItems(
             onClick: account.onSignOut,
           },
         ]
-      : [];
+      : account?.onSignIn && account?.onSignUp
+        ? [
+            {
+              kind: 'action',
+              label: t('nav.signIn'),
+              title: t('nav.signInTitle'),
+              onClick: account.onSignIn,
+            },
+          {
+            kind: 'action',
+            label: t('nav.signUp'),
+            title: t('nav.signUpTitle'),
+            onClick: account.onSignUp,
+            className: 'tb-menu-item--auth-cta',
+          },
+          ]
+        : [];
 
   return [
     ...accountItems,
@@ -202,91 +237,65 @@ function buildMoreItems(
 
 
 function MoreMenuSubmenuRow({ item }: { item: Extract<MoreMenuItem, { kind: 'submenu' }> }) {
-
   const [open, setOpen] = useState(false);
-
   const rowRef = useRef<HTMLDivElement>(null);
-
   const flyoutRef = useRef<HTMLDivElement>(null);
-
-  const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number } | null>(null);
-
-
+  const [flyoutPos, setFlyoutPos] = useState<SideFlyoutPos | null>(null);
 
   useLayoutEffect(() => {
-
     if (!open || !rowRef.current) {
-
       setFlyoutPos(null);
-
       return;
-
     }
-
-    const rect = rowRef.current.getBoundingClientRect();
-
-    setFlyoutPos({ top: rect.top, left: rect.right + 4 });
-
+    const place = () => {
+      const row = rowRef.current;
+      if (!row) return;
+      const panel = flyoutRef.current;
+      setFlyoutPos(
+        placeSideFlyout(row.getBoundingClientRect(), {
+          menuWidth: panel?.offsetWidth ?? 160,
+          menuHeight: panel?.offsetHeight ?? 80,
+          prefer: 'left',
+        }),
+      );
+    };
+    place();
+    const raf = window.requestAnimationFrame(place);
+    return () => window.cancelAnimationFrame(raf);
   }, [open]);
 
-
-
   return (
-
     <div
-
       ref={rowRef}
-
       className="tb-menu-item tb-menu-item--submenu"
-
       onMouseEnter={() => setOpen(true)}
-
       onMouseLeave={() => setOpen(false)}
-
     >
-
       <span>{item.label}</span>
-
       <ChevronRight size={12} aria-hidden />
-
-      {open && flyoutPos
-
+      {open
         ? createPortal(
-
             <div
-
               ref={flyoutRef}
-
               className="tb-menu-dropdown-list tb-menu-dropdown-list--portal tb-menu-submenu-flyout"
-
               role="menu"
-
-              style={{ top: flyoutPos.top, left: flyoutPos.left }}
-
+              style={
+                flyoutPos
+                  ? sideFlyoutStyle(flyoutPos)
+                  : { position: 'fixed', top: 0, left: 0, visibility: 'hidden', zIndex: 25000 }
+              }
               onMouseEnter={() => setOpen(true)}
-
               onMouseLeave={() => setOpen(false)}
-
             >
-
               <button type="button" className="tb-menu-item tb-menu-item--disabled" disabled title={item.title}>
-
                 <span>{item.hint}</span>
-
               </button>
-
             </div>,
-
             document.body,
-
           )
-
         : null}
-
     </div>
-
   );
-
 }
 
 
@@ -309,6 +318,10 @@ export function HeaderPromoLinks({
 
   onSignOut,
 
+  onSignIn,
+
+  onSignUp,
+
 }: Pick<HeaderSiteNavProps, 'onOpenUpdates' | 'hasUnreadUpdates'> & {
 
   onOpenAdvancedSearch: () => void;
@@ -320,6 +333,10 @@ export function HeaderPromoLinks({
   authDisplayName?: string;
 
   onSignOut?: () => void;
+
+  onSignIn?: () => void;
+
+  onSignUp?: () => void;
 
 }) {
 
@@ -336,7 +353,15 @@ export function HeaderPromoLinks({
     t,
     onOpenAdvancedSearch,
     onOpenShortcuts,
-    onSignOut ? { signedIn, displayName: authDisplayName, onSignOut } : undefined,
+    onSignOut || onSignIn
+      ? {
+          signedIn,
+          displayName: authDisplayName,
+          onSignOut: onSignOut ?? (() => undefined),
+          onSignIn,
+          onSignUp,
+        }
+      : undefined,
   );
 
 
@@ -351,9 +376,28 @@ export function HeaderPromoLinks({
 
     }
 
-    const rect = moreRef.current.getBoundingClientRect();
-
-    setMoreMenuPos(placeAnchoredMenu(rect, { menuWidth: 180, menuHeight: 280, align: 'right' }));
+    const place = () => {
+      const el = moreRef.current;
+      if (!el) return;
+      const panel = moreMenuRef.current;
+      setMoreMenuPos(
+        placeAnchoredMenu(el.getBoundingClientRect(), {
+          menuWidth: panel?.offsetWidth ?? 200,
+          menuHeight: panel?.offsetHeight ?? 280,
+          align: 'right',
+          offsetX: MORE_MENU_NUDGE_X,
+        }),
+      );
+    };
+    place();
+    const raf = window.requestAnimationFrame(place);
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
 
   }, [moreOpen]);
 
@@ -487,7 +531,7 @@ export function HeaderPromoLinks({
 
                         type="button"
 
-                        className="tb-menu-item"
+                        className={`tb-menu-item${item.className ? ` ${item.className}` : ''}`}
 
                         title={item.title}
 
@@ -634,7 +678,7 @@ export function HeaderInlineSearch({
 
 
 
-/** Row 2: Community, designs, auth, Download, Tools. */
+/** Row 2: Community, designs, auth, Download. */
 
 export function HeaderSiteNav({
 
@@ -664,6 +708,8 @@ export function HeaderSiteNav({
 
   downloadMenu,
 
+  fileMenu,
+
   accountInMoreMenu = false,
 
 }: HeaderSiteNavProps) {
@@ -673,6 +719,10 @@ export function HeaderSiteNav({
   return (
 
     <nav className="header-links header-links--actions" aria-label={t('nav.editorActionsAria')}>
+
+      <div className="header-links__lead">
+
+      {fileMenu}
 
       <a
 
@@ -752,6 +802,10 @@ export function HeaderSiteNav({
 
       </button>
 
+      </div>
+
+      <span className="header-links__trailing">
+
       {signedIn ? (
 
         accountInMoreMenu ? null : (
@@ -806,23 +860,7 @@ export function HeaderSiteNav({
 
       {downloadMenu}
 
-      <a
-
-        className="tb-btn tb-btn-tools"
-
-        href="/tools/"
-
-        target="_blank"
-
-        rel="noopener noreferrer"
-
-        title={t('nav.toolsTitle')}
-
-      >
-
-        {t('nav.tools')}
-
-      </a>
+      </span>
 
     </nav>
 

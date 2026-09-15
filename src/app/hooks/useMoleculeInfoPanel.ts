@@ -11,6 +11,27 @@ import type { StructureCheckResult } from '@moldraw/engine-2d';
 import type { MoleculeWorkerClient } from '@moldraw/core/moleculeWorker/client';
 import type { InfoPanelData, PubChemImportContext } from '../components';
 
+const INFO_PANEL_OPEN_KEY = 'moldraw.infoPanel.open';
+
+function readInfoPanelOpenPref(): boolean {
+  try {
+    const stored = localStorage.getItem(INFO_PANEL_OPEN_KEY);
+    if (stored === '1') return true;
+    if (stored === '0') return false;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+function writeInfoPanelOpenPref(open: boolean): void {
+  try {
+    localStorage.setItem(INFO_PANEL_OPEN_KEY, open ? '1' : '0');
+  } catch {
+    /* ignore */
+  }
+}
+
 export interface UseMoleculeInfoPanelOptions {
   molecule: Molecule;
   selectedAtomIds: string[];
@@ -26,13 +47,14 @@ export function useMoleculeInfoPanel({
   workerRef,
   pubchemImport,
 }: UseMoleculeInfoPanelOptions) {
-  const [showInfoPanel, setShowInfoPanel] = useState(false);
+  const [showInfoPanel, setShowInfoPanel] = useState(readInfoPanelOpenPref);
   /**
    * After the user closes the panel, stay closed until they open it again.
    * Starts dismissed so we do not auto-open on the first selection; once opened,
    * the panel stays visible (including after canvas deselect) until Close.
+   * Restored from localStorage when the user left the panel open.
    */
-  const [infoPanelDismissed, setInfoPanelDismissed] = useState(true);
+  const [infoPanelDismissed, setInfoPanelDismissed] = useState(() => !readInfoPanelOpenPref());
   const [infoData, setInfoData] = useState<InfoPanelData | null>(null);
 
   /** Connectivity of the current selection — used to refresh the info panel when chemistry changes. */
@@ -107,11 +129,13 @@ export function useMoleculeInfoPanel({
     if (selectedAtomIds.length === 0 && !infoData) return;
     setInfoPanelDismissed(false);
     setShowInfoPanel(true);
+    writeInfoPanelOpenPref(true);
   }, [selectedAtomIds.length, infoData]);
 
   const closeInfoPanel = useCallback(() => {
     setInfoPanelDismissed(true);
     setShowInfoPanel(false);
+    writeInfoPanelOpenPref(false);
   }, []);
 
   const toggleInfoPanel = useCallback(() => {
@@ -156,9 +180,11 @@ export function useMoleculeInfoPanel({
     if (next) {
       setInfoPanelDismissed(false);
       setShowInfoPanel(true);
+      writeInfoPanelOpenPref(true);
     } else {
       setInfoPanelDismissed(true);
       setShowInfoPanel(false);
+      writeInfoPanelOpenPref(false);
     }
   }, [showInfoPanel]);
 

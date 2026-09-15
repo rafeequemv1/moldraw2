@@ -425,6 +425,21 @@ export function AppTopBar(props: AppTopBarProps) {
 
   const ribbonMode: 'draw' | 'home' = !isCompact && drawToolsOpen ? 'draw' : 'home';
 
+  const fileMenu = (
+    <FileMenu
+      openFileBusy={openFileBusy}
+      openFileError={openFileError}
+      onDismissOpenError={onDismissOpenFileError}
+      onOpenFile={onOpenMoleculeFile}
+      onPlaceFile={onPlaceFile}
+      onNewProject={onNewProject}
+      onSave={onSave}
+      onSaveAs={onSaveAs}
+      shortcutOverrides={shortcutOverrides}
+      preferSheet={isCompact}
+    />
+  );
+
   return (
     <header
       ref={headerRef}
@@ -453,18 +468,6 @@ export function AppTopBar(props: AppTopBarProps) {
               searchAriaLabel={t('search.aria')}
             />
           )}
-          <FileMenu
-            openFileBusy={openFileBusy}
-            openFileError={openFileError}
-            onDismissOpenError={onDismissOpenFileError}
-            onOpenFile={onOpenMoleculeFile}
-            onPlaceFile={onPlaceFile}
-            onNewProject={onNewProject}
-            onSave={onSave}
-            onSaveAs={onSaveAs}
-            shortcutOverrides={shortcutOverrides}
-            preferSheet={isCompact}
-          />
           {onGoHome && !isCompact ? (
             <button
               type="button"
@@ -590,6 +593,8 @@ export function AppTopBar(props: AppTopBarProps) {
               signedIn={Boolean(signedIn)}
               authDisplayName={authDisplayName ?? ''}
               onSignOut={() => onSignOut?.()}
+              onSignIn={() => onSignIn?.()}
+              onSignUp={() => onSignUp?.()}
             />
           ) : null}
           <CharlaHelpButton compact={isCompact} />
@@ -599,6 +604,7 @@ export function AppTopBar(props: AppTopBarProps) {
       {!isCompact ? (
         <div className="app-top-bar__site-row">
           <HeaderSiteNav
+            fileMenu={fileMenu}
             onOpenMyDesigns={() => onOpenLibrary?.()}
             onCopySmiles={() => onCopySmiles?.()}
             onCopySvg={() => onCopySvg?.()}
@@ -627,6 +633,7 @@ export function AppTopBar(props: AppTopBarProps) {
       ) : (
         <div className="app-top-bar__site-row app-top-bar__site-row--compact">
           <HeaderSiteNav
+            fileMenu={fileMenu}
             onOpenMyDesigns={() => onOpenLibrary?.()}
             onCopySmiles={() => onCopySmiles?.()}
             onCopySvg={() => onCopySvg?.()}
@@ -921,6 +928,7 @@ export function AppTopBar(props: AppTopBarProps) {
         <ToolCluster label={t('topBar.clusterArrange')}>
           {contextRow}
           {ribbonMode === 'home' || isCompact ? (
+            <>
             <TopBarSelectMenu
               activeTool={activeTool}
               molecule={molecule}
@@ -929,6 +937,17 @@ export function AppTopBar(props: AppTopBarProps) {
               onQuickSelect={onQuickSelect}
               shortcutOverrides={shortcutOverrides}
             />
+            <a
+              className="app-top-bar__select-trigger app-top-bar__tools-link"
+              href="/tools/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t('nav.toolsTitle')}
+              aria-label={t('nav.tools')}
+            >
+              {t('nav.tools')}
+            </a>
+            </>
           ) : null}
         </ToolCluster>
         ) : null}

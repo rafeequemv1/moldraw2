@@ -11,9 +11,9 @@ function atomFill(atom: Atom): string {
   return cpkColorForElement(atom.element);
 }
 
-function stickFill(bond: Bond): string {
+function stickFill(bond: Bond, ink: string): string {
   if (bond.color && /^#[0-9A-Fa-f]{6}$/.test(bond.color)) return bond.color;
-  return OUTLINE;
+  return ink;
 }
 
 function insetEnds(
@@ -45,6 +45,7 @@ function drawRectBar(
   width: number,
   fill: string,
   outlineW: number,
+  outline: string,
 ): void {
   const dx = bx - ax;
   const dy = by - ay;
@@ -62,7 +63,7 @@ function drawRectBar(
   ctx.fill();
   ctx.lineJoin = 'miter';
   ctx.lineWidth = outlineW;
-  ctx.strokeStyle = OUTLINE;
+  ctx.strokeStyle = outline;
   ctx.stroke();
 }
 
@@ -115,6 +116,7 @@ export function drawBallStickStructure(ctx: CanvasRenderingContext2D, R: RenderC
   const visibleAtomIds = R.visibleAtomIds;
   const visibleBondIds = R.visibleBondIds;
   const outlineW = Math.max(0.9, 1.15 / Math.max(R.viewport.zoom, 0.5));
+  const stickInk = R.structureTheme.ink;
 
   ctx.save();
 
@@ -129,7 +131,7 @@ export function drawBallStickStructure(ctx: CanvasRenderingContext2D, R: RenderC
     if (!ends) continue;
     const n = stickCount(bond);
     const w = stickWidth(R, n);
-    const fill = stickFill(bond);
+    const fill = stickFill(bond, stickInk);
     const dx = ends.bx - ends.ax;
     const dy = ends.by - ends.ay;
     const len = Math.hypot(dx, dy);
@@ -148,6 +150,7 @@ export function drawBallStickStructure(ctx: CanvasRenderingContext2D, R: RenderC
         w,
         fill,
         outlineW,
+        stickInk,
       );
     }
   }

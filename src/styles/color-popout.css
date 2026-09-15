@@ -271,7 +271,7 @@ html.app-mobile-compact .format-left-panel.format-left-panel--sheet {
   height: 3px;
   margin: 8px auto 0;
   border-radius: 999px;
-  background: var(--chrome-border-strong);
+  background: color-mix(in srgb, var(--text-muted) 45%, transparent);
 }
 
 html.app-mobile-compact .format-left-panel--sheet .format-left-panel__head {

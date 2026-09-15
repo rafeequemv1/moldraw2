@@ -3,6 +3,7 @@
  * Compact viewports use a full-screen bottom sheet.
  */
 import { useEffect, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { Bot, FolderOpen, Keyboard, Palette, Puzzle, Type, X } from 'lucide-react';
 import { MobileBottomSheet } from '../components/MobileBottomSheet';
 import { useCompactViewport } from '../hooks/useCompactViewport';
@@ -288,46 +289,46 @@ export function AppSettingsModal({
         onMouseDown={e => e.stopPropagation()}
         style={panelStyle}
       >
-        <div
-          className="app-settings-sheet-head"
-          style={{
-            padding: isCompact ? undefined : '10px 14px',
-            borderBottom: isCompact ? undefined : '1px solid var(--chrome-border)',
-            background: 'var(--chrome-bg-elevated)',
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <div>
-              <span className="app-settings-sheet-title" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-                {t('settings.title')}
-                <SettingsBetaTag />
-              </span>
-              <div className="app-settings-sheet-intro" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>
-                {t('settings.intro')}
+        {!isCompact ? (
+          <div
+            className="app-settings-sheet-head"
+            style={{
+              padding: '10px 14px',
+              borderBottom: '1px solid var(--chrome-border)',
+              background: 'var(--chrome-bg-elevated)',
+              flexShrink: 0,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <span className="app-settings-sheet-title" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
+                  {t('settings.title')}
+                  <SettingsBetaTag />
+                </span>
+                <div className="app-settings-sheet-intro" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>
+                  {t('settings.intro')}
+                </div>
               </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setPresetId('default');
-                  resetToDefaults();
-                }}
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: 'var(--text-main)',
-                  background: 'var(--chrome-bg)',
-                  border: '1px solid var(--chrome-border-strong)',
-                  borderRadius: 'var(--radius-control)',
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                }}
-              >
-                {t('settings.resetDefaults')}
-              </button>
-              {!isCompact ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPresetId('default');
+                    resetToDefaults();
+                  }}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text-main)',
+                    background: 'var(--chrome-bg)',
+                    border: '1px solid var(--chrome-border-strong)',
+                    borderRadius: 'var(--radius-control)',
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t('settings.resetDefaults')}
+                </button>
                 <button
                   type="button"
                   aria-label={t('settings.closeAria')}
@@ -347,19 +348,18 @@ export function AppSettingsModal({
                 >
                   <X size={18} />
                 </button>
-              ) : null}
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         <div
           className={isCompact ? 'app-settings-sheet-layout' : undefined}
           style={{
             display: 'grid',
-            gridTemplateColumns: '148px minmax(0, 1fr)',
-            flex: 1,
+            gridTemplateColumns: isCompact ? '118px minmax(0, 1fr)' : '148px minmax(0, 1fr)',
+            flex: isCompact ? '1 1 auto' : '0 1 auto',
             minHeight: 0,
-            maxHeight: 'calc(100vh - 96px)',
             background: 'var(--chrome-bg-elevated)',
           }}
         >
@@ -374,6 +374,7 @@ export function AppSettingsModal({
             }}
           >
             <div
+              className="app-settings-modal__sections-label"
               style={{
                 fontSize: 10,
                 fontWeight: 700,
@@ -393,7 +394,7 @@ export function AppSettingsModal({
             >
               <FolderOpen size={16} />
               {t('settings.general.nav')}
-              <SettingsBetaTag />
+              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -403,7 +404,7 @@ export function AppSettingsModal({
             >
               <Type size={16} />
               {t('settings.style.nav')}
-              <SettingsBetaTag />
+              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -413,7 +414,7 @@ export function AppSettingsModal({
             >
               <FolderOpen size={16} />
               {t('settings.bonds.nav')}
-              <SettingsBetaTag />
+              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -423,7 +424,7 @@ export function AppSettingsModal({
             >
               <Palette size={16} />
               {t('settings.presets.nav')}
-              <SettingsBetaTag />
+              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -433,7 +434,7 @@ export function AppSettingsModal({
             >
               <Bot size={16} />
               {t('settings.ai.nav')}
-              <SettingsBetaTag />
+              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -443,7 +444,7 @@ export function AppSettingsModal({
             >
               <Puzzle size={16} />
               {t('settings.plugins.nav')}
-              <SettingsBetaTag />
+              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -453,19 +454,24 @@ export function AppSettingsModal({
             >
               <Keyboard size={16} />
               {t('settings.shortcuts.nav')}
-              <SettingsBetaTag />
+              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
           </div>
 
           <div
+            className={isCompact ? 'app-settings-sheet-content' : undefined}
             style={{
-              padding: '8px 12px 12px',
+              padding: isCompact ? '10px 14px 16px' : '8px 12px 12px',
               background: 'var(--chrome-bg-elevated)',
               overflowY: 'auto',
-              height: SETTINGS_CONTENT_HEIGHT,
-              minHeight: SETTINGS_CONTENT_HEIGHT,
-              maxHeight: SETTINGS_CONTENT_HEIGHT,
               boxSizing: 'border-box',
+              ...(isCompact
+                ? { minHeight: 0, height: 'auto', maxHeight: 'none' }
+                : {
+                    height: SETTINGS_CONTENT_HEIGHT,
+                    minHeight: SETTINGS_CONTENT_HEIGHT,
+                    maxHeight: SETTINGS_CONTENT_HEIGHT,
+                  }),
             }}
           >
             {activeCategory === 'shortcuts' ? (
@@ -1214,31 +1220,34 @@ export function AppSettingsModal({
         title={t('topBar.settings')}
         size="tall"
         className="mobile-sheet--settings"
+        footer={
+          <button
+            type="button"
+            className="mobile-sheet--settings__reset"
+            onClick={() => {
+              setPresetId('default');
+              resetToDefaults();
+            }}
+          >
+            {t('settings.resetDefaults')}
+          </button>
+        }
       >
         {settingsInner}
       </MobileBottomSheet>
     );
   }
 
-  return (
+  return createPortal(
     <div
       className="app-settings-modal"
       role="dialog"
       aria-modal="true"
       aria-label={t('settings.modalAria')}
       onMouseDown={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(15, 23, 42, 0.16)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-        zIndex: 9999,
-      }}
     >
       {settingsInner}
-    </div>
+    </div>,
+    document.body,
   );
 }

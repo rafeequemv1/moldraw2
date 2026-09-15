@@ -1,9 +1,9 @@
 (function () {
-  if (!document.querySelector('script[data-site="i9cwwugh"][src="https://piqo.app/piqo.js"]')) {
+  if (!document.querySelector('script[data-site="i9cwwugh"]')) {
     var piqoScript = document.createElement('script');
     piqoScript.defer = true;
     piqoScript.setAttribute('data-site', 'i9cwwugh');
-    piqoScript.src = 'https://piqo.app/piqo.js';
+    piqoScript.src = 'https://data.moldraw.com/piqo.js';
     document.head.appendChild(piqoScript);
   }
 

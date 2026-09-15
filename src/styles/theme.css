@@ -350,9 +350,118 @@ body,
   .app-settings-modal {
     --text-muted: var(--text-main);
     --md-text-muted: var(--text-main);
+    display: grid !important;
+    place-items: center !important;
     background: rgba(0, 0, 0, 0.22) !important;
     backdrop-filter: none !important;
     color: var(--text-main);
+  }
+
+  .auth-modal-backdrop,
+  .feature-request-backdrop {
+    --text-muted: var(--text-main);
+    background: var(--sheet-backdrop) !important;
+  }
+
+  .auth-modal,
+  .feature-request-modal,
+  .updates-modal {
+    --text-muted: var(--text-main);
+    background: var(--chrome-bg-elevated) !important;
+    border-color: var(--chrome-border) !important;
+    color: var(--text-main) !important;
+    box-shadow: var(--shadow-elevated) !important;
+  }
+
+  .auth-modal-title,
+  .auth-modal-subtitle,
+  .auth-field span,
+  .auth-field-note,
+  .auth-inline-link,
+  .feature-request-title,
+  .feature-request-subtitle,
+  .feature-request-field span,
+  .updates-eyebrow,
+  .updates-card-title,
+  .updates-card-date,
+  .updates-card p,
+  .updates-card-list,
+  .updates-list-end,
+  .updates-list-sentinel {
+    color: var(--text-main) !important;
+  }
+
+  .auth-modal-x,
+  .feature-request-close,
+  .auth-cancel,
+  .feature-request-cancel {
+    background: var(--chrome-input-bg) !important;
+    border-color: var(--chrome-border) !important;
+    color: var(--text-main) !important;
+  }
+
+  .auth-field input,
+  .auth-field select,
+  .feature-request-field input,
+  .feature-request-field textarea {
+    background: var(--chrome-input-bg) !important;
+    border-color: var(--chrome-border-strong) !important;
+    color: var(--text-main) !important;
+  }
+
+  .auth-mode-switch,
+  .feature-request-tabs,
+  .updates-card,
+  .updates-card-highlight {
+    background: var(--chrome-bg) !important;
+    border-color: var(--chrome-border) !important;
+  }
+
+  .auth-mode-switch button.active,
+  .feature-request-tab.active {
+    background: var(--chrome-hover) !important;
+    color: var(--text-main) !important;
+  }
+
+  .kb-shortcuts-modal {
+    background: var(--sheet-backdrop) !important;
+  }
+
+  .kb-shortcuts-modal__panel {
+    --text-muted: var(--text-main);
+    background: var(--chrome-bg-elevated) !important;
+    color: var(--text-main) !important;
+    border-color: var(--chrome-border) !important;
+  }
+
+  .kb-shortcuts-modal__title,
+  .kb-shortcuts-modal__label,
+  .kb-shortcuts-modal__hint,
+  .kb-shortcuts-modal__group-title,
+  .kb-shortcuts-modal__sep,
+  .kb-shortcuts-modal__foot,
+  .kb-shortcuts-modal__close {
+    color: var(--text-main) !important;
+  }
+
+  .kb-shortcuts-modal__key {
+    background: var(--chrome-input-bg) !important;
+    border-color: var(--chrome-border-strong) !important;
+    color: var(--text-main) !important;
+  }
+
+  .kb-shortcuts-modal__nav {
+    background: var(--chrome-bg) !important;
+    border-color: var(--chrome-border) !important;
+  }
+
+  .kb-shortcuts-modal__nav-btn {
+    color: var(--text-main) !important;
+  }
+
+  .kb-shortcuts-modal__nav-btn:hover,
+  .kb-shortcuts-modal__nav-btn.is-active {
+    background: var(--chrome-hover) !important;
   }
 
   .app-settings-modal__panel,

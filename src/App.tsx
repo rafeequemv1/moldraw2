@@ -54,6 +54,7 @@ import { usePubChemBatchBridge } from './app/hooks/usePubChemBatchBridge';
 import { useAppSettings } from './app/settings';
 import {
   applyUiThemeToDocument,
+  rememberLastDarkUiTheme,
   structureInkForTheme,
   viewer3dBackgroundForTheme,
 } from './app/theme';
@@ -134,6 +135,7 @@ import type { MoleculeWorkerResponse } from '@moldraw/core/moleculeWorker/messag
 const IMAGE_FILE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg';
 const VIEWER3D_OPEN_KEY = 'moldraw.viewer3d.open';
 const EXPORT_SIGNUP_NOTICE = 'Sign up to download and export files.';
+const NEW_TAB_SIGNUP_NOTICE = 'Sign up to open more design tabs.';
 
 function readViewer3DOpenPref(): boolean {
   try {
@@ -217,6 +219,11 @@ function App() {
   const requireExportSignup = useCallback((): boolean => {
     if (auth.signedIn) return true;
     auth.openAuthModal('signup', EXPORT_SIGNUP_NOTICE);
+    return false;
+  }, [auth.signedIn, auth.openAuthModal]);
+  const requireNewTabSignup = useCallback((): boolean => {
+    if (auth.signedIn) return true;
+    auth.openAuthModal('signup', NEW_TAB_SIGNUP_NOTICE);
     return false;
   }, [auth.signedIn, auth.openAuthModal]);
   const [docRoute, setDocRoute] = useState<AppDocRoute>(() => parseAppRoute(window.location));
@@ -341,12 +348,13 @@ function App() {
   }, []);
 
   const handleNewTab = useCallback(() => {
+    if (!requireNewTabSignup()) return;
     setDocRoute({ kind: 'editor' });
     navigateToEditor(true);
     void newProject().catch(() => {
       /* newProject handles its own state; swallow to avoid unhandled rejection */
     });
-  }, [newProject]);
+  }, [newProject, requireNewTabSignup]);
 
   const importMolblockRef = useRef<
     (
@@ -437,6 +445,7 @@ function App() {
 
   useLayoutEffect(() => {
     applyUiThemeToDocument(appSettings.general.theme);
+    rememberLastDarkUiTheme(appSettings.general.theme);
   }, [appSettings.general.theme]);
 
   const uiLanguage = resolveUiLanguage(appSettings.general.uiLanguage);
@@ -730,6 +739,9 @@ function App() {
       return value;
     });
   }, []);
+  useEffect(() => {
+    writeViewer3DOpenPref(show3DViewer);
+  }, [show3DViewer]);
 
   const topBarRows3 = false;
   useLayoutEffect(() => {
