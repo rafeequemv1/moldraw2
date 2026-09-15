@@ -3,23 +3,61 @@ const { execFile } = require('child_process');
 const MAX_SMILES_LENGTH = 2000;
 const MAX_MOLFILE_LENGTH = 250000;
 const MAX_CACTUS_URL_LENGTH = 7500;
+const IS_VERCEL = Boolean(process.env.VERCEL);
+// Vercel Hobby kills functions at 10s with no app logs. Keep a hard budget under that.
+const FETCH_TIMEOUT_MS = IS_VERCEL ? 3500 : 20000;
+const GENERATION_BUDGET_MS = IS_VERCEL ? 8000 : 40000;
+
+const remainingMs = (deadline) => Math.max(0, deadline - Date.now());
 
 const shouldAttemptLocalChemEngines = () => {
   const flag = String(process.env.MOLDRAW_ENABLE_LOCAL_3D || '').trim().toLowerCase();
   return flag === '1' || flag === 'true' || !process.env.VERCEL;
 };
 
-const fetchText = async (url, options = {}, timeoutMs = 45000) => {
+const fetchText = async (url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) => {
+  const budget = Math.max(200, Math.min(timeoutMs, FETCH_TIMEOUT_MS));
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), budget);
   try {
     const response = await fetch(url, { ...options, signal: controller.signal });
     const text = await response.text();
     return { ok: response.ok, status: response.status, text };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      text: '',
+      error: error?.name === 'AbortError' ? 'TIMEOUT' : (error?.name || 'FETCH_FAILED'),
+    };
   } finally {
     clearTimeout(timeout);
   }
 };
+
+const firstValidStructure = (promises) => new Promise((resolve) => {
+  const list = Array.isArray(promises) ? promises : [];
+  if (!list.length) {
+    resolve(null);
+    return;
+  }
+  let pending = list.length;
+  let settled = false;
+  list.forEach((promise) => {
+    Promise.resolve(promise).then((result) => {
+      if (!settled && (result?.sdf || result?.pdb)) {
+        settled = true;
+        resolve(result);
+        return;
+      }
+      pending -= 1;
+      if (!settled && pending === 0) resolve(null);
+    }).catch(() => {
+      pending -= 1;
+      if (!settled && pending === 0) resolve(null);
+    });
+  });
+});
 
 const getSdf3DStats = (text) => {
   if (typeof text !== 'string' || !/M\s+END/i.test(text)) return null;
@@ -212,71 +250,48 @@ const uniqueSmilesCandidates = (smiles) => {
   return [...new Set(candidates)];
 };
 
-const tryCactusStructure = async (structure, format = 'sdf') => {
+const tryCactusStructure = async (structure, format = 'sdf', timeoutMs = FETCH_TIMEOUT_MS) => {
   const encoded = encodeURIComponent(structure);
-  if (!encoded || encoded.length > MAX_CACTUS_URL_LENGTH) return null;
+  if (!encoded || encoded.length > MAX_CACTUS_URL_LENGTH) return { error: 'URL_TOO_LONG' };
 
   const get3d = format === 'sdf' || format === 'pdb' ? '&get3d=true' : '';
   const url = `https://cactus.nci.nih.gov/chemical/structure/${encoded}/file?format=${format}${get3d}`;
 
-  try {
-    const result = await fetchText(url);
-    if (!result.ok || isHtmlErrorPage(result.text)) return null;
-    if (format === 'sdf' && isValid3DSdf(result.text)) {
-      return {
-        sdf: result.text,
-        source: 'nci-cactus',
-        stats: getSdf3DStats(result.text),
-      };
-    }
-    if (format === 'pdb' && isValid3DPdb(result.text)) {
-      return {
-        pdb: result.text,
-        source: 'nci-cactus-pdb',
-        stats: getPdb3DStats(result.text),
-      };
-    }
-    return null;
-  } catch (error) {
-    return { error: error?.name || 'error' };
+  const result = await fetchText(url, {}, timeoutMs);
+  if (result.error) return { error: result.error };
+  if (!result.ok || isHtmlErrorPage(result.text)) {
+    return { error: `HTTP_${result.status || 'ERR'}` };
   }
+  if (format === 'sdf' && isValid3DSdf(result.text)) {
+    return {
+      sdf: result.text,
+      source: 'nci-cactus',
+      stats: getSdf3DStats(result.text),
+    };
+  }
+  if (format === 'pdb' && isValid3DPdb(result.text)) {
+    return {
+      pdb: result.text,
+      source: 'nci-cactus-pdb',
+      stats: getPdb3DStats(result.text),
+    };
+  }
+  return { error: 'INVALID_3D' };
 };
 
-const tryCactusForSmiles = async (smiles) => {
-  const errors = [];
-  const candidates = uniqueSmilesCandidates(smiles);
-  for (const candidate of candidates) {
-    for (const format of ['sdf', 'pdb']) {
-      const result = await tryCactusStructure(candidate, format);
-      if (result?.sdf || result?.pdb) return { ...result, errors };
-      if (result?.error) errors.push(`nci-cactus:${candidate}:${format}:${result.error}`);
-    }
+const tryPubChem3D = async (smiles, timeoutMs = FETCH_TIMEOUT_MS) => {
+  const encoded = encodeURIComponent(smiles);
+  const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/SDF?record_type=3d`;
+  const result = await fetchText(url, {}, timeoutMs);
+  if (result.error) return { error: `pubchem-3d:${result.error}` };
+  if (result.ok && isValid3DSdf(result.text)) {
+    return {
+      sdf: result.text,
+      source: 'pubchem-3d',
+      stats: getSdf3DStats(result.text),
+    };
   }
-  return { errors };
-};
-
-const tryPubChem3D = async (smiles) => {
-  const candidates = uniqueSmilesCandidates(smiles);
-  const errors = [];
-  for (const candidate of candidates) {
-    const encoded = encodeURIComponent(candidate);
-    const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/SDF?record_type=3d`;
-    try {
-      const result = await fetchText(url);
-      if (result.ok && isValid3DSdf(result.text)) {
-        return {
-          sdf: result.text,
-          source: 'pubchem-3d',
-          stats: getSdf3DStats(result.text),
-          errors,
-        };
-      }
-      errors.push(`pubchem-3d:${candidate}:${result.status}`);
-    } catch (error) {
-      errors.push(`pubchem-3d:${candidate}:${error?.name || 'error'}`);
-    }
-  }
-  return { errors };
+  return { error: `pubchem-3d:${result.status || 'ERR'}` };
 };
 
 const buildSuccessBody = (result, tier, tried) => ({
@@ -293,6 +308,8 @@ const buildSuccessBody = (result, tier, tried) => ({
 });
 
 const generate3DStructure = async ({ smiles, molfile }) => {
+  const startedAt = Date.now();
+  const deadline = startedAt + GENERATION_BUDGET_MS;
   const cleanSmiles = String(smiles || '').trim();
   const cleanMolfile = String(molfile || '').trim();
   if (!cleanSmiles && !cleanMolfile) {
@@ -306,37 +323,68 @@ const generate3DStructure = async ({ smiles, molfile }) => {
   }
 
   const tried = [];
+  const candidates = uniqueSmilesCandidates(cleanSmiles);
+  const primary = candidates[0] || '';
 
-  if (cleanSmiles) {
-    const cactusResult = await tryCactusForSmiles(cleanSmiles);
-    if (cactusResult?.sdf || cactusResult?.pdb) {
-      return buildSuccessBody(cactusResult, 'public', tried);
+  try {
+  if (primary) {
+    const slice = remainingMs(deadline);
+    const cactusSdf = tryCactusStructure(primary, 'sdf', slice).then((result) => {
+      if (result?.error) tried.push(`nci-cactus:${primary}:sdf:${result.error}`);
+      return result;
+    });
+    const pubchem = tryPubChem3D(primary, slice).then((result) => {
+      if (result?.error) tried.push(result.error);
+      return result;
+    });
+    const raced = await firstValidStructure([cactusSdf, pubchem]);
+    if (raced?.sdf || raced?.pdb) {
+      console.log('[convert-3d] success', { source: raced.source, ms: Date.now() - startedAt });
+      return buildSuccessBody(raced, 'public', tried);
     }
-    tried.push(...(cactusResult.errors || []));
 
-    const pubchemResult = await tryPubChem3D(cleanSmiles);
-    if (pubchemResult?.sdf) {
-      return buildSuccessBody(pubchemResult, 'public', tried);
+    if (remainingMs(deadline) > 1200) {
+      const pdbResult = await tryCactusStructure(primary, 'pdb', remainingMs(deadline));
+      if (pdbResult?.pdb) {
+        console.log('[convert-3d] success', { source: pdbResult.source, ms: Date.now() - startedAt });
+        return buildSuccessBody(pdbResult, 'public', tried);
+      }
+      if (pdbResult?.error) tried.push(`nci-cactus:${primary}:pdb:${pdbResult.error}`);
     }
-    tried.push(...(pubchemResult.errors || []));
   }
 
-  if (shouldAttemptLocalChemEngines()) {
+  // Salt/fragment fallback is too slow for serverless; only try locally.
+  if (!IS_VERCEL && candidates.length > 1) {
+    for (const candidate of candidates.slice(1)) {
+      if (remainingMs(deadline) < 1500) break;
+      const result = await tryCactusStructure(candidate, 'sdf', remainingMs(deadline));
+      if (result?.sdf) return buildSuccessBody(result, 'public', tried);
+      if (result?.error) tried.push(`nci-cactus:${candidate}:sdf:${result.error}`);
+    }
+  }
+
+  if (shouldAttemptLocalChemEngines() && remainingMs(deadline) > 2000) {
     const rdkitResult = await tryRdkit(cleanSmiles, cleanMolfile);
     if (rdkitResult?.sdf) {
       return buildSuccessBody(rdkitResult, 'local', tried);
     }
     tried.push('rdkit:unavailable-or-failed');
 
-    const openBabelResult = await tryOpenBabel(cleanSmiles, cleanMolfile);
-    if (openBabelResult?.sdf) {
-      return buildSuccessBody(openBabelResult, 'local', tried);
+    if (remainingMs(deadline) > 2000) {
+      const openBabelResult = await tryOpenBabel(cleanSmiles, cleanMolfile);
+      if (openBabelResult?.sdf) {
+        return buildSuccessBody(openBabelResult, 'local', tried);
+      }
+      tried.push('openbabel:unavailable-or-failed');
     }
-    tried.push('openbabel:unavailable-or-failed');
-  } else {
+  } else if (IS_VERCEL) {
     tried.push('local-engines:disabled-by-policy');
   }
 
+  const elapsed = Date.now() - startedAt;
+  const timedOut = remainingMs(deadline) < 250;
+  const code = timedOut ? 'UPSTREAM_TIMEOUT' : 'NO_3D_CONFORMER';
+  console.warn('[convert-3d] no_conformer', { code, elapsed, tried });
   return {
     status: 200,
     body: {
@@ -344,11 +392,23 @@ const generate3DStructure = async ({ smiles, molfile }) => {
       pdb: null,
       format: null,
       source: 'frontend-estimate',
-      error: 'No 3D conformer could be generated for this structure.',
-      code: 'NO_3D_CONFORMER',
+      error: timedOut
+        ? '3D providers timed out before a conformer could be generated.'
+        : 'No 3D conformer could be generated for this structure.',
+      code,
       tried,
     },
   };
+  } catch (error) {
+    console.error('[convert-3d] failed', error?.message || error);
+    return {
+      status: 500,
+      body: {
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      },
+    };
+  }
 };
 
 module.exports = {

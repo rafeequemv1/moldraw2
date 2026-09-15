@@ -4,8 +4,9 @@
  * content up to the leftover viewport. Compact sheets are unchanged.
  */
 html:has(.canvas-document-tabs) {
+  --canvas-tab-stack-height: 32px;
   --app-left-dock-top: calc(
-    var(--app-top-bar-height, 96px) + 2px + var(--canvas-tab-stack-height, 28px) + 2px
+    var(--app-top-bar-height, 96px) + 2px + var(--canvas-tab-stack-height, 32px) + 2px
   );
 }
 

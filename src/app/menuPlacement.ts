@@ -176,3 +176,55 @@ export function anchoredMenuStyle(pos: AnchoredMenuPos): CSSProperties {
     transform: 'none',
   };
 }
+
+/** Nested flyout to the side of a menu row (File → Save as, Select submenus). */
+export type SideFlyoutPos = {
+  top: number;
+  left: number;
+  maxHeight: number;
+};
+
+export function placeSideFlyout(
+  anchor: DOMRect,
+  opts?: {
+    menuWidth?: number;
+    menuHeight?: number;
+    gap?: number;
+    pad?: number;
+    prefer?: 'right' | 'left';
+  },
+): SideFlyoutPos {
+  const gap = opts?.gap ?? 4;
+  const pad = opts?.pad ?? 8;
+  const menuW = opts?.menuWidth ?? 210;
+  const menuH = opts?.menuHeight ?? 280;
+  const prefer = opts?.prefer ?? 'right';
+  const { width: vw, height: vh } = visualViewportBox();
+
+  const openRight = anchor.right + gap;
+  const openLeft = anchor.left - gap - menuW;
+  let left = prefer === 'left' ? openLeft : openRight;
+  if (left + menuW > vw - pad) left = Math.max(pad, openLeft);
+  if (left < pad) left = Math.min(openRight, Math.max(pad, vw - pad - menuW));
+
+  let top = anchor.top;
+  const maxHeight = Math.max(96, vh - pad * 2);
+  if (top + Math.min(menuH, maxHeight) > vh - pad) {
+    top = Math.max(pad, vh - pad - Math.min(menuH, maxHeight));
+  }
+  if (top < pad) top = pad;
+
+  return { top, left, maxHeight: Math.min(maxHeight, vh - pad - top) };
+}
+
+export function sideFlyoutStyle(pos: SideFlyoutPos): CSSProperties {
+  return {
+    position: 'fixed',
+    top: pos.top,
+    left: pos.left,
+    maxHeight: pos.maxHeight,
+    zIndex: 25000,
+    overflowY: 'auto',
+    transform: 'none',
+  };
+}

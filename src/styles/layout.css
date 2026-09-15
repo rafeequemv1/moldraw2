@@ -103,7 +103,7 @@
 }
 
 .workspace-2d-with-overlay:has(.canvas-document-tabs) {
-  --canvas-tab-stack-height: 28px;
+  --canvas-tab-stack-height: 32px;
 }
 
 .canvas-smiles-bar {
@@ -311,7 +311,7 @@ body.workspace-pane-resizing * {
   border: 1px solid var(--chrome-border);
   border-radius: var(--radius-control);
   background: var(--chrome-bg);
-  color: hsl(222 47% 18%);
+  color: var(--text-main);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -332,7 +332,7 @@ body.workspace-pane-resizing * {
 .viewer3d-island__toggle-caret {
   flex: 0 0 auto;
   font-size: 9px;
-  color: hsl(215 16% 47%);
+  color: var(--text-muted);
   line-height: 1;
 }
 
@@ -345,7 +345,7 @@ body.workspace-pane-resizing * {
   gap: 6px;
   padding: 0;
   font-size: 11px;
-  color: hsl(215 16% 47%);
+  color: var(--text-muted);
   border-bottom: none;
   background: transparent;
   position: relative;
@@ -374,7 +374,7 @@ body.workspace-pane-resizing * {
   border: 1px solid var(--chrome-border);
   border-radius: var(--radius-control);
   background: var(--chrome-bg);
-  color: hsl(222 47% 18%);
+  color: var(--text-main);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.35;
@@ -394,7 +394,7 @@ body.workspace-pane-resizing * {
   white-space: nowrap;
   font-weight: 500;
   font-size: 9px;
-  color: hsl(215 16% 52%);
+  color: var(--text-muted);
 }
 
 .viewer3d-menu__panel {
@@ -422,7 +422,7 @@ body.workspace-pane-resizing * {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: hsl(215 16% 57%);
+  color: var(--text-muted);
 }
 
 .viewer3d-menu__row {
@@ -432,12 +432,12 @@ body.workspace-pane-resizing * {
   padding: 4px 6px;
   border-radius: 5px;
   font-size: 11px;
-  color: hsl(222 47% 18%);
+  color: var(--text-main);
   cursor: pointer;
 }
 
 .viewer3d-menu__row:hover {
-  background: hsl(210 40% 97%);
+  background: var(--chrome-hover);
 }
 
 .viewer3d-menu__row input {
@@ -458,7 +458,7 @@ body.workspace-pane-resizing * {
   width: 1.6rem;
   height: 1.2rem;
   padding: 0;
-  border: 1px solid hsl(214 32% 88%);
+  border: 1px solid var(--chrome-border);
   border-radius: 4px;
   background: transparent;
   cursor: pointer;
@@ -469,11 +469,11 @@ body.workspace-pane-resizing * {
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-size: 10px;
-  color: hsl(215 16% 47%);
+  color: var(--text-muted);
 }
 
 .viewer3d-menu__muted {
-  color: hsl(215 16% 55%);
+  color: var(--text-muted);
   font-weight: 400;
   font-size: 10px;
 }
@@ -489,10 +489,10 @@ body.workspace-pane-resizing * {
 .viewer3d-menu__clear {
   align-self: flex-start;
   padding: 2px 8px;
-  border: 1px solid hsl(214 32% 88%);
+  border: 1px solid var(--chrome-border);
   border-radius: 6px;
-  background: hsl(210 40% 98%);
-  color: hsl(222 47% 18%);
+  background: var(--chrome-input-bg);
+  color: var(--text-main);
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -500,7 +500,7 @@ body.workspace-pane-resizing * {
 
 .viewer3d-menu__file-btn:hover:not(:disabled),
 .viewer3d-menu__clear:hover {
-  background: hsl(214 95% 97%);
+  background: var(--chrome-hover);
 }
 
 .viewer3d-menu__file-btn:disabled {
@@ -514,7 +514,7 @@ body.workspace-pane-resizing * {
   gap: 6px;
   max-width: 100%;
   font-size: 10px;
-  color: hsl(215 16% 40%);
+  color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -524,7 +524,7 @@ body.workspace-pane-resizing * {
   margin: 0;
   font-size: 10px;
   line-height: 1.35;
-  color: hsl(215 16% 52%);
+  color: var(--text-muted);
 }
 
 .viewer3d-status {
@@ -534,12 +534,12 @@ body.workspace-pane-resizing * {
   margin-left: 4px;
   padding: 1px 6px 1px 4px;
   border-radius: 999px;
-  border: 1px solid hsl(214 32% 88%);
-  background: hsl(210 40% 98%);
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-input-bg);
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: hsl(215 16% 40%);
+  color: var(--text-muted);
   flex-shrink: 0;
   user-select: none;
 }
@@ -651,7 +651,7 @@ body.workspace-pane-resizing * {
 .viewer3d-export__heading {
   font-size: 11px;
   font-weight: 600;
-  color: hsl(222 47% 18%);
+  color: var(--text-main);
   padding: 0 2px;
 }
 
@@ -806,7 +806,7 @@ body.workspace-pane-resizing * {
   font-size: 11px;
   font-weight: 600;
   line-height: 1.35;
-  color: hsl(222 47% 11%);
+  color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

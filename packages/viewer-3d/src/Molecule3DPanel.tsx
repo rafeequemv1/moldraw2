@@ -20,6 +20,8 @@ import type { Viewer3DExportViewer } from './export';
 import {
   create3DmolViewer,
   disposeViewerHost,
+  frameViewerSelection,
+  noteViewerPanHome,
   type Viewer3DHandle,
 } from './create3DmolViewer';
 
@@ -114,6 +116,10 @@ export interface Molecule3DPanelProps {
   onApplyMmff94?: (payload: { molblock: string; energyKcal: number }) => void;
   /** Register a getter for the live 3Dmol viewer (File → Export 3D screenshots). */
   onRegisterExportViewer?: (getViewer: () => Viewer3DExportViewer | null) => void;
+  /** Return false to cancel (e.g. show signup before export). */
+  onBeforeExport?: () => boolean;
+  /** Re-render export gating when auth changes (memo ignores callback identity). */
+  canExport?: boolean;
   /** Viewer clear color (hex). Follows app UI theme when provided. */
   backgroundColor?: string;
   /**
@@ -284,12 +290,14 @@ function Molecule3DPanelInner({
   heavyAtomCount,
   stereoHints = [],
   stereoIssues = [],
+  selectedAtomIndices = [],
   onAtomPick,
   onRebuild3D,
   rebuildBusy = false,
   onApplyOclConformer,
   onApplyMmff94,
   onRegisterExportViewer,
+  onBeforeExport,
   backgroundColor = '#f8fafc',
   controlsAsSheet = false,
 }: Molecule3DPanelProps) {
@@ -339,6 +347,9 @@ function Molecule3DPanelInner({
   const onAtomPickRef = useRef(onAtomPick);
   const stereoHintsRef = useRef(stereoHints);
   const stereoIssuesRef = useRef(stereoIssues);
+  const selectedAtomIndicesRef = useRef(selectedAtomIndices);
+  selectedAtomIndicesRef.current = selectedAtomIndices;
+  const selectedKey = selectedAtomIndices.join(',');
   const hostSizeRef = useRef({ w: 0, h: 0 });
   const [galleryOpen, setGalleryOpen] = useState(false);
   /** Local override when user applies OCL conformer / MMFF94 (cleared when parent molblock changes). */
@@ -557,7 +568,7 @@ function Molecule3DPanelInner({
               models: modelsRef.current,
               mode: displaySettings.mode,
               showHydrogens: displaySettings.showHydrogens,
-              selectedAtomIndices: [],
+              selectedAtomIndices,
               onAtomPick: pick => onAtomPickRef.current?.(pick),
             });
             applyOutlineViewStyle(viewer, displaySettings.mode === 'toonish');
@@ -597,13 +608,24 @@ function Molecule3DPanelInner({
           models,
           mode: displaySettings.mode,
           showHydrogens: displaySettings.showHydrogens,
-          selectedAtomIndices: [],
+          selectedAtomIndices,
           onAtomPick: pick => onAtomPickRef.current?.(pick),
         });
         applyOutlineViewStyle(viewer, displaySettings.mode === 'toonish');
         applyStereoOverlays(viewer, models, stereoHintsRef.current, stereoIssuesRef.current);
         if (savedView) restoreViewerView(viewer, savedView);
-        else if (!hadModelRef.current) viewer.zoomTo();
+        else if (!hadModelRef.current) {
+          viewer.zoomTo();
+          noteViewerPanHome(viewer);
+        } else {
+          frameViewerSelection(
+            viewer,
+            selectedAtomIndicesRef.current.length > 0
+              ? { serial: selectedAtomIndicesRef.current }
+              : {},
+            false,
+          );
+        }
         hadModelRef.current = true;
         if (surfaceSettings.kind) {
           applyViewerSurface({
@@ -631,7 +653,7 @@ function Molecule3DPanelInner({
       models,
       mode: displaySettings.mode,
       showHydrogens: displaySettings.showHydrogens,
-      selectedAtomIndices: [],
+      selectedAtomIndices,
       onAtomPick: pick => onAtomPickRef.current?.(pick),
     });
     applyOutlineViewStyle(viewer, displaySettings.mode === 'toonish');
@@ -644,6 +666,41 @@ function Molecule3DPanelInner({
     displaySettings.showHydrogens,
     surfaceSettings,
   ]);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !viewerReady || viewerInitError) return;
+    if (!hadModelRef.current || modelsRef.current.length === 0) return;
+    const indices = selectedAtomIndicesRef.current;
+    applyAtomDisplayStyle({
+      viewer,
+      models: modelsRef.current,
+      mode: displaySettings.mode,
+      showHydrogens: displaySettings.showHydrogens,
+      selectedAtomIndices: indices,
+      onAtomPick: pick => onAtomPickRef.current?.(pick),
+    });
+    viewer.render();
+  }, [
+    viewerReady,
+    viewerInitError,
+    selectedKey,
+    displaySettings.mode,
+    displaySettings.showHydrogens,
+  ]);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !viewerReady || viewerInitError) return;
+    if (!hadModelRef.current || modelsRef.current.length === 0) return;
+    const indices = selectedAtomIndicesRef.current;
+    frameViewerSelection(
+      viewer,
+      indices.length > 0 ? { serial: indices } : {},
+      false,
+    );
+    viewer.render();
+  }, [viewerReady, viewerInitError, selectedKey]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -800,6 +857,7 @@ function Molecule3DPanelInner({
         title={moleculeTitle}
         disabled={!displayMolblock.trim()}
         getViewer={() => viewerRef.current as Viewer3DExportViewer | null}
+        onBeforeExport={onBeforeExport}
       />
     </>
   );
@@ -948,6 +1006,10 @@ export const Molecule3DPanel = memo(Molecule3DPanelInner, (prev, next) => {
   if (prev.backgroundColor !== next.backgroundColor) return false;
   if (prev.stereoHints !== next.stereoHints) return false;
   if (prev.stereoIssues !== next.stereoIssues) return false;
+  const prevSel = (prev.selectedAtomIndices ?? []).join(',');
+  const nextSel = (next.selectedAtomIndices ?? []).join(',');
+  if (prevSel !== nextSel) return false;
+  if (prev.canExport !== next.canExport) return false;
   return true;
 });
 Molecule3DPanel.displayName = 'Molecule3DPanel';

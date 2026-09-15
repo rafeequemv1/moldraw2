@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   font-family: var(--font-ui);
-  color: hsl(222 47% 11%);
+  color: var(--text-main);
   background: var(--chrome-bg-elevated);
   border: 1px solid var(--chrome-border);
   border-radius: var(--radius-panel);
@@ -24,7 +24,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 6px 8px 5px;
-  border-bottom: 1px solid hsl(214 32% 94%);
+  border-bottom: 1px solid var(--chrome-border);
   flex-shrink: 0;
 }
 
@@ -33,7 +33,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: hsl(215 16% 47%);
+  color: var(--text-muted);
 }
 
 .molecule-info-panel__close {
@@ -46,15 +46,15 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: hsl(215 16% 47%);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
 }
 
 .molecule-info-panel__close:hover {
-  background: hsl(210 40% 96%);
-  color: hsl(222 47% 11%);
+  background: var(--chrome-hover);
+  color: var(--text-main);
 }
 
 .molecule-info-panel__body {
@@ -80,7 +80,7 @@
   font-size: 14px;
   font-weight: 700;
   line-height: 1.25;
-  color: hsl(222 47% 11%);
+  color: var(--text-main);
   word-break: break-word;
 }
 
@@ -89,7 +89,7 @@
   flex-direction: column;
   gap: 6px;
   padding-top: 2px;
-  border-top: 1px solid hsl(214 32% 94%);
+  border-top: 1px solid var(--chrome-border);
 }
 
 .molecule-info-panel__accordion-trigger {
@@ -104,12 +104,12 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: hsl(215 16% 47%);
+  color: var(--text-muted);
   font-family: inherit;
 }
 
 .molecule-info-panel__accordion-trigger:hover {
-  color: hsl(222 47% 11%);
+  color: var(--text-main);
 }
 
 .molecule-info-panel__accordion-body {
@@ -135,7 +135,7 @@
 .molecule-info-panel__label {
   font-size: 10px;
   font-weight: 500;
-  color: hsl(215 16% 47%);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -148,11 +148,11 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  color: hsl(215 16% 47%);
+  color: var(--text-muted);
 }
 
 .molecule-info-panel__expand-label:hover .molecule-info-panel__label {
-  color: hsl(222 47% 11%);
+  color: var(--text-main);
 }
 
 .molecule-info-panel__value {
@@ -160,7 +160,7 @@
   font-weight: 500;
   line-height: 1.4;
   word-break: break-word;
-  color: hsl(222 47% 11%);
+  color: var(--text-main);
 }
 
 .molecule-info-panel__value--mono {
@@ -181,7 +181,7 @@
   -webkit-line-clamp: 1;
   overflow: hidden;
   word-break: break-all;
-  color: hsl(215 16% 40%);
+  color: var(--text-muted);
 }
 
 .molecule-info-panel__row {
@@ -193,7 +193,7 @@
 
 .molecule-info-panel__row-label {
   font-size: 11px;
-  color: hsl(215 16% 47%);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -209,7 +209,7 @@
 .molecule-info-panel__row-value {
   font-size: 12px;
   font-weight: 500;
-  color: hsl(222 47% 11%);
+  color: var(--text-main);
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -234,14 +234,14 @@
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  color: hsl(215 16% 55%);
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 .molecule-info-panel__icon-copy:hover {
-  background: hsl(210 40% 96%);
-  color: hsl(222 47% 11%);
-  border-color: hsl(214 32% 91%);
+  background: var(--chrome-hover);
+  color: var(--text-main);
+  border-color: var(--chrome-border);
 }
 
 .molecule-info-panel__icon-copy--ok {
@@ -264,7 +264,7 @@
 
 .molecule-info-panel__muted {
   font-size: 11px;
-  color: hsl(215 16% 57%);
+  color: var(--text-muted);
 }
 
 .molecule-info-panel--sheet {

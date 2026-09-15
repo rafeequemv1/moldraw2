@@ -129,10 +129,10 @@ export function useMolDrawAuth() {
     setShowAuthModal(true);
   }, []);
 
-  const openAuthModal = useCallback((mode: AuthMode = 'signin') => {
+  const openAuthModal = useCallback((mode: AuthMode = 'signin', notice = '') => {
     setAuthMode(mode);
     setAuthError('');
-    setAuthNotice('');
+    setAuthNotice(notice);
     setShowAuthModal(true);
   }, []);
 

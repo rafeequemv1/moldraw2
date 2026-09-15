@@ -2751,6 +2751,13 @@ html.app-top-rows-3 {
   color: var(--text-main);
 }
 
+.app-top-bar__file-submenu--portal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 25000;
+}
+
 .app-top-bar__file-submenu-item {
   display: flex;
   align-items: center;

@@ -767,7 +767,7 @@ export function AppSettingsModal({
                         width: 18,
                         height: 18,
                         borderRadius: '50%',
-                        border: '1px solid #94a3b8',
+                        border: '1px solid var(--chrome-border-strong)',
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1019,7 +1019,7 @@ export function AppSettingsModal({
                     href="https://aistudio.google.com/apikey"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#0d9488' }}
+                    style={{ color: 'var(--chrome-accent)' }}
                   >
                     {t('settings.ai.googleAiStudio')}
                   </a>

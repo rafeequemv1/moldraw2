@@ -61,6 +61,7 @@ import {
   navigateToEditor,
   navigateToMy,
   parseAppRoute,
+  EDITOR_BROWSER_TAB_TITLE,
   type AppDocRoute,
 } from './features/documentation';
 import {
@@ -126,10 +127,32 @@ import { hasUnreadMolDrawUpdates, markMolDrawUpdatesSeen } from './app/component
 import { CanvasWithResolvedTheme } from './app/components/StructureThemeControls';
 import { nativeSmilesTo2DMolblock } from '@moldraw/core/io/smilesToMolblock';
 import { SELECTION_SMI } from './app/data/selectionSmi';
+import { importReactionSchemeFromSmiles } from './app/importExport/importReactionSmiles';
 import { getAppSettingsPreset, type AppSettingsPresetId } from './app/settings';
 import type { MoleculeWorkerResponse } from '@moldraw/core/moleculeWorker/messages';
 
 const IMAGE_FILE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg';
+const VIEWER3D_OPEN_KEY = 'moldraw.viewer3d.open';
+const EXPORT_SIGNUP_NOTICE = 'Sign up to download and export files.';
+
+function readViewer3DOpenPref(): boolean {
+  try {
+    const stored = localStorage.getItem(VIEWER3D_OPEN_KEY);
+    if (stored === '1') return true;
+    if (stored === '0') return false;
+  } catch {
+    /* ignore */
+  }
+  return typeof window === 'undefined' || window.innerWidth > 1024;
+}
+
+function writeViewer3DOpenPref(open: boolean): void {
+  try {
+    localStorage.setItem(VIEWER3D_OPEN_KEY, open ? '1' : '0');
+  } catch {
+    /* ignore */
+  }
+}
 
 /** Lazy: 3dmol / OCL stay out of the initial critical path when the pane is off. */
 const Molecule3DPanel = lazy(() =>
@@ -191,6 +214,11 @@ function App() {
   const [showUpdatesModal, setShowUpdatesModal] = useState(false);
   const [hasUnreadUpdates, setHasUnreadUpdates] = useState(hasUnreadMolDrawUpdates);
   const auth = useMolDrawAuth();
+  const requireExportSignup = useCallback((): boolean => {
+    if (auth.signedIn) return true;
+    auth.openAuthModal('signup', EXPORT_SIGNUP_NOTICE);
+    return false;
+  }, [auth.signedIn, auth.openAuthModal]);
   const [docRoute, setDocRoute] = useState<AppDocRoute>(() => parseAppRoute(window.location));
   const [showAppSettings, setShowAppSettings] = useState(false);
   const [showProjectLibrary, setShowProjectLibrary] = useState(false);
@@ -204,6 +232,11 @@ function App() {
     window.addEventListener('popstate', syncRoute);
     return () => window.removeEventListener('popstate', syncRoute);
   }, []);
+
+  useEffect(() => {
+    if (docRoute.kind !== 'editor') return;
+    document.title = EDITOR_BROWSER_TAB_TITLE;
+  }, [docRoute.kind]);
 
   // ── Viewport / canvas refs ────────────────────────────────────────────────
   const [viewportInfo, setViewportInfo] = useState({ x: 0, y: 0, zoom: 1 });
@@ -272,6 +305,8 @@ function App() {
     selectedReactionArrow,
     selection,
   } = useMoleculeEditor(editorStore);
+  const applyCommandRef = useRef(applyCommand);
+  applyCommandRef.current = applyCommand;
 
   const {
     projectName,
@@ -427,9 +462,12 @@ function App() {
   const appliedBondLenRef = useRef(resolvedCanvasPreferences.bondLengthPx);
   const bondScaleTimerRef = useRef(0);
   /** SEO deep-links: `/?smiles=` (molecule pages) and `/?reaction=` (reaction guides). */
-  const initialSmilesRef = useRef(() => {
+  const initialQueryRef = useRef(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('smiles')?.trim() || params.get('reaction')?.trim() || null;
+    return {
+      smiles: params.get('smiles')?.trim() || null,
+      reaction: params.get('reaction')?.trim() || null,
+    };
   });
 
   const scaleMoleculeToBondLength = useCallback(
@@ -613,13 +651,38 @@ function App() {
   const selectionSmiLoadedRef = useRef(false);
   const startupSeedCleanupRef = useRef(false);
 
+  const importReactionQuery = useCallback((smiles: string) => {
+    editorStore.resetMolecule();
+    importReactionSchemeFromSmiles({
+      smiles,
+      applyCommand: applyCommandRef.current,
+      bondLengthPx: bondLengthPxRef.current,
+    });
+  }, [editorStore]);
+
+  // Native SMILES conversion does not need the engine worker; run even if onReady
+  // is skipped because the canvas already has atoms from a prior session.
+  useEffect(() => {
+    const reaction = initialQueryRef.current().reaction;
+    if (!reaction || selectionSmiLoadedRef.current) return;
+    selectionSmiLoadedRef.current = true;
+    importReactionQuery(reaction);
+  }, [importReactionQuery]);
+
   const { workerRef, engineWorkerStatus, engineWorkerError, indigoLayoutReady } =
     useMoleculeEngineWorker({
       onMessage: msg => engineMsgRef.current(msg),
       onReady: client => {
+        const query = initialQueryRef.current();
+        if (query.reaction) {
+          if (selectionSmiLoadedRef.current) return;
+          selectionSmiLoadedRef.current = true;
+          queueMicrotask(() => importReactionQuery(query.reaction!));
+          return;
+        }
         if (selectionSmiLoadedRef.current || moleculeRef.current.atoms.length > 0) return;
         selectionSmiLoadedRef.current = true;
-        const smiles = initialSmilesRef.current() ?? SELECTION_SMI;
+        const smiles = query.smiles ?? SELECTION_SMI;
         const localMolblock = nativeSmilesTo2DMolblock(smiles);
         if (localMolblock?.trim()) {
           // Defer so useEngineMessageRouter has wired engineMsgRef.
@@ -661,9 +724,14 @@ function App() {
   const clipboard = useMoleculeClipboard();
 
   /** Desktop: 3D on by default. Phone/tablet: off so the 2D canvas has room. */
-  const [show3DViewer, setShow3DViewer] = useState(
-    () => typeof window === 'undefined' || window.innerWidth > 1024,
-  );
+  const [show3DViewer, setShow3DViewerState] = useState(readViewer3DOpenPref);
+  const setShow3DViewer = useCallback((next: boolean | ((prev: boolean) => boolean)) => {
+    setShow3DViewerState(prev => {
+      const value = typeof next === 'function' ? next(prev) : next;
+      writeViewer3DOpenPref(value);
+      return value;
+    });
+  }, []);
 
   const topBarRows3 = false;
   useLayoutEffect(() => {
@@ -1542,8 +1610,44 @@ function App() {
   /* eslint-disable react-hooks/refs -- intentional circular-dep bridge */
   pasteFromClipboardRef.current = handlePasteFromSystemClipboard;
   pasteWithFallbackRef.current = handlePasteWithFallback;
-  saveMoldrawRef.current = handleSaveMoldrawToDisk;
+  saveMoldrawRef.current = () => {
+    if (!requireExportSignup()) return;
+    return handleSaveMoldrawToDisk();
+  };
   /* eslint-enable react-hooks/refs */
+
+  const gatedSaveAs = useCallback(
+    (format: Parameters<typeof handleSaveAs>[0]) => {
+      if (!requireExportSignup()) return;
+      handleSaveAs(format);
+    },
+    [handleSaveAs, requireExportSignup],
+  );
+  const gatedDownload = useCallback(
+    (format: Parameters<typeof handleDownload>[0]) => {
+      if (!requireExportSignup()) return;
+      handleDownload(format);
+    },
+    [handleDownload, requireExportSignup],
+  );
+  const gatedSaveMoldrawToDisk = useCallback(() => {
+    if (!requireExportSignup()) return;
+    void handleSaveMoldrawToDisk();
+  }, [handleSaveMoldrawToDisk, requireExportSignup]);
+  const gatedDownloadProject = useCallback(
+    (id: string) => {
+      if (!requireExportSignup()) return;
+      void downloadProjectMoldrawFile(id);
+    },
+    [requireExportSignup],
+  );
+  const gatedDownloadAll = useCallback(
+    (asZip: boolean) => {
+      if (!requireExportSignup()) return;
+      void downloadAllProjectsMoldraw({ asZip });
+    },
+    [requireExportSignup],
+  );
 
   const handleHeaderCopySmiles = useCallback(() => {
     handleCopyAs('smiles');
@@ -1734,8 +1838,8 @@ function App() {
         onRenameFolder={renameFolder}
         onDeleteFolder={deleteFolder}
         onMoveProjectsToFolder={moveProjectsToFolder}
-        onDownloadProject={id => void downloadProjectMoldrawFile(id)}
-        onDownloadAll={asZip => void downloadAllProjectsMoldraw({ asZip })}
+        onDownloadProject={gatedDownloadProject}
+        onDownloadAll={gatedDownloadAll}
         onBackToEditor={handleBackToEditor}
       />
       </Suspense>
@@ -1836,8 +1940,8 @@ function App() {
         onRenameFolder={renameFolder}
         onDeleteFolder={deleteFolder}
         onMoveProjectsToFolder={moveProjectsToFolder}
-        onDownloadProject={id => void downloadProjectMoldrawFile(id)}
-        onDownloadAll={asZip => void downloadAllProjectsMoldraw({ asZip })}
+        onDownloadProject={gatedDownloadProject}
+        onDownloadAll={gatedDownloadAll}
       />
 
       {showAppSettings ? (
@@ -2097,8 +2201,8 @@ function App() {
             onGoHome={() => {
               setShowDrawTools(false);
             }}
-            onSaveAs={handleSaveAs}
-            onSave={() => void handleSaveMoldrawToDisk()}
+            onSaveAs={gatedSaveAs}
+            onSave={gatedSaveMoldrawToDisk}
             activeColor={activeColor}
             onActiveColorChange={setActiveColor}
             colorTargets={appSettings.general.colorTargets}
@@ -2411,6 +2515,8 @@ function App() {
                       rebuildBusy={viewer3DComputeStatus === 'computing'}
                       onApplyOclConformer={handleApplyOclConformer}
                       onApplyMmff94={handleApplyMmff94}
+                      onBeforeExport={requireExportSignup}
+                      canExport={auth.signedIn}
                       backgroundColor={viewer3dBackground}
                       controlsAsSheet={isCompactViewport}
                     />
@@ -2485,6 +2591,7 @@ function App() {
             runBatchPipeline: runBatchSmilesPipeline,
             onImportMolblockToCanvas: handleBatchImportMolblockOnly,
             onImportMolblocksToCanvas: handleBatchImportMolblocksToCanvas,
+            onBeforeDownload: requireExportSignup,
           }}
         />
         </Suspense>
@@ -2664,7 +2771,7 @@ function App() {
           onInvertStereoAtAtom={handleContextInvertStereoAtAtom}
           onSwapSelectedAtomPositions={handleContextSwapAtomPositions}
           onEditSruBracketSubscript={handleContextEditSruBracketSubscript}
-          onDownload={handleDownload}
+          onDownload={gatedDownload}
           onAddExplicitHydrogen={handleContextAddExplicitHydrogen}
           onToggleAllExplicitHydrogens={() => {
             const unfolding = !molecule.atoms.some(a => a.element === 'H');

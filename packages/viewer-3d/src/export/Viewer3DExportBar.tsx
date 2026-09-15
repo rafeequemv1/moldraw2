@@ -16,6 +16,8 @@ export interface Viewer3DExportBarProps {
   title?: string;
   getViewer: () => Viewer3DExportViewer | null;
   disabled?: boolean;
+  /** Return false to cancel (e.g. show signup before export). */
+  onBeforeExport?: () => boolean;
 }
 
 export function Viewer3DExportBar({
@@ -23,6 +25,7 @@ export function Viewer3DExportBar({
   title,
   getViewer,
   disabled = false,
+  onBeforeExport,
 }: Viewer3DExportBarProps) {
   const [hiRes, setHiRes] = useState(false);
   const [transparentPng, setTransparentPng] = useState(true);
@@ -30,6 +33,7 @@ export function Viewer3DExportBar({
   const [error, setError] = useState<string | null>(null);
 
   const run = (format: Viewer3DExportFormat) => {
+    if (onBeforeExport && onBeforeExport() === false) return;
     setActive(format);
     setError(null);
     const result = exportViewer3D({

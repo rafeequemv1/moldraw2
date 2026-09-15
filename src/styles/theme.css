@@ -302,8 +302,14 @@ body,
   .viewer3d-menu__hint,
   .viewer3d-menu__value,
   .viewer3d-menu__muted,
-  .viewer3d-island__toggle-label {
-    color: var(--text-muted) !important;
+  .viewer3d-menu__cube-name,
+  .viewer3d-menu__trigger-hint,
+  .viewer3d-island__toggle-label,
+  .viewer3d-island__toggle-caret,
+  .viewer3d-toolbar,
+  .viewer3d-toggle,
+  .viewer3d-status {
+    color: var(--text-main) !important;
   }
 
   .viewer3d-export__chip {
@@ -342,15 +348,26 @@ body,
 
   /* Settings overlay stays translucent so theme changes show on the app behind. */
   .app-settings-modal {
+    --text-muted: var(--text-main);
+    --md-text-muted: var(--text-main);
     background: rgba(0, 0, 0, 0.22) !important;
     backdrop-filter: none !important;
+    color: var(--text-main);
   }
 
   .app-settings-modal__panel,
-  .app-settings-sheet-inner {
+  .app-settings-sheet-inner,
+  .molecule-info-panel {
+    --text-muted: var(--text-main);
+    --md-text-muted: var(--text-main);
     background: var(--chrome-bg-elevated) !important;
     color: var(--text-main) !important;
     border-color: var(--chrome-border) !important;
+  }
+
+  .molecule-info-panel--sheet {
+    background: transparent !important;
+    border-color: transparent !important;
   }
 
   .app-settings-modal__sidebar {
@@ -379,8 +396,50 @@ body,
     border-color: var(--chrome-border) !important;
   }
 
-  .app-settings-modal__hint {
-    color: var(--text-muted) !important;
+  .app-settings-modal__hint,
+  .app-settings-preset-card__desc,
+  .app-settings-modal p,
+  .app-settings-modal h4,
+  .app-settings-modal label,
+  .app-settings-modal code,
+  .app-settings-modal option,
+  .molecule-info-panel,
+  .molecule-info-panel__title,
+  .molecule-info-panel__name,
+  .molecule-info-panel__label,
+  .molecule-info-panel__value,
+  .molecule-info-panel__row-label,
+  .molecule-info-panel__row-value,
+  .molecule-info-panel__muted,
+  .molecule-info-panel__accordion-trigger {
+    color: var(--text-main) !important;
+  }
+
+  .molecule-info-panel__close,
+  .molecule-info-panel__expand-label,
+  .molecule-info-panel__icon-copy {
+    color: var(--text-main) !important;
+  }
+
+  .molecule-info-panel__close:hover,
+  .molecule-info-panel__icon-copy:hover {
+    background: var(--chrome-hover) !important;
+    color: var(--text-main) !important;
+    border-color: var(--chrome-border) !important;
+  }
+
+  .molecule-info-panel__check-list {
+    color: #fbbf24 !important;
+  }
+
+  .molecule-info-panel__icon-copy--ok {
+    color: #4ade80 !important;
+    background: color-mix(in srgb, #22c55e 18%, transparent) !important;
+    border-color: color-mix(in srgb, #22c55e 45%, transparent) !important;
+  }
+
+  .viewer3d-molecule-title {
+    color: var(--text-main) !important;
   }
 
   /* Top bar brand / search / import — no white chips */
@@ -391,7 +450,7 @@ body,
   .app-top-bar__beta {
     background: var(--chrome-hover) !important;
     border-color: var(--chrome-border) !important;
-    color: var(--text-muted) !important;
+    color: var(--text-main) !important;
   }
 
   .app-top-bar__search {
@@ -446,7 +505,7 @@ body,
 
   .app-top-bar__select-item-shortcut,
   .app-top-bar__select-empty {
-    color: var(--text-muted) !important;
+    color: var(--text-main) !important;
   }
 
   .app-top-bar__select-menu,
@@ -488,7 +547,7 @@ body,
   .app-top-bar__style-opacity-pct,
   .app-top-bar__style-unit,
   .mol-color-side-note--hint {
-    color: var(--text-muted) !important;
+    color: var(--text-main) !important;
   }
 
   .app-top-bar__color-menu,
@@ -612,7 +671,7 @@ body,
   .app-top-bar__file-menu-chevron,
   .app-top-bar__file-menu-sep,
   .app-top-bar__file-menu-section {
-    color: var(--text-muted) !important;
+    color: var(--text-main) !important;
   }
 
   .app-top-bar__file-menu-item:hover:not(:disabled),
@@ -682,10 +741,18 @@ body,
   .toolbar-fg-tool__panel,
   .color-popout,
   .context-menu,
+  .context-menu--popup,
+  .context-menu-flyout,
   .export-menu,
   .app-top-bar__menu,
   .app-top-bar__file-submenu,
   .app-top-bar__export-menu,
+  .style-toolbar__menu,
+  .text-style-symbols-dd__menu,
+  .pencil-options-floating,
+  .alias-inline-editor__panel,
+  .mol-color-compact,
+  .mol-color-side-panel,
   .periodic-table-dialog {
     background: var(--chrome-bg-elevated) !important;
     border-color: var(--chrome-border) !important;
@@ -700,8 +767,18 @@ body,
   .toolbar-split-tool__search-input,
   .toolbar-fg-tool__search,
   .toolbar-split-tool__group-label,
+  .toolbar-split-tool__empty,
+  .toolbar-fg-tool__empty,
   .menu-item,
-  .app-top-bar__clip-menu-item {
+  .app-top-bar__clip-menu-item,
+  .style-toolbar__menu-item,
+  .text-style-symbol-btn,
+  .text-style-symbols-dd__btn,
+  .alias-inline-editor__option,
+  .alias-inline-editor__option-label,
+  .alias-inline-editor__option-meta,
+  .context-menu__heading,
+  .context-menu-palette__btn {
     color: var(--text-main) !important;
     background: transparent;
   }
@@ -717,7 +794,12 @@ body,
   .toolbar-split-tool__item:hover,
   .toolbar-split-tool__item--on,
   .menu-item:hover,
-  .app-top-bar__clip-menu-item:hover {
+  .app-top-bar__clip-menu-item:hover,
+  .style-toolbar__menu-item:hover,
+  .style-toolbar__menu-item.is-selected,
+  .alias-inline-editor__option:hover,
+  .alias-inline-editor__option--active,
+  .context-menu-palette__btn--active {
     background: var(--chrome-hover) !important;
     color: var(--text-main) !important;
   }
@@ -733,6 +815,20 @@ body,
   input,
   button {
     border-radius: var(--radius-control);
+  }
+
+  select,
+  select option,
+  option {
+    background-color: var(--chrome-input-bg) !important;
+    color: var(--text-main) !important;
+    border-color: var(--chrome-border) !important;
+  }
+
+  option:checked,
+  option:hover {
+    background-color: var(--chrome-hover) !important;
+    color: var(--text-main) !important;
   }
 
   /* Settings: preset cards, AI Clear, shortcuts */
@@ -753,7 +849,7 @@ body,
   }
 
   .app-settings-preset-card__desc {
-    color: var(--text-muted) !important;
+    color: var(--text-main) !important;
   }
 
   .app-settings-kbd {
@@ -902,6 +998,68 @@ body,
   }
 
   .toolbar-fg-item__label {
-    color: var(--text-muted) !important;
+    color: var(--text-main) !important;
+  }
+
+  .mol-color-compact-title,
+  .mol-color-compact-close,
+  .mol-color-side-panel-title,
+  .mol-color-side-label,
+  .mol-color-side-note,
+  .mol-color-side-link,
+  .app-top-bar__color-stroke-value,
+  .alias-inline-editor__caret,
+  .alias-inline-editor__caret--open,
+  .template-library-card__hint,
+  .template-library-close,
+  .template-library-panel-lead,
+  .template-library-nav__empty,
+  .template-library-placeholder,
+  .template-library-placeholder__hint,
+  .template-library-placeholder__title,
+  .context-menu__heading {
+    color: var(--text-main) !important;
+  }
+
+  .mol-color-compact-close:hover,
+  .mol-color-side-link:hover:not(:disabled) {
+    background: var(--chrome-hover) !important;
+    color: var(--text-main) !important;
+  }
+
+  .mol-color-reset-btn {
+    background: var(--chrome-input-bg) !important;
+    border-color: var(--chrome-border) !important;
+    color: var(--text-main) !important;
+  }
+
+  .mol-color-reset-btn:hover:not(:disabled) {
+    background: var(--chrome-hover) !important;
+    color: var(--text-main) !important;
+  }
+
+  .theme-picker__btn,
+  .spec-modal__btn {
+    background: var(--chrome-input-bg) !important;
+    border-color: var(--chrome-border) !important;
+    color: var(--text-main) !important;
+  }
+
+  .theme-picker__btn:hover,
+  .theme-picker__btn--active,
+  .spec-modal__btn:hover {
+    background: var(--chrome-hover) !important;
+    color: var(--text-main) !important;
+  }
+
+  .arrow-reagent-inline__input,
+  .alias-inline-editor__input {
+    background: var(--chrome-input-bg) !important;
+    color: var(--text-main) !important;
+    border-color: var(--chrome-border-strong) !important;
+  }
+
+  .alias-inline-editor__row--focus {
+    background: var(--chrome-hover) !important;
   }
 }

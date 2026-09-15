@@ -42,6 +42,7 @@ interface PubChemSearchProps {
     onImportMolblocksToCanvas?: (
       items: Array<{ molblock: string; displayName: string }>,
     ) => void | Promise<void>;
+    onBeforeDownload?: () => boolean;
   };
 }
 
@@ -493,6 +494,7 @@ export const PubChemSearch: React.FC<PubChemSearchProps> = ({
                 runBatchPipeline={batchPipeline.runBatchPipeline}
                 onImportMolblockToCanvas={batchPipeline.onImportMolblockToCanvas}
                 onImportMolblocksToCanvas={batchPipeline.onImportMolblocksToCanvas}
+                onBeforeDownload={batchPipeline.onBeforeDownload}
               />
             </div>
             <div style={{

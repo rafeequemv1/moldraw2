@@ -42,6 +42,8 @@ export type BatchStructuresPanelProps = {
    */
   pendingBulkText?: { nonce: number; text: string; append: boolean } | null;
   onPendingBulkTextConsumed?: () => void;
+  /** Return false to cancel a file download (e.g. show signup). */
+  onBeforeDownload?: () => boolean;
 };
 
 const PAD_EMPTY_ROWS = 8;
@@ -196,6 +198,7 @@ export const BatchStructuresPanel = forwardRef<BatchStructuresHandle, BatchStruc
       onImportMolblocksToCanvas,
       pendingBulkText = null,
       onPendingBulkTextConsumed,
+      onBeforeDownload,
     },
     ref,
   ) {
@@ -452,16 +455,18 @@ export const BatchStructuresPanel = forwardRef<BatchStructuresHandle, BatchStruc
     );
 
     const downloadOne = useCallback((row: BatchTableRow) => {
+      if (onBeforeDownload && onBeforeDownload() === false) return;
       if (!row.molblock3d?.trim()) return;
       const xyz = molblock3dToXyz(row.molblock3d, row.name || row.id);
       if (!xyz) return;
       downloadText(`${sanitizeFilename(row.id || row.name)}.xyz`, xyz);
-    }, []);
+    }, [onBeforeDownload]);
 
     const downloadSdfOne = useCallback((row: BatchTableRow) => {
+      if (onBeforeDownload && onBeforeDownload() === false) return;
       if (!row.molblock3d?.trim()) return;
       downloadText(`${sanitizeFilename(row.id || row.name)}.sdf`, molblock3dToSdf(row.molblock3d));
-    }, []);
+    }, [onBeforeDownload]);
 
     /** Phase 2 only: 3D / .xyz for selected rows that already have SMILES. */
     const convertSelected = useCallback(async () => {
@@ -564,6 +569,7 @@ export const BatchStructuresPanel = forwardRef<BatchStructuresHandle, BatchStruc
     };
 
     const downloadSheetCsv = useCallback(() => {
+      if (onBeforeDownload && onBeforeDownload() === false) return;
       if (activeCsvColumns.length === 0) return;
       const dataRows = rows.filter(r => !isRowEmpty(r));
       if (dataRows.length === 0) return;
@@ -572,7 +578,7 @@ export const BatchStructuresPanel = forwardRef<BatchStructuresHandle, BatchStruc
         activeCsvColumns.map(c => csvEscapeField(cellForCsvColumn(r, c))).join(','),
       );
       downloadText('batch-export.csv', [header, ...lines].join('\r\n'));
-    }, [rows, activeCsvColumns, csvExportColumns]);
+    }, [rows, activeCsvColumns, csvExportColumns, onBeforeDownload]);
 
     const toggleCsvColumn = (col: CsvExportColumn) => {
       setCsvExportColumns(prev => {
@@ -1348,6 +1354,7 @@ export const BatchStructuresPanel = forwardRef<BatchStructuresHandle, BatchStruc
                   type="button"
                   disabled={!previewText}
                   onClick={() => {
+                    if (onBeforeDownload && onBeforeDownload() === false) return;
                     if (previewText) {
                       downloadText(
                         `${sanitizeFilename(preview.row.id || preview.row.name)}.${preview.format}`,

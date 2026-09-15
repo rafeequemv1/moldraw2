@@ -13,7 +13,8 @@ export type Viewer3DHandle = {
   addModel: (data: string, format: string) => unknown;
   addLine: (spec: object) => void;
   addSphere: (spec: object) => void;
-  zoomTo: () => void;
+  zoomTo: (sel?: object, animationDuration?: number) => void;
+  center?: (sel?: object, animationDuration?: number) => void;
   render: () => void;
   resize: () => void;
   pngURI: () => string;
@@ -22,6 +23,7 @@ export type Viewer3DHandle = {
   /** Camera quaternion + pan + zoom. Restoring this avoids a scene reset. */
   getView?: () => number[];
   setView?: (view: number[]) => void;
+  setViewChangeCallback?: (cb: ((view: number[]) => void) | null) => void;
   removeAllModels?: () => void;
   removeAllShapes?: () => void;
   removeAllLabels?: () => void;
@@ -44,6 +46,13 @@ export type Viewer3DHandle = {
     maxpixels?: number;
   }) => void;
 };
+
+/** Keep rotation as the main gesture: modest zoom in/out, small pan from home. */
+export const VIEWER_3D_CAMERA_LIMITS = {
+  lowerZoomLimit: 48,
+  upperZoomLimit: 160,
+  maxPanFromHome: 22,
+} as const;
 
 const resolveCreateViewer = ():
   | ((el: HTMLElement, opts: object) => Viewer3DHandle | null | undefined)
@@ -91,6 +100,66 @@ const withClassicCanvasWebGLPath = <T>(fn: () => T): T => {
   }
 };
 
+type PanHome = { x: number; y: number };
+
+const panHomeByViewer = new WeakMap<object, PanHome>();
+
+export const noteViewerPanHome = (viewer: Viewer3DHandle): void => {
+  try {
+    const view = viewer.getView?.();
+    if (!Array.isArray(view) || view.length < 2) return;
+    panHomeByViewer.set(viewer, { x: view[0] ?? 0, y: view[1] ?? 0 });
+  } catch {
+    /* ignore */
+  }
+};
+
+export const frameViewerSelection = (
+  viewer: Viewer3DHandle,
+  sel: object | undefined,
+  zoom: boolean,
+): void => {
+  try {
+    if (zoom) viewer.zoomTo(sel ?? {});
+    else viewer.center?.(sel ?? {});
+    noteViewerPanHome(viewer);
+  } catch {
+    try {
+      if (zoom) viewer.zoomTo();
+      else viewer.center?.();
+      noteViewerPanHome(viewer);
+    } catch {
+      /* ignore */
+    }
+  }
+};
+
+const attachLimitedPan = (viewer: Viewer3DHandle): void => {
+  if (typeof viewer.setViewChangeCallback !== 'function' || typeof viewer.setView !== 'function') {
+    return;
+  }
+  let clamping = false;
+  viewer.setViewChangeCallback(view => {
+    if (clamping || !Array.isArray(view) || view.length < 2) return;
+    const home = panHomeByViewer.get(viewer) ?? { x: 0, y: 0 };
+    const max = VIEWER_3D_CAMERA_LIMITS.maxPanFromHome;
+    const x = view[0] ?? 0;
+    const y = view[1] ?? 0;
+    const nx = Math.max(home.x - max, Math.min(home.x + max, x));
+    const ny = Math.max(home.y - max, Math.min(home.y + max, y));
+    if (nx === x && ny === y) return;
+    const next = view.slice();
+    next[0] = nx;
+    next[1] = ny;
+    clamping = true;
+    try {
+      viewer.setView?.(next);
+    } finally {
+      clamping = false;
+    }
+  });
+};
+
 export const create3DmolViewer = (
   host: HTMLElement,
   config: object = { backgroundColor: '#f8fafc' },
@@ -100,12 +169,21 @@ export const create3DmolViewer = (
     throw new Error('3Dmol createViewer not found');
   }
 
-  const viewer = withClassicCanvasWebGLPath(() => createViewer(host, config));
+  const viewerConfig = {
+    backgroundColor: '#f8fafc',
+    antialias: true,
+    lowerZoomLimit: VIEWER_3D_CAMERA_LIMITS.lowerZoomLimit,
+    upperZoomLimit: VIEWER_3D_CAMERA_LIMITS.upperZoomLimit,
+    ...(config as Record<string, unknown>),
+  };
+
+  const viewer = withClassicCanvasWebGLPath(() => createViewer(host, viewerConfig));
   if (!viewer) {
     throw new Error(
       'Browser could not create a WebGL context. Enable hardware acceleration, then click Retry.',
     );
   }
+  attachLimitedPan(viewer);
   // Smoke-check: catch silent null-GL construction before the panel mounts.
   try {
     viewer.resize();

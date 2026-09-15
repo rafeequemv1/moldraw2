@@ -11,3 +11,4 @@ export {
 export type { DocSection, DocNavGroup } from './docNav';
 export { parseAppRoute, navigateToDocs, navigateToEditor, navigateToMy, docsPathForSlug } from './docRoute';
 export type { AppDocRoute } from './docRoute';
+export { EDITOR_BROWSER_TAB_TITLE } from './docSeo';

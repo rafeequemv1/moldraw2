@@ -21,15 +21,11 @@ function stateBadgeKey(state: PluginStateRecord['state']): string {
 function stateBadgeTone(state: PluginStateRecord['state']): string {
   switch (state) {
     case 'loaded':
-      return '#16a34a';
-    case 'installed':
-      return '#64748b';
+      return 'var(--primary)';
     case 'failed':
-      return '#dc2626';
-    case 'disabled':
-      return '#94a3b8';
+      return 'var(--md-danger-soft)';
     default:
-      return '#94a3b8';
+      return 'var(--text-main)';
   }
 }
 

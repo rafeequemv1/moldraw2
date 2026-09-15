@@ -3,6 +3,16 @@
   "installCommand": "pnpm install",
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/convert-3d.js": {
+      "maxDuration": 10,
+      "memory": 256
+    },
+    "api/mcp.js": {
+      "maxDuration": 10,
+      "memory": 256
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",

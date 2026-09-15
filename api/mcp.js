@@ -1,3 +1,5 @@
+const { generate3DStructure } = require('../server/convert3d-core');
+
 const READ_ONLY_TOOLS = [
   {
     name: 'lookup_llms_index',
@@ -80,18 +82,21 @@ module.exports = async function handler(req, res) {
       if (!smiles) {
         return res.status(200).json(jsonRpc(id, null, { code: -32602, message: 'smiles is required' }));
       }
-      const host = req.headers['x-forwarded-host'] || req.headers.host || 'www.moldraw.com';
-      const protocol = String(req.headers['x-forwarded-proto'] || 'https');
-      const response = await fetch(`${protocol}://${host}/api/convert-3d`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ smiles }),
-      });
-      const body = await response.json();
-      return res.status(200).json(jsonRpc(id, {
-        content: [{ type: 'text', text: JSON.stringify(body, null, 2) }],
-        isError: !response.ok,
-      }));
+      try {
+        const result = await generate3DStructure({ smiles });
+        const body = result.body || {};
+        const failed = result.status >= 400 || !(body.sdf || body.pdb);
+        return res.status(200).json(jsonRpc(id, {
+          content: [{ type: 'text', text: JSON.stringify(body, null, 2) }],
+          isError: failed,
+        }));
+      } catch (error) {
+        console.error('[mcp] convert_smiles_to_3d', error?.message || error);
+        return res.status(200).json(jsonRpc(id, null, {
+          code: -32603,
+          message: '3D conversion failed',
+        }));
+      }
     }
 
     return res.status(200).json(jsonRpc(id, null, { code: -32601, message: `Unknown tool: ${toolName}` }));

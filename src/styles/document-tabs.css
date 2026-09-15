@@ -50,9 +50,9 @@
 .document-tab-bar__tab {
   display: inline-flex;
   align-items: center;
-  max-width: 180px;
-  min-width: 72px;
-  height: 26px;
+  max-width: 200px;
+  min-width: 88px;
+  height: 30px;
   margin: 0;
   padding: 0 2px 0 0;
   border: 1px solid var(--chrome-border, #cbd5e1);
@@ -63,6 +63,7 @@
   flex-shrink: 0;
   position: relative;
   top: 1px;
+  cursor: pointer;
 }
 
 .document-tab-bar__tab + .document-tab-bar__tab {
@@ -75,7 +76,7 @@
 }
 
 .document-tab-bar__tab--active {
-  height: 28px;
+  height: 32px;
   top: 0;
   background: var(--canvas-bg, #fff);
   color: var(--text-main);
@@ -92,12 +93,13 @@
 .document-tab-bar__tab-label {
   flex: 1;
   min-width: 0;
-  padding: 0 4px 0 10px;
+  min-height: 30px;
+  padding: 0 8px 0 12px;
   border: none;
   background: transparent;
   color: inherit;
   font-family: var(--font-ui);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1;
@@ -106,6 +108,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .document-tab-bar__tab--editing {
@@ -193,20 +196,21 @@
 .canvas-document-tabs {
   position: absolute;
   top: 2px;
-  left: var(--app-tool-island-inset, 6px);
-  z-index: 14;
+  left: calc(var(--app-tool-island-inset, 6px) + var(--app-tool-rail-width, 38px) + 6px);
+  z-index: 40;
   display: flex;
   align-items: flex-end;
   width: max-content;
-  max-width: min(420px, calc(100% - var(--app-tool-rail-width, 38px) - 40px));
+  max-width: min(560px, calc(100% - var(--app-tool-rail-width, 38px) - 24px));
   pointer-events: auto;
+  isolation: isolate;
   border-bottom: 1px solid var(--chrome-border, #cbd5e1);
 }
 
 .canvas-document-tabs .document-tab-bar {
-  min-height: var(--canvas-tab-stack-height, 28px);
-  max-height: var(--canvas-tab-stack-height, 28px);
-  height: var(--canvas-tab-stack-height, 28px);
+  min-height: var(--canvas-tab-stack-height, 32px);
+  max-height: var(--canvas-tab-stack-height, 32px);
+  height: var(--canvas-tab-stack-height, 32px);
   padding: 0;
   border: none;
   border-bottom: none;

@@ -84,6 +84,9 @@ export function DocumentTabBar({
                 }`}
                 role="tab"
                 aria-selected={active}
+                onClick={() => {
+                  if (!editing) onSelectTab(tab.id);
+                }}
                 onContextMenu={e => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -115,7 +118,9 @@ export function DocumentTabBar({
                     type="button"
                     className="document-tab-bar__tab-label"
                     title={t('tabs.renameHint', { name: tab.name })}
-                    onClick={() => onSelectTab(tab.id)}
+                    onClick={() => {
+                      if (!editing) onSelectTab(tab.id);
+                    }}
                     onDoubleClick={e => {
                       e.preventDefault();
                       e.stopPropagation();

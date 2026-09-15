@@ -51,6 +51,9 @@ const upsertJsonLd = (id: string, data: object): void => {
   el.textContent = JSON.stringify(data);
 };
 
+/** Browser tab text for the editor. Meta / OG / Twitter titles stay unchanged. */
+export const EDITOR_BROWSER_TAB_TITLE = 'moldraw.com';
+
 export const applyDocSeo = (section: DocSection): void => {
   const title = `${section.title} — Moldraw Documentation`;
   const url = docCanonicalUrl(section.slug);
@@ -92,7 +95,7 @@ export const applyDocSeo = (section: DocSection): void => {
 };
 
 export const clearDocSeo = (): void => {
-  document.title = 'Moldraw — Chemical structure editor';
+  document.title = EDITOR_BROWSER_TAB_TITLE;
   for (const id of [META_DESC_ID, META_OG_TITLE_ID, META_OG_DESC_ID, META_OG_URL_ID, META_ROBOTS_ID]) {
     document.getElementById(id)?.remove();
   }

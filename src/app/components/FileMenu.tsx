@@ -14,7 +14,16 @@ import {
 import type { DownloadFormat } from '../types';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { useI18n } from '../i18n';
-import { anchoredMenuStyle, placeAnchoredMenu, type AnchoredMenuPos } from '../menuPlacement';
+import {
+  anchoredMenuStyle,
+  placeAnchoredMenu,
+  placeSideFlyout,
+  sideFlyoutStyle,
+  type AnchoredMenuPos,
+  type SideFlyoutPos,
+} from '../menuPlacement';
+
+const SAVE_AS_CLOSE_MS = 140;
 
 export interface FileMenuProps {
   openFileBusy: boolean;
@@ -50,9 +59,33 @@ export function FileMenu({
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const saveAsBtnRef = useRef<HTMLButtonElement>(null);
+  const saveAsMenuRef = useRef<HTMLDivElement>(null);
+  const saveAsCloseTimer = useRef<number | null>(null);
   const openInputRef = useRef<HTMLInputElement>(null);
   const placeInputRef = useRef<HTMLInputElement>(null);
   const [menuPos, setMenuPos] = useState<AnchoredMenuPos | null>(null);
+  const [saveAsPos, setSaveAsPos] = useState<SideFlyoutPos | null>(null);
+
+  const clearSaveAsCloseTimer = () => {
+    if (saveAsCloseTimer.current != null) {
+      window.clearTimeout(saveAsCloseTimer.current);
+      saveAsCloseTimer.current = null;
+    }
+  };
+
+  const keepSaveAsOpen = () => {
+    clearSaveAsCloseTimer();
+    setSaveAsOpen(true);
+  };
+
+  const scheduleSaveAsClose = () => {
+    clearSaveAsCloseTimer();
+    saveAsCloseTimer.current = window.setTimeout(() => {
+      setSaveAsOpen(false);
+      saveAsCloseTimer.current = null;
+    }, SAVE_AS_CLOSE_MS);
+  };
 
   useLayoutEffect(() => {
     if (!menuOpen || preferSheet) {
@@ -74,19 +107,55 @@ export function FileMenu({
     };
   }, [menuOpen, preferSheet]);
 
+  useLayoutEffect(() => {
+    if (!menuOpen || !saveAsOpen || preferSheet) {
+      setSaveAsPos(null);
+      return;
+    }
+    const place = () => {
+      const anchor = saveAsBtnRef.current;
+      if (!anchor) return;
+      const panel = saveAsMenuRef.current;
+      setSaveAsPos(
+        placeSideFlyout(anchor.getBoundingClientRect(), {
+          menuWidth: panel?.offsetWidth ?? 210,
+          menuHeight: panel?.offsetHeight ?? 280,
+        }),
+      );
+    };
+    place();
+    const raf = window.requestAnimationFrame(place);
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [menuOpen, saveAsOpen, preferSheet]);
+
   useEffect(() => {
     if (!menuOpen || preferSheet) return;
     const onDoc = (e: MouseEvent) => {
       const t = e.target as Node;
-      if (wrapRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      if (
+        wrapRef.current?.contains(t) ||
+        menuRef.current?.contains(t) ||
+        saveAsMenuRef.current?.contains(t)
+      ) {
+        return;
+      }
       setMenuOpen(false);
       setSaveAsOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setMenuOpen(false);
+      if (e.key !== 'Escape') return;
+      if (saveAsOpen) {
         setSaveAsOpen(false);
+        return;
       }
+      setMenuOpen(false);
+      setSaveAsOpen(false);
     };
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
@@ -94,9 +163,12 @@ export function FileMenu({
       document.removeEventListener('mousedown', onDoc);
       document.removeEventListener('keydown', onKey);
     };
-  }, [menuOpen, preferSheet]);
+  }, [menuOpen, preferSheet, saveAsOpen]);
+
+  useEffect(() => () => clearSaveAsCloseTimer(), []);
 
   const close = () => {
+    clearSaveAsCloseTimer();
     setMenuOpen(false);
     setSaveAsOpen(false);
   };
@@ -214,16 +286,17 @@ export function FileMenu({
         ) : (
           <div
             className={`app-top-bar__file-menu-flyout-wrap${saveAsOpen ? ' is-open' : ''}`}
-            onMouseEnter={() => setSaveAsOpen(true)}
-            onMouseLeave={() => setSaveAsOpen(false)}
+            onMouseEnter={keepSaveAsOpen}
+            onMouseLeave={scheduleSaveAsClose}
           >
             <button
+              ref={saveAsBtnRef}
               type="button"
               className={`${itemClass} app-top-bar__file-menu-item--flyout`}
               role="menuitem"
               aria-haspopup="menu"
               aria-expanded={saveAsOpen}
-              onClick={() => setSaveAsOpen(true)}
+              onClick={keepSaveAsOpen}
             >
               <FileDown size={14} strokeWidth={2} aria-hidden />
               <span className="app-top-bar__file-menu-text">
@@ -232,11 +305,6 @@ export function FileMenu({
               </span>
               <ChevronRight size={14} className="app-top-bar__file-menu-chevron" aria-hidden />
             </button>
-            {saveAsOpen ? (
-              <div className="app-top-bar__file-submenu" role="menu" aria-label={t('file.saveAs')}>
-                {saveAsItems}
-              </div>
-            ) : null}
           </div>
         )
       ) : null}
@@ -310,7 +378,10 @@ export function FileMenu({
       <button
         type="button"
         className={`app-top-bar__file-btn ${menuOpen ? 'app-top-bar__file-btn--open' : ''}`}
-        onClick={() => setMenuOpen(v => !v)}
+        onClick={() => {
+          if (menuOpen) close();
+          else setMenuOpen(true);
+        }}
         title={t('file.menu')}
         aria-expanded={menuOpen}
         aria-haspopup="menu"
@@ -327,6 +398,26 @@ export function FileMenu({
               style={anchoredMenuStyle(menuPos)}
             >
               {menuItems}
+            </div>,
+            document.body,
+          )
+        : null}
+      {onSaveAs && menuOpen && saveAsOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              ref={saveAsMenuRef}
+              className="app-top-bar__file-submenu app-top-bar__file-submenu--portal"
+              role="menu"
+              aria-label={t('file.saveAs')}
+              style={
+                saveAsPos
+                  ? { ...sideFlyoutStyle(saveAsPos), visibility: 'visible' }
+                  : { position: 'fixed', top: 0, left: 0, visibility: 'hidden', zIndex: 25000 }
+              }
+              onMouseEnter={keepSaveAsOpen}
+              onMouseLeave={scheduleSaveAsClose}
+            >
+              {saveAsItems}
             </div>,
             document.body,
           )

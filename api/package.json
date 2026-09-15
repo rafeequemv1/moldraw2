@@ -1,0 +1,4 @@
+{
+  "type": "commonjs",
+  "description": "Keep Vercel /api handlers as CommonJS. The repo root is ESM for Vite; without this, module.exports is empty and every request fails with no runtime logs."
+}

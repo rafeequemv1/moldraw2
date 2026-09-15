@@ -1,0 +1,4 @@
+{
+  "type": "commonjs",
+  "description": "Shared CJS helpers required by api/*.js. Root package.json is ESM for Vite."
+}
