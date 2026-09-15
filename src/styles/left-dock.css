@@ -9,7 +9,8 @@ html:has(.canvas-document-tabs) {
   );
 }
 
-html:not(.app-mobile-compact) .format-left-panel:not(.format-left-panel--sheet) {
+html:not(.app-mobile-compact)
+  .format-left-panel:not(.format-left-panel--sheet):not(.left-params-panel) {
   top: var(--app-left-dock-top) !important;
   left: var(--app-left-dock-left) !important;
   bottom: auto !important;
