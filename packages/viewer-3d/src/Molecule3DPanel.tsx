@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DEFAULT_DISPLAY_SETTINGS,
@@ -302,6 +302,7 @@ function Molecule3DPanelInner({
   controlsAsSheet = false,
 }: Molecule3DPanelProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const shellRef = useRef<HTMLDivElement | null>(null);
   /** Phone: controls live in a bottom sheet opened from a single pill. */
   const [controlsSheetOpen, setControlsSheetOpen] = useState(false);
   useEffect(() => {
@@ -754,6 +755,63 @@ function Molecule3DPanelInner({
     };
   }, [viewerReady, viewerEpoch]);
 
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    const applyInset = (px: number) => {
+      shell.style.setProperty('--viewer3d-sheet-inset', `${Math.max(0, Math.round(px))}px`);
+    };
+
+    const reframe = () => {
+      const viewer = viewerRef.current;
+      if (!viewer || !viewerReady || viewerInitError) return;
+      try {
+        viewer.resize();
+      } catch {
+        /* ignore */
+      }
+      if (!hadModelRef.current) {
+        viewer.render();
+        return;
+      }
+      const indices = selectedAtomIndicesRef.current;
+      frameViewerSelection(
+        viewer,
+        indices.length > 0 ? { serial: indices } : {},
+        true,
+      );
+      viewer.render();
+    };
+
+    if (!controlsAsSheet || !controlsSheetOpen) {
+      applyInset(0);
+      const id = window.requestAnimationFrame(reframe);
+      return () => window.cancelAnimationFrame(id);
+    }
+
+    let cancelled = false;
+    const measure = () => {
+      if (cancelled) return;
+      const panel = document.querySelector(
+        '.mobile-sheet--viewer3d-controls .mobile-sheet__panel',
+      );
+      const sheetH =
+        panel instanceof HTMLElement ? panel.getBoundingClientRect().height : 0;
+      const fallback = Math.min(window.innerHeight * 0.42, 280);
+      applyInset(sheetH > 24 ? sheetH : fallback);
+      reframe();
+    };
+
+    const id = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(measure);
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(id);
+    };
+  }, [controlsAsSheet, controlsSheetOpen, viewerReady, viewerInitError]);
+
   const controls = (
     <>
       <div className="viewer3d-toolbar">
@@ -909,7 +967,12 @@ function Molecule3DPanelInner({
       : null;
 
   return (
-    <div className="viewer3d-shell">
+    <div
+      ref={shellRef}
+      className={`viewer3d-shell${
+        controlsAsSheet && controlsSheetOpen ? ' viewer3d-shell--controls-sheet-open' : ''
+      }`}
+    >
       <div className="viewer3d-stage">
         {moleculeTitle ? (
           <div className="viewer3d-molecule-title" title={moleculeTitle}>
