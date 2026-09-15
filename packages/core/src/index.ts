@@ -304,6 +304,7 @@ export {
   GRAPHENE_RINGS_MIN,
   GRAPHENE_RINGS_MAX,
   type GrapheneShape,
+  type GrapheneOxidation,
   type GrapheneSheetOptions,
   type GenerateGrapheneOptions,
 } from './molecule/grapheneSheet';

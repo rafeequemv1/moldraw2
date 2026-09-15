@@ -1,8 +1,10 @@
 /**
- * H/V/D packing sliders for the active COF lattice — shown in the top-bar
- * context row so they stay visible after a preset is placed.
+ * H/V/D packing sliders for the active COF / MOF lattice — shown in a closable
+ * left-docked params panel (bottom sheet on compact) after a preset is placed
+ * or whenever a lattice is selected.
  */
 import { useEffect, useRef, useState } from 'react';
+import { LeftParamsPanel } from '../components/LeftParamsPanel';
 import {
   COF_LAYERS_MAX,
   COF_LAYERS_MIN,
@@ -34,7 +36,14 @@ export function CofsPackingBar({
   const [cols, setCols] = useState(lattice?.cols ?? 1);
   const [rows, setRows] = useState(lattice?.rows ?? 1);
   const [layers, setLayers] = useState(lattice?.layers ?? 1);
+  const [dismissed, setDismissed] = useState(false);
   const sessionRef = useRef<CofLattice | undefined>(lattice);
+  const selectedLatticeId = selected?.id ?? null;
+
+  // Selecting a lattice (or a different one) re-opens the panel after a close.
+  useEffect(() => {
+    if (selectedLatticeId) setDismissed(false);
+  }, [selectedLatticeId]);
   const liveRafRef = useRef<number | null>(null);
   const pendingRef = useRef<{ cols?: number; rows?: number; layers?: number } | null>(null);
 
@@ -53,7 +62,7 @@ export function CofsPackingBar({
     [],
   );
 
-  if (!lattice) return null;
+  if (!lattice || dismissed) return null;
 
   const apply = (nextCols: number, nextRows: number, nextLayers: number, live: boolean) => {
     const lat = sessionRef.current ?? lattice;
@@ -172,21 +181,30 @@ export function CofsPackingBar({
     </label>
   );
 
+  const kind = listMofPresets().some(p => p.id === lattice.presetId) ? 'MOF' : 'COF';
+
   return (
-    <span className="selection-align-toolbar__pattern-top-params app-top-bar__cofs-pack" aria-label="COF packing">
-      <span className="app-top-bar__cofs-preset-label">{label} pack</span>
-      {slider('H', `Horizontal packing (${poreTitle})`, cols, COF_PACK_MIN, COF_PACK_MAX, n => {
-        setCols(n);
-        scheduleLive({ cols: n });
-      })}
-      {slider('V', `Vertical packing (${poreTitle})`, rows, COF_PACK_MIN, COF_PACK_MAX, n => {
-        setRows(n);
-        scheduleLive({ rows: n });
-      })}
-      {slider('D', depthTitle, layers, COF_LAYERS_MIN, COF_LAYERS_MAX, n => {
-        setLayers(n);
-        scheduleLive({ layers: n });
-      })}
-    </span>
+    <LeftParamsPanel
+      title={`${label} packing`}
+      ariaLabel={`${kind} packing`}
+      onClose={() => setDismissed(true)}
+      className="left-params-panel--cofs"
+      slot={2}
+    >
+      <span className="selection-align-toolbar__pattern-top-params app-top-bar__cofs-pack" aria-label={`${kind} packing`}>
+        {slider('H', `Horizontal packing (${poreTitle})`, cols, COF_PACK_MIN, COF_PACK_MAX, n => {
+          setCols(n);
+          scheduleLive({ cols: n });
+        })}
+        {slider('V', `Vertical packing (${poreTitle})`, rows, COF_PACK_MIN, COF_PACK_MAX, n => {
+          setRows(n);
+          scheduleLive({ rows: n });
+        })}
+        {slider('D', depthTitle, layers, COF_LAYERS_MIN, COF_LAYERS_MAX, n => {
+          setLayers(n);
+          scheduleLive({ layers: n });
+        })}
+      </span>
+    </LeftParamsPanel>
   );
 }

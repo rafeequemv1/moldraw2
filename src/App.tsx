@@ -19,8 +19,10 @@ import {
   COF_PACK_DEFAULT,
   createMoleculeStore,
   hasPerspectivePose,
+  setStructureTheme,
   sruBracketBoxForAtoms,
 } from '@moldraw/core';
+import { resolveCanvasPreferences } from '@moldraw/core/canvasPreferences';
 import { CMD } from '@moldraw/core/commands/registry';
 import {
   bondIdsTargetedBySelection,
@@ -56,8 +58,6 @@ import {
   viewer3dBackgroundForTheme,
 } from './app/theme';
 import {
-  DEFAULT_DOC_SLUG,
-  navigateToDocs,
   navigateToEditor,
   navigateToMy,
   parseAppRoute,
@@ -78,8 +78,12 @@ import {
   InlineAliasEditor,
   InlineTextEditor,
   KeyboardShortcutsModal,
+  AuthModal,
+  FeatureRequestModal,
+  UpdatesModal,
   MoleculeInfoPanel,
   MoleculeStatusBar,
+  SiteFooterHost,
   type PubChemImportContext,
   PencilOptionsBar,
   StereochemistryDialogs,
@@ -102,9 +106,23 @@ import {
   DocumentTabBar,
 } from './app/components';
 import { CofsPackingBar } from './app/cofs';
+import { rememberGrapheneSheet } from './app/graphene/grapheneSession';
 import { useReactionLibraryInsert } from './app/hooks/useReactionLibraryInsert';
 import { useProjectPersistence } from './app/projects/useProjectPersistence';
+import { getProject, saveProjectRecord } from './app/projects/projectStorage';
+import { readOpenTabsSession, writeOpenTabsSession } from './app/projects/tabSession';
+import {
+  mergeBondsForDocument,
+  mergeDocumentStyle,
+  mergeGeneralForDocument,
+  type DocumentStyleByTabId,
+  type DocumentStyleOverrides,
+} from './app/settings/documentStyle';
+import type { BondsSettings, GeneralSettings } from './app/settings/types';
+import { I18nProvider, resolveUiLanguage } from './app/i18n';
 import { PluginHostProvider } from './app/plugins';
+import { useMolDrawAuth } from './app/auth/useMolDrawAuth';
+import { hasUnreadMolDrawUpdates, markMolDrawUpdatesSeen } from './app/components/UpdatesModal';
 import { CanvasWithResolvedTheme } from './app/components/StructureThemeControls';
 import { nativeSmilesTo2DMolblock } from '@moldraw/core/io/smilesToMolblock';
 import { SELECTION_SMI } from './app/data/selectionSmi';
@@ -169,11 +187,17 @@ function App() {
   /** Hide HTML text overlay while moving/resizing/rotating so canvas letters track the drag. */
   const [canvasTextTransforming, setCanvasTextTransforming] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showFeatureRequest, setShowFeatureRequest] = useState(false);
+  const [showUpdatesModal, setShowUpdatesModal] = useState(false);
+  const [hasUnreadUpdates, setHasUnreadUpdates] = useState(hasUnreadMolDrawUpdates);
+  const auth = useMolDrawAuth();
   const [docRoute, setDocRoute] = useState<AppDocRoute>(() => parseAppRoute(window.location));
   const [showAppSettings, setShowAppSettings] = useState(false);
   const [showProjectLibrary, setShowProjectLibrary] = useState(false);
   const [showDrawTools, setShowDrawTools] = useState(false);
-  const [showStyleBar, setShowStyleBar] = useState(false);
+  const [smilesCopied, setSmilesCopied] = useState(false);
+  const [svgCopied, setSvgCopied] = useState(false);
+  const [svgCopyError, setSvgCopyError] = useState(false);
 
   useEffect(() => {
     const syncRoute = () => setDocRoute(parseAppRoute(window.location));
@@ -310,12 +334,84 @@ function App() {
     updateShortcutBindings: updateAppShortcutBindings,
     resetShortcutBindings: resetAppShortcutBindings,
     resetToDefaults: resetAppSettings,
-    resolvedCanvasPreferences,
+    resolvedCanvasPreferences: globalCanvasPreferences,
   } = useAppSettings();
+
+  const styleApplyGlobally = appSettings.general.styleApplyGlobally !== false;
+
+  const [documentStyleByTabId, setDocumentStyleByTabId] = useState<DocumentStyleByTabId>(
+    () => readOpenTabsSession()?.documentStyles ?? {},
+  );
+
+  const activeDocumentStyle = documentStyleByTabId[activeTabId];
+
+  const effectiveGeneral = useMemo(
+    () =>
+      mergeGeneralForDocument(
+        appSettings.general,
+        styleApplyGlobally ? undefined : activeDocumentStyle,
+        {
+          structureThemeId: molecule.structureThemeId,
+          structureDrawMode: molecule.structureDrawMode,
+        },
+      ),
+    [
+      activeDocumentStyle,
+      appSettings.general,
+      molecule.structureDrawMode,
+      molecule.structureThemeId,
+      styleApplyGlobally,
+    ],
+  );
+
+  const effectiveBonds = useMemo(
+    () => mergeBondsForDocument(appSettings.bonds, styleApplyGlobally ? undefined : activeDocumentStyle),
+    [activeDocumentStyle, appSettings.bonds, styleApplyGlobally],
+  );
+
+  const resolvedCanvasPreferences = useMemo(() => {
+    if (styleApplyGlobally) return globalCanvasPreferences;
+    return resolveCanvasPreferences({
+      general: {
+        ...appSettings.general,
+        fontFamily: effectiveGeneral.fontFamily,
+        fontSizePt: effectiveGeneral.fontSizePt,
+        subFontSizePt: effectiveGeneral.subFontSizePt,
+        boldAtomLabels: effectiveGeneral.boldAtomLabels,
+        showGrid: effectiveGeneral.showGrid,
+        gridPattern: effectiveGeneral.gridPattern,
+      },
+      bonds: effectiveBonds,
+    });
+  }, [
+    appSettings.general,
+    effectiveBonds,
+    effectiveGeneral.boldAtomLabels,
+    effectiveGeneral.fontFamily,
+    effectiveGeneral.fontSizePt,
+    effectiveGeneral.gridPattern,
+    effectiveGeneral.showGrid,
+    effectiveGeneral.subFontSizePt,
+    globalCanvasPreferences,
+    styleApplyGlobally,
+  ]);
+
+  useEffect(() => {
+    const prev = readOpenTabsSession();
+    if (!prev?.tabs?.length) return;
+    writeOpenTabsSession({ ...prev, documentStyles: documentStyleByTabId });
+  }, [documentStyleByTabId]);
 
   useLayoutEffect(() => {
     applyUiThemeToDocument(appSettings.general.theme);
   }, [appSettings.general.theme]);
+
+  const uiLanguage = resolveUiLanguage(appSettings.general.uiLanguage);
+
+  useLayoutEffect(() => {
+    document.documentElement.lang =
+      uiLanguage === 'zh' ? 'zh-CN' : uiLanguage === 'ja' ? 'ja' : uiLanguage;
+  }, [uiLanguage]);
 
   const structureTheme = structureInkForTheme(appSettings.general.theme);
   const viewer3dBackground = viewer3dBackgroundForTheme(appSettings.general.theme);
@@ -336,11 +432,8 @@ function App() {
     return params.get('smiles')?.trim() || params.get('reaction')?.trim() || null;
   });
 
-  const updateAppSettingsBondsLive = useCallback(
-    (patch: Partial<typeof appSettings.bonds>) => {
-      updateAppSettingsBonds(patch);
-      if (patch.bondLengthPx == null) return;
-      const nextPx = patch.bondLengthPx;
+  const scaleMoleculeToBondLength = useCallback(
+    (nextPx: number) => {
       window.clearTimeout(bondScaleTimerRef.current);
       bondScaleTimerRef.current = window.setTimeout(() => {
         const from = appliedBondLenRef.current;
@@ -364,7 +457,141 @@ function App() {
         });
       }, 160);
     },
-    [applyCommand, updateAppSettingsBonds],
+    [applyCommand],
+  );
+
+  const updateAppSettingsBondsLive = useCallback(
+    (patch: Partial<typeof appSettings.bonds>) => {
+      updateAppSettingsBonds(patch);
+      if (patch.bondLengthPx != null) scaleMoleculeToBondLength(patch.bondLengthPx);
+    },
+    [scaleMoleculeToBondLength, updateAppSettingsBonds],
+  );
+
+  const patchDocumentStyle = useCallback(
+    (patch: DocumentStyleOverrides) => {
+      setDocumentStyleByTabId(prev => ({
+        ...prev,
+        [activeTabId]: mergeDocumentStyle(prev[activeTabId], patch),
+      }));
+    },
+    [activeTabId],
+  );
+
+  const applyThemeToAllOpenDesigns = useCallback(
+    async (themeId: string, drawMode: 'skeletal' | 'ball-stick') => {
+      applyCommand(CMD.SetStructureTheme, { themeId, drawMode });
+      await Promise.all(
+        openTabs.map(async tab => {
+          if (tab.id === activeTabId) return;
+          const saved = await getProject(tab.id);
+          if (!saved?.molecule) return;
+          const nextMol = setStructureTheme(saved.molecule, { themeId, drawMode });
+          if (nextMol === saved.molecule) return;
+          await saveProjectRecord({
+            ...saved,
+            molecule: nextMol,
+            updatedAt: Date.now(),
+          });
+        }),
+      );
+    },
+    [activeTabId, applyCommand, openTabs],
+  );
+
+  const handleStyleGeneralPatch = useCallback(
+    (patch: Partial<GeneralSettings>) => {
+      const themeId = patch.structureThemeId;
+      const drawMode = patch.structureDrawMode;
+      const hasTheme = themeId != null && drawMode != null;
+
+      if (styleApplyGlobally) {
+        updateAppSettingsGeneral(patch);
+        if (hasTheme) void applyThemeToAllOpenDesigns(themeId, drawMode);
+        return;
+      }
+
+      patchDocumentStyle({ general: patch });
+      if (hasTheme) applyCommand(CMD.SetStructureTheme, { themeId, drawMode });
+    },
+    [
+      applyCommand,
+      applyThemeToAllOpenDesigns,
+      patchDocumentStyle,
+      styleApplyGlobally,
+      updateAppSettingsGeneral,
+    ],
+  );
+
+  const handleStyleBondsPatch = useCallback(
+    (patch: Partial<BondsSettings>) => {
+      if (styleApplyGlobally) {
+        updateAppSettingsBondsLive(patch);
+        return;
+      }
+      patchDocumentStyle({ bonds: patch });
+      if (patch.bondLengthPx != null) scaleMoleculeToBondLength(patch.bondLengthPx);
+    },
+    [
+      patchDocumentStyle,
+      scaleMoleculeToBondLength,
+      styleApplyGlobally,
+      updateAppSettingsBondsLive,
+    ],
+  );
+
+  const handleApplyGloballyChange = useCallback(
+    (global: boolean) => {
+      if (!global) {
+        updateAppSettingsGeneral({ styleApplyGlobally: false });
+        return;
+      }
+
+      const mergedGeneral = mergeGeneralForDocument(
+        appSettings.general,
+        documentStyleByTabId[activeTabId],
+        {
+          structureThemeId: molecule.structureThemeId,
+          structureDrawMode: molecule.structureDrawMode,
+        },
+      );
+      const mergedBonds = mergeBondsForDocument(
+        appSettings.bonds,
+        documentStyleByTabId[activeTabId],
+      );
+
+      updateAppSettingsGeneral({
+        styleApplyGlobally: true,
+        structureThemeId: mergedGeneral.structureThemeId,
+        structureDrawMode: mergedGeneral.structureDrawMode,
+        fontFamily: mergedGeneral.fontFamily,
+        fontSizePt: mergedGeneral.fontSizePt,
+        subFontSizePt: mergedGeneral.subFontSizePt,
+        boldAtomLabels: mergedGeneral.boldAtomLabels,
+      });
+      updateAppSettingsBonds(mergedBonds);
+      void applyThemeToAllOpenDesigns(
+        mergedGeneral.structureThemeId,
+        mergedGeneral.structureDrawMode,
+      );
+      setDocumentStyleByTabId(prev => {
+        if (!prev[activeTabId]) return prev;
+        const next = { ...prev };
+        delete next[activeTabId];
+        return next;
+      });
+    },
+    [
+      activeTabId,
+      appSettings.bonds,
+      appSettings.general,
+      applyThemeToAllOpenDesigns,
+      documentStyleByTabId,
+      molecule.structureDrawMode,
+      molecule.structureThemeId,
+      updateAppSettingsBonds,
+      updateAppSettingsGeneral,
+    ],
   );
 
   const handleApplySettingsPreset = useCallback((presetId: AppSettingsPresetId) => {
@@ -384,6 +611,7 @@ function App() {
 
   const engineMsgRef = useRef<(msg: MoleculeWorkerResponse) => void>(() => {});
   const selectionSmiLoadedRef = useRef(false);
+  const startupSeedCleanupRef = useRef(false);
 
   const { workerRef, engineWorkerStatus, engineWorkerError, indigoLayoutReady } =
     useMoleculeEngineWorker({
@@ -1259,6 +1487,7 @@ function App() {
     handleImageFile,
     handlePasteFromSystemClipboard,
     handlePasteWithFallback,
+    handlePasteTextToCanvas,
     handleSaveAs,
     handleSaveMoldrawToDisk,
     handleDownload,
@@ -1316,6 +1545,45 @@ function App() {
   saveMoldrawRef.current = handleSaveMoldrawToDisk;
   /* eslint-enable react-hooks/refs */
 
+  const handleHeaderCopySmiles = useCallback(() => {
+    handleCopyAs('smiles');
+    setSmilesCopied(true);
+    window.setTimeout(() => setSmilesCopied(false), 1800);
+  }, [handleCopyAs]);
+
+  const handleHeaderCopySvg = useCallback(() => {
+    setSvgCopyError(false);
+    void Promise.resolve(handleCopyAs('svg')).then(ok => {
+      if (ok === false) {
+        setSvgCopyError(true);
+        window.setTimeout(() => setSvgCopyError(false), 2200);
+        return;
+      }
+      setSvgCopied(true);
+      window.setTimeout(() => setSvgCopied(false), 1800);
+    });
+  }, [handleCopyAs]);
+
+  const handleHeaderPasteSmiles = useCallback(async () => {
+    const paste = async (raw: string) => {
+      const ok = await handlePasteTextToCanvas(raw, true);
+      if (!ok) {
+        setOpenFileError('Clipboard does not contain a SMILES string or structure.');
+      }
+    };
+    try {
+      const text = (await navigator.clipboard.readText()).trim();
+      if (text) {
+        await paste(text);
+        return;
+      }
+    } catch {
+      /* fall through to prompt */
+    }
+    const smiles = window.prompt('Paste or type a SMILES string:');
+    if (smiles?.trim()) await paste(smiles.trim());
+  }, [handlePasteTextToCanvas, setOpenFileError]);
+
   useEngineMessageRouter({
     engineMsgRef,
     importMolblockRef,
@@ -1346,6 +1614,8 @@ function App() {
     setActiveTool,
     runLocalCleanupRef,
     onCleanupStructureRef: cleanupStructureRef,
+    startupSeedCleanupRef,
+    getMolecule: () => editorStore.getMolecule(),
   });
 
 
@@ -1473,6 +1743,7 @@ function App() {
   }
 
   return (
+    <I18nProvider language={uiLanguage}>
     <PluginHostProvider
       getMolecule={() => editorStore.getMolecule()}
       getSelection={() => editorStore.getSelection()}
@@ -1504,6 +1775,27 @@ function App() {
       <HardwareAccelBanner />
 
       <KeyboardShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      <AuthModal
+        open={auth.showAuthModal}
+        mode={auth.authMode}
+        form={auth.authForm}
+        error={auth.authError}
+        notice={auth.authNotice}
+        loading={auth.isAuthLoading}
+        onClose={auth.closeAuthModal}
+        onModeChange={mode => {
+          auth.setAuthMode(mode);
+        }}
+        onChange={auth.updateAuthForm}
+        onSubmit={auth.handleAuthSubmit}
+      />
+      <FeatureRequestModal
+        key={auth.defaultFeatureEmail}
+        open={showFeatureRequest}
+        defaultEmail={auth.defaultFeatureEmail}
+        onClose={() => setShowFeatureRequest(false)}
+      />
+      <UpdatesModal open={showUpdatesModal} onClose={() => setShowUpdatesModal(false)} />
 
       <Suspense fallback={null}>
         <PluginModals />
@@ -1572,6 +1864,8 @@ function App() {
       </Suspense>
       ) : null}
 
+      <div className="app-frame">
+      <div className="app-shell">
       <WorkspaceSplit
         showChatPanel={showChatPanel}
         show3DViewer={show3DViewer}
@@ -1599,31 +1893,34 @@ function App() {
             onOpenMoleculeFile={handleOpenMoleculeFile}
             onPlaceFile={handlePlaceOnCanvas}
             onNewProject={handleNewTab}
-            styleRow={
-              showStyleBar && !isCompactViewport ? (
-                <StyleToolbar
-                  general={{
-                    ...appSettings.general,
-                    structureThemeId:
-                      molecule.structureThemeId ?? appSettings.general.structureThemeId,
-                    structureDrawMode:
-                      molecule.structureDrawMode ?? appSettings.general.structureDrawMode,
-                  }}
-                  bonds={appSettings.bonds}
-                  updateGeneral={updateAppSettingsGeneral}
-                  updateBonds={updateAppSettingsBondsLive}
-                  onStructureThemeChange={(themeId, drawMode) => {
-                    applyCommand(CMD.SetStructureTheme, { themeId, drawMode });
-                  }}
-                  onResetToDefaults={() => {
-                    resetAppSettings();
-                    applyCommand(CMD.SetStructureTheme, {
-                      themeId: 'skeletal',
-                      drawMode: 'skeletal',
-                    });
-                  }}
-                />
-              ) : null
+            documentStyleThemePanel={
+              <StyleToolbar
+                layout="panel"
+                panelSection="theme"
+                general={effectiveGeneral}
+                bonds={effectiveBonds}
+                applyGlobally={styleApplyGlobally}
+                onApplyGloballyChange={handleApplyGloballyChange}
+                updateGeneral={handleStyleGeneralPatch}
+                updateBonds={handleStyleBondsPatch}
+              />
+            }
+            documentStyleRestPanel={
+              <StyleToolbar
+                layout="panel"
+                panelSection="rest"
+                general={effectiveGeneral}
+                bonds={effectiveBonds}
+                applyGlobally={styleApplyGlobally}
+                onApplyGloballyChange={handleApplyGloballyChange}
+                updateGeneral={handleStyleGeneralPatch}
+                updateBonds={handleStyleBondsPatch}
+                onResetToDefaults={() => {
+                  resetAppSettings();
+                  setDocumentStyleByTabId({});
+                  void applyThemeToAllOpenDesigns('skeletal', 'skeletal');
+                }}
+              />
             }
             drawRow={
               showDrawTools && !isCompactViewport ? (
@@ -1645,7 +1942,7 @@ function App() {
               ) : null
             }
             toolsRow={
-              !isCompactViewport && !showStyleBar && !showDrawTools ? (
+              !isCompactViewport && !showDrawTools ? (
                 <ToolbarTopStrip
                   activeTool={activeTool}
                   onSelect={handleToolbarSelectWithPerspective}
@@ -1766,50 +2063,42 @@ function App() {
             onToggleObjectsPanel={() => setShowObjectsPanel(v => !v)}
             onOpenSettings={() => setShowAppSettings(true)}
             onOpenShortcuts={() => setShowShortcuts(true)}
-            onOpenDocumentation={() => {
-              navigateToDocs(DEFAULT_DOC_SLUG);
-              setDocRoute({ kind: 'docs', slug: DEFAULT_DOC_SLUG });
-            }}
             onOpenMyProjects={handleOpenMyProjects}
             onOpenLibrary={() => {
               void refreshMetas();
               setShowProjectLibrary(true);
             }}
+            onCopySmiles={handleHeaderCopySmiles}
+            onCopySvg={handleHeaderCopySvg}
+            smilesCopied={smilesCopied}
+            svgCopied={svgCopied}
+            svgCopyError={svgCopyError}
+            onRequestFeature={() => setShowFeatureRequest(true)}
+            onSignIn={() => auth.openAuthModal('signin')}
+            onSignUp={() => auth.openAuthModal('signup')}
+            onSignOut={() => void auth.handleSignOut()}
+            signedIn={auth.signedIn}
+            authDisplayName={auth.authDisplayName}
+            onOpenUpdates={() => {
+              setShowUpdatesModal(true);
+              setHasUnreadUpdates(false);
+              markMolDrawUpdatesSeen();
+            }}
+            hasUnreadUpdates={hasUnreadUpdates}
             onOpenTemplateLibrary={() => {
               setTemplateLibraryTab('structures');
               setShowTemplateLibrary(true);
               setShowDrawTools(false);
-              setShowStyleBar(false);
             }}
             drawToolsOpen={showDrawTools}
             onToggleDrawTools={() => {
-              setShowDrawTools(v => {
-                const next = !v;
-                if (next) setShowStyleBar(false);
-                return next;
-              });
-            }}
-            styleBarOpen={showStyleBar}
-            onToggleStyleBar={() => {
-              setShowStyleBar(v => {
-                const next = !v;
-                if (next) setShowDrawTools(false);
-                return next;
-              });
+              setShowDrawTools(v => !v);
             }}
             onGoHome={() => {
               setShowDrawTools(false);
-              setShowStyleBar(false);
             }}
             onSaveAs={handleSaveAs}
             onSave={() => void handleSaveMoldrawToDisk()}
-            onCopyAs={handleCopyAs}
-            onPaste={() => {
-              void handlePasteFromSystemClipboard();
-            }}
-            copyDisabled={molecule.atoms.length === 0}
-            pasteDisabled={false}
-            smilesStatusHint={smilesBarHint}
             activeColor={activeColor}
             onActiveColorChange={setActiveColor}
             colorTargets={appSettings.general.colorTargets}
@@ -1828,28 +2117,12 @@ function App() {
             onBeginCanvasShapeLiquidScrub={beginCanvasShapeLiquidScrub}
             onScrubCanvasShapeLiquidLevel={scrubCanvasShapeLiquidLevel}
             onEndCanvasShapeLiquidScrub={endCanvasShapeLiquidScrub}
-            documentFontSizePt={appSettings.general.fontSizePt}
-            documentBondThicknessPx={appSettings.bonds.bondThicknessPx}
+            documentFontSizePt={effectiveGeneral.fontSizePt}
+            documentBondThicknessPx={effectiveBonds.bondThicknessPx}
             onApplySelectionFontSize={handleContextApplySelectionFontSize}
             onApplySelectionBondThickness={handleContextApplySelectionBondThickness}
             onApplySelectionOpacity={handleContextApplySelectionOpacity}
           />
-            {docRoute.kind === 'editor' ? (
-              <DocumentTabBar
-                tabs={openTabs}
-                activeTabId={activeTabId}
-                onSelectTab={id => {
-                  void switchTab(id);
-                }}
-                onCloseTab={id => {
-                  void closeTab(id);
-                }}
-                onNewTab={handleNewTab}
-                onRenameTab={(id, name) => {
-                  void renameProject(name, id);
-                }}
-              />
-            ) : null}
           </>
         }
         paneChat={
@@ -1871,6 +2144,24 @@ function App() {
         }
         pane2D={
           <div className="workspace-2d-with-overlay">
+            {docRoute.kind === 'editor' ? (
+              <div className="canvas-document-tabs">
+                <DocumentTabBar
+                  tabs={openTabs}
+                  activeTabId={activeTabId}
+                  onSelectTab={id => {
+                    void switchTab(id);
+                  }}
+                  onCloseTab={id => {
+                    void closeTab(id);
+                  }}
+                  onNewTab={handleNewTab}
+                  onRenameTab={(id, name) => {
+                    void renameProject(name, id);
+                  }}
+                />
+              </div>
+            ) : null}
             <CanvasWithResolvedTheme
               themeId={molecule.structureThemeId ?? appSettings.general.structureThemeId}
               storedDrawMode={
@@ -1896,8 +2187,8 @@ function App() {
               applyAtomColorsToBonds={appSettings.general.applyAtomColorsToBonds}
               structureTheme={structureTheme}
               onBondAdded={recordAutoCleanupBond}
-              canvasTextFontFamily={appSettings.general.fontFamily}
-              canvasTextFontSizePt={appSettings.general.fontSizePt}
+              canvasTextFontFamily={effectiveGeneral.fontFamily}
+              canvasTextFontSizePt={effectiveGeneral.fontSizePt}
               activeColor={activeColor}
               activeThickness={activeThickness}
               ringPaintActive={ringPaintActive}
@@ -2121,6 +2412,7 @@ function App() {
                       onApplyOclConformer={handleApplyOclConformer}
                       onApplyMmff94={handleApplyMmff94}
                       backgroundColor={viewer3dBackground}
+                      controlsAsSheet={isCompactViewport}
                     />
                   </Suspense>
                 }
@@ -2129,6 +2421,15 @@ function App() {
           ) : null
         }
       />
+      </div>
+
+      <MoleculeStatusBar
+        molecule={molecule}
+        selectedAtomIds={selectedAtomIds}
+        selectedCanvasShapeId={colorEditCanvasShapeId}
+      />
+      <SiteFooterHost />
+      </div>
 
       {editingArrowReagent && inlineArrowReagentPos ? (
         <InlineArrowReagentEditor
@@ -2220,6 +2521,22 @@ function App() {
             cy: 0,
           });
         }}
+        onInsertGraphene={opts => {
+          setShowTemplateLibrary(false);
+          const params = {
+            cols: opts.cols,
+            rows: opts.rows,
+            shape: opts.shape,
+            bondLengthPx: resolvedCanvasPreferences.bondLengthPx,
+            oxidation: opts.oxidation,
+            cx: 0,
+            cy: 0,
+          };
+          const ids = handleGenerateGraphene(params);
+          // The Arrange toolbar reopens the Graphene params panel for this sheet
+          // (selection → sheet id) and grows it incrementally from these values.
+          rememberGrapheneSheet(ids, params);
+        }}
         onInsertDendrimer={id => {
           setShowTemplateLibrary(false);
           handleGenerateDendrimer({
@@ -2264,17 +2581,12 @@ function App() {
           pubchemImport={pubchemImport}
           selectionMatchesPubchemImport={selectionMatchesPubchemImport}
           onClose={closeInfoPanel}
+          asSheet={isCompactViewport}
           onCopyText={text => {
             void navigator.clipboard.writeText(text);
           }}
         />
       )}
-
-      <MoleculeStatusBar
-        molecule={molecule}
-        selectedAtomIds={selectedAtomIds}
-        selectedCanvasShapeId={colorEditCanvasShapeId}
-      />
 
       {contextMenu && touchQuickMenu && fullMenuFor !== contextMenu && (
         <TouchQuickMenu
@@ -2383,6 +2695,7 @@ function App() {
       <ViewerLinkHint message={viewer3DLinkHint} />
     </>
     </PluginHostProvider>
+    </I18nProvider>
   );
 }
 

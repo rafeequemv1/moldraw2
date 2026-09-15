@@ -20,7 +20,8 @@ const EXTENSIONLESS_STATIC = [
   { pattern: /^\/tools\/free-chem-tools\/([^/]+)$/, build: (m) => `/tools/free-chem-tools/${m[1]}.html` },
   { pattern: /^\/pages\/([^/]+)$/, build: (m) => `/pages/${m[1]}.html` },
   { pattern: /^\/course\/chapters\/([^/]+)$/, build: (m) => `/course/chapters/${m[1]}.html` },
-  { pattern: /^\/course\/ketcher-help-complete$/, build: () => '/course/ketcher-help-complete.html' },
+  { pattern: /^\/course\/ketcher-help-complete$/, build: () => '/course/reference.html' },
+  { pattern: /^\/course\/reference$/, build: () => '/course/reference.html' },
 ];
 
 function resolveExtensionlessRedirect(pathname) {

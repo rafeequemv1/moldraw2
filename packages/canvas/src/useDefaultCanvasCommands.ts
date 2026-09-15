@@ -435,9 +435,17 @@ export function useDefaultCanvasCommands({
   );
 
   const onScaleSelectionCommit = useCallback(
-    (atomIds: string[], cx: number, cy: number, factor: number) => {
-      if (atomIds.length === 0 || !Number.isFinite(factor) || Math.abs(factor - 1) < 1e-4) return;
-      applyCommand(CMD.ScaleAtoms, { atomIds, cx, cy, factor });
+    (atomIds: string[], anchorX: number, anchorY: number, factorX: number, factorY?: number) => {
+      const fy = factorY ?? factorX;
+      if (
+        atomIds.length === 0 ||
+        !Number.isFinite(factorX) ||
+        !Number.isFinite(fy) ||
+        (Math.abs(factorX - 1) < 1e-4 && Math.abs(fy - 1) < 1e-4)
+      ) {
+        return;
+      }
+      applyCommand(CMD.ScaleAtoms, { atomIds, cx: anchorX, cy: anchorY, factor: factorX, factorY: fy });
     },
     [applyCommand],
   );

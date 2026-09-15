@@ -453,11 +453,11 @@ const scaleAtomsCmd: MoleculeCommand<z.infer<typeof schemas.scaleAtoms>> = {
   id: CMD.ScaleAtoms,
   description: 'Scale atoms about (cx, cy) by `factor`. Instance-array copies follow the parent.',
   inputSchema: schemas.scaleAtoms,
-  apply: (prev, { atomIds, cx, cy, factor }) => {
+  apply: (prev, { atomIds, cx, cy, factor, factorY }) => {
     const { realAtomIds } = partitionAtomIdsForInstances(prev, atomIds);
     const ids = realAtomIds.length > 0 ? realAtomIds : atomIds;
     if (ids.length === 0) return { next: prev };
-    let next = Mut.scaleAtoms(prev, ids, cx, cy, factor);
+    let next = Mut.scaleAtoms(prev, ids, cx, cy, factor, factorY);
     const arrayIds = instanceArrayIdsForAtomIds(next, ids);
     if (arrayIds.length > 0) {
       next = scaleInstanceArrayPlacements(next, new Set(arrayIds), factor);
@@ -702,6 +702,7 @@ const generateGrapheneCmd: MoleculeCommand<
       bondLength: input.bondLengthPx,
       cx: input.cx,
       cy: input.cy,
+      oxidation: input.oxidation,
       replaceAtomIds: input.replaceAtomIds,
     });
     return {

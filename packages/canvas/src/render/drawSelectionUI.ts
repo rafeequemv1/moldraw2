@@ -1,18 +1,15 @@
 /**
  * UI overlays for the "select" tool:
- *  - the rotate handle above selected atoms
- *  - the move handle below selected atoms
- *  - the dashed marquee rectangle while box-selecting
- *  - the dashed lasso path while lasso-selecting
- *  - ChemDraw-style angle protractor while rotating
+ *  - rotate handle above the selection
+ *  - circular corner / edge resize handles on the box
+ *  - marquee + lasso while selecting
+ *  - protractor while rotating
  */
 import {
-  MOVE_HANDLE_R,
   ROTATE_HANDLE_R,
-  SCALE_HANDLE_R,
   atomIdsForSelectionTransform,
-  getSelectionCentroid,
   getMarqueeSelectionTransformLayout,
+  getSelectionBoxHandles,
   hasMarqueeSelectionContent,
   type MarqueeSelectionBoundsInput,
   shortestAngleDiff,
@@ -20,13 +17,10 @@ import {
 import type { RenderContext } from './types';
 import { drawTransformHandleDisc, transformChrome } from './transformChrome';
 
-/** Navy chrome — matches image / shape / 3D selection handles (fallback icons). */
-const NAVY_SOFT = 'rgba(30, 58, 138, 0.85)';
-
 /** Screen-stable stroke width (avoids hairline pixelation when zooming). */
 const screenLw = (invZ: number, px: number) => Math.max(1.25 * invZ, px * invZ);
 
-/** Dual curved arrows (clockwise) — toolbar-style rotate glyph. */
+/** Dual curved arrows — rotate glyph. */
 const drawRotateIcon = (
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -34,11 +28,11 @@ const drawRotateIcon = (
   scale: number,
   color: string,
 ): void => {
-  const r = 5.2 * scale;
+  const r = 4.4 * scale;
   ctx.save();
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.lineWidth = 1.55 * scale;
+  ctx.lineWidth = 1.35 * scale;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
@@ -51,8 +45,8 @@ const drawRotateIcon = (
     const ey = cy + Math.sin(end) * r;
     const tx = Math.sin(end);
     const ty = -Math.cos(end);
-    const ah = 2.8 * scale;
-    const aw = 2.1 * scale;
+    const ah = 2.4 * scale;
+    const aw = 1.7 * scale;
     ctx.beginPath();
     ctx.moveTo(ex + tx * ah, ey + ty * ah);
     ctx.lineTo(ex - ty * aw, ey - tx * aw);
@@ -61,54 +55,12 @@ const drawRotateIcon = (
     ctx.fill();
   };
 
-  drawHalf(-Math.PI * 0.15, Math.PI * 0.95);
-  drawHalf(Math.PI * 0.85, Math.PI * 0.95);
+  drawHalf(-Math.PI * 0.12, Math.PI * 0.92);
+  drawHalf(Math.PI * 0.88, Math.PI * 0.92);
   ctx.restore();
 };
 
-/** Four-way move (pan) icon centered at (cx, cy). */
-const drawMoveIcon = (
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  scale: number,
-  color: string,
-): void => {
-  const arm = 5.6 * scale;
-  const tip = 2.7 * scale;
-  const half = 1.55 * scale;
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 1.8 * scale;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - arm);
-  ctx.lineTo(cx, cy + arm);
-  ctx.moveTo(cx - arm, cy);
-  ctx.lineTo(cx + arm, cy);
-  ctx.stroke();
-
-  const heads: Array<[number, number, number, number, number, number]> = [
-    [cx, cy - arm, cx - half, cy - arm + tip, cx + half, cy - arm + tip],
-    [cx + arm, cy, cx + arm - tip, cy - half, cx + arm - tip, cy + half],
-    [cx, cy + arm, cx - half, cy + arm - tip, cx + half, cy + arm - tip],
-    [cx - arm, cy, cx - arm + tip, cy - half, cx - arm + tip, cy + half],
-  ];
-  for (const [ax, ay, bx, by, cx2, cy2] of heads) {
-    ctx.beginPath();
-    ctx.moveTo(ax, ay);
-    ctx.lineTo(bx, by);
-    ctx.lineTo(cx2, cy2);
-    ctx.closePath();
-    ctx.fill();
-  }
-  ctx.restore();
-};
-
-/** Hairline rounded AABB around any selected objects. */
+/** Dotted AABB — molecule halo already marks the selection. */
 const drawIdleSelectionRect = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -119,17 +71,15 @@ const drawIdleSelectionRect = (
   chrome: ReturnType<typeof transformChrome>,
 ): void => {
   if (!(w > 0) || !(h > 0)) return;
-  const radius = Math.min(5 * invZ, w * 0.5, h * 0.5);
   ctx.beginPath();
-  if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, w, h, radius);
-  else ctx.rect(x, y, w, h);
+  ctx.rect(x, y, w, h);
   ctx.strokeStyle = chrome.boxStroke;
-  ctx.lineWidth = screenLw(invZ, 1.05);
-  ctx.setLineDash([]);
+  ctx.lineWidth = screenLw(invZ, 1.15);
+  ctx.setLineDash([3.6 * invZ, 2.8 * invZ]);
   ctx.stroke();
+  ctx.setLineDash([]);
 };
 
-/** White disc + navy ring (theme-aware). */
 const drawHandleDisc = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -139,21 +89,61 @@ const drawHandleDisc = (
   R: RenderContext,
 ): void => {
   const chrome = transformChrome(R);
-  drawTransformHandleDisc(ctx, x, y, r, screenLw(invZ, 1.7), chrome);
+  drawTransformHandleDisc(ctx, x, y, r, screenLw(invZ, 1.35), chrome);
 };
 
-/** Pivot crosshair at selection centroid. */
+const drawTealHandleDot = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  invZ: number,
+  chrome: ReturnType<typeof transformChrome>,
+): void => {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = chrome.accent;
+  ctx.fill();
+  ctx.strokeStyle = chrome.handleStroke;
+  ctx.lineWidth = screenLw(invZ, 1.15);
+  ctx.stroke();
+};
+
+/** Circular corner (uniform) + side (non-uniform) resize dots. */
+const drawBoxResizeHandles = (
+  ctx: CanvasRenderingContext2D,
+  L: ReturnType<typeof getMarqueeSelectionTransformLayout>,
+  invZ: number,
+  chrome: ReturnType<typeof transformChrome>,
+): void => {
+  if (!L) return;
+  const handles = getSelectionBoxHandles(L);
+  const cornerR = Math.max(4.6 * invZ, 4.6 * invZ);
+  const edgeR = Math.max(3.6 * invZ, 3.6 * invZ);
+
+  ctx.save();
+  for (const id of ['nw', 'ne', 'sw', 'se'] as const) {
+    const p = handles[id];
+    drawTealHandleDot(ctx, p.x, p.y, cornerR, invZ, chrome);
+  }
+  for (const id of ['n', 's', 'e', 'w'] as const) {
+    const p = handles[id];
+    drawTealHandleDot(ctx, p.x, p.y, edgeR, invZ, chrome);
+  }
+  ctx.restore();
+};
+
 const drawPivotCrosshair = (
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   invZ: number,
-  color = NAVY_SOFT,
+  color: string,
 ): void => {
-  const arm = 7 * invZ;
+  const arm = 6 * invZ;
   ctx.save();
   ctx.strokeStyle = color;
-  ctx.lineWidth = screenLw(invZ, 1.35);
+  ctx.lineWidth = screenLw(invZ, 1.2);
   ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(cx - arm, cy);
@@ -164,7 +154,6 @@ const drawPivotCrosshair = (
   ctx.restore();
 };
 
-/** ChemDraw-style dashed protractor + live degrees at the grab handle only. */
 const drawRotationAngleCircle = (
   ctx: CanvasRenderingContext2D,
   R: RenderContext,
@@ -198,60 +187,40 @@ const drawRotationAngleCircle = (
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  // Dashed protractor ring
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.strokeStyle = chrome.guide;
-  ctx.lineWidth = screenLw(invZ, 1.35);
+  ctx.lineWidth = screenLw(invZ, 1.25);
   ctx.setLineDash([5 * invZ, 4 * invZ]);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Degree tick labels (relative to grab = 0°)
-  const labelAngles = [0, 30, 45, 60, 90, 120, 135, 150, 180, -30, -45, -60, -90, -120, -135];
-  const fontPx = Math.max(9, 11 * invZ);
-  ctx.font = `${fontPx}px ui-sans-serif, system-ui, sans-serif`;
-  ctx.fillStyle = chrome.guide;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  for (const d of labelAngles) {
-    const a = startPointerAngle + (d * Math.PI) / 180;
-    const lx = cx + Math.cos(a) * (radius + 14 * invZ);
-    const ly = cy + Math.sin(a) * (radius + 14 * invZ);
-    const nearHandle = Math.abs(shortestAngleDiff(a, currentPointerAngle)) < 0.18;
-    if (nearHandle) continue;
-    ctx.fillText(`${d}°`, lx, ly);
-  }
-
-  // Solid arc from start → current
   if (Math.abs(delta) > 0.01) {
     ctx.beginPath();
     ctx.arc(cx, cy, radius, startPointerAngle, currentPointerAngle, delta < 0);
     ctx.strokeStyle = chrome.accent;
-    ctx.lineWidth = screenLw(invZ, 2.4);
+    ctx.lineWidth = screenLw(invZ, 2.2);
     ctx.stroke();
   }
 
-  // Radial dashed guide to current handle
   const hx = cx + Math.cos(currentPointerAngle) * radius;
   const hy = cy + Math.sin(currentPointerAngle) * radius;
   ctx.beginPath();
   ctx.moveTo(cx, cy);
   ctx.lineTo(hx, hy);
-  ctx.strokeStyle = chrome.accent;
-  ctx.lineWidth = screenLw(invZ, 1.4);
+  ctx.strokeStyle = chrome.handleStroke;
+  ctx.lineWidth = screenLw(invZ, 1.15);
   ctx.setLineDash([4.5 * invZ, 3.5 * invZ]);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Grab handle — white disc + navy ring + rotate glyph (same as idle)
-  const hr = Math.max(ROTATE_HANDLE_R * 0.92 * invZ, 7 * invZ);
+  const hr = Math.max(ROTATE_HANDLE_R * 0.82 * invZ, 6.5 * invZ);
   drawHandleDisc(ctx, hx, hy, hr, invZ, R);
-  drawRotateIcon(ctx, hx, hy, invZ, chrome.badgeText);
+  drawRotateIcon(ctx, hx, hy, invZ, chrome.handleStroke);
 
-  // Live degree badge only at the grab handle (not duplicated at top)
   const badge = `${deg}°`;
-  ctx.font = `600 ${Math.max(10, 12 * invZ)}px ui-sans-serif, system-ui, sans-serif`;
+  const fontPx = Math.max(10, 12 * invZ);
+  ctx.font = `600 ${fontPx}px ui-sans-serif, system-ui, sans-serif`;
   const tw = ctx.measureText(badge).width;
   const padX = 5 * invZ;
   const padY = 3.5 * invZ;
@@ -260,7 +229,7 @@ const drawRotationAngleCircle = (
   const bw = tw + padX * 2;
   const bh = fontPx + padY * 2;
   ctx.fillStyle = chrome.badgeFill;
-  ctx.strokeStyle = chrome.accent;
+  ctx.strokeStyle = chrome.handleStroke;
   ctx.lineWidth = screenLw(invZ, 1);
   ctx.fillRect(bx - padX, by - bh / 2, bw, bh);
   ctx.strokeRect(bx - padX, by - bh / 2, bw, bh);
@@ -269,8 +238,7 @@ const drawRotationAngleCircle = (
   ctx.textBaseline = 'middle';
   ctx.fillText(badge, bx, by);
 
-  drawPivotCrosshair(ctx, cx, cy, invZ, chrome.accent);
-
+  drawPivotCrosshair(ctx, cx, cy, invZ, chrome.handleStroke);
   ctx.restore();
 };
 
@@ -294,27 +262,24 @@ export const drawSelectionTransformHandle = (
   };
   if (!hasMarqueeSelectionContent(marqueeBounds)) return;
   if (R.dragAction?.type === 'box_select' || R.dragAction?.type === 'lasso_select') return;
+  const exclusiveText =
+    transformIds.length === 0 &&
+    (R.selectedCanvasTextIds?.length ?? 0) > 0 &&
+    (R.selectedReactionArrowIds?.length ?? 0) === 0 &&
+    (R.selectedStrokeIds?.length ?? 0) === 0 &&
+    (R.selectedCanvasShapeIds?.length ?? 0) === 0 &&
+    (R.selectedCanvasImageIds?.length ?? 0) === 0;
+  if (exclusiveText) return;
 
   const L = getMarqueeSelectionTransformLayout(R.renderedMolecule, marqueeBounds, null);
   if (!L) return;
 
   const canRotate = transformIds.length > 0 && R.hasRotateCommit;
+  const canScale = transformIds.length > 0 && R.hasScaleCommit;
 
-  const {
-    boxMinX,
-    boxMinY,
-    boxW,
-    boxH,
-    handleX,
-    handleY,
-    moveHandleX,
-    moveHandleY,
-    scaleHandleX,
-    scaleHandleY,
-  } = L;
+  const { boxMinX, boxMinY, boxW, boxH, handleX, handleY } = L;
   const invZ = 1 / Math.max(1e-6, R.viewport.zoom);
   const rotating = R.dragAction?.type === 'rotate_selection';
-  const scaling = R.dragAction?.type === 'scale_selection';
   const chrome = transformChrome(R);
 
   ctx.save();
@@ -323,81 +288,34 @@ export const drawSelectionTransformHandle = (
 
   drawIdleSelectionRect(ctx, boxMinX, boxMinY, boxW, boxH, invZ, chrome);
 
+  if (canScale && !rotating) {
+    drawBoxResizeHandles(ctx, L, invZ, chrome);
+  }
+
   if (rotating) {
     drawRotationAngleCircle(ctx, R, invZ);
     ctx.restore();
     return;
   }
-  if (scaling) {
-    ctx.restore();
-    return;
-  }
-
-  const canScale = transformIds.length > 0 && R.hasScaleCommit;
 
   if (canRotate) {
-    // Idle rotate: stem + white/navy disc + rotate icon
+    const stemR = 2.4 * invZ;
+    const rotateR = Math.max(ROTATE_HANDLE_R * 0.72 * invZ, 6.2 * invZ);
+    drawTealHandleDot(ctx, handleX, boxMinY, stemR, invZ, chrome);
+
     ctx.beginPath();
     ctx.moveTo(handleX, boxMinY);
-    ctx.lineTo(handleX, handleY + ROTATE_HANDLE_R * 0.35);
-    ctx.strokeStyle = chrome.accent;
-    ctx.lineWidth = screenLw(invZ, 1.5);
-    ctx.setLineDash([4 * invZ, 3.25 * invZ]);
+    ctx.lineTo(handleX, handleY + rotateR);
+    ctx.strokeStyle = chrome.handleStroke;
+    ctx.lineWidth = screenLw(invZ, 1.05);
+    ctx.setLineDash([3.2 * invZ, 2.6 * invZ]);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    drawHandleDisc(ctx, handleX, handleY, ROTATE_HANDLE_R * 0.92, invZ, R);
-    drawRotateIcon(ctx, handleX, handleY, invZ, chrome.badgeText);
-
-    const cen = getSelectionCentroid(R.renderedMolecule, transformIds);
-    if (cen) drawPivotCrosshair(ctx, cen.cx, cen.cy, invZ, chrome.accent);
+    drawHandleDisc(ctx, handleX, handleY, rotateR, invZ, R);
+    drawRotateIcon(ctx, handleX, handleY, invZ, chrome.handleStroke);
   }
 
-  // Idle move: stem + circular badge below the box, icon inside the circle
-  const moveDiscR = MOVE_HANDLE_R * 0.95;
-  const moveIconScale = Math.min(1, invZ);
-  ctx.beginPath();
-  ctx.moveTo(moveHandleX, boxMinY + boxH);
-  ctx.lineTo(moveHandleX, moveHandleY - moveDiscR * 0.55);
-  ctx.strokeStyle = chrome.accent;
-  ctx.lineWidth = screenLw(invZ, 1.5);
-  ctx.setLineDash([4 * invZ, 3.25 * invZ]);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  drawHandleDisc(ctx, moveHandleX, moveHandleY, moveDiscR, invZ, R);
-  drawMoveIcon(ctx, moveHandleX, moveHandleY, moveIconScale, chrome.badgeText);
-
-  if (canScale) {
-    drawHandleDisc(ctx, scaleHandleX, scaleHandleY, SCALE_HANDLE_R * 0.85, invZ, R);
-    drawScaleIcon(ctx, scaleHandleX, scaleHandleY, invZ, chrome.badgeText);
-  }
-
-  ctx.restore();
-};
-
-const drawScaleIcon = (
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  scale: number,
-  color: string,
-): void => {
-  const arm = 4.4 * scale;
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.6 * scale;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(cx - arm, cy + arm);
-  ctx.lineTo(cx + arm, cy - arm);
-  ctx.moveTo(cx + arm - 2.2 * scale, cy - arm);
-  ctx.lineTo(cx + arm, cy - arm);
-  ctx.lineTo(cx + arm, cy - arm + 2.2 * scale);
-  ctx.moveTo(cx - arm + 2.2 * scale, cy + arm);
-  ctx.lineTo(cx - arm, cy + arm);
-  ctx.lineTo(cx - arm, cy + arm - 2.2 * scale);
-  ctx.stroke();
   ctx.restore();
 };
 
@@ -409,7 +327,7 @@ export const drawMarquee = (ctx: CanvasRenderingContext2D, R: RenderContext): vo
 
   if (da.type === 'box_select') {
     ctx.strokeStyle = chrome.marqueeStroke;
-    ctx.lineWidth = screenLw(invZ, 1.6);
+    ctx.lineWidth = screenLw(invZ, 1.5);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.setLineDash([5.5 * invZ, 3.75 * invZ]);
@@ -426,7 +344,7 @@ export const drawMarquee = (ctx: CanvasRenderingContext2D, R: RenderContext): vo
 
   if (da.type === 'lasso_select' && da.points.length > 0) {
     ctx.strokeStyle = chrome.marqueeStroke;
-    ctx.lineWidth = screenLw(invZ, 1.6);
+    ctx.lineWidth = screenLw(invZ, 1.5);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.setLineDash([5 * invZ, 3.5 * invZ]);

@@ -1,8 +1,25 @@
 /**
  * Download dropdown on the top bar — PNG, MOL, ChemDraw, PDF, etc.
  */
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { ChevronDown } from 'lucide-react';
 import { DOWNLOAD_FORMAT_ITEMS } from '../downloadFormats';
 import type { DownloadFormat } from '../types';
+import { useI18n } from '../i18n';
+import { anchoredMenuStyle, placeAnchoredMenu, type AnchoredMenuPos } from '../menuPlacement';
+
+const COMPACT_DOWNLOAD_LABEL: Partial<Record<DownloadFormat, string>> = {
+  png_white: 'PNG white',
+  mol: 'MOL',
+  cdxml: 'CDXML',
+  cdx: 'CDX',
+  rxn: 'RXN',
+};
+
+function compactDownloadLabel(key: DownloadFormat, label: string): string {
+  return COMPACT_DOWNLOAD_LABEL[key] ?? label;
+}
 
 export interface ExportMenuProps {
   open: boolean;
@@ -11,41 +28,62 @@ export interface ExportMenuProps {
 }
 
 export function ExportMenu({ open, onToggle, onSaveAs }: ExportMenuProps) {
+  const { t } = useI18n();
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<AnchoredMenuPos | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !wrapRef.current) {
+      setMenuPos(null);
+      return;
+    }
+    const rect = wrapRef.current.getBoundingClientRect();
+    setMenuPos(placeAnchoredMenu(rect, { menuWidth: 118, menuHeight: 280, align: 'right' }));
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (wrapRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      onToggle();
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open, onToggle]);
+
   return (
-    <div className="app-top-bar__export-wrap">
-      <button type="button" className="app-top-bar__export-btn" onClick={onToggle}>
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-        Download
+    <div className="tb-menu-dropdown tb-menu-dropdown--download" ref={wrapRef}>
+      <button type="button" className="tb-btn tb-btn-download" onClick={onToggle} aria-expanded={open}>
+        {t('export.download')}
+        <ChevronDown size={10} strokeWidth={2.5} aria-hidden />
       </button>
-      {open && (
-        <div className="app-top-bar__export-menu" role="menu">
-          {DOWNLOAD_FORMAT_ITEMS.map(({ key, label, icon }) => (
-            <button
-              key={key}
-              type="button"
-              className="app-top-bar__export-menu-item"
-              role="menuitem"
-              onClick={() => onSaveAs(key)}
+      {open && menuPos
+        ? createPortal(
+            <div
+              ref={menuRef}
+              className="tb-menu-dropdown-list tb-menu-dropdown-list--portal tb-menu-dropdown-list--compact tb-menu-dropdown-list--download"
+              role="menu"
+              aria-label={t('export.downloadFormatAria')}
+              style={anchoredMenuStyle(menuPos)}
+              onMouseDown={e => e.stopPropagation()}
             >
-              {icon(13)}
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+              {DOWNLOAD_FORMAT_ITEMS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="tb-menu-item"
+                  role="menuitem"
+                  onClick={() => onSaveAs(key)}
+                >
+                  {compactDownloadLabel(key, label)}
+                </button>
+              ))}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

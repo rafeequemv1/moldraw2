@@ -436,6 +436,7 @@ export function useMoleculeEditor(store: MoleculeEditor) {
         bondLengthPx: params.bondLengthPx,
         cx: params.cx,
         cy: params.cy,
+        oxidation: params.oxidation ?? 'none',
         ...(params.replaceAtomIds?.length ? { replaceAtomIds: params.replaceAtomIds } : {}),
       });
       if (

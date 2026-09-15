@@ -16,14 +16,14 @@ export const transformChrome = (R: RenderContext): TransformChrome => {
   const t = R.structureTheme;
   return {
     handleFill: t.transformHandleFill ?? '#ffffff',
-    handleStroke: t.transformHandleStroke ?? 'rgba(30, 58, 138, 0.95)',
-    boxStroke: t.transformBoxStroke ?? 'rgba(30, 58, 138, 0.42)',
-    accent: t.transformAccent ?? 'rgba(30, 58, 138, 0.85)',
-    badgeFill: t.transformBadgeFill ?? 'rgba(241, 245, 249, 0.96)',
-    badgeText: t.transformBadgeText ?? '#1e3a8a',
-    guide: t.transformGuideStroke ?? 'rgba(148, 163, 184, 0.85)',
-    marqueeStroke: t.marqueeStroke ?? 'rgba(30, 58, 138, 0.75)',
-    marqueeFill: t.marqueeFill ?? 'rgba(30, 58, 138, 0.08)',
+    handleStroke: t.transformHandleStroke ?? '#0f172a',
+    boxStroke: t.transformBoxStroke ?? 'rgba(13, 148, 166, 0.92)',
+    accent: t.transformAccent ?? '#2dd4bf',
+    badgeFill: t.transformBadgeFill ?? 'rgba(240, 253, 250, 0.97)',
+    badgeText: t.transformBadgeText ?? '#0f172a',
+    guide: t.transformGuideStroke ?? 'rgba(45, 212, 191, 0.55)',
+    marqueeStroke: t.marqueeStroke ?? 'rgba(13, 148, 136, 0.85)',
+    marqueeFill: t.marqueeFill ?? 'rgba(45, 212, 191, 0.08)',
   };
 };
 

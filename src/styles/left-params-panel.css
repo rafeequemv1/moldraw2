@@ -1,0 +1,213 @@
+/*
+ * Generator params panels (graphene / COF / MOF / circular / linear / dendrimer).
+ * Desktop: a fixed dock at the left edge, same geometry as the Color & style
+ * panel; when that panel is open the dock shifts right so both stay visible.
+ * Compact: rendered as an undimmed peek bottom sheet (see mobile-sheet.css).
+ */
+.left-params-dock {
+  position: fixed;
+  top: calc(var(--app-top-bar-height, 96px) + var(--app-tool-island-inset, 6px));
+  left: calc(
+    var(--app-tool-island-inset, 6px) + var(--app-tool-rail-width, 38px) +
+      var(--app-draw-panel-width, 0px) + 4px
+  );
+  bottom: calc(
+    var(--app-tool-bottom-height, 38px) + var(--app-tool-island-inset, 6px) +
+      var(--app-page-footer-stack, 0px) + 4px
+  );
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 212px;
+  pointer-events: none;
+}
+
+.left-params-dock:empty {
+  display: none;
+}
+
+html.format-left-panel-open .left-params-dock {
+  left: calc(
+    var(--app-tool-island-inset, 6px) + var(--app-tool-rail-width, 38px) +
+      var(--app-draw-panel-width, 0px) + 4px + 212px + 6px
+  );
+}
+
+html.format-left-panel-open .left-params-dock .left-params-panel {
+  border-left: 1px solid var(--chrome-border);
+  border-radius: var(--radius-panel, 4px);
+}
+
+/* Panels inside the dock are laid out by the dock, not fixed themselves. */
+.left-params-dock .left-params-panel {
+  position: static;
+  top: auto;
+  left: auto;
+  bottom: auto;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  width: 100%;
+  pointer-events: auto;
+  border-radius: 0 var(--radius-panel, 4px) var(--radius-panel, 4px) 0;
+  background: var(--chrome-bg-elevated, #fff);
+}
+
+.left-params-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 10px 10px;
+}
+
+.left-params-panel__body .selection-align-toolbar__pattern-top-params {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin: 0;
+}
+
+.left-params-panel__body .selection-align-toolbar__slider {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr 2.2rem;
+  align-items: center;
+  gap: 6px;
+  height: auto;
+  min-height: 24px;
+}
+
+.left-params-panel__body .selection-align-toolbar__range {
+  width: 100%;
+  min-width: 0;
+}
+
+.left-params-panel__body .selection-align-toolbar__btn {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Shape pair (Rect / Circle) sits side by side; everything else stacks. */
+.left-params-panel--generate .selection-align-toolbar__pattern-top-params {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.left-params-panel--generate .selection-align-toolbar__pattern-top-params > .selection-align-toolbar__slider,
+.left-params-panel--generate .selection-align-toolbar__pattern-top-params > .selection-align-toolbar__toggle {
+  grid-column: 1 / -1;
+}
+
+.left-params-panel--generate .selection-align-toolbar__pattern-top-params > .selection-align-toolbar__btn[aria-pressed] {
+  justify-content: center;
+}
+
+/* rGO toggle switch */
+.selection-align-toolbar__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-main, #334155);
+  cursor: pointer;
+  user-select: none;
+}
+
+.selection-align-toolbar__toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.selection-align-toolbar__toggle-track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--chrome-border-strong, #94a3b8);
+  transition: background 0.15s ease;
+}
+
+.selection-align-toolbar__toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.selection-align-toolbar__toggle-input:checked + .selection-align-toolbar__toggle-track {
+  background: var(--brand, #0f766e);
+}
+
+.selection-align-toolbar__toggle-input:checked + .selection-align-toolbar__toggle-track::after {
+  transform: translateX(12px);
+}
+
+.selection-align-toolbar__toggle-input:focus-visible + .selection-align-toolbar__toggle-track {
+  outline: 2px solid var(--brand, #0f766e);
+  outline-offset: 2px;
+}
+
+.selection-align-toolbar__toggle-label {
+  flex: 1 1 auto;
+  line-height: 1.2;
+}
+
+/* Compact: params sheet keeps the canvas visible (peek, no dim). */
+.mobile-sheet--params .mobile-sheet__panel {
+  max-height: 46dvh;
+}
+
+.left-params-panel__body--sheet {
+  padding: 0 0 4px;
+}
+
+.left-params-panel__body--sheet .selection-align-toolbar__pattern-top-params {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+  margin: 0;
+}
+
+.left-params-panel__body--sheet .selection-align-toolbar__pattern-top-params > .selection-align-toolbar__slider,
+.left-params-panel__body--sheet .selection-align-toolbar__pattern-top-params > .selection-align-toolbar__toggle {
+  grid-column: 1 / -1;
+}
+
+.left-params-panel__body--sheet .selection-align-toolbar__slider {
+  display: grid;
+  grid-template-columns: 1.2rem 1fr 2.4rem;
+  align-items: center;
+  gap: 8px;
+  height: auto;
+  min-height: 30px;
+  font-size: 12px;
+}
+
+.left-params-panel__body--sheet .selection-align-toolbar__range {
+  width: 100%;
+  height: 28px;
+}
+
+.left-params-panel__body--sheet .selection-align-toolbar__btn {
+  height: 32px;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}

@@ -378,8 +378,9 @@ export const drawBonds = (ctx: CanvasRenderingContext2D, R: RenderContext): void
 
         const ringCenter = R.ringCenterByBondId?.get(bond.id);
         const ringAtomIds = R.ringAtomIdsByBondId?.get(bond.id);
+        const inRing = Boolean(ringCenter || (pose && ringAtomIds));
 
-        if (ringCenter || (pose && ringAtomIds)) {
+        if (inRing) {
           // Prefer in-plane 3D offset so benzene doubles stay coplanar when rotating.
           const planeOff =
             pose && ringAtomIds
@@ -404,16 +405,33 @@ export const drawBonds = (ctx: CanvasRenderingContext2D, R: RenderContext): void
           ny = aligned.ny;
         }
 
-        ctx.beginPath();
-        ctx.moveTo(T.ax, T.ay);
-        ctx.lineTo(T.bx, T.by);
-        ctx.stroke();
         ctx.save();
         ctx.lineCap = 'butt';
-        ctx.beginPath();
-        ctx.moveTo(T.ax + nx + ux * inset, T.ay + ny + uy * inset);
-        ctx.lineTo(T.bx + nx - ux * inset, T.by + ny - uy * inset);
-        ctx.stroke();
+        if (inRing) {
+          // Outer stroke stays on the atom–atom edge (ring perimeter).
+          // Inner stroke is offset toward the centroid so Kekulé rings read as complete.
+          const innerInset = Math.min(2.4, len * 0.055);
+          ctx.beginPath();
+          ctx.moveTo(T.ax + ux * inset, T.ay + uy * inset);
+          ctx.lineTo(T.bx - ux * inset, T.by - uy * inset);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(T.ax + nx + ux * innerInset, T.ay + ny + uy * innerInset);
+          ctx.lineTo(T.bx + nx - ux * innerInset, T.by + ny - uy * innerInset);
+          ctx.stroke();
+        } else {
+          // Chains: straddle the axis so both strokes meet the atoms symmetrically.
+          const hx = nx / 2;
+          const hy = ny / 2;
+          ctx.beginPath();
+          ctx.moveTo(T.ax - hx + ux * inset, T.ay - hy + uy * inset);
+          ctx.lineTo(T.bx - hx - ux * inset, T.by - hy - uy * inset);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(T.ax + hx + ux * inset, T.ay + hy + uy * inset);
+          ctx.lineTo(T.bx + hx - ux * inset, T.by + hy - uy * inset);
+          ctx.stroke();
+        }
         ctx.restore();
       }
       ctx.restore();

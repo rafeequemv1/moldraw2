@@ -13,6 +13,8 @@ import {
 } from '../keyboard/shortcutBindings';
 import type { DownloadFormat } from '../types';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { useI18n } from '../i18n';
+import { anchoredMenuStyle, placeAnchoredMenu, type AnchoredMenuPos } from '../menuPlacement';
 
 export interface FileMenuProps {
   openFileBusy: boolean;
@@ -43,13 +45,14 @@ export function FileMenu({
   preferSheet = false,
   shortcutOverrides = null,
 }: FileMenuProps) {
+  const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const openInputRef = useRef<HTMLInputElement>(null);
   const placeInputRef = useRef<HTMLInputElement>(null);
-  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [menuPos, setMenuPos] = useState<AnchoredMenuPos | null>(null);
 
   useLayoutEffect(() => {
     if (!menuOpen || preferSheet) {
@@ -59,8 +62,8 @@ export function FileMenu({
     const place = () => {
       const el = wrapRef.current;
       if (!el) return;
-      const r = el.getBoundingClientRect();
-      setMenuPos({ top: Math.round(r.bottom + 4), left: Math.round(r.left) });
+      const measured = menuRef.current?.offsetHeight ?? 280;
+      setMenuPos(placeAnchoredMenu(el.getBoundingClientRect(), { menuWidth: 180, menuHeight: measured }));
     };
     place();
     window.addEventListener('resize', place);
@@ -150,7 +153,7 @@ export function FileMenu({
           }}
         >
           <FilePlus size={14} strokeWidth={2} aria-hidden />
-          <span className="app-top-bar__file-menu-label">New</span>
+          <span className="app-top-bar__file-menu-label">{t('file.new')}</span>
         </button>
       ) : null}
 
@@ -162,7 +165,7 @@ export function FileMenu({
         onClick={triggerOpen}
       >
         <FileUp size={14} strokeWidth={2} aria-hidden />
-        <span className="app-top-bar__file-menu-label">Open…</span>
+        <span className="app-top-bar__file-menu-label">{t('file.open')}</span>
       </button>
 
       {onPlaceFile ? (
@@ -174,7 +177,7 @@ export function FileMenu({
           onClick={triggerPlace}
         >
           <CopyPlus size={14} strokeWidth={2} aria-hidden />
-          <span className="app-top-bar__file-menu-label">Place…</span>
+          <span className="app-top-bar__file-menu-label">{t('file.place')}</span>
         </button>
       ) : null}
 
@@ -192,8 +195,8 @@ export function FileMenu({
         >
           <Save size={14} strokeWidth={2} aria-hidden />
           <span className="app-top-bar__file-menu-text">
-            <span className="app-top-bar__file-menu-label">Save Moldraw</span>
-            <span className="app-top-bar__file-menu-hint">Entire canvas (.moldraw)</span>
+            <span className="app-top-bar__file-menu-label">{t('file.saveMoldraw')}</span>
+            <span className="app-top-bar__file-menu-hint">{t('file.saveMoldrawHint')}</span>
           </span>
           {saveShortcut ? (
             <span className="app-top-bar__file-submenu-ext">{saveShortcut}</span>
@@ -205,7 +208,7 @@ export function FileMenu({
         preferSheet ? (
           <>
             <div className="app-top-bar__file-menu-sep" role="separator" />
-            <div className="app-top-bar__file-menu-section">Save as</div>
+            <div className="app-top-bar__file-menu-section">{t('file.saveAs')}</div>
             {saveAsItems}
           </>
         ) : (
@@ -224,13 +227,13 @@ export function FileMenu({
             >
               <FileDown size={14} strokeWidth={2} aria-hidden />
               <span className="app-top-bar__file-menu-text">
-                <span className="app-top-bar__file-menu-label">Save as</span>
-                <span className="app-top-bar__file-menu-hint">Molfile, ChemDraw, images…</span>
+                <span className="app-top-bar__file-menu-label">{t('file.saveAs')}</span>
+                <span className="app-top-bar__file-menu-hint">{t('file.saveAsHint')}</span>
               </span>
               <ChevronRight size={14} className="app-top-bar__file-menu-chevron" aria-hidden />
             </button>
             {saveAsOpen ? (
-              <div className="app-top-bar__file-submenu" role="menu" aria-label="Save as">
+              <div className="app-top-bar__file-submenu" role="menu" aria-label={t('file.saveAs')}>
                 {saveAsItems}
               </div>
             ) : null}
@@ -269,7 +272,7 @@ export function FileMenu({
       {openFileError ? (
         <div className="app-top-bar__file-error" role="alert">
           <span>{openFileError}</span>
-          <button type="button" onClick={onDismissOpenError} aria-label="Dismiss">
+          <button type="button" onClick={onDismissOpenError} aria-label={t('file.dismissError')}>
             ×
           </button>
         </div>
@@ -284,16 +287,16 @@ export function FileMenu({
           type="button"
           className={`app-top-bar__file-btn app-top-bar__clip-btn--icon${menuOpen ? ' app-top-bar__file-btn--open' : ''}`}
           onClick={() => setMenuOpen(v => !v)}
-          title="File"
-          aria-label="File"
+          title={t('file.menu')}
+          aria-label={t('file.menu')}
           aria-expanded={menuOpen}
           aria-haspopup="dialog"
         >
           <FolderOpen size={14} strokeWidth={2} aria-hidden />
-          File
+          {t('file.menu')}
         </button>
-        <MobileBottomSheet open={menuOpen} onClose={close} title="File" size="auto">
-          <div className="mobile-sheet-list" role="menu" aria-label="File">
+        <MobileBottomSheet open={menuOpen} onClose={close} title={t('file.menu')} size="auto">
+          <div className="mobile-sheet-list" role="menu" aria-label={t('file.menu')}>
             {menuItems}
           </div>
         </MobileBottomSheet>
@@ -308,12 +311,12 @@ export function FileMenu({
         type="button"
         className={`app-top-bar__file-btn ${menuOpen ? 'app-top-bar__file-btn--open' : ''}`}
         onClick={() => setMenuOpen(v => !v)}
-        title="File"
+        title={t('file.menu')}
         aria-expanded={menuOpen}
         aria-haspopup="menu"
       >
         <FolderOpen size={13} strokeWidth={2} aria-hidden />
-        File
+        {t('file.menu')}
       </button>
       {menuOpen && menuPos && typeof document !== 'undefined'
         ? createPortal(
@@ -321,7 +324,7 @@ export function FileMenu({
               ref={menuRef}
               className="app-top-bar__file-menu app-top-bar__file-menu--portal"
               role="menu"
-              style={{ top: menuPos.top, left: menuPos.left }}
+              style={anchoredMenuStyle(menuPos)}
             >
               {menuItems}
             </div>,

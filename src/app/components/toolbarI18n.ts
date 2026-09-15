@@ -1,0 +1,139 @@
+import { useMemo } from 'react';
+import {
+  CANVAS_SHAPE_KIND_ORDER,
+  getGlasswareEntry,
+  type CanvasShapeKind,
+  type ReactionArrowKind,
+  REACTION_ARROW_KIND_ORDER,
+} from '@moldraw/domain';
+import { useI18n } from '../i18n';
+import { localizeTool } from '../i18n/localeTools';
+import {
+  CHARGE_SYMBOL_TOOL_IDS,
+  SRU_BRACKET_SUBSCRIPT_OPTIONS,
+  TOOL_DEFS,
+  type ShapeMenuValue,
+  type ToolDef,
+} from '../toolDefs';
+
+export function useToolbarI18n() {
+  const { t } = useI18n();
+
+  return useMemo(() => {
+    const reactionArrowKindLabel = (k: ReactionArrowKind): string => {
+      const key = `toolbar.reactionArrows.${k}`;
+      const v = t(key);
+      return v === key ? k : v;
+    };
+
+    const canvasShapeKindLabel = (k: CanvasShapeKind): string => {
+      switch (k) {
+        case 'rectangle':
+          return t('toolbar.shapeRectangle');
+        case 'line':
+          return t('toolbar.shapeLine');
+        case 'circle':
+          return t('toolbar.shapeCircle');
+        case 'triangle':
+          return t('toolbar.shapeTriangle');
+        case 'star':
+          return t('toolbar.shapeStar');
+        default: {
+          const gw = getGlasswareEntry(k);
+          return gw?.label ?? k;
+        }
+      }
+    };
+
+    const reactionArrowOptions = REACTION_ARROW_KIND_ORDER.map(k => ({
+      value: k,
+      label: reactionArrowKindLabel(k),
+    }));
+
+    const shapeDrawOptions = CANVAS_SHAPE_KIND_ORDER.map(k => ({
+      value: k as ShapeMenuValue,
+      label: canvasShapeKindLabel(k),
+    }));
+
+    const shapeMenuGroups = [
+      { id: 'shapes', label: t('toolbar.menuShapes'), options: shapeDrawOptions },
+    ];
+
+    const chargeMenuGroups = [
+      {
+        id: 'charge',
+        label: t('toolbar.menuCharge'),
+        options: [
+          { value: 'charge_plus', label: t('toolbar.positiveCharge') },
+          { value: 'charge_minus', label: t('toolbar.negativeCharge') },
+          { value: 'oplus', label: t('toolbar.carbocation') },
+          { value: 'ominus', label: t('toolbar.carbanion') },
+          { value: 'radical_cation', label: t('toolbar.radicalCation') },
+          { value: 'radical_anion', label: t('toolbar.radicalAnion') },
+          { value: 'delta_plus', label: 'δ+' },
+          { value: 'delta_minus', label: 'δ−' },
+        ],
+      },
+      {
+        id: 'symbols',
+        label: t('toolbar.menuSymbols'),
+        options: CHARGE_SYMBOL_TOOL_IDS.map(id => {
+          const tool = TOOL_DEFS.find(x => x.id === id);
+          const lt = tool ? localizeTool(tool, t) : null;
+          return {
+            value: id,
+            label: lt?.label ?? id,
+            keywords: lt?.title,
+          };
+        }),
+      },
+    ] as const;
+
+    const sruSubscriptOptions = SRU_BRACKET_SUBSCRIPT_OPTIONS.map(o => ({
+      value: o.value,
+      label: o.label,
+    }));
+
+    const mobileCategoryLabel = (id: string): string => {
+      const key = `toolbar.categories.${id}`;
+      const v = t(key);
+      return v === key ? id : v;
+    };
+
+    return {
+      t,
+      localizeTool: (tool: ToolDef) => localizeTool(tool, t),
+      reactionArrowKindLabel,
+      canvasShapeKindLabel,
+      reactionArrowOptions,
+      shapeMenuGroups,
+      chargeMenuGroups,
+      sruSubscriptOptions,
+      mobileCategoryLabel,
+      c6Options: [
+        { value: 'hexagon', label: t('toolbar.menuFlatC6') },
+        { value: 'cyclohexane', label: t('toolbar.menuChair') },
+        { value: 'boat_cyclohexane', label: t('toolbar.menuBoat') },
+      ],
+      lonePairOptions: [
+        { value: 'lone_pair', label: t('toolbar.menuLonePair') },
+        { value: 'free_radical', label: t('toolbar.menuFreeRadical') },
+      ],
+      orbitalOptions: [
+        { value: 'orbital_p', label: t('toolbar.menuOrbitalP') },
+        { value: 'orbital_s', label: t('toolbar.menuOrbitalS') },
+        { value: 'orbital_p2', label: t('toolbar.menuOrbitalP2') },
+        { value: 'orbital_d', label: t('toolbar.menuOrbitalD') },
+        { value: 'orbital_dz2', label: t('toolbar.menuOrbitalDz2') },
+      ],
+      stereoBondOptions: [
+        { value: 'wedge_bond', label: t('toolbar.menuWedge') },
+        { value: 'dash_bond', label: t('toolbar.menuDashWedge') },
+        { value: 'wavy_bond', label: t('toolbar.menuWavy') },
+        { value: 'dative_bond', label: t('toolbar.menuDative') },
+      ],
+    };
+  }, [t]);
+}
+
+export type ToolbarI18n = ReturnType<typeof useToolbarI18n>;

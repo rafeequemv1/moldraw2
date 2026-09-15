@@ -1,20 +1,32 @@
-/* Always-on molecule status bar (formula / MW / charge / selection). Fluent-flat. */
+/* In-flow strip at the bottom of .app-frame. Always light — not the UI theme. */
 
 .molecule-status-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  height: var(--app-status-bar-height, 26px);
+  position: relative;
+  flex: 0 0 auto;
+  align-self: stretch;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  top: auto;
+  width: 100%;
+  height: var(--app-status-bar-height, 28px);
+  min-height: var(--app-status-bar-height, 28px);
+  max-height: none;
+  z-index: 80;
   display: flex;
+  visibility: visible;
+  opacity: 1;
   align-items: center;
   gap: 0;
   padding: 0 12px;
-  background: var(--chrome-bg);
-  border-top: 1px solid var(--chrome-border);
-  color: hsl(222 22% 28%);
-  font-size: 11px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #ffffff;
+  border-top: 1px solid #cbd5e1;
+  box-shadow: 0 -1px 0 rgba(15, 23, 42, 0.06);
+  pointer-events: auto;
+  color: #0f172a;
+  font-size: 8px;
   font-family: var(--font-ui);
   user-select: none;
 }
@@ -23,33 +35,36 @@
   display: inline-flex;
   align-items: baseline;
   gap: 5px;
+  min-width: 0;
+  flex: 0 1 auto;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .molecule-status-bar__label {
-  color: var(--text-muted);
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: 7px;
 }
 
 .molecule-status-bar__value {
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--text-main);
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .molecule-status-bar__formula {
   font-family: var(--font-mono);
-  font-weight: 550;
+  font-weight: 600;
 }
 
 .molecule-status-bar__sep {
   width: 1px;
   height: 12px;
   margin: 0 10px;
-  background: var(--chrome-border-strong);
+  background: var(--chrome-border-strong, #94a3b8);
   flex-shrink: 0;
 }
 
@@ -57,14 +72,23 @@
   margin-left: 10px;
   padding: 1px 6px;
   border-radius: var(--radius-control);
-  background: var(--chrome-hover);
+  background: var(--chrome-hover, #e5e7eb);
   color: hsl(215 16% 42%);
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 8px;
+  font-weight: 600;
 }
 
 .molecule-status-bar__item--apparatus .molecule-status-bar__value {
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+html.elegant-dark .molecule-status-bar,
+html.ink-dark .molecule-status-bar,
+[data-theme='elegant-dark'] .molecule-status-bar,
+[data-theme='ink-dark'] .molecule-status-bar {
+  background: #ffffff;
+  color: #0f172a;
+  border-top-color: #cbd5e1;
 }

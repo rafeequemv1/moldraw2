@@ -9,6 +9,7 @@ import { ChevronDown } from 'lucide-react';
 import { LIGAND_TEMPLATES } from '@moldraw/templates';
 import { FunctionalGroupPreviewCell } from './FunctionalGroupPreviewCell';
 import { computeToolbarFgPanelStyle } from './toolbarFgPanelPosition';
+import { pinMenuAboveAnchor, shouldOpenMenuAbove } from '../menuPlacement';
 import { MobileBottomSheet } from './MobileBottomSheet';
 
 const TOOL_ID = 'ligands';
@@ -27,6 +28,7 @@ export function ToolbarLigandsTool({
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
   const [panelStyle, setPanelStyle] = useState<CSSProperties | null>(null);
+  const [dropUp, setDropUp] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -39,16 +41,31 @@ export function ToolbarLigandsTool({
     const update = () => {
       const el = wrapRef.current;
       if (!el) return;
-      setPanelStyle(computeToolbarFgPanelStyle(el.getBoundingClientRect()));
+      const rect = el.getBoundingClientRect();
+      const openAbove = shouldOpenMenuAbove(el, rect);
+      setDropUp(openAbove);
+      setPanelStyle(computeToolbarFgPanelStyle(rect, el));
+      const panel = panelRef.current;
+      if (openAbove && panel) pinMenuAboveAnchor(panel, rect, 280);
     };
     update();
     window.addEventListener('resize', update);
     window.addEventListener('scroll', update, true);
+    window.visualViewport?.addEventListener('resize', update);
     return () => {
       window.removeEventListener('resize', update);
       window.removeEventListener('scroll', update, true);
+      window.visualViewport?.removeEventListener('resize', update);
     };
   }, [open, preferSheet]);
+
+  useLayoutEffect(() => {
+    if (!open || preferSheet || !dropUp) return;
+    const panel = panelRef.current;
+    const el = wrapRef.current;
+    if (!panel || !el) return;
+    pinMenuAboveAnchor(panel, el.getBoundingClientRect(), 280);
+  }, [open, preferSheet, dropUp, panelStyle]);
 
   useEffect(() => {
     if (!open || preferSheet) return;
@@ -120,7 +137,10 @@ export function ToolbarLigandsTool({
       <div
         ref={panelRef}
         id={menuId}
-        className="toolbar-fg-tool__panel toolbar-fg-tool__panel--portal"
+        className={`toolbar-fg-tool__panel toolbar-fg-tool__panel--portal${
+          dropUp ? ' toolbar-fg-tool__panel--drop-up' : ''
+        }`}
+        data-placement={dropUp ? 'above' : 'side'}
         role="dialog"
         aria-label="Ligands"
         style={panelStyle}

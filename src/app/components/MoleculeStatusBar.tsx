@@ -9,6 +9,7 @@ import {
   type Molecule,
 } from '@moldraw/domain';
 import { getMolecularData } from '@moldraw/core';
+import { useI18n } from '../i18n';
 
 export interface MoleculeStatusBarProps {
   molecule: Molecule;
@@ -38,6 +39,8 @@ export function MoleculeStatusBar({
   selectedAtomIds,
   selectedCanvasShapeId = null,
 }: MoleculeStatusBarProps) {
+  const { t } = useI18n();
+
   const stats = useMemo(() => {
     const idSet = selectedAtomIds.length > 0 ? new Set(selectedAtomIds) : null;
     const atoms = idSet ? molecule.atoms.filter(a => idSet.has(a.id)) : molecule.atoms;
@@ -77,25 +80,32 @@ export function MoleculeStatusBar({
 
   return (
     <footer className="molecule-status-bar" role="status" aria-live="polite">
-      <span className="molecule-status-bar__item" title={stats.scope === 'selection' ? 'Selection formula' : 'Molecule formula'}>
-        <span className="molecule-status-bar__label">Formula</span>
+      <span
+        className="molecule-status-bar__item"
+        title={
+          stats.scope === 'selection'
+            ? t('statusBar.formulaSelectionTitle')
+            : t('statusBar.formulaMoleculeTitle')
+        }
+      >
+        <span className="molecule-status-bar__label">{t('statusBar.formula')}</span>
         <span className="molecule-status-bar__value molecule-status-bar__formula">{stats.formula}</span>
       </span>
       <span className="molecule-status-bar__sep" aria-hidden />
-      <span className="molecule-status-bar__item" title="Molecular weight (g/mol)">
-        <span className="molecule-status-bar__label">MW</span>
+      <span className="molecule-status-bar__item" title={t('statusBar.mwTitle')}>
+        <span className="molecule-status-bar__label">{t('statusBar.mw')}</span>
         <span className="molecule-status-bar__value">
           {stats.mw != null ? stats.mw.toFixed(2) : '—'}
         </span>
       </span>
       <span className="molecule-status-bar__sep" aria-hidden />
-      <span className="molecule-status-bar__item" title="Net formal charge">
-        <span className="molecule-status-bar__label">Charge</span>
+      <span className="molecule-status-bar__item" title={t('statusBar.chargeTitle')}>
+        <span className="molecule-status-bar__label">{t('statusBar.charge')}</span>
         <span className="molecule-status-bar__value">{formatCharge(stats.charge)}</span>
       </span>
       <span className="molecule-status-bar__sep" aria-hidden />
-      <span className="molecule-status-bar__item" title="Selected atoms (0 = whole molecule stats)">
-        <span className="molecule-status-bar__label">Sel</span>
+      <span className="molecule-status-bar__item" title={t('statusBar.selTitle')}>
+        <span className="molecule-status-bar__label">{t('statusBar.sel')}</span>
         <span className="molecule-status-bar__value">{stats.selCount}</span>
       </span>
       {apparatusLabel ? (
@@ -103,15 +113,15 @@ export function MoleculeStatusBar({
           <span className="molecule-status-bar__sep" aria-hidden />
           <span
             className="molecule-status-bar__item molecule-status-bar__item--apparatus"
-            title="Selected apparatus / canvas shape"
+            title={t('statusBar.apparatusTitle')}
           >
-            <span className="molecule-status-bar__label">Apparatus</span>
+            <span className="molecule-status-bar__label">{t('statusBar.apparatus')}</span>
             <span className="molecule-status-bar__value">{apparatusLabel}</span>
           </span>
         </>
       ) : null}
       {stats.scope === 'selection' ? (
-        <span className="molecule-status-bar__hint">selection</span>
+        <span className="molecule-status-bar__hint">{t('statusBar.selection')}</span>
       ) : null}
     </footer>
   );

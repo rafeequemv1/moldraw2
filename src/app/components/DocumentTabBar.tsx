@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, X } from 'lucide-react';
 import type { DocumentTab } from '../projects/types';
+import { useI18n } from '../i18n';
 
 export interface DocumentTabBarProps {
   tabs: DocumentTab[];
@@ -22,6 +23,7 @@ export function DocumentTabBar({
   onNewTab,
   onRenameTab,
 }: DocumentTabBarProps) {
+  const { t } = useI18n();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [menu, setMenu] = useState<TabMenu | null>(null);
@@ -70,7 +72,7 @@ export function DocumentTabBar({
   return (
     <div className="document-tab-bar">
       <div className="document-tab-bar__scroll">
-        <div className="document-tab-bar__tabs" role="tablist" aria-label="Open designs">
+        <div className="document-tab-bar__tabs" role="tablist" aria-label={t('tabs.openDesignsAria')}>
           {tabs.map(tab => {
             const active = tab.id === activeTabId;
             const editing = tab.id === editingId;
@@ -93,7 +95,7 @@ export function DocumentTabBar({
                     ref={inputRef}
                     className="document-tab-bar__tab-input"
                     value={draft}
-                    aria-label="Design name"
+                    aria-label={t('tabs.designNameAria')}
                     onChange={e => setDraft(e.target.value)}
                     onClick={e => e.stopPropagation()}
                     onBlur={commitRename}
@@ -112,7 +114,7 @@ export function DocumentTabBar({
                   <button
                     type="button"
                     className="document-tab-bar__tab-label"
-                    title={`${tab.name} — double-click to rename`}
+                    title={t('tabs.renameHint', { name: tab.name })}
                     onClick={() => onSelectTab(tab.id)}
                     onDoubleClick={e => {
                       e.preventDefault();
@@ -126,8 +128,8 @@ export function DocumentTabBar({
                 <button
                   type="button"
                   className="document-tab-bar__tab-close"
-                  title={`Close ${tab.name}`}
-                  aria-label={`Close ${tab.name}`}
+                  title={t('tabs.closeTab', { name: tab.name })}
+                  aria-label={t('tabs.closeTab', { name: tab.name })}
                   onClick={e => {
                     e.stopPropagation();
                     if (editingId === tab.id) setEditingId(null);
@@ -140,16 +142,16 @@ export function DocumentTabBar({
             );
           })}
         </div>
-        <button
-          type="button"
-          className="document-tab-bar__new"
-          title="New design tab"
-          aria-label="New design tab"
-          onClick={() => onNewTab()}
-        >
-          <Plus size={12} strokeWidth={2.2} aria-hidden />
-        </button>
       </div>
+      <button
+        type="button"
+        className="document-tab-bar__new"
+        title={t('tabs.newTab')}
+        aria-label={t('tabs.newTab')}
+        onClick={() => onNewTab()}
+      >
+        <Plus size={15} strokeWidth={2.4} aria-hidden />
+      </button>
       {menu && menuTab
         ? createPortal(
             <div
@@ -164,7 +166,7 @@ export function DocumentTabBar({
                 role="menuitem"
                 onClick={() => beginRename(menuTab)}
               >
-                Rename
+                {t('tabs.rename')}
               </button>
               <button
                 type="button"
@@ -175,7 +177,7 @@ export function DocumentTabBar({
                   onCloseTab(menuTab.id);
                 }}
               >
-                Close
+                {t('tabs.close')}
               </button>
             </div>,
             document.body,

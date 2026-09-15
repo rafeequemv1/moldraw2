@@ -36,6 +36,7 @@ export default defineConfig({
       { find: '@moldraw/plugin-proteins/proteins.css', replacement: path.resolve(root, 'plugins/proteins/src/proteins.css') },
     ],
   },
+  envPrefix: ['VITE_', 'REACT_APP_'],
   worker: {
     format: 'es',
   },

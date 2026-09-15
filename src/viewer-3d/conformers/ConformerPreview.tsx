@@ -18,7 +18,7 @@ type Viewer3D = {
 
 const CARBON_VDW_A = vdwRadius('C');
 const CARBON_SPHERE_RADIUS = 0.48;
-const STICK_RADIUS = 0.14;
+const STICK_RADIUS = 0.11;
 const HYDROGEN_COLOR = '#e8eef5';
 
 const ballStickSphereRadius = (elem: string): number =>

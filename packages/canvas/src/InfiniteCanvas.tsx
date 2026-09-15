@@ -105,7 +105,13 @@ export interface InfiniteCanvasProps {
   /** Cumulative rotation for upright labels on selected atoms (world rad). */
   selectionFragmentRotationRad?: number;
   onRotateSelectionCommit?: (atomIds: string[], cx: number, cy: number, deltaRad: number) => void;
-  onScaleSelectionCommit?: (atomIds: string[], cx: number, cy: number, factor: number) => void;
+  onScaleSelectionCommit?: (
+    atomIds: string[],
+    anchorX: number,
+    anchorY: number,
+    factorX: number,
+    factorY?: number,
+  ) => void;
   /** ChemDraw Structure Perspective: commit pose orbit on pointer-up. */
   onRotate3DPoseCommit?: (dAngleX: number, dAngleY: number) => void;
   /** Live canvas 3D pose → right viewer during drag. */
@@ -621,9 +627,10 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
           if (drag.type === 'scale_selection') {
             return {
               kind: 'scale' as const,
-              cx: drag.cx,
-              cy: drag.cy,
-              factor: drag.currentFactor,
+              cx: drag.anchorX,
+              cy: drag.anchorY,
+              factor: drag.currentFactorX,
+              factorY: drag.currentFactorY,
             };
           }
           return null;
@@ -651,8 +658,8 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       if (!structure || !overlay) return;
       const resizeCanvas = () => {
         const parent = overlay.parentElement;
-        const w = parent?.clientWidth ?? window.innerWidth;
-        const h = parent?.clientHeight ?? window.innerHeight;
+        const w = Math.max(1, parent?.clientWidth || window.innerWidth || 1);
+        const h = Math.max(1, parent?.clientHeight || window.innerHeight || 1);
         structure.width = w;
         structure.height = h;
         overlay.width = w;
@@ -695,6 +702,8 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
         <canvas
           ref={structureCanvasRef}
           aria-hidden
+          width={1}
+          height={1}
           style={{
             position: 'absolute',
             inset: 0,
@@ -707,6 +716,8 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
         <canvas
           ref={overlayCanvasRef}
           className={CANVAS_TOUCH_CLASS}
+          width={1}
+          height={1}
           onPointerDown={input.handlePointerDown}
           onPointerMove={input.handlePointerMove}
           onPointerUp={input.handlePointerUp}

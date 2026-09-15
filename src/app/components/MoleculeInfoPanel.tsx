@@ -4,6 +4,7 @@
 import React, { useCallback, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react';
 import '../../styles/info-panel.css';
+import { MobileBottomSheet } from './MobileBottomSheet';
 
 export interface InfoPanelData {
   empirical: { order: string[]; counts: Record<string, number> };
@@ -44,6 +45,8 @@ export interface MoleculeInfoPanelProps {
   selectionMatchesPubchemImport: boolean;
   onClose: () => void;
   onCopyText: (text: string) => void;
+  /** Phone/tablet: open as a bottom sheet instead of a floating card. */
+  asSheet?: boolean;
 }
 
 function formulaPlain(empirical: InfoPanelData['empirical']): string {
@@ -118,6 +121,7 @@ export function MoleculeInfoPanel({
   selectionMatchesPubchemImport,
   onClose,
   onCopyText,
+  asSheet = false,
 }: MoleculeInfoPanelProps) {
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -158,14 +162,7 @@ export function MoleculeInfoPanel({
         ? data.iupacName
         : '';
 
-  return (
-    <aside className="molecule-info-panel" aria-label="Molecule details">
-      <header className="molecule-info-panel__header">
-        <span className="molecule-info-panel__title">Molecule details</span>
-        <button type="button" className="molecule-info-panel__close" onClick={onClose} aria-label="Close">
-          ×
-        </button>
-      </header>
+  const body = (
       <div className="molecule-info-panel__body">
         <div className="molecule-info-panel__name-row">
           <span className="molecule-info-panel__name">{displayName}</span>
@@ -329,6 +326,31 @@ export function MoleculeInfoPanel({
           ) : null}
         </div>
       </div>
+  );
+
+  if (asSheet) {
+    return (
+      <MobileBottomSheet
+        open
+        onClose={onClose}
+        title="Molecule details"
+        size="auto"
+        className="mobile-sheet--info"
+      >
+        <div className="molecule-info-panel molecule-info-panel--sheet">{body}</div>
+      </MobileBottomSheet>
+    );
+  }
+
+  return (
+    <aside className="molecule-info-panel" aria-label="Molecule details">
+      <header className="molecule-info-panel__header">
+        <span className="molecule-info-panel__title">Molecule details</span>
+        <button type="button" className="molecule-info-panel__close" onClick={onClose} aria-label="Close">
+          ×
+        </button>
+      </header>
+      {body}
     </aside>
   );
 }

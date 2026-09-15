@@ -18,9 +18,10 @@ import {
 } from '../themes/ballStick/draw';
 import { isFragmentPlacementSnapValid } from './drawFragmentPlacementGhost';
 import { atomLabelHighlightBox, fillRoundRect } from './atomLabelHighlightBox';
+import { safeDrawImage } from './safeDrawImage';
 import type { RenderContext } from './types';
 
-const HOVER_OUTLINE = 'rgba(37, 99, 235, 1)';
+const HOVER_OUTLINE = 'rgba(14, 165, 233, 1)';
 /** Screen-px ring thickness (world space at zoom 1). */
 const HOVER_OUTLINE_WIDTH = 2.2;
 
@@ -302,12 +303,15 @@ const blitHighlight = (
   if (!bounds) return;
 
   const padding = outer + 6;
-  const w = bounds.maxX - bounds.minX + padding * 2;
-  const h = bounds.maxY - bounds.minY + padding * 2;
-  if (!(w > 0 && h > 0)) return;
+  const w = Math.ceil(bounds.maxX - bounds.minX + padding * 2);
+  const h = Math.ceil(bounds.maxY - bounds.minY + padding * 2);
+  // Canvas width/height truncate to integers; sub-pixel sizes become 0 and
+  // the later drawImage throws InvalidStateError (white-screens the SPA).
+  if (!(w >= 1 && h >= 1)) return;
 
   offCanvas.width = w;
   offCanvas.height = h;
+  if (offCanvas.width < 1 || offCanvas.height < 1) return;
   offCtx.setTransform(1, 0, 0, 1, 0, 0);
   offCtx.clearRect(0, 0, w, h);
   offCtx.translate(-bounds.minX + padding, -bounds.minY + padding);
@@ -334,7 +338,7 @@ const blitHighlight = (
   }
 
   tintMask(offCtx, w, h, color);
-  ctx.drawImage(offCanvas, bounds.minX - padding, bounds.minY - padding);
+  safeDrawImage(ctx, offCanvas, bounds.minX - padding, bounds.minY - padding);
 };
 
 /** Opaque wash under bonds/labels — call before `paintStructureLayers`. */

@@ -396,7 +396,8 @@
   topbar.innerHTML = [
     '<div class="site-topbar-inner">',
     '  <a class="site-topbar-brand" href="/" aria-label="MolDraw home">',
-    '    <img class="site-topbar-logo" src="/logo.svg" alt="MolDraw">',
+    '    <img class="site-topbar-logo" src="/logo-mark.svg" alt="">',
+    '    <span class="site-topbar-wordmark">MolDraw</span>',
     '    <span class="site-topbar-by">by scidart.com</span>',
     '  </a>',
     '  <nav class="site-topbar-nav" aria-label="Main navigation">',

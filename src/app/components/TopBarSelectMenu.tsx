@@ -5,6 +5,7 @@
  */
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { anchoredMenuStyle, placeAnchoredMenu, type AnchoredMenuPos } from '../menuPlacement';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Molecule } from '@moldraw/domain';
 import {
@@ -269,7 +270,9 @@ export function TopBarSelectMenu({
   const [open, setOpen] = useState(false);
   const [openSub, setOpenSub] = useState<SubmenuId | null>(null);
   const [subPos, setSubPos] = useState<{ top: number; left: number } | null>(null);
+  const [menuPos, setMenuPos] = useState<AnchoredMenuPos | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const subAnchorRefs = useRef<Partial<Record<SubmenuId, HTMLButtonElement | null>>>({});
   const submenuRef = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
@@ -293,6 +296,28 @@ export function TopBarSelectMenu({
     setOpenSub(null);
     setSubPos(null);
   };
+
+  useLayoutEffect(() => {
+    if (!open || !rootRef.current) {
+      setMenuPos(null);
+      return;
+    }
+    const placeMain = () => {
+      const el = rootRef.current;
+      if (!el) return;
+      const measured = menuRef.current?.offsetHeight ?? 320;
+      setMenuPos(placeAnchoredMenu(el.getBoundingClientRect(), { menuWidth: 200, menuHeight: measured }));
+    };
+    placeMain();
+    const raf = window.requestAnimationFrame(placeMain);
+    window.addEventListener('resize', placeMain);
+    window.addEventListener('scroll', placeMain, true);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener('resize', placeMain);
+      window.removeEventListener('scroll', placeMain, true);
+    };
+  }, [open]);
 
   useLayoutEffect(() => {
     if (!open || !openSub) return;
@@ -332,9 +357,10 @@ export function TopBarSelectMenu({
 
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e: MouseEvent) => {
+    const onDoc = (e: Event) => {
       const t = e.target as Node;
       if (rootRef.current?.contains(t)) return;
+      if (menuRef.current?.contains(t)) return;
       if (submenuRef.current?.contains(t)) return;
       closeMenu();
     };
@@ -348,10 +374,13 @@ export function TopBarSelectMenu({
         }
       }
     };
-    document.addEventListener('mousedown', onDoc);
+    const t = window.setTimeout(() => {
+      document.addEventListener('pointerdown', onDoc);
+    }, 0);
     document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', onDoc);
+      window.clearTimeout(t);
+      document.removeEventListener('pointerdown', onDoc);
       document.removeEventListener('keydown', onKey);
     };
   }, [open, openSub]);
@@ -439,64 +468,73 @@ export function TopBarSelectMenu({
         <span>Select</span>
         <ChevronDown size={11} strokeWidth={2} aria-hidden />
       </button>
-      {open ? (
-        <div className="app-top-bar__select-menu" id={menuId} role="menu">
-          {TOP_ROWS.map((row, index) => {
-            if (row.kind === 'sep') {
-              return (
-                <div key={`sep-${index}`} className="app-top-bar__select-sep" role="separator" />
-              );
-            }
-            if (row.kind === 'tool') {
-              const isActive = activeTool === row.id;
-              const toolShortcut = primaryToolShortcutLabel(row.id, bindings);
-              return (
-                <button
-                  key={row.id}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={isActive}
-                  className={`app-top-bar__select-item${isActive ? ' is-active' : ''}`}
-                  title={row.hint}
-                  onClick={() => {
-                    onSelectTool(row.id);
-                    closeMenu();
-                  }}
-                >
-                  <span className="app-top-bar__select-item-label">{row.label}</span>
-                  {toolShortcut ? (
-                    <span className="app-top-bar__select-item-shortcut">{toolShortcut}</span>
-                  ) : null}
-                </button>
-              );
-            }
-            if (row.kind === 'action') {
-              return renderActionButton(row.item, row.item.id);
-            }
-            const isSubOpen = openSub === row.id;
-            return (
-              <div key={row.id} className="app-top-bar__select-subwrap">
-                <button
-                  type="button"
-                  role="menuitem"
-                  aria-haspopup="menu"
-                  aria-expanded={isSubOpen}
-                  className={`app-top-bar__select-item app-top-bar__select-item--submenu${isSubOpen ? ' is-open' : ''}`}
-                  title={row.hint}
-                  ref={el => {
-                    subAnchorRefs.current[row.id] = el;
-                  }}
-                  onClick={() => setOpenSub(isSubOpen ? null : row.id)}
-                  onMouseEnter={() => setOpenSub(row.id)}
-                >
-                  <span className="app-top-bar__select-item-label">{row.label}</span>
-                  <ChevronRight size={12} strokeWidth={2} aria-hidden />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
+      {open && menuPos && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              ref={menuRef}
+              className="app-top-bar__select-menu app-top-bar__select-menu--portal"
+              id={menuId}
+              role="menu"
+              style={anchoredMenuStyle(menuPos)}
+            >
+              {TOP_ROWS.map((row, index) => {
+                if (row.kind === 'sep') {
+                  return (
+                    <div key={`sep-${index}`} className="app-top-bar__select-sep" role="separator" />
+                  );
+                }
+                if (row.kind === 'tool') {
+                  const isActive = activeTool === row.id;
+                  const toolShortcut = primaryToolShortcutLabel(row.id, bindings);
+                  return (
+                    <button
+                      key={row.id}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={isActive}
+                      className={`app-top-bar__select-item${isActive ? ' is-active' : ''}`}
+                      title={row.hint}
+                      onClick={() => {
+                        onSelectTool(row.id);
+                        closeMenu();
+                      }}
+                    >
+                      <span className="app-top-bar__select-item-label">{row.label}</span>
+                      {toolShortcut ? (
+                        <span className="app-top-bar__select-item-shortcut">{toolShortcut}</span>
+                      ) : null}
+                    </button>
+                  );
+                }
+                if (row.kind === 'action') {
+                  return renderActionButton(row.item, row.item.id);
+                }
+                const isSubOpen = openSub === row.id;
+                return (
+                  <div key={row.id} className="app-top-bar__select-subwrap">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      aria-haspopup="menu"
+                      aria-expanded={isSubOpen}
+                      className={`app-top-bar__select-item app-top-bar__select-item--submenu${isSubOpen ? ' is-open' : ''}`}
+                      title={row.hint}
+                      ref={el => {
+                        subAnchorRefs.current[row.id] = el;
+                      }}
+                      onClick={() => setOpenSub(isSubOpen ? null : row.id)}
+                      onMouseEnter={() => setOpenSub(row.id)}
+                    >
+                      <span className="app-top-bar__select-item-label">{row.label}</span>
+                      <ChevronRight size={12} strokeWidth={2} aria-hidden />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
       {openSubmenuContent && typeof document !== 'undefined'
         ? createPortal(
             <div
@@ -505,8 +543,8 @@ export function TopBarSelectMenu({
               role="menu"
               style={
                 subPos
-                  ? { top: subPos.top, left: subPos.left, visibility: 'visible' }
-                  : { top: 0, left: 0, visibility: 'hidden' }
+                  ? { top: subPos.top, left: subPos.left, visibility: 'visible', zIndex: 25000 }
+                  : { top: 0, left: 0, visibility: 'hidden', zIndex: 25000 }
               }
             >
               {openSubmenuContent}

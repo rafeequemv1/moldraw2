@@ -1446,12 +1446,12 @@ export function useMoleculeImportExport({
       }
 
       if (format === 'svg') {
-        void (async () => {
+        return (async (): Promise<boolean> => {
           const molToCopy = getMoleculeForExport('visual');
           if (!moleculeHasExportableContent(molToCopy)) {
             setSmilesBarHint('Nothing to copy');
             window.setTimeout(() => setSmilesBarHint(''), 2000);
-            return;
+            return false;
           }
           try {
             const svgText = exportMoleculeSvg({
@@ -1472,35 +1472,28 @@ export function useMoleculeImportExport({
             if (!svgText) {
               setSmilesBarHint('SVG export failed');
               window.setTimeout(() => setSmilesBarHint(''), 2000);
-              return;
+              return false;
             }
-            if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-              try {
-                await navigator.clipboard.write([
-                  new ClipboardItem({
-                    'image/svg+xml': new Blob([svgText], { type: 'image/svg+xml' }),
-                  }),
-                ]);
-              } catch {
-                await navigator.clipboard.write([
-                  new ClipboardItem({
-                    'text/plain': new Blob([svgText], { type: 'text/plain' }),
-                  }),
-                ]);
-              }
-            } else if (navigator.clipboard?.writeText) {
+            if (typeof navigator.clipboard?.writeText === 'function') {
               await navigator.clipboard.writeText(svgText);
+            } else if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+              await navigator.clipboard.write([
+                new ClipboardItem({
+                  'text/plain': new Blob([svgText], { type: 'text/plain' }),
+                }),
+              ]);
             } else {
               throw new Error('Clipboard API unavailable');
             }
             setSmilesBarHint('Copied SVG');
             window.setTimeout(() => setSmilesBarHint(''), 2000);
+            return true;
           } catch (err) {
             setSmilesBarHint(err instanceof Error ? err.message : 'SVG copy failed');
             window.setTimeout(() => setSmilesBarHint(''), 2800);
+            return false;
           }
         })();
-        return;
       }
 
       const molToCopy = resolveMoleculeForCopy(item?.label ?? 'copy');

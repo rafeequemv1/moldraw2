@@ -1,67 +1,87 @@
 .document-tab-bar {
   display: flex;
-  align-items: stretch;
+  align-items: flex-end;
   gap: 0;
-  min-height: 22px;
-  max-height: 22px;
-  padding: 0 6px;
-  background: var(--chrome-bg);
-  border-bottom: 1px solid var(--chrome-border);
-  flex-shrink: 0;
+  min-height: var(--canvas-tab-stack-height, 32px);
+  max-height: var(--canvas-tab-stack-height, 32px);
+  height: var(--canvas-tab-stack-height, 32px);
+  padding: 0 2px 0 0;
+  background: transparent;
+  border-bottom: 1px solid var(--chrome-border, #cbd5e1);
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .document-tab-bar__scroll {
   display: flex;
-  align-items: stretch;
+  align-items: flex-end;
   gap: 0;
   flex: 1;
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.28) transparent;
+}
+
+.document-tab-bar__scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.document-tab-bar__scroll::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.28);
+  border-radius: 999px;
+}
+
+.document-tab-bar__scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .document-tab-bar__tabs {
   display: flex;
-  align-items: stretch;
-  gap: 0;
+  align-items: flex-end;
+  gap: 1px;
   flex: 0 0 auto;
   min-width: 0;
-}
-
-.document-tab-bar__scroll::-webkit-scrollbar {
-  height: 0;
-  display: none;
+  padding-left: 2px;
 }
 
 .document-tab-bar__tab {
   display: inline-flex;
   align-items: center;
-  max-width: 168px;
-  min-width: 56px;
-  height: 20px;
-  margin: 1px 0 0;
+  max-width: 180px;
+  min-width: 72px;
+  height: 26px;
+  margin: 0;
   padding: 0 2px 0 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
+  border: 1px solid var(--chrome-border, #cbd5e1);
+  border-bottom: none;
+  border-radius: var(--radius-panel, 4px) var(--radius-panel, 4px) 0 0;
+  background: color-mix(in srgb, var(--chrome-bg, #f1f5f9) 88%, #fff);
   color: var(--text-muted);
   flex-shrink: 0;
+  position: relative;
+  top: 1px;
 }
 
 .document-tab-bar__tab + .document-tab-bar__tab {
-  box-shadow: inset 1px 0 0 var(--chrome-border);
+  box-shadow: none;
 }
 
 .document-tab-bar__tab:hover {
   color: var(--text-main);
-  background: color-mix(in srgb, var(--chrome-hover) 70%, transparent);
+  background: color-mix(in srgb, var(--chrome-hover) 80%, #fff);
 }
 
 .document-tab-bar__tab--active {
+  height: 28px;
+  top: 0;
   background: var(--canvas-bg, #fff);
   color: var(--text-main);
-  box-shadow: inset 0 1px 0 var(--chrome-border);
+  border-color: var(--chrome-border, #cbd5e1);
+  box-shadow: none;
+  z-index: 1;
 }
 
 .document-tab-bar__tab--active + .document-tab-bar__tab,
@@ -72,13 +92,13 @@
 .document-tab-bar__tab-label {
   flex: 1;
   min-width: 0;
-  padding: 0 2px 0 8px;
+  padding: 0 4px 0 10px;
   border: none;
   background: transparent;
   color: inherit;
   font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1;
   text-align: left;
@@ -90,22 +110,22 @@
 
 .document-tab-bar__tab--editing {
   min-width: 120px;
-  max-width: 200px;
+  max-width: 180px;
 }
 
 .document-tab-bar__tab-input {
   flex: 1;
   min-width: 0;
-  height: 16px;
-  margin: 0 1px 0 4px;
-  padding: 0 4px;
+  height: 20px;
+  margin: 0 2px 0 6px;
+  padding: 0 6px;
   border: 1px solid var(--chrome-border-strong, #94a3b8);
-  border-radius: 2px;
+  border-radius: 4px;
   background: var(--chrome-input-bg, #fff);
   color: var(--text-main, #0f172a);
   font: inherit;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   outline: none;
 }
 
@@ -124,58 +144,85 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 14px;
-  height: 14px;
-  margin-right: 3px;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
   padding: 0;
   border: none;
-  border-radius: 2px;
+  border-radius: 50%;
   background: transparent;
   color: inherit;
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: pointer;
 }
 
 .document-tab-bar__tab-close:hover {
   opacity: 1;
-  background: var(--chrome-hover);
+  background: color-mix(in srgb, var(--chrome-hover) 90%, transparent);
 }
 
 .document-tab-bar__tab--active .document-tab-bar__tab-close:hover {
-  background: var(--chrome-hover);
+  background: color-mix(in srgb, var(--chrome-hover) 90%, transparent);
 }
 
 .document-tab-bar__new {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  margin: 1px 0 0 2px;
+  width: 26px;
+  height: 26px;
+  margin: 0 0 2px 4px;
   padding: 0;
-  border: none;
-  border-radius: 3px;
-  background: transparent;
+  border: 1px solid var(--chrome-border, #cbd5e1);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--chrome-bg, #f1f5f9) 88%, #fff);
   color: var(--text-muted);
   cursor: pointer;
   flex-shrink: 0;
   position: relative;
   z-index: 2;
+  box-sizing: border-box;
 }
 
 .document-tab-bar__new:hover {
   color: var(--text-main);
-  background: var(--chrome-hover);
+  background: color-mix(in srgb, var(--chrome-hover) 85%, #fff);
+  border-color: var(--chrome-border-strong, #94a3b8);
+}
+
+.canvas-document-tabs {
+  position: absolute;
+  top: 2px;
+  left: var(--app-tool-island-inset, 6px);
+  z-index: 14;
+  display: flex;
+  align-items: flex-end;
+  width: max-content;
+  max-width: min(420px, calc(100% - var(--app-tool-rail-width, 38px) - 40px));
+  pointer-events: auto;
+  border-bottom: 1px solid var(--chrome-border, #cbd5e1);
+}
+
+.canvas-document-tabs .document-tab-bar {
+  min-height: var(--canvas-tab-stack-height, 28px);
+  max-height: var(--canvas-tab-stack-height, 28px);
+  height: var(--canvas-tab-stack-height, 28px);
+  padding: 0;
+  border: none;
+  border-bottom: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 @media (max-width: 640px) {
-  .document-tab-bar {
-    min-height: 22px;
-    max-height: 22px;
+  .document-tab-bar__tab {
+    max-width: 120px;
+    min-width: 56px;
   }
 
-  .document-tab-bar__tab {
-    max-width: 104px;
-    min-width: 48px;
+  .canvas-document-tabs {
+    max-width: min(300px, 78vw);
   }
 }

@@ -11,13 +11,13 @@ export const CARBON_COVALENT_A = covalentRadius('C');
 export const CARBON_SPHERE_RADIUS = 0.55;
 /** Classic 3Dmol ball-and-stick: sphere.scale × Bondi vdW (not custom cylinders). */
 export const MOL3D_BALLSTICK_SPHERE_SCALE = 0.3;
-export const MOL3D_BALLSTICK_STICK_RADIUS = 0.2;
+export const MOL3D_BALLSTICK_STICK_RADIUS = 0.16;
 export const SELECTED_SPHERE_SCALE = 1.25;
-export const STICK_RADIUS = 0.14;
-export const SELECTED_STICK_RADIUS = 0.24;
+export const STICK_RADIUS = 0.11;
+export const SELECTED_STICK_RADIUS = 0.19;
 /** Thicker sticks for the Toon-ish display cheat. */
-export const TOONISH_STICK_RADIUS = 0.22;
-export const TOONISH_SELECTED_STICK_RADIUS = 0.3;
+export const TOONISH_STICK_RADIUS = 0.18;
+export const TOONISH_SELECTED_STICK_RADIUS = 0.24;
 export const TOONISH_SPHERE_SCALE = 1.18;
 /**
  * Whitish H on the light (#f8fafc) viewer background — pale enough to read as
@@ -58,7 +58,7 @@ export const TOONISH_ELEMENT_COLORS: Record<string, string> = {
 export const ballStickSphereRadius = (elem: string): number =>
   (covalentRadius(elem) / CARBON_COVALENT_A) * CARBON_SPHERE_RADIUS;
 
-/** Stick cylinder radius (Å) scaled by covalent radius — H ≈ 0.057, C = 0.14. */
+/** Stick cylinder radius (Å) scaled by covalent radius — H ≈ 0.045, C = 0.11. */
 export const ballStickStickRadius = (elem: string): number =>
   (covalentRadius(elem) / CARBON_COVALENT_A) * STICK_RADIUS;
 

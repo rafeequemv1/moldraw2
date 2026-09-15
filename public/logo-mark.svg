@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="MolDraw">
+  <rect width="32" height="32" rx="7" ry="7" fill="#2C7A7B"/>
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 4.6 L25.5 10.1 L25.5 21.9 L16 27.4 L6.5 21.9 L6.5 10.1 Z" stroke-width="2.2"/>
+    <path d="M23.95 11.2 L23.95 20.8" stroke-width="1.55"/>
+    <path d="M16.55 6.15 L8.2 10.95" stroke-width="1.55"/>
+    <path d="M8.2 21.05 L16.55 25.85" stroke-width="1.55"/>
+  </g>
+</svg>

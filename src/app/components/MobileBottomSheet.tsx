@@ -9,14 +9,16 @@ export interface MobileBottomSheetProps {
   open: boolean;
   onClose: () => void;
   title?: string;
-  /** `full` ≈ phone full-screen drawer; `tall` ≈ ~88dvh sheet; `auto` sizes to content. */
-  size?: 'auto' | 'tall' | 'full';
+  /** `full` ≈ phone full-screen drawer; `tall` ≈ ~88dvh sheet; `peek` ≈ half so the canvas stays visible; `auto` sizes to content. */
+  size?: 'auto' | 'tall' | 'full' | 'peek';
   children: ReactNode;
   /** Optional footer pinned below scroll body. */
   footer?: ReactNode;
   className?: string;
   /** aria-label when title omitted */
   ariaLabel?: string;
+  /** When false, no dim overlay — canvas above the sheet stays visible and tappable. */
+  dimBackdrop?: boolean;
 }
 
 const DISMISS_PX = 72;
@@ -30,6 +32,7 @@ export function MobileBottomSheet({
   footer,
   className = '',
   ariaLabel,
+  dimBackdrop = true,
 }: MobileBottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef<number | null>(null);
@@ -43,8 +46,8 @@ export function MobileBottomSheet({
       dragStartY.current = null;
       return;
     }
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const prev = dimBackdrop ? document.body.style.overflow : null;
+    if (dimBackdrop) document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
@@ -53,10 +56,10 @@ export function MobileBottomSheet({
     };
     window.addEventListener('keydown', onKey, true);
     return () => {
-      document.body.style.overflow = prev;
+      if (prev != null) document.body.style.overflow = prev;
       window.removeEventListener('keydown', onKey, true);
     };
-  }, [open, onClose]);
+  }, [open, onClose, dimBackdrop]);
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -86,13 +89,20 @@ export function MobileBottomSheet({
   };
 
   return createPortal(
-    <div className={`mobile-sheet${className ? ` ${className}` : ''}`} role="presentation">
-      <button
-        type="button"
-        className="mobile-sheet__backdrop"
-        aria-label="Dismiss"
-        onClick={onClose}
-      />
+    <div
+      className={`mobile-sheet${className ? ` ${className}` : ''}${
+        dimBackdrop ? '' : ' mobile-sheet--canvas-visible'
+      }`}
+      role="presentation"
+    >
+      {dimBackdrop ? (
+        <button
+          type="button"
+          className="mobile-sheet__backdrop"
+          aria-label="Dismiss"
+          onClick={onClose}
+        />
+      ) : null}
       <div
         ref={sheetRef}
         className={`mobile-sheet__panel mobile-sheet__panel--${size}${dragging ? ' mobile-sheet__panel--dragging' : ''}`}

@@ -427,7 +427,9 @@ export const renderToolIcon = (toolId: string) => {
     case 'benzene': {
       // Kekulé benzene: flat-top hexagon + three alternating double-bond marks
       const hex = nGonVerts(6, 7.35, 10, 10, true);
-      const doubles = [0, 2, 4].map(i => doubleBondAlongEdge(hex[i], hex[(i + 1) % 6]));
+      const doubles = [0, 2, 4].map(i =>
+        doubleBondAlongEdge(hex[i], hex[(i + 1) % 6], 10, 10, 0.26, 1.95),
+      );
       return (
         <IconSvg>
           <polygon points={vertsToPoints(hex)} {...stroke} strokeWidth={1.55} />

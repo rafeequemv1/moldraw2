@@ -26,7 +26,7 @@ import { selectionIsGrouped } from '@moldraw/core';
 import { COLOR_PRESETS } from '@moldraw/core/color/selectionColor';
 import type { CopyAsFormat, DownloadFormat } from '../types';
 import { DOWNLOAD_FORMAT_ITEMS } from '../downloadFormats';
-import { CONTEXT_COPY_AS_ITEMS } from '../copyAsFormats';
+import { COPY_AS_FORMAT_ITEMS } from '../copyAsFormats';
 import { isSimpleCycleAtomSet } from '@moldraw/domain';
 import { QUICK_ELEMENT_PALETTE, PERIODIC_TABLE_CELLS } from '@moldraw/domain';
 import { MobileBottomSheet } from './MobileBottomSheet';
@@ -533,9 +533,9 @@ export function CanvasContextMenu({
           anchorRef={copyAsAnchorRef}
           onKeepOpen={() => openFlyout('copyAs')}
           onRequestClose={() => scheduleCloseFlyout('copyAs')}
-          minWidth={148}
+          minWidth={220}
         >
-          {CONTEXT_COPY_AS_ITEMS.map(item => (
+          {COPY_AS_FORMAT_ITEMS.map(item => (
             <button
               key={item.key}
               type="button"

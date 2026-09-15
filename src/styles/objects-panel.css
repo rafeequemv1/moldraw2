@@ -16,7 +16,7 @@
   color: var(--text-main);
   background: var(--chrome-bg-elevated);
   border: 1px solid var(--chrome-border);
-  border-radius: 8px;
+  border-radius: var(--radius-panel, 4px);
   overflow: hidden;
 }
 

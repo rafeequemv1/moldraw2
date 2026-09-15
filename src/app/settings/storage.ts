@@ -1,9 +1,20 @@
+import { detectBrowserUiLanguage } from '../i18n';
 import { DEFAULT_APP_SETTINGS } from './defaults';
 import type { AppSettings } from './types';
 
+function settingsForFirstVisit(): AppSettings {
+  return {
+    ...DEFAULT_APP_SETTINGS,
+    general: {
+      ...DEFAULT_APP_SETTINGS.general,
+      uiLanguage: detectBrowserUiLanguage(),
+    },
+  };
+}
+
 const STORAGE_KEY = 'moldraw-app-settings-v1';
 /** Bumped when a one-shot default migration must run for existing localStorage. */
-const SETTINGS_SCHEMA_VERSION = 9;
+const SETTINGS_SCHEMA_VERSION = 10;
 const SCHEMA_VERSION_KEY = 'moldraw-app-settings-schema';
 
 function deepMerge<T extends Record<string, unknown>>(base: T, patch: Partial<T>): T {
@@ -25,7 +36,7 @@ export function loadAppSettings(): AppSettings {
   if (typeof window === 'undefined') return DEFAULT_APP_SETTINGS;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_APP_SETTINGS;
+    if (!raw) return settingsForFirstVisit();
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
     const merged = deepMerge(
       DEFAULT_APP_SETTINGS as unknown as Record<string, unknown>,
@@ -76,6 +87,10 @@ export function loadAppSettings(): AppSettings {
       // One-shot: uniform round singles at 2 px (schema 8 had forced 1).
       if (schema < 9 && merged.bonds.bondThicknessPx === 1) {
         merged.bonds = { ...merged.bonds, bondThicknessPx: 2 };
+      }
+      // One-shot: background grid on (older saves may have turned it off).
+      if (schema < 10) {
+        nextGeneral.showGrid = true;
       }
       merged.general = nextGeneral;
       window.localStorage.setItem(SCHEMA_VERSION_KEY, String(SETTINGS_SCHEMA_VERSION));

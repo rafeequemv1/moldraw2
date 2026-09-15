@@ -1,5 +1,13 @@
 /* Left toolbar — floating island matching the AI / 3D tools-row height. */
 
+.workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar {
+  top: calc(2px + var(--canvas-tab-stack-height, 28px) + 2px);
+}
+
+.workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar-fg-panel {
+  top: calc(2px + var(--canvas-tab-stack-height, 28px) + 2px);
+}
+
 .toolbar {
   position: absolute;
   left: var(--app-tool-island-inset, 6px);
@@ -10,16 +18,16 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: center;
+  align-items: stretch;
   flex: 0 0 auto;
   align-self: flex-start;
   min-height: 0;
-  gap: 0;
-  padding: 5px 4px;
-  border-radius: 8px;
-  background: var(--chrome-bg-elevated);
-  border: 1px solid var(--chrome-border);
-  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.1);
+  gap: 4px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
   z-index: 12;
   width: var(--app-tool-rail-width, 38px);
   box-sizing: border-box;
@@ -48,9 +56,13 @@
   align-items: center;
   gap: 0;
   width: 100%;
-  padding-bottom: 2px;
-  margin-bottom: 1px;
-  border-bottom: 1px solid color-mix(in srgb, var(--chrome-border) 85%, transparent);
+  padding: 4px 4px;
+  margin: 0;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--radius-panel, 4px);
+  background: var(--chrome-bg-elevated);
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.1);
+  box-sizing: border-box;
   justify-content: flex-start;
 }
 
@@ -91,23 +103,15 @@
 
 .toolbar-group--history {
   margin-top: 0;
-  border-bottom: none;
-  padding-bottom: 0;
-  padding-top: 2px;
-  border-top: 1px solid var(--chrome-border);
 }
 
 .toolbar-group--settings {
   margin-top: 0;
-  border-bottom: none;
-  padding-bottom: 2px;
-  padding-top: 0;
-  border-top: none;
+  padding: 4px;
 }
 
 .toolbar-group:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+  padding-bottom: 4px;
 }
 
 .toolbar-spacer {
@@ -168,7 +172,7 @@
   box-sizing: border-box;
   background: var(--chrome-bg-elevated);
   border: 1px solid var(--chrome-border);
-  border-radius: 8px;
+  border-radius: var(--radius-panel, 4px);
   overflow: visible;
 }
 
@@ -196,7 +200,7 @@
   box-sizing: border-box;
   background: var(--chrome-bg-elevated);
   border: 1px solid var(--chrome-border);
-  border-radius: 8px;
+  border-radius: var(--radius-panel, 4px);
   box-shadow: 0 1px 6px rgba(15, 23, 42, 0.1);
   overflow-x: auto;
   overflow-y: hidden;
@@ -293,11 +297,11 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: var(--app-status-bar-height, 26px);
+  bottom: var(--app-page-footer-stack);
   z-index: 51;
   height: var(--app-mobile-category-height, 48px);
   padding: 0 4px;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: 0;
   box-sizing: border-box;
   background: var(--chrome-bg);
   border-top: 1px solid var(--chrome-border);
@@ -309,7 +313,7 @@
 .toolbar-mobile-categories__btn {
   flex: 1 1 0;
   min-width: 0;
-  min-height: 44px;
+  min-height: 0;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -459,8 +463,61 @@
 }
 
 .toolbar-split-tool__menu--portal {
-  position: fixed;
-  z-index: 7600;
+  position: fixed !important;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  z-index: 24000;
+}
+
+.toolbar-split-tool__menu--drop-up,
+.toolbar-fg-tool__panel--drop-up,
+.toolbar-split-tool__menu--portal[data-placement='above'],
+.toolbar-fg-tool__panel--portal[data-placement='above'],
+html.touch-ui .toolbar-split-tool__menu--drop-up,
+html.touch-ui .toolbar-fg-tool__panel--drop-up {
+  position: fixed !important;
+  top: auto !important;
+  right: auto !important;
+  left: var(--split-menu-left, 8px) !important;
+  bottom: var(--split-menu-bottom, 96px) !important;
+  max-height: min(70dvh, calc(100dvh - var(--split-menu-bottom, 96px) - 8px)) !important;
+  transform: none !important;
+  z-index: 60000 !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.18);
+}
+
+/* Compact dock: sit just above the tool strip, same as the C6 rings menu. */
+html.app-mobile-compact .toolbar-split-tool__menu--portal,
+html.app-mobile-compact .toolbar-fg-tool__panel--portal,
+html.app-mobile-compact .toolbar-split-tool__menu--drop-up,
+html.app-mobile-compact .toolbar-fg-tool__panel--drop-up {
+  position: fixed !important;
+  top: auto !important;
+  right: auto !important;
+  left: var(--split-menu-left, 8px) !important;
+  /* JS measures the trigger + dock and sets --split-menu-bottom; the chrome
+     var is only the pre-measure fallback so the first frame never drops down. */
+  bottom: var(--split-menu-bottom, calc(var(--app-mobile-bottom-chrome, 80px) + 4px)) !important;
+  max-height: min(
+    70dvh,
+    calc(100dvh - var(--split-menu-bottom, var(--app-mobile-bottom-chrome, 80px)) - 12px)
+  ) !important;
+  transform: none !important;
+  z-index: 60000 !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.18);
+}
+
+html.app-mobile-compact .toolbar-split-tool__menu--drop-up {
+  min-width: 148px;
+  max-width: min(220px, calc(100vw - 16px));
+  border-radius: 6px;
 }
 
 /* Compact native-style menus from left rail + bottom rings */
@@ -530,7 +587,8 @@
   font-size: 10px;
 }
 
-.toolbar-bottom .toolbar-split-tool__menu {
+.toolbar-bottom .toolbar-split-tool__menu,
+.toolbar--mobile-strip .toolbar-split-tool__menu:not(.toolbar-split-tool__menu--portal) {
   left: 0;
   top: auto;
   bottom: calc(100% + 4px);
@@ -697,7 +755,9 @@
 
 /* Mobile: variant picker as a horizontal chip slider above the category dock */
 .toolbar-split-tool__menu--slider {
-  z-index: 80;
+  z-index: 12000;
+  top: auto !important;
+  bottom: var(--app-mobile-bottom-chrome) !important;
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -705,8 +765,8 @@
   width: 100%;
   max-width: none;
   max-height: none;
-  padding: 6px 8px;
-  border-radius: 12px 12px 0 0;
+  padding: 4px 6px;
+  border-radius: 6px 6px 0 0;
   border: 1px solid var(--chrome-border);
   border-bottom: none;
   box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.12);
@@ -718,17 +778,27 @@
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   overflow-x: auto;
   overflow-y: hidden;
   max-height: none;
   padding: 0 2px 2px;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.28) transparent;
 }
 
 .toolbar-split-tool__menu--slider .toolbar-split-tool__menu-body::-webkit-scrollbar {
-  display: none;
+  height: 4px;
+}
+
+.toolbar-split-tool__menu--slider .toolbar-split-tool__menu-body::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.28);
+  border-radius: 999px;
+}
+
+.toolbar-split-tool__menu--slider .toolbar-split-tool__menu-body::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .toolbar-split-tool__menu--slider .toolbar-split-tool__group {
@@ -746,10 +816,10 @@
 .toolbar-split-tool__menu--slider .toolbar-split-tool__item {
   flex: 0 0 auto;
   flex-direction: column;
-  min-width: 56px;
-  min-height: 52px;
-  padding: 6px 8px;
-  gap: 2px;
+  min-width: 40px;
+  min-height: 36px;
+  padding: 3px 5px;
+  gap: 1px;
 }
 
 .toolbar-split-tool__menu--slider .toolbar-split-tool__preview {

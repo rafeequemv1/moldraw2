@@ -1,5 +1,5 @@
 /**
- * Right-side element palette dock: H/C/N/O/S quick bar + periodic table opener.
+ * Floating H/C/N/O/S island on the 2D canvas (top-right) plus periodic table opener.
  */
 import { useState } from 'react';
 import { ChevronsLeft, ChevronsRight, Grid3x3 } from 'lucide-react';

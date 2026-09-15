@@ -346,7 +346,8 @@ export const MOBILE_TOOL_CATEGORIES: {
   { id: 'draw', label: 'Draw' },
   { id: 'rings', label: 'Rings' },
   { id: 'annotate', label: 'Annotate' },
-  { id: 'objects', label: 'Objects' },
+  // 'objects' is a valid category id (header objects-list button) but is not a
+  // dock tab: on compact the list icon lives in the header, like desktop.
   { id: 'more', label: 'More' },
 ];
 

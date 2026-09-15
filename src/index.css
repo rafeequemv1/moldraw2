@@ -2,26 +2,12 @@
  * Global stylesheet. Composed from per-section files in `./styles/`.
  * Keep this file thin: only the font import and the section @imports.
  * @import order matters: design-system + tokens first, responsive last.
+ * Regular CSS rules MUST come after every @import (Vite/PostCSS).
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* SPA host: fill viewport; site footer in index.html is for crawlers / static chrome */
-html,
-body {
-  margin: 0;
-  height: 100%;
-  overflow: hidden;
-}
-#root {
-  height: 100%;
-  min-height: 0;
-}
-
-/* Design system first (tokens + shared buttons). Windows / Fluent-flat chrome. */
 @import './design-system/index.css';
 @import './styles/tokens.css';
-/* Theme overrides (light / elegant-dark / ink-dark) — keep after base tokens. */
 @import './styles/theme.css';
 @import './styles/layout.css';
 @import './styles/status-bar.css';
@@ -36,13 +22,83 @@ body {
 @import './styles/right-rail.css';
 @import './styles/right-dock.css';
 @import './styles/color-popout.css';
+@import './styles/left-params-panel.css';
 @import './styles/palette.css';
 @import './styles/my-projects.css';
 @import './styles/documentation.css';
 @import './styles/document-tabs.css';
-/* Re-apply topbar after canvas styles so docked align toolbar stays in-flow. */
 @import './styles/topbar-align-fix.css';
 @import './styles/mobile-sheet.css';
 @import './styles/responsive.css';
+@import './styles/account-modals.css';
 @import './styles/spectroscopy-modal.css';
 @import '../plugins/proteins/src/proteins.css';
+
+/* SPA host fills the viewport. The site footer is moved under the formula
+   row (SiteFooterHost) so it stays visible without covering the canvas. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#root {
+  position: relative;
+  flex: 1 1 0%;
+  inset: auto;
+  height: auto;
+  max-height: none;
+  width: 100%;
+  min-height: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.app-shell {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.app-site-footer-slot,
+body > .site-footer-root {
+  display: block;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 80;
+  width: 100%;
+}
+
+#app-status-host {
+  display: none;
+}
+
+/* Charla launcher stays hidden until Help (mobile) or desktop auto-load adds this class. */
+html:not(.charla-visible) charla-widget,
+html:not(.charla-visible) iframe[src*="charla"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

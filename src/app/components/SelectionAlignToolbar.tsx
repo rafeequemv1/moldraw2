@@ -1,7 +1,8 @@
 /**
- * Align / distribute controls. Generate (circular / linear / dendrimer / grid /
- * graphene) is a click-only dropdown; param sliders sit on the top bar after a
- * mode is chosen.
+ * Align / distribute controls. Generate (circular / linear / dendrimer / grid)
+ * is a click-only dropdown; parameter sliders open in a closable left-docked
+ * params panel (bottom sheet on compact). Graphene lives in the Library — its
+ * params panel opens here whenever a graphene sheet is selected.
  */
 import {
   useEffect,
@@ -24,12 +25,20 @@ import {
   ChevronDown,
   Circle,
   GitFork,
-  Hexagon,
   LayoutGrid,
   RotateCw,
   type LucideIcon,
 } from 'lucide-react';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { LeftParamsPanel } from './LeftParamsPanel';
+import {
+  GRAPHENE_DEFAULT_PARAMS,
+  grapheneAnchorFromAtoms,
+  grapheneSheetAtomIds,
+  grapheneSheetIdForSelection,
+  recallGrapheneSheet,
+  rememberGrapheneSheet,
+} from '../graphene/grapheneSession';
 import type { Molecule } from '@moldraw/domain';
 import type { InfiniteCanvasHandle } from '@moldraw/canvas/InfiniteCanvas';
 import type { Viewport } from '@moldraw/canvas/geometry';
@@ -99,6 +108,8 @@ export type GrapheneGenerateParams = {
   bondLengthPx: number;
   cx: number;
   cy: number;
+  /** `rgo` = reduced graphene oxide (residual –OH / –COOH / epoxide groups). */
+  oxidation?: 'none' | 'rgo';
   replaceAtomIds?: string[];
 };
 
@@ -113,6 +124,7 @@ type LiveOverrides = {
   grapheneCols?: number;
   grapheneRows?: number;
   grapheneShape?: 'rectangular' | 'circular';
+  grapheneOxidation?: 'none' | 'rgo';
   bondLength?: number;
   foldCount?: number;
   spacingPx?: number;
@@ -160,7 +172,6 @@ const GENERATE_MODES: { id: GenerateMode; label: string; title?: string; Icon: L
     Icon: GitFork,
   },
   { id: 'grid', label: 'Grid', Icon: LayoutGrid },
-  { id: 'graphene', label: 'Graphene', Icon: Hexagon },
 ];
 
 const SPACING_MIN = 20;
@@ -243,10 +254,13 @@ export function SelectionAlignToolbar({
   const [grapheneCols, setGrapheneCols] = useState(GRAPHENE_COLS_DEFAULT);
   const [grapheneRows, setGrapheneRows] = useState(GRAPHENE_ROWS_DEFAULT);
   const [grapheneShape, setGrapheneShape] = useState<'rectangular' | 'circular'>('rectangular');
+  const [grapheneOxidation, setGrapheneOxidation] = useState<'none' | 'rgo'>('none');
   const [bondLength, setBondLength] = useState(BOND_LEN_DEFAULT);
   const [generateMode, setGenerateMode] = useState<GenerateMode>('circular');
   const [menuOpen, setMenuOpen] = useState(false);
   const [generateActive, setGenerateActive] = useState(false);
+  /** User closed the params panel; reopens on the next mode pick / selection change. */
+  const [paramsDismissed, setParamsDismissed] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<GenerateSession | null>(null);
   const liveTimerRef = useRef<number | null>(null);
@@ -269,6 +283,35 @@ export function SelectionAlignToolbar({
           ));
     prevSelectionKeyRef.current = selectionKey;
     if (!stillInSession) {
+      // Graphene sheet (from the Library or an earlier session) selected → reopen its params panel.
+      const grSheet = grapheneSheetIdForSelection(selectionAtomIds);
+      if (grSheet) {
+        const sheetIds = grapheneSheetAtomIds(molecule, grSheet);
+        const remembered = recallGrapheneSheet(grSheet);
+        const anchor =
+          remembered
+            ? { cx: remembered.cx, cy: remembered.cy }
+            : grapheneAnchorFromAtoms(molecule, grSheet) ?? sheetCenter();
+        sessionRef.current = {
+          seedAtomIds: [],
+          newAtomIds: sheetIds,
+          mode: 'graphene',
+          anchorCx: anchor.cx,
+          anchorCy: anchor.cy,
+        };
+        skipLiveRef.current = true;
+        const p = remembered ?? GRAPHENE_DEFAULT_PARAMS;
+        setGrapheneCols(p.cols);
+        setGrapheneRows(p.rows);
+        setGrapheneShape(p.shape);
+        setGrapheneOxidation(p.oxidation);
+        setBondLength(p.bondLengthPx);
+        setGenerateMode('graphene');
+        setGenerateActive(true);
+        setParamsDismissed(false);
+        setMenuOpen(false);
+        return;
+      }
       const arr = molecule.instanceArrays?.find(
         a =>
           a.circular &&
@@ -344,10 +387,12 @@ export function SelectionAlignToolbar({
       setGrapheneCols(GRAPHENE_COLS_DEFAULT);
       setGrapheneRows(GRAPHENE_ROWS_DEFAULT);
       setGrapheneShape('rectangular');
+      setGrapheneOxidation('none');
       setBondLength(BOND_LEN_DEFAULT);
       setLinearSpacing(suggestedLinearSpacing);
       setMenuOpen(false);
       setGenerateActive(false);
+      setParamsDismissed(false);
     }
   }, [selectionKey, selectionAtomIds, suggestedRadius, molecule.instanceArrays]);
 
@@ -424,21 +469,35 @@ export function SelectionAlignToolbar({
       const cols = Math.max(1, Math.min(GRAPHENE_SIZE_MAX, overrides?.grapheneCols ?? grapheneCols));
       const rows = Math.max(1, Math.min(GRAPHENE_SIZE_MAX, overrides?.grapheneRows ?? grapheneRows));
       const shape = overrides?.grapheneShape ?? grapheneShape;
+      const oxidation = overrides?.grapheneOxidation ?? grapheneOxidation;
+      const bondLengthPx = overrides?.bondLength ?? bondLength;
       setGrapheneCols(cols);
       setGrapheneRows(rows);
       setGrapheneShape(shape);
+      setGrapheneOxidation(oxidation);
       const newIds = onGenerateGraphene({
         cols,
         rows,
         shape,
-        bondLengthPx: overrides?.bondLength ?? bondLength,
+        bondLengthPx,
+        oxidation,
         cx: center.cx,
         cy: center.cy,
         replaceAtomIds,
       });
+      const ids = Array.isArray(newIds) ? newIds : [];
+      rememberGrapheneSheet(ids, {
+        cols,
+        rows,
+        shape,
+        bondLengthPx,
+        oxidation,
+        cx: center.cx,
+        cy: center.cy,
+      });
       sessionRef.current = {
         seedAtomIds: [],
-        newAtomIds: Array.isArray(newIds) ? newIds : [],
+        newAtomIds: ids,
         mode: 'graphene',
         anchorCx: center.cx,
         anchorCy: center.cy,
@@ -625,7 +684,9 @@ export function SelectionAlignToolbar({
   const selectMode = (mode: GenerateMode) => {
     setGenerateMode(mode);
     setGenerateActive(true);
+    setParamsDismissed(false);
     setMenuOpen(false);
+    setArrangeSheetOpen(false);
     applyLive(mode);
   };
 
@@ -842,7 +903,43 @@ export function SelectionAlignToolbar({
           setBondLength(n);
           scheduleLive('graphene', { bondLength: n });
         })}
+        <label
+          className="selection-align-toolbar__toggle"
+          title="Reduced graphene oxide: sparse residual edge –OH / –COOH, basal –OH and epoxide (C–O–C) groups, C/O ≈ 10"
+        >
+          <input
+            type="checkbox"
+            className="selection-align-toolbar__toggle-input"
+            checked={grapheneOxidation === 'rgo'}
+            onChange={e => {
+              const next = e.target.checked ? 'rgo' : 'none';
+              setGrapheneOxidation(next);
+              scheduleLive('graphene', { grapheneOxidation: next });
+            }}
+          />
+          <span className="selection-align-toolbar__toggle-track" aria-hidden />
+          <span className="selection-align-toolbar__toggle-label">Reduced graphene oxide (rGO)</span>
+        </label>
       </span>
+    ) : null;
+
+  const paramsPanelTitle =
+    generateMode === 'graphene'
+      ? grapheneOxidation === 'rgo'
+        ? 'Reduced graphene oxide'
+        : 'Graphene'
+      : `${activeModeLabel} options`;
+
+  const paramsPanel =
+    topBarParams && !paramsDismissed ? (
+      <LeftParamsPanel
+        title={paramsPanelTitle}
+        onClose={() => setParamsDismissed(true)}
+        className="left-params-panel--generate"
+        slot={1}
+      >
+        {topBarParams}
+      </LeftParamsPanel>
     ) : null;
 
   const generatePanel = (
@@ -857,7 +954,7 @@ export function SelectionAlignToolbar({
           title={
             generateActive
               ? `Generate — ${activeModeLabel}`
-              : 'Generate — circular, linear, dendrimer, grid, graphene'
+              : 'Generate — circular, linear, dendrimer, grid (graphene: Library)'
           }
           aria-label="Generate"
           aria-haspopup="menu"
@@ -925,7 +1022,7 @@ export function SelectionAlignToolbar({
           </div>
         ) : null}
       </div>
-      {topBarParams}
+      {paramsPanel}
     </>
   );
 
@@ -934,7 +1031,9 @@ export function SelectionAlignToolbar({
       open={arrangeSheetOpen}
       onClose={() => setArrangeSheetOpen(false)}
       title="Arrange"
-      size="auto"
+      size="peek"
+      dimBackdrop={false}
+      className="mobile-sheet--arrange"
       ariaLabel="Arrange and generate"
     >
       <div className="mobile-sheet-arrange__section">
@@ -987,12 +1086,18 @@ export function SelectionAlignToolbar({
           })}
         </div>
       </div>
-      {topBarParams ? (
+      {topBarParams && paramsDismissed ? (
         <div className="mobile-sheet-arrange__section">
-          <span className="mobile-sheet-arrange__label">{activeModeLabel} options</span>
-          <div className="selection-align-toolbar__pattern-top-params selection-align-toolbar__pattern-top-params--sheet">
-            {topBarParams}
-          </div>
+          <button
+            type="button"
+            className="mobile-sheet-arrange__list-btn"
+            onClick={() => {
+              setParamsDismissed(false);
+              setArrangeSheetOpen(false);
+            }}
+          >
+            <span className="mobile-sheet-arrange__list-title">Show {paramsPanelTitle} sliders</span>
+          </button>
         </div>
       ) : null}
     </MobileBottomSheet>
@@ -1021,6 +1126,7 @@ export function SelectionAlignToolbar({
           </button>
         </div>
         {arrangeSheet}
+        {arrangeSheetOpen ? null : paramsPanel}
       </>
     );
   }

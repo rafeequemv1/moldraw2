@@ -1,0 +1,58 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const code = fs.readFileSync(path.join(root, 'public/course/course-content.js'), 'utf8');
+const sandbox = { window: {} };
+vm.runInNewContext(code, sandbox);
+const chapters = sandbox.window.MOLDRAW_COURSE_CHAPTERS;
+if (!Array.isArray(chapters) || chapters.length === 0) {
+  throw new Error('No course chapters found');
+}
+
+const dir = path.join(root, 'public/course/chapters');
+fs.mkdirSync(dir, { recursive: true });
+
+const template = (ch) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="description" content="${ch.title.replace(/"/g, '&quot;')} — MolDraw 2D editor course chapter.">
+  <link rel="canonical" href="https://www.moldraw.com${ch.href}">
+  <link rel="icon" type="image/svg+xml" href="/logo-mark.svg">
+  <title>${ch.title} | MolDraw Course</title>
+  <link rel="stylesheet" href="/css/site-topbar.css">
+  <style>
+    body { font-family: Inter, Arial, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; }
+    .wrap { max-width: 920px; margin: 28px auto 80px; padding: 0 18px; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 28px 32px; }
+    .top { margin-bottom: 14px; }
+    .top a { margin-right: 12px; color: #2c7a7b; text-decoration: none; font-weight: 700; }
+    h1 { margin: 0 0 10px; font-size: 28px; }
+    p, li { line-height: 1.7; color: #334155; }
+    .cta { display: inline-flex; margin-top: 18px; background: #2C7A7B; color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 10px 16px; border-radius: 10px; }
+  </style>
+  <script src="/js/site-topbar.js" defer></script>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top"><a href="/course/index.html">Back to Course</a><a href="/">Open MolDraw</a></div>
+    <article class="card">
+      ${String(ch.html).trim()}
+      <p><a class="cta" href="/">Open the 2D editor</a></p>
+    </article>
+  </main>
+</body>
+</html>
+`;
+
+for (const ch of chapters) {
+  const file = path.basename(ch.href || '');
+  if (!file.endsWith('.html')) continue;
+  fs.writeFileSync(path.join(dir, file), template(ch));
+  console.log('wrote', file);
+}

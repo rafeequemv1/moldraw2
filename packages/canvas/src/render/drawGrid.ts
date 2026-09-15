@@ -51,6 +51,8 @@ const worldBounds = (
   };
 };
 
+export type GridPattern = 'lines' | 'dots';
+
 export const drawGrid = (
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -58,7 +60,9 @@ export const drawGrid = (
   viewport: Viewport,
   theme: StructureThemeColors = DEFAULT_STRUCTURE_THEME,
   gridSizePx: number = DEFAULT_GRID_SIZE,
+  gridPattern: GridPattern = 'lines',
 ): void => {
+  if (!(width >= 1 && height >= 1)) return;
   const { left, right, top, bottom } = worldBounds(width, height, viewport);
   let step = gridWorldStepForZoom(gridSizePx, viewport.zoom);
 
@@ -76,6 +80,29 @@ export const drawGrid = (
   }
 
   const z = Math.max(1e-6, viewport.zoom);
+
+  if (gridPattern === 'dots') {
+    // World radius = screen px / zoom so dots stay the same size on screen
+    // (same idea as lineWidth = 1 / z). A world-space floor would grow dots
+    // when zooming in.
+    const minorRadius = 1.35 / z;
+    const majorRadius = 2.05 / z;
+    for (let i = iMin; i <= iMax; i++) {
+      for (let j = jMin; j <= jMax; j++) {
+        const x = i * step;
+        const y = j * step;
+        const isOrigin = i === 0 && j === 0;
+        const isMajor = i % MAJOR_STEP === 0 && j % MAJOR_STEP === 0;
+        ctx.fillStyle = isOrigin ? theme.gridAxis : isMajor ? theme.gridMajor : theme.gridMinor;
+        const r = isOrigin ? majorRadius * 1.2 : isMajor ? majorRadius : minorRadius;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    return;
+  }
+
   // 1 device pixel after the world-scale transform, at every zoom.
   ctx.lineWidth = 1 / z;
   ctx.lineCap = 'butt';

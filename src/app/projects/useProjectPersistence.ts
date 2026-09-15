@@ -19,6 +19,7 @@ import {
   renameProjectRecord,
   saveProjectRecord,
 } from './projectStorage';
+import { migrateLegacyMyDesigns } from './migrateLegacyMyDesigns';
 import { renderProjectThumbnailDataUrl } from './projectThumbnail';
 import {
   readOpenTabsSession,
@@ -55,7 +56,12 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
   projectNameRef.current = projectName;
 
   const syncTabsSession = useCallback((tabs: DocumentTab[], activeId: string) => {
-    writeOpenTabsSession({ tabs, activeTabId: activeId });
+    const prev = readOpenTabsSession();
+    writeOpenTabsSession({
+      tabs,
+      activeTabId: activeId,
+      documentStyles: prev?.documentStyles,
+    });
   }, []);
 
   const refreshLibrary = useCallback(async () => {
@@ -406,13 +412,30 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
   }, [openTabs, projectId, syncTabsSession]);
 
   useEffect(() => {
-    void refreshLibrary();
+    let cancelled = false;
+    void (async () => {
+      try {
+        await migrateLegacyMyDesigns();
+      } catch (err) {
+        console.warn('[useProjectPersistence] legacy My Designs migration failed', err);
+      }
+      if (!cancelled) await refreshLibrary();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [refreshLibrary]);
 
   useEffect(() => {
     if (hydratedRef.current) return;
     hydratedRef.current = true;
     void (async () => {
+      // Wait a tick so migration can finish writing before hydrating the active tab.
+      try {
+        await migrateLegacyMyDesigns();
+      } catch {
+        /* already logged above */
+      }
       const saved = await getProject(projectId);
       if (!saved) return;
       editorStore.resetMolecule(saved.molecule);

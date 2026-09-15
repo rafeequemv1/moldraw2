@@ -52,26 +52,26 @@ export type StructureThemeInk = {
 
 const TRANSFORM_LIGHT = {
   transformHandleFill: '#ffffff',
-  transformHandleStroke: 'rgba(30, 58, 138, 0.95)',
-  transformBoxStroke: 'rgba(30, 58, 138, 0.75)',
-  transformAccent: 'rgba(30, 58, 138, 0.85)',
-  transformBadgeFill: 'rgba(241, 245, 249, 0.96)',
-  transformBadgeText: '#1e3a8a',
-  transformGuideStroke: 'rgba(100, 116, 139, 0.95)',
-  marqueeStroke: 'rgba(30, 58, 138, 0.75)',
-  marqueeFill: 'rgba(30, 58, 138, 0.08)',
+  transformHandleStroke: '#0f172a',
+  transformBoxStroke: 'rgba(13, 148, 136, 0.92)',
+  transformAccent: '#2dd4bf',
+  transformBadgeFill: 'rgba(240, 253, 250, 0.97)',
+  transformBadgeText: '#0f172a',
+  transformGuideStroke: 'rgba(45, 212, 191, 0.55)',
+  marqueeStroke: 'rgba(13, 148, 136, 0.85)',
+  marqueeFill: 'rgba(45, 212, 191, 0.08)',
 } as const;
 
 const TRANSFORM_DARK = {
   transformHandleFill: '#f8fafc',
-  transformHandleStroke: 'rgba(147, 197, 253, 0.95)',
-  transformBoxStroke: 'rgba(147, 197, 253, 0.88)',
-  transformAccent: 'rgba(96, 165, 250, 0.92)',
-  transformBadgeFill: 'rgba(15, 23, 42, 0.92)',
+  transformHandleStroke: '#0f172a',
+  transformBoxStroke: 'rgba(94, 234, 212, 0.92)',
+  transformAccent: '#5eead4',
+  transformBadgeFill: 'rgba(15, 23, 42, 0.94)',
   transformBadgeText: '#f8fafc',
-  transformGuideStroke: 'rgba(203, 213, 225, 0.9)',
-  marqueeStroke: 'rgba(147, 197, 253, 0.9)',
-  marqueeFill: 'rgba(59, 130, 246, 0.14)',
+  transformGuideStroke: 'rgba(153, 246, 228, 0.55)',
+  marqueeStroke: 'rgba(94, 234, 212, 0.9)',
+  marqueeFill: 'rgba(45, 212, 191, 0.14)',
 } as const;
 
 /** Default structure colors per theme (match --structure-* / --grid-* in theme.css). */
@@ -84,11 +84,11 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
         gridMinor: 'rgba(255, 255, 255, 0.05)',
         gridMajor: 'rgba(255, 255, 255, 0.09)',
         gridAxis: 'rgba(255, 255, 255, 0.16)',
-        selectionHoverFill: 'rgba(59, 130, 246, 0.42)',
-        selectionFill: 'rgba(59, 130, 246, 0.55)',
-        selectionHoverStroke: 'rgba(96, 165, 250, 0.75)',
-        selectionStroke: 'rgba(96, 165, 250, 0.9)',
-        selectionBond: 'rgba(96, 165, 250, 0.7)',
+        selectionHoverFill: 'rgba(45, 212, 191, 0.28)',
+        selectionFill: 'rgba(56, 189, 248, 0.38)',
+        selectionHoverStroke: 'rgba(125, 211, 252, 0.85)',
+        selectionStroke: 'rgba(45, 212, 191, 0.7)',
+        selectionBond: 'rgba(56, 189, 248, 0.55)',
         ...TRANSFORM_DARK,
       };
     case 'ink-dark':
@@ -98,11 +98,11 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
         gridMinor: 'rgba(255, 255, 255, 0.06)',
         gridMajor: 'rgba(255, 255, 255, 0.1)',
         gridAxis: 'rgba(255, 255, 255, 0.2)',
-        selectionHoverFill: 'rgba(59, 130, 246, 0.45)',
-        selectionFill: 'rgba(59, 130, 246, 0.58)',
-        selectionHoverStroke: 'rgba(147, 197, 253, 0.8)',
-        selectionStroke: 'rgba(147, 197, 253, 0.95)',
-        selectionBond: 'rgba(147, 197, 253, 0.75)',
+        selectionHoverFill: 'rgba(45, 212, 191, 0.3)',
+        selectionFill: 'rgba(56, 189, 248, 0.4)',
+        selectionHoverStroke: 'rgba(125, 211, 252, 0.9)',
+        selectionStroke: 'rgba(94, 234, 212, 0.75)',
+        selectionBond: 'rgba(56, 189, 248, 0.6)',
         ...TRANSFORM_DARK,
       };
     case 'light':
@@ -113,11 +113,11 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
         gridMinor: 'rgba(15, 23, 42, 0.035)',
         gridMajor: 'rgba(15, 23, 42, 0.07)',
         gridAxis: 'rgba(15, 23, 42, 0.14)',
-        selectionHoverFill: 'rgba(147, 197, 253, 0.38)',
-        selectionFill: 'rgba(147, 197, 253, 0.55)',
-        selectionHoverStroke: 'rgba(147, 197, 253, 0.45)',
-        selectionStroke: 'rgba(147, 197, 253, 0.55)',
-        selectionBond: 'rgba(147, 197, 253, 0.55)',
+        selectionHoverFill: 'rgba(125, 211, 252, 0.28)',
+        selectionFill: 'rgba(56, 189, 248, 0.42)',
+        selectionHoverStroke: 'rgba(14, 165, 233, 0.7)',
+        selectionStroke: 'rgba(45, 212, 191, 0.45)',
+        selectionBond: 'rgba(56, 189, 248, 0.42)',
         ...TRANSFORM_LIGHT,
       };
   }

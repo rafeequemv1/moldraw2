@@ -1,4 +1,5 @@
 import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   DEFAULT_DISPLAY_SETTINGS,
   DISPLAY_MODE_OPTIONS,
@@ -115,6 +116,12 @@ export interface Molecule3DPanelProps {
   onRegisterExportViewer?: (getViewer: () => Viewer3DExportViewer | null) => void;
   /** Viewer clear color (hex). Follows app UI theme when provided. */
   backgroundColor?: string;
+  /**
+   * Phone / tablet: replace the floating controls island with a single
+   * "3D controls" pill that opens the toolbar + export bar in a bottom sheet
+   * (model stays visible above the sheet).
+   */
+  controlsAsSheet?: boolean;
 }
 
 const STATUS_META: Record<
@@ -284,8 +291,25 @@ function Molecule3DPanelInner({
   onApplyMmff94,
   onRegisterExportViewer,
   backgroundColor = '#f8fafc',
+  controlsAsSheet = false,
 }: Molecule3DPanelProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  /** Phone: controls live in a bottom sheet opened from a single pill. */
+  const [controlsSheetOpen, setControlsSheetOpen] = useState(false);
+  useEffect(() => {
+    if (!controlsAsSheet) setControlsSheetOpen(false);
+  }, [controlsAsSheet]);
+  useEffect(() => {
+    if (!controlsSheetOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setControlsSheetOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [controlsSheetOpen]);
   const viewerRef = useRef<Viewer3DHandle | null>(null);
   const backgroundColorRef = useRef(backgroundColor);
   /** Bump to tear down + recreate the WebGL viewer (retry / HMR recovery). */
@@ -672,6 +696,145 @@ function Molecule3DPanelInner({
     };
   }, [viewerReady, viewerEpoch]);
 
+  const controls = (
+    <>
+      <div className="viewer3d-toolbar">
+        <DisplayDropdown
+          settings={displaySettings}
+          onChange={next => {
+            setDisplayMode(next.mode);
+            writeDisplayMode(next.mode);
+            if (next.showHydrogens !== showHydrogens) {
+              onToggleHydrogens(next.showHydrogens);
+            }
+          }}
+          onToggleHydrogens={onToggleHydrogens}
+        />
+        <button
+          type="button"
+          className={`viewer3d-rebuild${showHydrogens ? ' is-on' : ''}`}
+          aria-pressed={showHydrogens}
+          title={showHydrogens ? 'Hide hydrogens in 3D' : 'Show hydrogens in 3D'}
+          onClick={() => onToggleHydrogens(!showHydrogens)}
+        >
+          {showHydrogens ? 'H on' : 'H off'}
+        </button>
+        <SurfacesDropdown settings={surfaceSettings} onChange={setSurfaceSettings} />
+        <span className={status.className} title={statusTitle} aria-live="polite">
+          <span className="viewer3d-status__icon" aria-hidden="true" />
+          <span className="viewer3d-status__label">{status.label}</span>
+        </span>
+        {displaySourceLabel ? (
+          <span className="viewer3d-toggle__source" title={displaySourceLabel}>
+            {displaySourceLabel}
+          </span>
+        ) : null}
+        {stereoIssues.length > 0 ? (
+          <span className="viewer3d-stereo-warn" title={stereoIssues.map(i => i.label).join('\n')}>
+            Stereo!
+          </span>
+        ) : null}
+        {displayEnergyKind &&
+        typeof displayEnergyKcal === 'number' &&
+        Number.isFinite(displayEnergyKcal) ? (
+          <span
+            className="viewer3d-toggle__energy"
+            title={
+              displayEnergyKind === 'mmff94'
+                ? 'MMFF94 total energy after minimization (OpenChemLib)'
+                : 'UFF energy of this conformer (native engine)'
+            }
+          >
+            {`${displayEnergyKind === 'mmff94' ? 'MMFF94' : 'UFF'} ${displayEnergyKcal.toFixed(1)} kcal/mol`}
+          </span>
+        ) : null}
+        {showConformerGallery ? (
+          <button
+            type="button"
+            className={`viewer3d-rebuild${
+              typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
+                ? ' viewer3d-rebuild--muted'
+                : ''
+            }`}
+            onClick={() => setGalleryOpen(true)}
+            title={
+              typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
+                ? `Conformers not supported for larger molecules (${heavyAtomCount} heavy atoms; limit ${CONFORMER_MAX_HEAVY}). Use Calculate structure.`
+                : `OpenChemLib ConformerGenerator — collision-free torsion poses (up to ${CONFORMER_MAX_HEAVY} heavy atoms)`
+            }
+          >
+            {typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
+              ? 'Conformers (N/A)'
+              : 'Conformers…'}
+          </button>
+        ) : null}
+        {showMmff94 ? (
+          <button
+            type="button"
+            className="viewer3d-rebuild"
+            disabled={mmffBusy || isBuilding}
+            onClick={() => void runMmff94()}
+            title="MMFF94 minimize — organic force field (OpenChemLib). Needs a 3D pose first."
+          >
+            {mmffBusy ? 'MMFF94…' : 'MMFF94'}
+          </button>
+        ) : null}
+        {showRebuild ? (
+          <button
+            type="button"
+            className="viewer3d-rebuild"
+            onClick={onRebuild3D}
+            title="Calculate 3D structure (progressive center-out optimization)"
+          >
+            {isBuilding ? 'Building… · Calculate' : 'Calculate structure'}
+          </button>
+        ) : null}
+        {mmffError ? (
+          <span className="viewer3d-toggle__error" title={mmffError}>
+            {mmffError}
+          </span>
+        ) : null}
+      </div>
+      <Viewer3DExportBar
+        molblock={displayMolblock}
+        title={moleculeTitle}
+        disabled={!displayMolblock.trim()}
+        getViewer={() => viewerRef.current as Viewer3DExportViewer | null}
+      />
+    </>
+  );
+
+  const controlsSheet =
+    controlsAsSheet && controlsSheetOpen && typeof document !== 'undefined'
+      ? createPortal(
+          <div className="mobile-sheet mobile-sheet--viewer3d-controls" role="presentation">
+            <div
+              className="mobile-sheet__panel mobile-sheet__panel--auto"
+              role="dialog"
+              aria-modal="false"
+              aria-label="3D controls"
+            >
+              <div className="mobile-sheet__handle-hit" onClick={() => setControlsSheetOpen(false)}>
+                <div className="mobile-sheet__handle" aria-hidden />
+              </div>
+              <header className="mobile-sheet__header">
+                <h2 className="mobile-sheet__title">3D controls</h2>
+                <button
+                  type="button"
+                  className="mobile-sheet__close"
+                  onClick={() => setControlsSheetOpen(false)}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </header>
+              <div className="mobile-sheet__body">{controls}</div>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
     <div className="viewer3d-shell">
       <div className="viewer3d-stage">
@@ -698,139 +861,49 @@ function Molecule3DPanelInner({
           </div>
         ) : null}
       </div>
-      <div
-        className={`viewer3d-island${islandMinimized ? ' viewer3d-island--minimized' : ''}`}
-        aria-label="3D controls"
-      >
-        <button
-          type="button"
-          className="viewer3d-island__toggle"
-          onClick={toggleIslandMinimized}
-          aria-expanded={!islandMinimized}
-          title={
-            islandMinimized
-              ? 'Expand 3D controls (display, surfaces, export…)'
-              : 'Minimize 3D controls'
-          }
+      {controlsAsSheet ? (
+        <div className="viewer3d-island viewer3d-island--sheet-launch" aria-label="3D controls">
+          <button
+            type="button"
+            className="viewer3d-island__toggle"
+            onClick={() => setControlsSheetOpen(v => !v)}
+            aria-expanded={controlsSheetOpen}
+            aria-haspopup="dialog"
+            title="3D controls (display, surfaces, export…)"
+          >
+            <span className="viewer3d-island__toggle-label">3D controls</span>
+            <span className="viewer3d-island__toggle-caret" aria-hidden>
+              ▲
+            </span>
+          </button>
+        </div>
+      ) : (
+        <div
+          className={`viewer3d-island${islandMinimized ? ' viewer3d-island--minimized' : ''}`}
+          aria-label="3D controls"
         >
-          <span className="viewer3d-island__toggle-label">
-            {islandMinimized ? '3D controls' : 'Controls'}
-          </span>
-          <span className="viewer3d-island__toggle-caret" aria-hidden>
-            {islandMinimized ? '▲' : '▼'}
-          </span>
-        </button>
-        {!islandMinimized ? (
-          <>
-            <div className="viewer3d-toolbar">
-              <DisplayDropdown
-                settings={displaySettings}
-                onChange={next => {
-                  setDisplayMode(next.mode);
-                  writeDisplayMode(next.mode);
-                  if (next.showHydrogens !== showHydrogens) {
-                    onToggleHydrogens(next.showHydrogens);
-                  }
-                }}
-                onToggleHydrogens={onToggleHydrogens}
-              />
-              <button
-                type="button"
-                className={`viewer3d-rebuild${showHydrogens ? ' is-on' : ''}`}
-                aria-pressed={showHydrogens}
-                title={showHydrogens ? 'Hide hydrogens in 3D' : 'Show hydrogens in 3D'}
-                onClick={() => onToggleHydrogens(!showHydrogens)}
-              >
-                {showHydrogens ? 'H on' : 'H off'}
-              </button>
-              <SurfacesDropdown settings={surfaceSettings} onChange={setSurfaceSettings} />
-              <span className={status.className} title={statusTitle} aria-live="polite">
-                <span className="viewer3d-status__icon" aria-hidden="true" />
-                <span className="viewer3d-status__label">{status.label}</span>
-              </span>
-              {displaySourceLabel ? (
-                <span className="viewer3d-toggle__source" title={displaySourceLabel}>
-                  {displaySourceLabel}
-                </span>
-              ) : null}
-              {stereoIssues.length > 0 ? (
-                <span
-                  className="viewer3d-stereo-warn"
-                  title={stereoIssues.map(i => i.label).join('\n')}
-                >
-                  Stereo!
-                </span>
-              ) : null}
-              {displayEnergyKind &&
-              typeof displayEnergyKcal === 'number' &&
-              Number.isFinite(displayEnergyKcal) ? (
-                <span
-                  className="viewer3d-toggle__energy"
-                  title={
-                    displayEnergyKind === 'mmff94'
-                      ? 'MMFF94 total energy after minimization (OpenChemLib)'
-                      : 'UFF energy of this conformer (native engine)'
-                  }
-                >
-                  {`${displayEnergyKind === 'mmff94' ? 'MMFF94' : 'UFF'} ${displayEnergyKcal.toFixed(1)} kcal/mol`}
-                </span>
-              ) : null}
-              {showConformerGallery ? (
-                <button
-                  type="button"
-                  className={`viewer3d-rebuild${
-                    typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
-                      ? ' viewer3d-rebuild--muted'
-                      : ''
-                  }`}
-                  onClick={() => setGalleryOpen(true)}
-                  title={
-                    typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
-                      ? `Conformers not supported for larger molecules (${heavyAtomCount} heavy atoms; limit ${CONFORMER_MAX_HEAVY}). Use Calculate structure.`
-                      : `OpenChemLib ConformerGenerator — collision-free torsion poses (up to ${CONFORMER_MAX_HEAVY} heavy atoms)`
-                  }
-                >
-                  {typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
-                    ? 'Conformers (N/A)'
-                    : 'Conformers…'}
-                </button>
-              ) : null}
-              {showMmff94 ? (
-                <button
-                  type="button"
-                  className="viewer3d-rebuild"
-                  disabled={mmffBusy || isBuilding}
-                  onClick={() => void runMmff94()}
-                  title="MMFF94 minimize — organic force field (OpenChemLib). Needs a 3D pose first."
-                >
-                  {mmffBusy ? 'MMFF94…' : 'MMFF94'}
-                </button>
-              ) : null}
-              {showRebuild ? (
-                <button
-                  type="button"
-                  className="viewer3d-rebuild"
-                  onClick={onRebuild3D}
-                  title="Calculate 3D structure (progressive center-out optimization)"
-                >
-                  {isBuilding ? 'Building… · Calculate' : 'Calculate structure'}
-                </button>
-              ) : null}
-              {mmffError ? (
-                <span className="viewer3d-toggle__error" title={mmffError}>
-                  {mmffError}
-                </span>
-              ) : null}
-            </div>
-            <Viewer3DExportBar
-              molblock={displayMolblock}
-              title={moleculeTitle}
-              disabled={!displayMolblock.trim()}
-              getViewer={() => viewerRef.current as Viewer3DExportViewer | null}
-            />
-          </>
-        ) : null}
-      </div>
+          <button
+            type="button"
+            className="viewer3d-island__toggle"
+            onClick={toggleIslandMinimized}
+            aria-expanded={!islandMinimized}
+            title={
+              islandMinimized
+                ? 'Expand 3D controls (display, surfaces, export…)'
+                : 'Minimize 3D controls'
+            }
+          >
+            <span className="viewer3d-island__toggle-label">
+              {islandMinimized ? '3D controls' : 'Controls'}
+            </span>
+            <span className="viewer3d-island__toggle-caret" aria-hidden>
+              {islandMinimized ? '▲' : '▼'}
+            </span>
+          </button>
+          {!islandMinimized ? controls : null}
+        </div>
+      )}
+      {controlsSheet}
       {galleryOpen ? (
         <Suspense fallback={null}>
           <ConformerGalleryModal

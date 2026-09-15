@@ -1,0 +1,151 @@
+/** Simplified Chinese overrides for TOOL_DEFS labels, titles, and shortLabels. */
+export const zhToolOverrides: Record<
+  string,
+  Partial<{ label: string; title: string; shortLabel: string }>
+> = {
+  hand: { label: '平移', title: '平移画布 — 拖动以移动视图' },
+  select: {
+    label: '选择',
+    title: '选择（空格键临时切换）。Shift+在空白处拖动：套索；不按 Shift 拖动：矩形框选。',
+  },
+  lasso_select: { label: '套索', title: '套索选择' },
+  erase: { label: '橡皮擦', title: '擦除选中内容' },
+  single_bond: { label: '单键', title: '单键' },
+  double_bond: { label: '双键', title: '双键' },
+  triple_bond: { label: '三键', title: '三键' },
+  wedge_bond: { label: '楔形键', title: '楔形键（实楔）', shortLabel: '楔' },
+  dash_bond: { label: '虚楔', title: '虚楔键', shortLabel: '虚楔' },
+  wavy_bond: { label: '波浪键', title: '波浪键', shortLabel: '波浪' },
+  dative_bond: {
+    label: '配位键',
+    title: '配位键 / 配位共价键（虚线箭头；金属配体）',
+    shortLabel: '配位',
+  },
+  dotted_bond: {
+    label: '点线键',
+    title: '点线键 — 氢键与弱相互作用（不占用价键）',
+    shortLabel: '···',
+  },
+  perspective: {
+    label: '3D 视图',
+    title: '结构透视：拖动以旋转画布上的 3D 整理构象',
+    shortLabel: '3D',
+  },
+  chain: { label: '链', title: '烷基链' },
+  charge_plus: { label: '+', title: '正电荷（+）：无圆圈标记；再次点击变为 +2、+3…' },
+  charge_minus: { label: '−', title: '负电荷（−）：无圆圈标记；再次点击变为 −2、−3…' },
+  oplus: { label: '⊕', title: '碳正离子（⊕）：原子上带圈正电荷；再次点击清除' },
+  ominus: { label: '⊖', title: '碳负离子（⊖）：原子上带圈负电荷；再次点击清除' },
+  radical_cation: {
+    label: '•+',
+    title: '自由基正离子（•+）：点击原子设置单电子 + 形式电荷 +1；再次点击清除',
+    shortLabel: '•+',
+  },
+  radical_anion: {
+    label: '•−',
+    title: '自由基负离子（•−）：点击原子设置单电子 + 形式电荷 −1；再次点击清除',
+    shortLabel: '•−',
+  },
+  lone_pair: { label: '孤对电子', title: '孤对电子：点击原子添加孤对', shortLabel: 'LP' },
+  orbital_p: {
+    label: 'p 轨道',
+    title: 'p 轨道（对角线）：点击原子或空白画布放置',
+    shortLabel: 'p',
+  },
+  orbital_s: { label: 's 轨道', title: 's 轨道：点击原子或空白画布放置', shortLabel: 's' },
+  orbital_p2: {
+    label: 'p 轨道',
+    title: 'p 轨道（反对角线）：点击原子或空白画布放置',
+    shortLabel: 'p′',
+  },
+  orbital_d: {
+    label: 'd 轨道',
+    title: 'd 轨道（四叶形）：点击原子或空白画布放置',
+    shortLabel: 'd',
+  },
+  orbital_dz2: {
+    label: 'dz² 轨道',
+    title: 'dz² 轨道：点击原子或空白画布放置',
+    shortLabel: 'dz²',
+  },
+  delta_plus: { label: 'δ+', title: '部分正电荷（δ+）：点击原子添加/清除；拖动放置' },
+  delta_minus: { label: 'δ−', title: '部分负电荷（δ−）：点击原子添加/清除；拖动放置' },
+  stamp_delta: { label: 'Δ', title: '放置加热符号（Δ）— 点击空白画布' },
+  stamp_delta_tri: { label: '△', title: '放置加热三角（△）— 点击空白画布' },
+  stamp_nu: { label: 'ν', title: '放置 ν（如 hν）— 点击空白画布' },
+  stamp_ts: { label: '‡', title: '放置过渡态符号（‡）— 点击空白画布' },
+  stamp_celsius: { label: '°C', title: '放置 °C — 点击空白画布' },
+  free_radical: {
+    label: '自由基',
+    title: '自由基：点击原子添加/移除单电子',
+    shortLabel: '•',
+  },
+  add_explicit_h: {
+    label: '添加显式 H',
+    title: '添加显式氢：选择原子后点击，或激活工具后点击原子（如羰基碳上的醛基 H）',
+    shortLabel: 'H+',
+  },
+  cyclopropane: { label: '环丙烷', title: '环丙烷', shortLabel: 'C3' },
+  cyclobutane: { label: '环丁烷', title: '环丁烷', shortLabel: 'C4' },
+  cyclopentane: { label: '环戊烷', title: '环戊烷', shortLabel: 'C5' },
+  cyclopentadiene: { label: '环戊二烯', title: '环戊二烯', shortLabel: 'C5=' },
+  benzene: { label: '苯', title: '苯环' },
+  hexagon: { label: '六边形', title: '环己烷（平面六边形环）', shortLabel: 'C6' },
+  cyclohexane: { label: '椅式', title: '环己烷椅式构象', shortLabel: '椅式' },
+  boat_cyclohexane: { label: '船式 C6', title: '环己烷船式构象', shortLabel: '船式' },
+  cycloheptane: { label: '环庚烷', title: '环庚烷', shortLabel: 'C7' },
+  cyclooctane: { label: '环辛烷', title: '环辛烷', shortLabel: 'C8' },
+  pencil: { label: '画笔', title: '自由绘制 / 标注' },
+  smart_draw: {
+    label: '智能绘制',
+    title: '智能绘制 — 手绘化学键、环与标签；停顿约 1.2 秒或按 Enter 自动识别为结构',
+    shortLabel: '智能',
+  },
+  text: {
+    label: '文本',
+    title: '文本：点击空白画布放置；点击已有文本可移动（选择或文本工具）',
+  },
+  atom_label: {
+    label: '原子标签',
+    title:
+      '原子标签（A）：点击原子 — 输入 R、Me、Ph、CH3、COOH 等。R/R1/R2 为碳或杂原子上的通用取代基。',
+    shortLabel: '标签',
+  },
+  reaction_arrow: {
+    label: '反应箭头',
+    title:
+      '在画布上从尾拖到头。使用工具旁菜单选择箭头类型。SMILES react>>prod 使用第一个非平衡/半平衡/共振箭头。',
+    shortLabel: '箭头',
+  },
+  shape: {
+    label: '形状',
+    title: '点击拖动绘制标注形状。使用工具旁菜单选择矩形、直线、圆、三角或星形。',
+  },
+  glassware: {
+    label: '实验器皿',
+    title: '点击拖动放置实验器皿（锥形瓶、烧杯等）。液体颜色可在左侧颜色面板中设置。',
+    shortLabel: '器皿',
+  },
+  sru_bracket: {
+    label: '聚合物',
+    title:
+      '聚合物 SRU 括号：选择 ≥2 个原子后点击，或框选重复单元。点击下标编辑 n/m。',
+    shortLabel: 'SRU',
+  },
+  image: { label: '图片', title: '向画布添加 PNG/JPEG/WebP/GIF 图片标注' },
+  template_library: {
+    label: '模板库',
+    title: '模板库 — 氨基酸、配体、3D 笼形分子（立方烷、C₆₀…）',
+    shortLabel: '库',
+  },
+  functional_groups: {
+    label: '官能团',
+    title: '官能团 — 常见取代基（COOMe、Ph、Boc…）',
+    shortLabel: 'R',
+  },
+  ligands: {
+    label: '配体',
+    title: '配位配体 — NH₃、CO、PPh₃、bpy、Cp、H₂O…',
+    shortLabel: 'L',
+  },
+};

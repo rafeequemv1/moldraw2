@@ -58,6 +58,7 @@ import {
   paintStructureLayers,
 } from './render';
 import type { FragmentPlacementSession } from '@moldraw/core';
+import { safeDrawImage } from './render/safeDrawImage';
 import type {
   DragActionState,
   DrawingBondState,
@@ -177,7 +178,7 @@ type StructurePaintKey = {
 };
 
 const prefsFingerprint = (p: ResolvedCanvasPreferences): string =>
-  `${p.bondThicknessPx}|${p.bondSpacingFraction}|${p.bondLengthPx}|${p.stereoWedgeWidthPx}|${p.hashSpacingPx}|${p.elementFontCss}|${p.subFontCss}|${p.showGrid}|${p.gridSizePx}`;
+  `${p.bondThicknessPx}|${p.bondSpacingFraction}|${p.bondLengthPx}|${p.stereoWedgeWidthPx}|${p.hashSpacingPx}|${p.elementFontCss}|${p.subFontCss}|${p.showGrid}|${p.gridPattern}|${p.gridSizePx}`;
 
 const idsKey = (ids: readonly string[] | undefined): string =>
   ids && ids.length ? ids.slice().sort().join(',') : '';
@@ -347,8 +348,10 @@ const paintBackgroundGrid = (
   theme: StructureThemeColors,
   showGrid: boolean,
   gridSizePx: number,
+  gridPattern: 'lines' | 'dots',
 ): void => {
   if (showGrid === false) return;
+  if (canvas.width < 1 || canvas.height < 1) return;
   const effectiveZoom = viewport.zoom * displayScale;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -362,6 +365,7 @@ const paintBackgroundGrid = (
     { ...viewport, zoom: effectiveZoom },
     theme,
     gridSizePx,
+    gridPattern,
   );
   ctx.restore();
 };
@@ -431,11 +435,12 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       if (dragAction?.type === 'scale_selection' && transformAtomSet.has(a.id)) {
         const p = dragAction.snap[a.id];
         if (!p) return a;
-        const f = dragAction.currentFactor;
+        const fx = dragAction.currentFactorX;
+        const fy = dragAction.currentFactorY;
         return {
           ...a,
-          x: dragAction.cx + (p.x - dragAction.cx) * f,
-          y: dragAction.cy + (p.y - dragAction.cy) * f,
+          x: dragAction.anchorX + (p.x - dragAction.anchorX) * fx,
+          y: dragAction.anchorY + (p.y - dragAction.anchorY) * fy,
         };
       }
       if (dragAction?.type === 'move_selection' && transformAtomSet.has(a.id)) {
@@ -722,7 +727,18 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
     const sctx = structureCanvas.getContext('2d');
     const octx = overlayCanvas.getContext('2d');
     if (!sctx || !octx) return;
+    // Parent can be 0×0 on first layout (SEO footer / collapsed flex). drawImage
+    // from a zero-size canvas throws InvalidStateError and white-screens the SPA.
+    if (
+      structureCanvas.width < 1 ||
+      structureCanvas.height < 1 ||
+      overlayCanvas.width < 1 ||
+      overlayCanvas.height < 1
+    ) {
+      return;
+    }
 
+    try {
     const { R, transformAtomIds, effectiveZoom } = buildRendered(opts);
     const { viewport, displayScale, molecule } = opts;
     const dragKind = structureAffectingDrag(opts.dragAction);
@@ -781,6 +797,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
     const theme = opts.structureTheme ?? DEFAULT_STRUCTURE_THEME;
     const showGrid = opts.displayPrefs.showGrid !== false;
     const gridSizePx = opts.displayPrefs.gridSizePx || 50;
+    const gridPattern = opts.displayPrefs.gridPattern === 'dots' ? 'dots' : 'lines';
 
     if (panOnly && prev) {
       // Shift the cached *structure* bitmap. Do not bake the blit back into the
@@ -790,7 +807,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       sctx.clearRect(0, 0, structureCanvas.width, structureCanvas.height);
       const dx = viewport.x - prev.viewportX;
       const dy = viewport.y - prev.viewportY;
-      sctx.drawImage(prev.canvas, dx, dy);
+      safeDrawImage(sctx, prev.canvas, dx, dy);
       paintBackgroundGrid(
         sctx,
         structureCanvas,
@@ -799,6 +816,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
         theme,
         showGrid,
         gridSizePx,
+        gridPattern,
       );
     } else if (!sameStructure || !prev) {
       applyWorldTransform(sctx, structureCanvas, viewport, displayScale);
@@ -814,10 +832,10 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       cacheCanvas.width = structureCanvas.width;
       cacheCanvas.height = structureCanvas.height;
       const cctx = cacheCanvas.getContext('2d');
-      if (cctx) {
+      if (cctx && cacheCanvas.width >= 1 && cacheCanvas.height >= 1) {
         cctx.setTransform(1, 0, 0, 1, 0, 0);
         cctx.clearRect(0, 0, cacheCanvas.width, cacheCanvas.height);
-        cctx.drawImage(structureCanvas, 0, 0);
+        safeDrawImage(cctx, structureCanvas, 0, 0);
       }
       structureCacheRef.current = {
         key,
@@ -833,6 +851,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
         theme,
         showGrid,
         gridSizePx,
+        gridPattern,
       );
     }
 
@@ -843,6 +862,11 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       drawTouchLoupe(octx, overlayCanvas, structureCanvas, viewport, displayScale, R);
     }
     drawPointerDebugHud(octx, displayScale, opts.pointerDebugHud);
+    } catch (err) {
+      if (typeof console !== 'undefined') {
+        console.warn('[canvas] skipped frame', err);
+      }
+    }
   }, [opts, buildRendered, paintStructure, paintOverlay]);
 
   useEffect(() => {

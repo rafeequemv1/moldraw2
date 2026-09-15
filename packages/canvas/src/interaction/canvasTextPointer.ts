@@ -124,18 +124,26 @@ export function handleCanvasTextPointerDown(
     return true;
   }
 
+  beginCanvasTextMove(ctx, picked);
+  return true;
+}
+
+/** Translate a canvas text; hides the HTML overlay so chrome stays glued to the letters. */
+export function beginCanvasTextMove(
+  ctx: InteractionContext,
+  text: import('@moldraw/domain').CanvasText,
+): void {
   beginTextTransform(ctx);
   ctx.setDragAction({
     type: 'move_canvas_text',
-    textId: picked.id,
+    textId: text.id,
     startX: ctx.worldPos.x,
     startY: ctx.worldPos.y,
     currentX: ctx.worldPos.x,
     currentY: ctx.worldPos.y,
-    origX: picked.x,
-    origY: picked.y,
+    origX: text.x,
+    origY: text.y,
   });
-  return true;
 }
 
 export function commitCanvasTextResize(ctx: InteractionContext): void {

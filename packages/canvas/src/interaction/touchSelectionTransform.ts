@@ -150,7 +150,7 @@ export const commitTouchSelectionTransform = (
     cb.onRotateSelectionCommit(atomIds, drag.cx, drag.cy, drag.deltaRad);
   }
   if (Math.abs(drag.factor - 1) > 1e-4 && cb.onScaleSelectionCommit) {
-    cb.onScaleSelectionCommit(atomIds, drag.cx, drag.cy, drag.factor);
+    cb.onScaleSelectionCommit(atomIds, drag.cx, drag.cy, drag.factor, drag.factor);
   }
   if (Math.hypot(drag.dx, drag.dy) > 1) {
     if (cb.onTranslateMarqueeSelection) {

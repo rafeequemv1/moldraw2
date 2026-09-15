@@ -6,11 +6,15 @@
 }
 
 .workspace-split {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: var(--app-status-bar-height, 26px);
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  inset: auto;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -70,6 +74,7 @@
   width: auto;
   height: 100%;
   position: relative;
+  border-left: 1px solid var(--chrome-border, #cbd5e1);
 }
 
 .workspace-split--single .workspace-pane-2d,
@@ -95,6 +100,10 @@
   width: 100%;
   height: 100%;
   position: relative;
+}
+
+.workspace-2d-with-overlay:has(.canvas-document-tabs) {
+  --canvas-tab-stack-height: 28px;
 }
 
 .canvas-smiles-bar {
@@ -189,23 +198,24 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 6px;
+  width: 5px;
   z-index: 30;
   cursor: col-resize;
   touch-action: none;
+  background: transparent;
 }
 
 .workspace-pane-resize-handle--right {
-  right: -3px;
+  right: -2px;
 }
 
 .workspace-pane-resize-handle--left {
-  left: -3px;
+  left: -2px;
 }
 
 .workspace-pane-resize-handle:hover,
 .workspace-pane-resizing .workspace-pane-resize-handle {
-  background: color-mix(in srgb, var(--accent, #2563eb) 18%, transparent);
+  background: color-mix(in srgb, var(--chrome-border, #cbd5e1) 55%, transparent);
 }
 
 body.workspace-pane-resizing,

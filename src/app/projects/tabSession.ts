@@ -1,8 +1,10 @@
+import type { DocumentStyleByTabId } from '../settings/documentStyle';
 import { CURRENT_PROJECT_SESSION_KEY, OPEN_TABS_SESSION_KEY, type DocumentTab } from './types';
 
 export type OpenTabsSession = {
   tabs: DocumentTab[];
   activeTabId: string;
+  documentStyles?: DocumentStyleByTabId;
 };
 
 export const readOpenTabsSession = (): OpenTabsSession | null => {

@@ -79,13 +79,20 @@ export const drawTouchLoupe = (
   octx.fillStyle = '#ffffff';
   octx.fillRect(dstX, dstY, dstSize, dstSize);
 
-  // Structure (bonds, atoms, grid) then live overlay (ghost bond, hover glow).
-  // Drawing the overlay onto itself is allowed: the source is snapshotted first.
-  try {
-    octx.drawImage(structureCanvas, srcX, srcY, srcSize, srcSize, dstX, dstY, dstSize, dstSize);
-    octx.drawImage(overlayCanvas, srcX, srcY, srcSize, srcSize, dstX, dstY, dstSize, dstSize);
-  } catch {
-    // Zero-sized or detached canvases — skip the loupe for this frame.
+  if (
+    structureCanvas.width >= 1 &&
+    structureCanvas.height >= 1 &&
+    overlayCanvas.width >= 1 &&
+    overlayCanvas.height >= 1 &&
+    srcSize >= 1 &&
+    dstSize >= 1
+  ) {
+    try {
+      octx.drawImage(structureCanvas, srcX, srcY, srcSize, srcSize, dstX, dstY, dstSize, dstSize);
+      octx.drawImage(overlayCanvas, srcX, srcY, srcSize, srcSize, dstX, dstY, dstSize, dstSize);
+    } catch {
+      // Zero-sized or detached canvases — skip the loupe for this frame.
+    }
   }
 
   // Crosshair at the sampled fingertip.

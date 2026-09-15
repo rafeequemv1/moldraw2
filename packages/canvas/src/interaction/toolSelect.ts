@@ -1,5 +1,9 @@
 import { reactionArrowSupportsReagentLabels, type ReactionArrowUpdatePatch } from '@moldraw/domain';
-import { handleCanvasTextPointerDown, commitCanvasTextResize } from './canvasTextPointer';
+import {
+  handleCanvasTextPointerDown,
+  commitCanvasTextResize,
+  beginCanvasTextMove,
+} from './canvasTextPointer';
 import { handleCanvasImagePointerDown, commitCanvasImageDrag } from './canvasImagePointer';
 import { handleCanvasShapePointerDown, commitCanvasShapeDrag } from './canvasShapePointer';
 import { handleCanvasOrbitalPointerDown, commitCanvasOrbitalDrag } from './canvasOrbitalPointer';
@@ -14,7 +18,10 @@ import {
   getSelectionCentroid,
   isNearTransformRotateHandle,
   isNearTransformScaleHandle,
-  isNearTransformMoveHandle,
+  pickTransformScaleHandle,
+  anchorForBoxHandle,
+  scaleFactorsForBoxHandle,
+  getMarqueeSelectionTransformLayout,
   isInsideSelectionTransformBox,
   hasMarqueeSelectionContent,
   type MarqueeSelectionBoundsInput,
@@ -143,8 +150,19 @@ const isExclusiveKind = (
   annotationCount(sel) === 1 &&
   (sel[key]?.length ?? 0) === 1;
 
+/** Hide the HTML text overlay so canvas letters + transform chrome move as one. */
+const hideTextOverlayIfSelected = (ctx: InteractionContext): void => {
+  if ((ctx.selectedCanvasTextIds?.length ?? 0) === 0 && !ctx.selectedCanvasTextId) return;
+  ctx.onCanvasTextTransforming?.(true);
+  const ae = document.activeElement;
+  if (ae instanceof HTMLElement && (ae.tagName === 'TEXTAREA' || ae.tagName === 'INPUT')) {
+    ae.blur();
+  }
+};
+
 /** Select-tool drag on the structure is a 2D translate. Orbit is the Perspective tool (or Alt+drag). */
 const startStructureDrag = (ctx: InteractionContext, worldPos: Point): void => {
+  hideTextOverlayIfSelected(ctx);
   ctx.setDragAction({
     type: 'move_selection',
     startX: worldPos.x,
@@ -301,25 +319,11 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
   const hasSelection = hasMarqueeSelectionContent(marqueeBounds);
   const canMoveMarquee = !!(ctx.onTranslateMarqueeSelection || ctx.onMoveAtoms);
 
-  const startMoveSelection = (): void => {
-    if (transformAtomIds.length !== selectedAtomIds.length) {
-      ctx.setSelectedAtomIds?.(transformAtomIds);
-      ctx.setSelectedBondIds?.(bondsFullyInAtomSet(molecule, transformAtomIds));
-    }
-    ctx.setDragAction({
-      type: 'move_selection',
-      startX: worldPos.x,
-      startY: worldPos.y,
-      currentX: worldPos.x,
-      currentY: worldPos.y,
-    });
-  };
-
+  const exclusiveImage = isExclusiveKind(marqueeBounds, transformAtomIds.length, 'canvasImageIds');
+  const exclusiveText = isExclusiveKind(marqueeBounds, transformAtomIds.length, 'canvasTextIds');
+  const exclusiveShape = isExclusiveKind(marqueeBounds, transformAtomIds.length, 'canvasShapeIds');
+  const exclusiveArrow = isExclusiveKind(marqueeBounds, transformAtomIds.length, 'reactionArrowIds');
   if (hasSelection) {
-    const exclusiveImage = isExclusiveKind(marqueeBounds, transformAtomIds.length, 'canvasImageIds');
-    const exclusiveText = isExclusiveKind(marqueeBounds, transformAtomIds.length, 'canvasTextIds');
-    const exclusiveShape = isExclusiveKind(marqueeBounds, transformAtomIds.length, 'canvasShapeIds');
-    const exclusiveArrow = isExclusiveKind(marqueeBounds, transformAtomIds.length, 'reactionArrowIds');
     if (exclusiveImage && handleCanvasImagePointerDown(ctx, { handlesOnly: true })) return true;
     if (exclusiveText && handleCanvasTextPointerDown(ctx, { handlesOnly: true })) return true;
     if (exclusiveShape && handleCanvasShapePointerDown(ctx, { handlesOnly: true })) return true;
@@ -345,6 +349,7 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
     }
     const cen = getSelectionCentroid(molecule, transformAtomIds);
     if (cen) {
+      hideTextOverlayIfSelected(ctx);
       const snap: Record<string, Point> = {};
       for (const id of transformAtomIds) {
         const a = molecule.atoms.find(x => x.id === id);
@@ -379,34 +384,42 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
       ctx.setSelectedAtomIds?.(transformAtomIds);
       ctx.setSelectedBondIds?.(bondsFullyInAtomSet(molecule, transformAtomIds));
     }
-    const cen = getSelectionCentroid(molecule, transformAtomIds);
-    if (cen) {
+    const layout = getMarqueeSelectionTransformLayout(
+      molecule,
+      marqueeBounds,
+      canvasCtx ?? null,
+    );
+    const handle = pickTransformScaleHandle(
+      worldPos.x,
+      worldPos.y,
+      molecule,
+      transformAtomIds,
+      marqueeBounds,
+      canvasCtx,
+    );
+    if (layout && handle) {
+      hideTextOverlayIfSelected(ctx);
+      const anchor = anchorForBoxHandle(handle, layout);
       const snap: Record<string, Point> = {};
       for (const id of transformAtomIds) {
         const a = molecule.atoms.find(x => x.id === id);
         if (a) snap[id] = { x: a.x, y: a.y };
       }
-      const startDist = Math.max(8, Math.hypot(worldPos.x - cen.cx, worldPos.y - cen.cy));
       ctx.setDragAction({
         type: 'scale_selection',
-        cx: cen.cx,
-        cy: cen.cy,
+        handle,
+        anchorX: anchor.x,
+        anchorY: anchor.y,
         snap,
-        startDist,
-        currentFactor: 1,
+        startPointerX: worldPos.x,
+        startPointerY: worldPos.y,
+        currentFactorX: 1,
+        currentFactorY: 1,
       });
       return true;
     }
   }
 
-  const onMoveHandle = isNearTransformMoveHandle(
-    worldPos.x,
-    worldPos.y,
-    molecule,
-    transformAtomIds,
-    marqueeBounds,
-    canvasCtx,
-  );
   const insideBox = isInsideSelectionTransformBox(
     worldPos.x,
     worldPos.y,
@@ -415,12 +428,16 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
     marqueeBounds,
     canvasCtx,
   );
-  if (hasSelection && canMoveMarquee && (onMoveHandle || insideBox)) {
-    if (onMoveHandle) {
-      startMoveSelection();
-    } else {
-      startStructureDrag(ctx, worldPos);
+  if (hasSelection && canMoveMarquee && insideBox) {
+    if (exclusiveText) {
+      const textId = marqueeBounds.canvasTextIds?.[0];
+      const picked = textId ? molecule.canvasTexts?.find(t => t.id === textId) : undefined;
+      if (picked) {
+        beginCanvasTextMove(ctx, picked);
+        return true;
+      }
     }
+    startStructureDrag(ctx, worldPos);
     return true;
   }
 
@@ -717,18 +734,6 @@ export function selectToolHasTargetAt(ctx: InteractionContext): boolean {
       return true;
     }
     if (
-      isNearTransformMoveHandle(
-        worldPos.x,
-        worldPos.y,
-        molecule,
-        transformAtomIds,
-        marqueeBounds,
-        canvasCtx,
-      )
-    ) {
-      return true;
-    }
-    if (
       isNearTransformScaleHandle(
         worldPos.x,
         worldPos.y,
@@ -820,9 +825,16 @@ export const updateActiveDragAction = (ctx: InteractionContext): boolean => {
   } else if (dragAction.type === 'scale_selection') {
     ctx.setDragAction(prev => {
       if (!prev || prev.type !== 'scale_selection') return prev;
-      const dist = Math.hypot(worldPos.x - prev.cx, worldPos.y - prev.cy);
-      const factor = Math.max(0.05, Math.min(20, dist / prev.startDist));
-      return { ...prev, currentFactor: factor };
+      const { factorX, factorY } = scaleFactorsForBoxHandle(
+        prev.handle,
+        prev.anchorX,
+        prev.anchorY,
+        prev.startPointerX,
+        prev.startPointerY,
+        worldPos.x,
+        worldPos.y,
+      );
+      return { ...prev, currentFactorX: factorX, currentFactorY: factorY };
     });
   } else if (dragAction.type === 'rotate_canvas_image') {
     ctx.setDragAction(prev => {
@@ -963,16 +975,22 @@ export const commitDragAction = (ctx: InteractionContext): boolean => {
         ctx.onMoveAtoms(atomIds, dx, dy);
       }
     }
+    ctx.onCanvasTextTransforming?.(false);
   } else if (dragAction.type === 'rotate_selection' && ctx.onRotateSelectionCommit) {
     const d = shortestAngleDiff(dragAction.startPointerAngle, dragAction.currentPointerAngle);
     if (Math.abs(d) > 1e-6 && moveAtomIds.length > 0) {
       ctx.onRotateSelectionCommit(moveAtomIds, dragAction.cx, dragAction.cy, d);
     }
+    ctx.onCanvasTextTransforming?.(false);
   } else if (dragAction.type === 'scale_selection' && ctx.onScaleSelectionCommit) {
-    const f = dragAction.currentFactor;
-    if (Math.abs(f - 1) > 1e-4 && moveAtomIds.length > 0) {
-      ctx.onScaleSelectionCommit(moveAtomIds, dragAction.cx, dragAction.cy, f);
+    const { currentFactorX: fx, currentFactorY: fy, anchorX, anchorY } = dragAction;
+    if (
+      moveAtomIds.length > 0 &&
+      (Math.abs(fx - 1) > 1e-4 || Math.abs(fy - 1) > 1e-4)
+    ) {
+      ctx.onScaleSelectionCommit(moveAtomIds, anchorX, anchorY, fx, fy);
     }
+    ctx.onCanvasTextTransforming?.(false);
   } else if (dragAction.type === 'box_select' && ctx.setSelectedAtomIds) {
     const boxW = Math.abs(dragAction.currentX - dragAction.startX);
     const boxH = Math.abs(dragAction.currentY - dragAction.startY);

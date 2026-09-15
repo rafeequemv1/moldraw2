@@ -51,10 +51,19 @@
   max-height: 88dvh;
 }
 
+.mobile-sheet__panel--peek {
+  height: min(42dvh, 380px);
+  max-height: min(42dvh, 380px);
+}
+
 .mobile-sheet__panel--full {
   height: 100dvh;
   max-height: 100dvh;
   border-radius: 0;
+}
+
+.mobile-sheet--canvas-visible .mobile-sheet__panel {
+  margin-bottom: var(--app-mobile-bottom-chrome, 0px);
 }
 
 .mobile-sheet__handle-hit {
@@ -179,19 +188,78 @@
 .mobile-sheet-search {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  width: 100%;
+}
+
+.mobile-sheet--search-min .mobile-sheet__panel {
+  border-radius: 20px 20px 0 0;
+  background: #fff;
+  box-shadow: 0 -10px 36px rgba(15, 23, 42, 0.1);
+  border-top: 1px solid #e8eef2;
+}
+
+.mobile-sheet--search-min .mobile-sheet__header {
+  padding: 6px 18px 6px;
+  border-bottom: none;
+}
+
+.mobile-sheet--search-min .mobile-sheet__title {
+  font-size: 13px;
+  font-weight: 650;
+  color: #334155;
+  letter-spacing: -0.01em;
+}
+
+.mobile-sheet--search-min .mobile-sheet__body {
+  padding: 0 16px 16px;
+}
+
+.mobile-sheet--search-min .mobile-sheet-search {
+  gap: 8px;
+}
+
+.mobile-sheet--search-min .app-top-bar__search--sheet {
+  min-height: 44px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 0 12px;
+}
+
+.mobile-sheet--info .molecule-info-panel--sheet {
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 .mobile-sheet-search .app-top-bar__search--sheet {
   width: 100%;
   min-height: 44px;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .mobile-sheet-search .app-top-bar__search-input {
   width: 100%;
   max-width: none;
   font-size: 16px;
+}
+
+html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
+  width: 100%;
+  max-width: none;
+}
+
+.mobile-sheet--search .md-btn--primary {
+  background: #0d9488;
+  color: #fff;
+  border-color: #0d9488;
+}
+
+.mobile-sheet--search .md-btn--primary:hover:not(:disabled) {
+  background: #0f766e;
+  border-color: #0f766e;
 }
 
 .mobile-sheet-search__actions {
@@ -223,6 +291,67 @@
   border: none;
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* Arrange sheet: short, undimmed peek so the canvas shows the live result. */
+.mobile-sheet--arrange .mobile-sheet__panel {
+  height: auto;
+  max-height: min(40dvh, 340px);
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.16);
+}
+
+.mobile-sheet--arrange .mobile-sheet__handle-hit {
+  min-height: 18px;
+  padding-top: 5px;
+}
+
+.mobile-sheet--arrange .mobile-sheet__header {
+  padding: 0 8px 4px 14px;
+}
+
+.mobile-sheet--arrange .mobile-sheet__title {
+  font-size: 13px;
+}
+
+.mobile-sheet--arrange .mobile-sheet__close {
+  width: 32px;
+  height: 32px;
+}
+
+.mobile-sheet--arrange .mobile-sheet__body {
+  padding: 6px 12px 10px;
+}
+
+.mobile-sheet--arrange .mobile-sheet-arrange__section {
+  margin-bottom: 10px;
+}
+
+.mobile-sheet--arrange .mobile-sheet-arrange__grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.mobile-sheet--arrange .mobile-sheet-arrange__btn {
+  min-height: 48px;
+  padding: 5px 2px;
+  font-size: 9px;
+}
+
+.mobile-sheet--arrange .mobile-sheet-arrange__list {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.mobile-sheet--arrange .mobile-sheet-arrange__list-btn {
+  width: auto;
+  flex: 1 1 calc(50% - 4px);
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.mobile-sheet--arrange .mobile-sheet-arrange__list-title {
+  font-size: 12px;
 }
 
 /* Arrange sheet action grid */
@@ -439,6 +568,89 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
+}
+
+/* Phone: 3D controls as a sheet over the (still visible) model. */
+.viewer3d-island--sheet-launch,
+html.app-mobile-compact .viewer3d-island.viewer3d-island--sheet-launch {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: auto;
+  max-width: none;
+  padding: 4px;
+  gap: 0;
+}
+
+.viewer3d-island--sheet-launch .viewer3d-island__toggle {
+  min-height: 36px;
+  padding: 4px 14px;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.mobile-sheet--viewer3d-controls {
+  z-index: 12500;
+}
+
+.mobile-sheet--viewer3d-controls .mobile-sheet__panel {
+  max-height: min(70dvh, 560px);
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.22);
+}
+
+.mobile-sheet--viewer3d-controls .mobile-sheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 14px calc(16px + env(safe-area-inset-bottom, 0));
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-height: 0;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-menu {
+  display: block;
+  width: 100%;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-menu__trigger {
+  display: flex;
+  width: 100%;
+  max-width: none;
+  justify-content: space-between;
+  min-height: 40px;
+  font-size: 13px;
+}
+
+/* Dropdown panels expand inline inside the scrolling sheet (no floating popover). */
+.mobile-sheet--viewer3d-controls .viewer3d-menu__panel {
+  position: static;
+  top: auto;
+  bottom: auto;
+  left: auto;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  margin-top: 4px;
+  box-shadow: none;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-rebuild,
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar > button {
+  min-height: 40px;
+  font-size: 13px;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-status,
+.mobile-sheet--viewer3d-controls .viewer3d-toggle__source,
+.mobile-sheet--viewer3d-controls .viewer3d-toggle__energy {
+  font-size: 12px;
 }
 
 .mobile-sheet--viewer3d .workspace-pane-3d__viewer--sheet .viewer3d-shell,

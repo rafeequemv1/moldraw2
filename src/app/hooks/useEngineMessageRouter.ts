@@ -91,6 +91,9 @@ export interface UseEngineMessageRouterOptions {
   runLocalCleanupRef?: React.MutableRefObject<(seedAtomIds: Set<string>) => void>;
   /** After unfold-all hydrogens, run full-structure cleanup. */
   onCleanupStructureRef?: React.MutableRefObject<() => void>;
+  /** Re-select all atoms after startup seed cleanup (selection boundary on first visit). */
+  startupSeedCleanupRef?: React.MutableRefObject<boolean>;
+  getMolecule?: () => Molecule;
 }
 
 export function useEngineMessageRouter(opts: UseEngineMessageRouterOptions): void {
@@ -125,6 +128,8 @@ export function useEngineMessageRouter(opts: UseEngineMessageRouterOptions): voi
       importMolblock,
       runLocalCleanupRef,
       onCleanupStructureRef,
+      startupSeedCleanupRef,
+      getMolecule,
     } = opts;
 
     const aiWorkerPendingRef = aiWorkerPendingRefOpt ?? aiCleanupPendingRef!;
@@ -168,6 +173,13 @@ export function useEngineMessageRouter(opts: UseEngineMessageRouterOptions): voi
           if (!localResult.ok) {
             console.error('Local cleanup apply failed:', localResult.error);
             alert(localResult.error?.message ?? 'Could not apply cleanup result.');
+          } else if (startupSeedCleanupRef?.current) {
+            startupSeedCleanupRef.current = false;
+            const mol = getMolecule?.();
+            if (mol && mol.atoms.length > 0) {
+              setSelectedAtomIds(mol.atoms.map(a => a.id));
+              setActiveTool('select');
+            }
           }
           return;
         }
@@ -693,9 +705,13 @@ export function useEngineMessageRouter(opts: UseEngineMessageRouterOptions): voi
           return;
         }
         const newIds = pastedMol.atoms.map(a => a.id);
+        setActiveTool('select');
         setSelectedAtomIds(newIds);
         // Tidy imported structures (including startup seed) with native cleanup.
         if (newIds.length > 0 && runLocalCleanupRef) {
+          if (msg.id === 'import_smiles' && startupSeedCleanupRef) {
+            startupSeedCleanupRef.current = true;
+          }
           const seeds = new Set(newIds);
           queueMicrotask(() => runLocalCleanupRef.current(seeds));
         }

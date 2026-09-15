@@ -7,8 +7,8 @@ import { vdwRadius } from '@moldraw/core/chemistry/atomicData';
 export const CARBON_VDW_A = vdwRadius('C');
 export const CARBON_SPHERE_RADIUS = 0.48;
 export const SELECTED_SPHERE_SCALE = 1.25;
-export const STICK_RADIUS = 0.14;
-export const SELECTED_STICK_RADIUS = 0.24;
+export const STICK_RADIUS = 0.11;
+export const SELECTED_STICK_RADIUS = 0.19;
 /**
  * Whitish H on the light (#f8fafc) viewer background — pale enough to read as
  * hydrogen, slightly cooler than pure white so spheres stay visible.

@@ -9,6 +9,8 @@ import type { CanvasStructureTheme } from '@moldraw/canvas';
 import type { BondsSettings, GeneralSettings } from '../settings/types';
 import { CANVAS_FONT_FAMILIES } from '../constants/fonts';
 import { useInstalledStructureThemes } from '../hooks/useStructureTheme';
+import { FormatPanelAccordion } from './FormatPanelAccordion';
+import { useI18n } from '../i18n';
 
 export interface StyleToolbarProps {
   general: GeneralSettings;
@@ -18,6 +20,50 @@ export interface StyleToolbarProps {
   onResetToDefaults?: () => void;
   /** Persist the 2D look on the molecule (MCP / undo) as well as Settings. */
   onStructureThemeChange?: (themeId: string, drawMode: 'skeletal' | 'ball-stick') => void;
+  /** Ribbon row, compact menu, or color-panel rows (matches TopBarColorMenu). */
+  layout?: 'ribbon' | 'menu' | 'panel';
+  /** Panel layout only: theme+grid, rest (atoms/bonds), or full panel. */
+  panelSection?: 'theme' | 'rest' | 'full';
+  /** When true, edits update canvas defaults (Settings) and all open designs. */
+  applyGlobally?: boolean;
+  onApplyGloballyChange?: (value: boolean) => void;
+}
+
+function StyleGlobalToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="style-global-toggle">
+      <div className="style-global-toggle__text">
+        <span className="style-global-toggle__title">{t('stylePanel.canvasDefault')}</span>
+        <span className="style-global-toggle__hint">
+          {checked ? t('stylePanel.applyGloballyOn') : t('stylePanel.applyGloballyOff')}
+        </span>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        className={`style-global-toggle__switch${checked ? ' is-on' : ''}`}
+        aria-checked={checked}
+        aria-label={t('stylePanel.applyGloballyAria')}
+        onClick={() => onChange(!checked)}
+      />
+    </div>
+  );
+}
+
+function PanelRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="app-top-bar__color-style-row">
+      <span className="mol-color-side-label">{label}</span>
+      {children}
+    </div>
+  );
 }
 
 const FONT_SIZE_OPTS = [10, 12, 14, 16, 18, 20, 22, 24, 28, 32] as const;
@@ -237,13 +283,256 @@ export function StyleToolbar({
   updateBonds,
   onResetToDefaults,
   onStructureThemeChange,
+  layout = 'ribbon',
+  panelSection = 'full',
+  applyGlobally = true,
+  onApplyGloballyChange,
 }: StyleToolbarProps) {
+  const { t } = useI18n();
   const themes = useInstalledStructureThemes();
   const themeId = general.structureThemeId ?? 'skeletal';
   const themeLabel = themes.find(t => t.id === themeId)?.label ?? themes[0]?.label ?? 'Default';
 
+  const commitTheme = (next: CanvasStructureTheme) => {
+    updateGeneral({
+      structureThemeId: next.id,
+      structureDrawMode: next.drawMode,
+    });
+    onStructureThemeChange?.(next.id, next.drawMode);
+  };
+
+  const gridPattern = general.gridPattern === 'dots' ? 'dots' : 'lines';
+
+  const themeSection = (
+    <FormatPanelAccordion title={t('stylePanel.theme')} pinned defaultOpen>
+      <PanelRow label={t('stylePanel.look')}>
+        <select
+          className="app-top-bar__color-style-select"
+          value={themeId}
+          aria-label={t('stylePanel.look')}
+          onChange={e => {
+            const next = themes.find(th => th.id === e.target.value);
+            if (next) commitTheme(next);
+          }}
+        >
+          {themes.map((th: CanvasStructureTheme) => (
+            <option key={th.id} value={th.id}>
+              {th.label}
+            </option>
+          ))}
+        </select>
+      </PanelRow>
+      <PanelRow label={t('stylePanel.grid')}>
+        <button
+          type="button"
+          className={`app-top-bar__color-style-toggle${general.showGrid !== false ? ' is-on' : ''}`}
+          aria-pressed={general.showGrid !== false}
+          onClick={() => updateGeneral({ showGrid: general.showGrid === false })}
+        >
+          {general.showGrid !== false ? t('stylePanel.gridOn') : t('stylePanel.gridOff')}
+        </button>
+      </PanelRow>
+      <PanelRow label={t('stylePanel.gridPattern')}>
+        <select
+          className="app-top-bar__color-style-select"
+          value={gridPattern}
+          disabled={general.showGrid === false}
+          aria-label={t('stylePanel.gridPattern')}
+          onChange={e =>
+            updateGeneral({ gridPattern: e.target.value === 'dots' ? 'dots' : 'lines' })
+          }
+        >
+          <option value="lines">{t('stylePanel.gridLines')}</option>
+          <option value="dots">{t('stylePanel.gridDots')}</option>
+        </select>
+      </PanelRow>
+    </FormatPanelAccordion>
+  );
+
+  const restSection = (
+    <>
+      {onApplyGloballyChange ? (
+        <StyleGlobalToggle checked={applyGlobally} onChange={onApplyGloballyChange} />
+      ) : null}
+      <FormatPanelAccordion title={t('stylePanel.atoms')}>
+          <PanelRow label={t('stylePanel.font')}>
+            <select
+              className="app-top-bar__color-style-select"
+              value={general.fontFamily}
+              aria-label="Label font"
+              onChange={e => updateGeneral({ fontFamily: e.target.value })}
+            >
+              {CANVAS_FONT_FAMILIES.map(f => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          </PanelRow>
+          <PanelRow label={t('stylePanel.size')}>
+            <select
+              className="app-top-bar__color-style-select"
+              value={String(general.fontSizePt)}
+              aria-label="Label size"
+              onChange={e => {
+                const n = clampNum(e.target.value, 6, 36);
+                if (n != null) updateGeneral({ fontSizePt: n });
+              }}
+            >
+              {FONT_SIZE_OPTS.map(n => (
+                <option key={n} value={String(n)}>
+                  {n} pt
+                </option>
+              ))}
+            </select>
+          </PanelRow>
+          <PanelRow label={t('stylePanel.sub')}>
+            <select
+              className="app-top-bar__color-style-select"
+              value={String(general.subFontSizePt)}
+              aria-label="Subscript size"
+              onChange={e => {
+                const n = clampNum(e.target.value, 6, 36);
+                if (n != null) updateGeneral({ subFontSizePt: n });
+              }}
+            >
+              {SUB_SIZE_OPTS.map(n => (
+                <option key={n} value={String(n)}>
+                  {n} pt
+                </option>
+              ))}
+            </select>
+          </PanelRow>
+          <PanelRow label={t('stylePanel.bold')}>
+            <button
+              type="button"
+              className={`app-top-bar__color-style-toggle${general.boldAtomLabels ? ' is-on' : ''}`}
+              aria-pressed={general.boldAtomLabels}
+              onClick={() => updateGeneral({ boldAtomLabels: !general.boldAtomLabels })}
+            >
+              {t('stylePanel.boldLabels')}
+            </button>
+          </PanelRow>
+        </FormatPanelAccordion>
+        <FormatPanelAccordion title={t('stylePanel.bonds')}>
+          <PanelRow label={t('stylePanel.length')}>
+            <select
+              className="app-top-bar__color-style-select"
+              value={String(bonds.bondLengthPx)}
+              aria-label="Bond length"
+              onChange={e => {
+                const n = clampNum(e.target.value, 24, 80);
+                if (n != null) updateBonds({ bondLengthPx: n });
+              }}
+            >
+              {BOND_LEN_OPTS.map(n => (
+                <option key={n} value={String(n)}>
+                  {n} px
+                </option>
+              ))}
+            </select>
+          </PanelRow>
+          <PanelRow label={t('stylePanel.gap')}>
+            <select
+              className="app-top-bar__color-style-select"
+              value={String(bonds.bondSpacingPercent)}
+              aria-label="Double bond gap"
+              onChange={e => {
+                const n = clampNum(e.target.value, 4, 45);
+                if (n != null) updateBonds({ bondSpacingPercent: n });
+              }}
+            >
+              {BOND_GAP_OPTS.map(n => (
+                <option key={n} value={String(n)}>
+                  {n}%
+                </option>
+              ))}
+            </select>
+          </PanelRow>
+          <PanelRow label={t('stylePanel.thick')}>
+            <select
+              className="app-top-bar__color-style-select"
+              value={String(bonds.bondThicknessPx)}
+              aria-label="Bond thickness"
+              onChange={e => {
+                const n = clampNum(e.target.value, 1, 14);
+                if (n != null) updateBonds({ bondThicknessPx: n });
+              }}
+            >
+              {BOND_THICK_OPTS.map(n => (
+                <option key={n} value={String(n)}>
+                  {n} px
+                </option>
+              ))}
+            </select>
+          </PanelRow>
+          <PanelRow label={t('stylePanel.wedge')}>
+            <select
+              className="app-top-bar__color-style-select"
+              value={String(bonds.stereoWedgeWidthPx)}
+              aria-label="Stereo wedge width"
+              onChange={e => {
+                const n = clampNum(e.target.value, 2, 24);
+                if (n != null) updateBonds({ stereoWedgeWidthPx: n });
+              }}
+            >
+              {WEDGE_OPTS.map(n => (
+                <option key={n} value={String(n)}>
+                  {n} px
+                </option>
+              ))}
+            </select>
+          </PanelRow>
+          <PanelRow label={t('stylePanel.hash')}>
+            <select
+              className="app-top-bar__color-style-select"
+              value={String(bonds.hashSpacingPx)}
+              aria-label="Hash spacing"
+              onChange={e => {
+                const n = clampNum(e.target.value, 0.5, 14);
+                if (n != null) updateBonds({ hashSpacingPx: n });
+              }}
+            >
+              {HASH_OPTS.map(n => (
+                <option key={n} value={String(n)}>
+                  {n} px
+                </option>
+              ))}
+            </select>
+          </PanelRow>
+        </FormatPanelAccordion>
+      {onResetToDefaults ? (
+        <div className="mol-color-side-footer format-left-panel__style-footer">
+          <button type="button" className="mol-color-side-link" onClick={onResetToDefaults}>
+            <RotateCcw size={11} strokeWidth={2} aria-hidden />
+            {t('stylePanel.resetDrawingStyle')}
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
+
+  if (layout === 'panel') {
+    if (panelSection === 'theme') {
+      return <div className="format-left-panel__accordions">{themeSection}</div>;
+    }
+    if (panelSection === 'rest') {
+      return <div className="format-left-panel__accordions">{restSection}</div>;
+    }
+    return (
+      <div className="format-left-panel__accordions">
+        {themeSection}
+        {restSection}
+      </div>
+    );
+  }
+
   return (
-    <div className="style-toolbar" role="toolbar" aria-label="Drawing style">
+    <div
+      className={`style-toolbar${layout === 'menu' ? ' style-toolbar--menu' : ''}`}
+      role="toolbar"
+      aria-label="Drawing style"
+    >
       <div className="style-toolbar__group" role="group" aria-label="Theme">
         <span className="style-toolbar__group-label">Theme</span>
         <div className="style-toolbar__group-body">

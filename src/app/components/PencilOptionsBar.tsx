@@ -26,7 +26,6 @@ export function PencilOptionsBar({
               ? 'pencil-topbar__size pencil-topbar__size--active'
               : 'pencil-topbar__size'
           }
-          title={`${thick}px stroke`}
           aria-label={`${thick} pixel stroke`}
           aria-pressed={activeThickness === thick}
           onClick={() => onSelectThickness(thick)}

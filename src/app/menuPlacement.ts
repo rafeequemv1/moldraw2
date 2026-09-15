@@ -1,0 +1,178 @@
+import type { CSSProperties } from 'react';
+
+/** Place a fixed portal menu so it stays on-screen (drop down, or drop up if needed). */
+export type AnchoredMenuPos = {
+  top?: number;
+  bottom?: number;
+  left: number;
+  maxHeight: number;
+  openUp: boolean;
+};
+
+export function visualViewportBox(): { width: number; height: number } {
+  const vv = window.visualViewport;
+  return {
+    width: vv?.width ?? window.innerWidth,
+    height: vv?.height ?? window.innerHeight,
+  };
+}
+
+function px(value: string | number | undefined, fallback: string): string {
+  if (typeof value === 'number' && Number.isFinite(value)) return `${value}px`;
+  if (typeof value === 'string' && value.length > 0) return value;
+  return fallback;
+}
+
+export function triggerIsInLowerViewport(anchor: DOMRect, ratio = 0.45): boolean {
+  return anchor.top > visualViewportBox().height * ratio;
+}
+
+/** Trigger lives in the phone/tablet bottom dock (strip, categories, rings). */
+export function isBottomDockTrigger(el: HTMLElement): boolean {
+  if (
+    el.closest(
+      '.toolbar--mobile-strip, .toolbar-mobile-categories, .toolbar-bottom, .toolbar-draw-panel',
+    )
+  ) {
+    return true;
+  }
+  return (
+    document.documentElement.classList.contains('app-mobile-compact') &&
+    Boolean(el.closest('.toolbar'))
+  );
+}
+
+export function placeAnchoredMenu(
+  anchor: DOMRect,
+  opts?: {
+    menuWidth?: number;
+    menuHeight?: number;
+    gap?: number;
+    pad?: number;
+    forceUp?: boolean;
+    align?: 'left' | 'right';
+  },
+): AnchoredMenuPos {
+  const gap = opts?.gap ?? 4;
+  const pad = opts?.pad ?? 8;
+  const menuW = opts?.menuWidth ?? 200;
+  const menuH = opts?.menuHeight ?? 280;
+  const { width: vw, height: vh } = visualViewportBox();
+  const spaceBelow = vh - anchor.bottom - pad;
+  const spaceAbove = anchor.top - pad;
+  const need = Math.min(menuH, 240);
+  const forceUp =
+    opts?.forceUp === true ||
+    (typeof document !== 'undefined' &&
+      document.documentElement.classList.contains('app-mobile-compact') &&
+      anchor.top > vh * 0.38);
+  const openUp = forceUp || (spaceBelow < need && spaceAbove > spaceBelow);
+  const maxHeight = Math.max(96, (openUp ? spaceAbove : spaceBelow) - gap);
+
+  let left = opts?.align === 'right' ? anchor.right - menuW : anchor.left;
+  if (left + menuW > vw - pad) left = Math.max(pad, vw - pad - menuW);
+  if (left < pad) left = pad;
+
+  if (openUp) {
+    return { bottom: menuBottomAboveAnchor(anchor), left, maxHeight, openUp: true };
+  }
+  return { top: anchor.bottom + gap, left, maxHeight, openUp: false };
+}
+
+/** Pixels from the viewport bottom so a menu sits just above `anchor` and the dock. */
+export function menuBottomAboveAnchor(anchor: DOMRect): number {
+  const pad = 8;
+  const gap = 4;
+  const layoutH = window.innerHeight;
+  const clientH = document.documentElement.clientHeight || layoutH;
+  const { height: visualH } = visualViewportBox();
+  const aboveTrigger = Math.max(
+    layoutH - anchor.top + gap,
+    clientH - anchor.top + gap,
+    visualH - anchor.top + gap,
+  );
+  let chrome = 0;
+  for (const sel of [
+    '.toolbar-mobile-categories',
+    '.toolbar--mobile-strip',
+    '.toolbar-bottom',
+    '#app-status-host',
+    '.site-footer-root',
+  ]) {
+    const node = document.querySelector(sel);
+    if (!node) continue;
+    const box = node.getBoundingClientRect();
+    if (box.height < 2 || box.width < 2) continue;
+    chrome = Math.max(chrome, layoutH - box.top, visualH - box.top);
+  }
+  return Math.max(pad, aboveTrigger, chrome + 4);
+}
+
+/** Bottom-dock / lower-viewport triggers must open onto the canvas above. */
+export function shouldOpenMenuAbove(el: HTMLElement, anchor: DOMRect): boolean {
+  if (isBottomDockTrigger(el)) return true;
+  const vh = visualViewportBox().height;
+  return anchor.bottom > vh - 180 || triggerIsInLowerViewport(anchor, 0.45);
+}
+
+/** CSS for a portal menu whose bottom edge sits just above `anchor` (no transform — WebView-safe). */
+export function dropUpMenuStyle(anchor: DOMRect, menuWidth = 168): CSSProperties {
+  const pad = 8;
+  const { width: vw, height: vh } = visualViewportBox();
+  const width = Math.min(Math.max(menuWidth, 148), vw - pad * 2);
+  let left = anchor.left;
+  if (left + width > vw - pad) left = vw - width - pad;
+  if (left < pad) left = pad;
+  const bottom = menuBottomAboveAnchor(anchor);
+  // Room between the menu's bottom edge and the top of the viewport.
+  const room = Math.min(anchor.top - pad, vh - bottom - pad);
+  return {
+    position: 'fixed',
+    top: 'auto',
+    bottom,
+    left,
+    right: 'auto',
+    width,
+    maxHeight: Math.max(96, room),
+    zIndex: 60000,
+    overflowY: 'auto',
+    transform: 'none',
+    ['--split-menu-bottom' as string]: `${bottom}px`,
+    ['--split-menu-left' as string]: `${left}px`,
+  };
+}
+
+/** Inline `!important` so base `.toolbar-split-tool__menu { top: 0; left: 100% }` cannot win. */
+export function pinMenuAboveAnchor(menu: HTMLElement, anchor: DOMRect, menuWidth?: number) {
+  const style = dropUpMenuStyle(anchor, menuWidth ?? Math.max(148, menu.offsetWidth || 168));
+  const bottom = typeof style.bottom === 'number' ? `${style.bottom}px` : '96px';
+  const left = px(style.left, '8px');
+  // Same mechanism for every bottom-docked trigger (desktop C6 rings bar and the
+  // compact phone dock): measured `bottom` from the trigger's top edge / dock
+  // chrome, applied inline with !important so no stylesheet can flip it downward.
+  menu.style.setProperty('position', 'fixed', 'important');
+  menu.style.setProperty('top', 'auto', 'important');
+  menu.style.setProperty('bottom', bottom, 'important');
+  menu.style.setProperty('left', left, 'important');
+  menu.style.setProperty('right', 'auto', 'important');
+  menu.style.setProperty('width', px(style.width, '168px'), 'important');
+  menu.style.setProperty('max-height', px(style.maxHeight, '240px'), 'important');
+  menu.style.setProperty('z-index', '60000', 'important');
+  menu.style.setProperty('overflow-y', 'auto', 'important');
+  menu.style.setProperty('transform', 'none', 'important');
+  menu.style.setProperty('--split-menu-bottom', bottom);
+  menu.style.setProperty('--split-menu-left', left);
+}
+
+export function anchoredMenuStyle(pos: AnchoredMenuPos): CSSProperties {
+  return {
+    position: 'fixed',
+    left: pos.left,
+    top: pos.openUp ? 'auto' : pos.top,
+    bottom: pos.openUp ? pos.bottom : 'auto',
+    maxHeight: pos.maxHeight,
+    zIndex: 24000,
+    overflowY: 'auto',
+    transform: 'none',
+  };
+}

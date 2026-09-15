@@ -227,9 +227,10 @@ export interface InteractionContext {
   ) => void;
   onScaleSelectionCommit?: (
     atomIds: string[],
-    cx: number,
-    cy: number,
-    factor: number,
+    anchorX: number,
+    anchorY: number,
+    factorX: number,
+    factorY?: number,
   ) => void;
   /** Commit Structure Perspective orbit (radians about X then Y). */
   onRotate3DPoseCommit?: (dAngleX: number, dAngleY: number) => void;

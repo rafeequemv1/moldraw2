@@ -538,14 +538,16 @@ export const scaleAtoms = (
   cx: number,
   cy: number,
   factor: number,
+  factorY?: number,
 ): Molecule => {
   if (atomIds.length === 0 || !Number.isFinite(factor)) return prev;
-  const f = Math.max(0.05, Math.min(20, factor));
-  if (Math.abs(f - 1) < 1e-7) return prev;
+  const fx = Math.max(0.05, Math.min(20, factor));
+  const fy = Math.max(0.05, Math.min(20, factorY ?? factor));
+  if (Math.abs(fx - 1) < 1e-7 && Math.abs(fy - 1) < 1e-7) return prev;
   const set = new Set(atomIds);
   const scaleXY = (x: number, y: number) => ({
-    x: cx + (x - cx) * f,
-    y: cy + (y - cy) * f,
+    x: cx + (x - cx) * fx,
+    y: cy + (y - cy) * fy,
   });
   const pose = prev.perspective3D;
   if (pose) {

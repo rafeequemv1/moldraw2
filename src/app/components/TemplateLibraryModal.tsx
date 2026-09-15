@@ -21,12 +21,14 @@ import { CofsLibraryPanel } from '../cofs/CofsLibraryPanel';
 import { DendrimerLibraryPanel } from '../dendrimers/DendrimerLibraryPanel';
 import { MofsLibraryPanel } from '../mofs/MofsLibraryPanel';
 import { PolymersLibraryPanel } from '../polymers/PolymersLibraryPanel';
+import { GrapheneLibraryPanel, type GrapheneLibraryInsert } from '../graphene/GrapheneLibraryPanel';
 import '../../styles/template-library-modal.css';
 
 export type TemplateLibraryTab =
   | 'structures'
   | 'cofs'
   | 'mofs'
+  | 'graphene'
   | 'dendrimers'
   | 'polymers'
   | 'reactions';
@@ -40,6 +42,7 @@ export interface TemplateLibraryModalProps {
   onInsertStructure3D: (id: string) => void;
   onInsertCof: (id: string) => void;
   onInsertMof: (id: string) => void;
+  onInsertGraphene?: (opts: GrapheneLibraryInsert) => void;
   onInsertDendrimer: (id: string) => void;
   onInsertPolymer: (id: string) => void;
   onInsertReaction?: (reactionId: string) => void | Promise<void>;
@@ -57,6 +60,7 @@ export function TemplateLibraryModal({
   onInsertStructure3D,
   onInsertCof,
   onInsertMof,
+  onInsertGraphene,
   onInsertDendrimer,
   onInsertPolymer,
   onInsertReaction,
@@ -161,9 +165,14 @@ export function TemplateLibraryModal({
       <div className="template-library-dialog" onMouseDown={e => e.stopPropagation()}>
         <header className="template-library-header">
           <div>
-            <div className="template-library-header__title">Library</div>
+            <div className="template-library-header__title-row">
+              <div className="template-library-header__title">Library</div>
+              <span className="app-top-bar__beta" title="Beta release">
+                Beta
+              </span>
+            </div>
             <div className="template-library-header__subtitle">
-              Structure templates, COFs, MOFs, polymers, dendrimers, and named reaction schemes — place on canvas.
+              Structure templates, COFs, MOFs, graphene, polymers, dendrimers, and named reaction schemes — place on canvas.
             </div>
             <div className="template-library-tabs" role="tablist" aria-label="Library sections">
               <button
@@ -193,6 +202,17 @@ export function TemplateLibraryModal({
               >
                 MOFs
               </button>
+              {onInsertGraphene ? (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={libraryTab === 'graphene'}
+                  className={`template-library-tab${libraryTab === 'graphene' ? ' template-library-tab--active' : ''}`}
+                  onClick={() => setLibraryTab('graphene')}
+                >
+                  Graphene
+                </button>
+              ) : null}
               <button
                 type="button"
                 role="tab"
@@ -241,6 +261,11 @@ export function TemplateLibraryModal({
         ) : libraryTab === 'mofs' ? (
           <MofsLibraryPanel
             onInsert={onInsertMof}
+            requestSmilesMolblock={requestSmilesMolblock}
+          />
+        ) : libraryTab === 'graphene' && onInsertGraphene ? (
+          <GrapheneLibraryPanel
+            onInsert={onInsertGraphene}
             requestSmilesMolblock={requestSmilesMolblock}
           />
         ) : libraryTab === 'polymers' ? (

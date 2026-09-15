@@ -22,16 +22,49 @@ import { PluginsSettingsPanel } from './PluginsSettingsPanel';
 import { CANVAS_FONT_FAMILIES } from '../constants/fonts';
 import { UI_THEME_OPTIONS, type UiThemeId } from '../theme';
 import { useInstalledStructureThemes } from '../hooks/useStructureTheme';
+import { resolveUiLanguage, UI_LANGUAGES, useI18n, type UiLanguage } from '../i18n';
 
 /** Fixed content viewport so every section shares the same modal size (scroll inside). */
 const SETTINGS_CONTENT_HEIGHT = 460;
 
-const RESOLUTION_OPTIONS: { value: ImageResolutionPreset; label: string }[] = [
-  { value: 'document', label: '1× (match font size)' },
-  { value: 'low', label: 'low (2×)' },
-  { value: 'medium', label: 'medium (3×)' },
-  { value: 'high', label: 'high (4×)' },
-];
+const RESOLUTION_VALUES: ImageResolutionPreset[] = ['document', 'low', 'medium', 'high'];
+
+const RESOLUTION_LABEL_KEYS: Record<ImageResolutionPreset, string> = {
+  document: 'settings.general.resolutionDocument',
+  low: 'settings.general.resolutionLow',
+  medium: 'settings.general.resolutionMedium',
+  high: 'settings.general.resolutionHigh',
+};
+
+const THEME_LABEL_KEYS: Record<UiThemeId, string> = {
+  light: 'settings.general.themeLight',
+  'elegant-dark': 'settings.general.themeElegantDark',
+  'ink-dark': 'settings.general.themeInkDark',
+};
+
+const THEME_HINT_KEYS: Record<UiThemeId, string> = {
+  light: 'settings.general.themeLightHint',
+  'elegant-dark': 'settings.general.themeElegantDarkHint',
+  'ink-dark': 'settings.general.themeInkDarkHint',
+};
+
+const PRESET_LABEL_KEYS: Record<AppSettingsPresetId, string> = {
+  default: 'settings.presets.defaultLabel',
+  acs_1996: 'settings.presets.acs1996Label',
+  frontiers: 'settings.presets.frontiersLabel',
+  beilstein: 'settings.presets.beilsteinLabel',
+  rsc: 'settings.presets.rscLabel',
+  nature: 'settings.presets.natureLabel',
+};
+
+const PRESET_DESC_KEYS: Record<AppSettingsPresetId, string> = {
+  default: 'settings.presets.defaultDesc',
+  acs_1996: 'settings.presets.acs1996Desc',
+  frontiers: 'settings.presets.frontiersDesc',
+  beilstein: 'settings.presets.beilsteinDesc',
+  rsc: 'settings.presets.rscDesc',
+  nature: 'settings.presets.natureDesc',
+};
 
 export interface AppSettingsModalProps {
   open: boolean;
@@ -58,6 +91,15 @@ export interface AppSettingsModalProps {
 
 type SettingsCategory = 'general' | 'style' | 'bonds' | 'presets' | 'ai' | 'plugins' | 'shortcuts';
 
+function SettingsBetaTag() {
+  const { t } = useI18n();
+  return (
+    <span className="app-top-bar__beta" title={t('settings.beta')} style={{ marginLeft: 6, flexShrink: 0 }}>
+      {t('settings.beta')}
+    </span>
+  );
+}
+
 const rowStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -70,6 +112,25 @@ const rowStyle: CSSProperties = {
 };
 
 const labelStyle: CSSProperties = { flex: '1 1 auto', minWidth: 0 };
+
+const hintStyle: CSSProperties = {
+  display: 'block',
+  fontSize: 11,
+  color: 'var(--text-muted)',
+  fontWeight: 400,
+  marginTop: 4,
+  lineHeight: 1.35,
+};
+
+function SettingsFieldLabel({ labelKey, hintKey }: { labelKey: string; hintKey?: string }) {
+  const { t } = useI18n();
+  return (
+    <span style={labelStyle}>
+      {t(labelKey)}
+      {hintKey ? <span style={hintStyle}>{t(hintKey)}</span> : null}
+    </span>
+  );
+}
 
 const controlStyle: CSSProperties = {
   display: 'flex',
@@ -164,6 +225,7 @@ export function AppSettingsModal({
   onStructureThemeChange,
   localSession,
 }: AppSettingsModalProps) {
+  const { t } = useI18n();
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const [presetId, setPresetId] = useState<AppSettingsPresetId>(
     () => (settings.lastPresetId as AppSettingsPresetId) || 'default',
@@ -203,6 +265,7 @@ export function AppSettingsModal({
   if (!open) return null;
 
   const g = settings.general;
+  const uiLang = resolveUiLanguage(g.uiLanguage);
   const b = settings.bonds;
 
   const panelStyle: CSSProperties = {
@@ -236,12 +299,11 @@ export function AppSettingsModal({
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div>
               <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-                Drawing settings
+                {t('settings.title')}
+                <SettingsBetaTag />
               </span>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>
-                {
-                  'Saved in this browser. Typography, export, and bond appearance stay until you change them. Style presets compare journal layouts — each thumbnail shows aspirin with that preset.'
-                }
+                {t('settings.intro')}
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -262,12 +324,12 @@ export function AppSettingsModal({
                   cursor: 'pointer',
                 }}
               >
-                Reset defaults
+                {t('settings.resetDefaults')}
               </button>
               {!isCompact ? (
                 <button
                   type="button"
-                  aria-label="Close"
+                  aria-label={t('settings.closeAria')}
                   onClick={onClose}
                   style={{
                     display: 'inline-flex',
@@ -292,7 +354,7 @@ export function AppSettingsModal({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '118px minmax(0, 1fr)',
+            gridTemplateColumns: '148px minmax(0, 1fr)',
             flex: 1,
             minHeight: 0,
             maxHeight: 'calc(100vh - 96px)',
@@ -319,7 +381,7 @@ export function AppSettingsModal({
                 padding: '4px 8px 8px',
               }}
             >
-              Sections
+              {t('settings.sections')}
             </div>
             <button
               type="button"
@@ -328,7 +390,8 @@ export function AppSettingsModal({
               style={navBtnStyle(activeCategory === 'general', true)}
             >
               <FolderOpen size={16} />
-              General
+              {t('settings.general.nav')}
+              <SettingsBetaTag />
             </button>
             <button
               type="button"
@@ -337,7 +400,8 @@ export function AppSettingsModal({
               style={navBtnStyle(activeCategory === 'style')}
             >
               <Type size={16} />
-              Style
+              {t('settings.style.nav')}
+              <SettingsBetaTag />
             </button>
             <button
               type="button"
@@ -346,7 +410,8 @@ export function AppSettingsModal({
               style={navBtnStyle(activeCategory === 'bonds')}
             >
               <FolderOpen size={16} />
-              Bonds
+              {t('settings.bonds.nav')}
+              <SettingsBetaTag />
             </button>
             <button
               type="button"
@@ -355,7 +420,8 @@ export function AppSettingsModal({
               style={navBtnStyle(activeCategory === 'presets')}
             >
               <Palette size={16} />
-              Style presets
+              {t('settings.presets.nav')}
+              <SettingsBetaTag />
             </button>
             <button
               type="button"
@@ -364,7 +430,8 @@ export function AppSettingsModal({
               style={navBtnStyle(activeCategory === 'ai')}
             >
               <Bot size={16} />
-              AI
+              {t('settings.ai.nav')}
+              <SettingsBetaTag />
             </button>
             <button
               type="button"
@@ -373,7 +440,8 @@ export function AppSettingsModal({
               style={navBtnStyle(activeCategory === 'plugins')}
             >
               <Puzzle size={16} />
-              Plugins
+              {t('settings.plugins.nav')}
+              <SettingsBetaTag />
             </button>
             <button
               type="button"
@@ -382,7 +450,8 @@ export function AppSettingsModal({
               style={navBtnStyle(activeCategory === 'shortcuts')}
             >
               <Keyboard size={16} />
-              Shortcuts
+              {t('settings.shortcuts.nav')}
+              <SettingsBetaTag />
             </button>
           </div>
 
@@ -414,10 +483,9 @@ export function AppSettingsModal({
                     lineHeight: 1.5,
                   }}
                 >
-                  Pick a publication-style preset. Each card shows{' '}
-                  <strong style={{ color: 'var(--text-main)' }}>aspirin</strong> (2-acetoxybenzoic acid) rendered with
-                  that preset&apos;s bond and label settings. The highlighted card matches your current
-                  selection.
+                  {t('settings.presets.introBefore')}{' '}
+                  <strong style={{ color: 'var(--text-main)' }}>{t('settings.presets.aspirin')}</strong>{' '}
+                  {t('settings.presets.introAfter')}
                 </p>
                 <div
                   style={{
@@ -428,6 +496,7 @@ export function AppSettingsModal({
                 >
                   {APP_SETTINGS_PRESETS.map(p => {
                     const selected = p.id === presetId;
+                    const presetDesc = t(PRESET_DESC_KEYS[p.id]);
                     return (
                       <button
                         key={p.id}
@@ -437,7 +506,7 @@ export function AppSettingsModal({
                           setPresetId(p.id);
                           onApplyPreset(p.id);
                         }}
-                        title={p.description}
+                        title={presetDesc}
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
@@ -460,14 +529,14 @@ export function AppSettingsModal({
                           className="app-settings-preset-card__title"
                           style={{ fontSize: 12, fontWeight: selected ? 700 : 600, color: 'var(--text-main)' }}
                         >
-                          {p.label}
+                          {t(PRESET_LABEL_KEYS[p.id])}
                         </span>
-                        {p.description ? (
+                        {presetDesc ? (
                           <span
                             className="app-settings-preset-card__desc"
                             style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.35 }}
                           >
-                            {p.description}
+                            {presetDesc}
                           </span>
                         ) : null}
                       </button>
@@ -480,22 +549,24 @@ export function AppSettingsModal({
             {activeCategory === 'general' ? (
               <>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Theme
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
+                  <SettingsFieldLabel labelKey="settings.language" hintKey="settings.languageHint" />
+                  <div style={controlStyle}>
+                    <select
+                      value={uiLang}
+                      onChange={e => updateGeneral({ uiLanguage: e.target.value as UiLanguage })}
+                      style={{ ...inputNumStyle, width: 140, textAlign: 'left' }}
+                      aria-label={t('settings.language')}
                     >
-                      Look behind this window — chrome and canvas update as you pick a theme.
-                      Ink dark uses a black canvas with white bonds and atom letters.
-                    </span>
-                  </span>
+                      {UI_LANGUAGES.map(opt => (
+                        <option key={opt.id} value={opt.id}>
+                          {t(opt.labelKey)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                  <SettingsFieldLabel labelKey="settings.general.theme" hintKey="settings.general.themeHint" />
                   <div className="theme-picker">
                     {UI_THEME_OPTIONS.map(opt => {
                       const selected = (g.theme ?? 'light') === opt.id;
@@ -506,329 +577,174 @@ export function AppSettingsModal({
                           className={`theme-picker__btn${selected ? ' theme-picker__btn--active' : ''}`}
                           onClick={() => updateGeneral({ theme: opt.id as UiThemeId })}
                           aria-pressed={selected}
-                          title={opt.hint}
+                          title={t(THEME_HINT_KEYS[opt.id])}
                         >
-                          {opt.label}
+                          {t(THEME_LABEL_KEYS[opt.id])}
                         </button>
                       );
                     })}
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Show implicit H labels
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Draw CH₃ / NH₂-style counts on the 2D canvas when hydrogens are not expanded.
-                      The top-bar H button uses Indigo to fold/unfold real H atoms instead.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.showImplicitH"
+                    hintKey="settings.general.showImplicitHHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.showImplicitHydrogens}
                       onToggle={() => updateGeneral({ showImplicitHydrogens: !g.showImplicitHydrogens })}
-                      ariaLabel="Show implicit hydrogen labels on 2D canvas"
+                      ariaLabel={t('settings.general.showImplicitH')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Color atom labels by element
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Off by default (2D atoms black). When on, heteroatom labels use palette colors
-                      (N blue, O red, etc.). Custom painted colors always apply. The 3D viewer always
-                      uses element colors.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.colorAtomLabels"
+                    hintKey="settings.general.colorAtomLabelsHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.colorAtomLabels}
                       onToggle={() => updateGeneral({ colorAtomLabels: !g.colorAtomLabels })}
-                      ariaLabel="Color atom labels by element on 2D canvas"
+                      ariaLabel={t('settings.general.colorAtomLabels')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Color bonds to heteroatoms
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Off by default (2D bonds black). When on, 2D bonds to heteroatoms / functional
-                      groups match label colors (N blue, O red, etc.) unless the bond has a custom color.
-                      The 3D viewer always uses element-colored bonds.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.colorBondsToHeteroatoms"
+                    hintKey="settings.general.colorBondsToHeteroatomsHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.applyAtomColorsToBonds}
                       onToggle={() =>
                         updateGeneral({ applyAtomColorsToBonds: !g.applyAtomColorsToBonds })
                       }
-                      ariaLabel="Color bonds to heteroatoms and functional groups"
+                      ariaLabel={t('settings.general.colorBondsToHeteroatoms')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Condensed group labels
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Terminal groups can show compact labels (e.g. CH₃, NH₂) instead of only implicit-H
-                      stubs on carbons.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.condensedGroupLabels"
+                    hintKey="settings.general.condensedGroupLabelsHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.condensedGroupLabels}
                       onToggle={() => updateGeneral({ condensedGroupLabels: !g.condensedGroupLabels })}
-                      ariaLabel="Condensed group labels on terminal atoms"
+                      ariaLabel={t('settings.general.condensedGroupLabels')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    R/S and E/Z labels
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Show CIP stereo descriptors on the canvas (R/S on chiral atoms, E/Z on double
-                      bonds). Requires Indigo. Default off.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.showCipLabels"
+                    hintKey="settings.general.showCipLabelsHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.showCipLabels === true}
                       onToggle={() => updateGeneral({ showCipLabels: g.showCipLabels !== true })}
-                      ariaLabel="Show CIP R/S and E/Z labels"
+                      ariaLabel={t('settings.general.showCipLabels')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Auto-layout after bond burst
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      When you add several bonds in quick succession, tidy that fragment (same engine as
-                      Cleanup).
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.autoLayoutAfterBondBurst"
+                    hintKey="settings.general.autoLayoutAfterBondBurstHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.autoLayoutAfterBondBurst}
                       onToggle={() =>
                         updateGeneral({ autoLayoutAfterBondBurst: !g.autoLayoutAfterBondBurst })
                       }
-                      ariaLabel="Auto layout after drawing a burst of bonds"
+                      ariaLabel={t('settings.general.autoLayoutAfterBondBurst')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Indigo accelerator (legacy) for 2D layout
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      On (default): Cleanup and SMILES→2D try Indigo WASM when loaded
-                      (accelerator for hard polycyclics). Off: native TypeScript engine only.
-                      CIP, aromatize, and structure check work natively.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.preferIndigo2d"
+                    hintKey="settings.general.preferIndigo2dHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.preferIndigo2d === true}
                       onToggle={() =>
                         updateGeneral({ preferIndigo2d: g.preferIndigo2d !== true })
                       }
-                      ariaLabel="Indigo accelerator for 2D layout"
+                      ariaLabel={t('settings.general.preferIndigo2d')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Snap to grid
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      When dragging molecules or reaction arrows, snap centers to the background
-                      grid. Hold Shift to move freely. Alignment guides still snap to other
-                      molecule bounds.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel labelKey="settings.general.snapToGrid" hintKey="settings.general.snapToGridHint" />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.snapToGrid === true}
                       onToggle={() => updateGeneral({ snapToGrid: !g.snapToGrid })}
-                      ariaLabel="Snap to grid when dragging"
+                      ariaLabel={t('settings.general.snapToGrid')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Show grid
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Draw the light background grid on the 2D canvas (on by default).
-                    </span>
-                  </span>
+                  <SettingsFieldLabel labelKey="settings.general.showGrid" hintKey="settings.general.showGridHint" />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.showGrid !== false}
                       onToggle={() => updateGeneral({ showGrid: g.showGrid === false })}
-                      ariaLabel="Show background grid"
+                      ariaLabel={t('settings.general.showGrid')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Touch: one-finger pan on empty canvas
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      With the Select tool, dragging one finger on empty canvas pans the view
-                      instead of drawing a selection box. Off by default: pan with two fingers
-                      or the Hand tool, pinch to zoom, two-finger tap to undo, three-finger tap
-                      to redo.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.touchPanOnEmptyCanvas"
+                    hintKey="settings.general.touchPanOnEmptyCanvasHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.touchPanOnEmptyCanvas === true}
                       onToggle={() =>
                         updateGeneral({ touchPanOnEmptyCanvas: g.touchPanOnEmptyCanvas !== true })
                       }
-                      ariaLabel="Touch: one-finger pan on empty canvas"
+                      ariaLabel={t('settings.general.touchPanOnEmptyCanvas')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Touch: magnifier while drawing
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Shows a 2× loupe above the fingertip while dragging a bond, ring or chain
-                      or resting on an atom, so the finger does not hide what it is pointing at.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.touchLoupe"
+                    hintKey="settings.general.touchLoupeHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.touchLoupe !== false}
                       onToggle={() => updateGeneral({ touchLoupe: g.touchLoupe === false })}
-                      ariaLabel="Touch: magnifier while drawing"
+                      ariaLabel={t('settings.general.touchLoupe')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Pointer debug overlay
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Developer aid for checking pens and touch screens: shows the last pointer's
-                      type, pressure, tilt, buttons, contact size and gesture state on the canvas.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.pointerDebugHud"
+                    hintKey="settings.general.pointerDebugHudHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.pointerDebugHud === true}
                       onToggle={() => updateGeneral({ pointerDebugHud: g.pointerDebugHud !== true })}
-                      ariaLabel="Pointer debug overlay"
+                      ariaLabel={t('settings.general.pointerDebugHud')}
                     />
                   </div>
                 </div>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Reaction component margin size</span>
+                  <SettingsFieldLabel labelKey="settings.general.reactionComponentMargin" />
                   <div style={controlStyle}>
                     <input
                       type="number"
@@ -839,14 +755,14 @@ export function AppSettingsModal({
                       onChange={e => updateGeneral({ reactionComponentMarginPt: Number(e.target.value) })}
                       style={inputNumStyle}
                     />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>pt</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.general.unitPt')}</span>
                   </div>
                 </div>
                 <div style={{ ...rowStyle, borderBottom: 'none' }}>
-                  <span style={labelStyle}>Image resolution</span>
+                  <SettingsFieldLabel labelKey="settings.general.imageResolution" />
                   <div style={{ ...controlStyle, gap: 10 }}>
                     <span
-                      title="Applies to white PNG, JPEG, and PDF. Transparent PNG and SVG stay 1× so atom labels match Font size."
+                      title={t('settings.general.imageResolutionHint')}
                       style={{
                         width: 18,
                         height: 18,
@@ -868,10 +784,11 @@ export function AppSettingsModal({
                         updateGeneral({ imageResolution: e.target.value as ImageResolutionPreset })
                       }
                       style={{ ...inputNumStyle, width: 180, textAlign: 'left' }}
+                      aria-label={t('settings.general.imageResolution')}
                     >
-                      {RESOLUTION_OPTIONS.map(o => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
+                      {RESOLUTION_VALUES.map(value => (
+                        <option key={value} value={value}>
+                          {t(RESOLUTION_LABEL_KEYS[value])}
                         </option>
                       ))}
                     </select>
@@ -883,27 +800,15 @@ export function AppSettingsModal({
             {activeCategory === 'style' ? (
               <>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Structure theme
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Default (skeletal) or Simple (ball-and-stick). Same as Style → Theme and
-                      molecule.setStructureTheme.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.style.structureTheme"
+                    hintKey="settings.style.structureThemeHint"
+                  />
                   <div style={controlStyle}>
                     <select
                       value={g.structureThemeId}
                       onChange={e => {
-                        const next = structureThemes.find(t => t.id === e.target.value);
+                        const next = structureThemes.find(th => th.id === e.target.value);
                         if (!next) return;
                         updateGeneral({
                           structureThemeId: next.id,
@@ -912,23 +817,24 @@ export function AppSettingsModal({
                         onStructureThemeChange?.(next.id, next.drawMode);
                       }}
                       style={{ ...inputNumStyle, width: 160, textAlign: 'left' }}
-                      aria-label="Structure theme"
+                      aria-label={t('settings.style.structureTheme')}
                     >
-                      {structureThemes.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.label}
+                      {structureThemes.map(th => (
+                        <option key={th.id} value={th.id}>
+                          {th.label}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Font</span>
+                  <SettingsFieldLabel labelKey="settings.style.font" />
                   <div style={controlStyle}>
                     <select
                       value={g.fontFamily}
                       onChange={e => updateGeneral({ fontFamily: e.target.value })}
                       style={{ ...inputNumStyle, width: 160, textAlign: 'left' }}
+                      aria-label={t('settings.style.font')}
                     >
                       {CANVAS_FONT_FAMILIES.map(f => (
                         <option key={f} value={f}>
@@ -939,45 +845,20 @@ export function AppSettingsModal({
                   </div>
                 </div>
                 <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <span style={labelStyle}>
-                    Bold atom labels
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      Off by default. When on, element and group labels (N, OH, NH₂, …) render bold.
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.style.boldAtomLabels"
+                    hintKey="settings.style.boldAtomLabelsHint"
+                  />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.boldAtomLabels}
                       onToggle={() => updateGeneral({ boldAtomLabels: !g.boldAtomLabels })}
-                      ariaLabel="Bold atom and group labels on the canvas"
+                      ariaLabel={t('settings.style.boldAtomLabels')}
                     />
                   </div>
                 </div>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>
-                    Font size
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      CSS pixels at zoom 1. Transparent PNG and SVG use this size (20 = 20px Times New Roman).
-                    </span>
-                  </span>
+                  <SettingsFieldLabel labelKey="settings.style.fontSize" hintKey="settings.style.fontSizeHint" />
                   <div style={controlStyle}>
                     <input
                       type="number"
@@ -987,12 +868,13 @@ export function AppSettingsModal({
                       value={g.fontSizePt}
                       onChange={e => updateGeneral({ fontSizePt: Number(e.target.value) })}
                       style={inputNumStyle}
+                      aria-label={t('settings.style.fontSize')}
                     />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>px</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Sub font size</span>
+                  <SettingsFieldLabel labelKey="settings.style.subFontSize" />
                   <div style={controlStyle}>
                     <input
                       type="number"
@@ -1002,12 +884,13 @@ export function AppSettingsModal({
                       value={g.subFontSizePt}
                       onChange={e => updateGeneral({ subFontSizePt: Number(e.target.value) })}
                       style={inputNumStyle}
+                      aria-label={t('settings.style.subFontSize')}
                     />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>px</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Bond length</span>
+                  <SettingsFieldLabel labelKey="settings.style.bondLength" />
                   <div style={controlStyle}>
                     <input
                       type="number"
@@ -1017,12 +900,13 @@ export function AppSettingsModal({
                       value={b.bondLengthPx}
                       onChange={e => updateBonds({ bondLengthPx: Number(e.target.value) })}
                       style={inputNumStyle}
+                      aria-label={t('settings.style.bondLength')}
                     />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>px</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Bond spacing</span>
+                  <SettingsFieldLabel labelKey="settings.style.bondSpacing" />
                   <div style={controlStyle}>
                     <input
                       type="number"
@@ -1032,14 +916,15 @@ export function AppSettingsModal({
                       value={b.bondSpacingPercent}
                       onChange={e => updateBonds({ bondSpacingPercent: Number(e.target.value) })}
                       style={inputNumStyle}
+                      aria-label={t('settings.style.bondSpacing')}
                     />
                     <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      % of length
+                      {t('settings.style.percentOfLength')}
                     </span>
                   </div>
                 </div>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Bond thickness</span>
+                  <SettingsFieldLabel labelKey="settings.style.bondThickness" />
                   <div style={controlStyle}>
                     <input
                       type="number"
@@ -1049,12 +934,13 @@ export function AppSettingsModal({
                       value={b.bondThicknessPx}
                       onChange={e => updateBonds({ bondThicknessPx: Number(e.target.value) })}
                       style={inputNumStyle}
+                      aria-label={t('settings.style.bondThickness')}
                     />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>px</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Stereo (Wedge) bond width</span>
+                  <SettingsFieldLabel labelKey="settings.style.stereoWedgeWidth" />
                   <div style={controlStyle}>
                     <input
                       type="number"
@@ -1064,12 +950,13 @@ export function AppSettingsModal({
                       value={b.stereoWedgeWidthPx}
                       onChange={e => updateBonds({ stereoWedgeWidthPx: Number(e.target.value) })}
                       style={inputNumStyle}
+                      aria-label={t('settings.style.stereoWedgeWidth')}
                     />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>px</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
                 <div style={{ ...rowStyle, borderBottom: 'none' }}>
-                  <span style={labelStyle}>Hash spacing</span>
+                  <SettingsFieldLabel labelKey="settings.style.hashSpacing" />
                   <div style={controlStyle}>
                     <input
                       type="number"
@@ -1079,8 +966,9 @@ export function AppSettingsModal({
                       value={b.hashSpacingPx}
                       onChange={e => updateBonds({ hashSpacingPx: Number(e.target.value) })}
                       style={inputNumStyle}
+                      aria-label={t('settings.style.hashSpacing')}
                     />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>px</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
               </>
@@ -1089,21 +977,10 @@ export function AppSettingsModal({
             {activeCategory === 'bonds' ? (
               <>
                 <div style={{ ...rowStyle, borderBottom: 'none' }}>
-                  <span style={labelStyle}>
-                    Bond angle snap
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontWeight: 400,
-                        marginTop: 4,
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      New bonds and rings snap to this increment (15° = RSC style, 30° = ACS / Nature).
-                    </span>
-                  </span>
+                  <SettingsFieldLabel
+                    labelKey="settings.bonds.bondAngleSnap"
+                    hintKey="settings.bonds.bondAngleSnapHint"
+                  />
                   <div style={controlStyle}>
                     <input
                       type="number"
@@ -1113,8 +990,11 @@ export function AppSettingsModal({
                       value={b.bondAngleSnapDeg}
                       onChange={e => updateBonds({ bondAngleSnapDeg: Number(e.target.value) })}
                       style={inputNumStyle}
+                      aria-label={t('settings.bonds.bondAngleSnap')}
                     />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>°</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      {t('settings.bonds.unitDeg')}
+                    </span>
                   </div>
                 </div>
               </>
@@ -1132,20 +1012,21 @@ export function AppSettingsModal({
                     lineHeight: 1.5,
                   }}
                 >
-                  Chat uses Google Gemini with your API key stored only in this browser (
-                  <code style={{ fontSize: 11 }}>localStorage</code>). Get a key from{' '}
+                  {t('settings.ai.introBefore')}
+                  <code style={{ fontSize: 11 }}>localStorage</code>
+                  {t('settings.ai.introAfter')}{' '}
                   <a
                     href="https://aistudio.google.com/apikey"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: '#0d9488' }}
                   >
-                    Google AI Studio
+                    {t('settings.ai.googleAiStudio')}
                   </a>
                   .
                 </p>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Gemini model</span>
+                  <SettingsFieldLabel labelKey="settings.ai.geminiModel" />
                   <div style={controlStyle}>
                     <select
                       value={geminiModelDraft}
@@ -1161,6 +1042,7 @@ export function AppSettingsModal({
                         minWidth: 200,
                         textAlign: 'left',
                       }}
+                      aria-label={t('settings.ai.geminiModel')}
                     >
                       {MOLDRAW_CHAT_MODELS.map(m => (
                         <option key={m.id} value={m.id}>
@@ -1179,24 +1061,26 @@ export function AppSettingsModal({
                     lineHeight: 1.45,
                   }}
                 >
-                  Use <strong>3.1 Pro</strong> for reaction schemes — it produces more accurate SMILES
-                  for the canvas. Flash is faster for simple draws.
+                  {t('settings.ai.modelHintBefore')}{' '}
+                  <strong>{t('settings.ai.modelHintPro')}</strong>{' '}
+                  {t('settings.ai.modelHintAfter')}
                 </p>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Gemini API key</span>
+                  <SettingsFieldLabel labelKey="settings.ai.geminiApiKey" />
                   <div style={{ ...controlStyle, flexDirection: 'column', alignItems: 'stretch' }}>
                     <input
                       type="password"
                       autoComplete="off"
                       value={geminiKeyDraft}
                       onChange={e => setGeminiKeyDraft(e.target.value)}
-                      placeholder="AIza…"
+                      placeholder={t('settings.ai.apiKeyPlaceholder')}
                       style={{
                         ...inputNumStyle,
                         width: '100%',
                         minWidth: 200,
                         textAlign: 'left',
                       }}
+                      aria-label={t('settings.ai.geminiApiKey')}
                     />
                   </div>
                 </div>
@@ -1218,7 +1102,7 @@ export function AppSettingsModal({
                       cursor: 'pointer',
                     }}
                   >
-                    Save key
+                    {t('settings.ai.saveKey')}
                   </button>
                   <button
                     type="button"
@@ -1239,12 +1123,12 @@ export function AppSettingsModal({
                       cursor: 'pointer',
                     }}
                   >
-                    Clear
+                    {t('settings.ai.clear')}
                   </button>
                 </div>
 
                 <h4 style={{ margin: '20px 0 6px', fontSize: 12, color: 'var(--text-main)' }}>
-                  Local session bridge (MCP agents → this canvas)
+                  {t('settings.ai.localSessionTitle')}
                 </h4>
                 <p
                   style={{
@@ -1254,23 +1138,20 @@ export function AppSettingsModal({
                     lineHeight: 1.45,
                   }}
                 >
-                  Run <code style={{ fontSize: 11 }}>npm run api</code> in the repo, turn this on, and start
-                  the MCP server with <code style={{ fontSize: 11 }}>MOLDRAW_SESSION_URL</code> set to the
-                  same address. Cursor / Claude edits then appear here live and share this undo history.
-                  Loopback addresses only.
+                  {t('settings.ai.localSessionIntro')}
                 </p>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Connect to local session</span>
+                  <SettingsFieldLabel labelKey="settings.ai.connectLocalSession" />
                   <div style={controlStyle}>
                     <BoolSwitch
                       checked={g.localSessionEnabled === true}
                       onToggle={() => updateGeneral({ localSessionEnabled: g.localSessionEnabled !== true })}
-                      ariaLabel="Connect to local session"
+                      ariaLabel={t('settings.ai.connectLocalSession')}
                     />
                   </div>
                 </div>
                 <div style={rowStyle}>
-                  <span style={labelStyle}>Session URL</span>
+                  <SettingsFieldLabel labelKey="settings.ai.sessionUrl" />
                   <div style={controlStyle}>
                     <input
                       type="text"
@@ -1278,11 +1159,12 @@ export function AppSettingsModal({
                       onChange={e => updateGeneral({ localSessionUrl: e.target.value })}
                       spellCheck={false}
                       style={{ ...inputNumStyle, width: 220, textAlign: 'left' }}
+                      aria-label={t('settings.ai.sessionUrl')}
                     />
                   </div>
                 </div>
                 <div style={{ ...rowStyle, borderBottom: 'none' }}>
-                  <span style={labelStyle}>Status</span>
+                  <SettingsFieldLabel labelKey="settings.ai.status" />
                   <div style={{ ...controlStyle, fontSize: 12 }}>
                     <span
                       aria-hidden
@@ -1303,12 +1185,15 @@ export function AppSettingsModal({
                     />
                     <span style={{ color: 'var(--text-muted)' }}>
                       {localSession?.status === 'connected'
-                        ? `connected · revision ${localSession.revision} · ${localSession.remoteChanges} remote change(s)`
+                        ? t('settings.ai.statusConnected', {
+                            revision: localSession.revision,
+                            remoteChanges: localSession.remoteChanges,
+                          })
                         : localSession?.status === 'connecting'
-                          ? 'connecting…'
+                          ? t('settings.ai.statusConnecting')
                           : localSession?.status === 'error'
                             ? localSession.error ?? 'error'
-                            : 'off'}
+                            : t('settings.ai.statusOff')}
                     </span>
                   </div>
                 </div>
@@ -1324,7 +1209,7 @@ export function AppSettingsModal({
       <MobileBottomSheet
         open={open}
         onClose={onClose}
-        title="Settings"
+        title={t('topBar.settings')}
         size="tall"
         className="mobile-sheet--settings"
       >
@@ -1338,7 +1223,7 @@ export function AppSettingsModal({
       className="app-settings-modal"
       role="dialog"
       aria-modal="true"
-      aria-label="App settings"
+      aria-label={t('settings.modalAria')}
       onMouseDown={onClose}
       style={{
         position: 'fixed',

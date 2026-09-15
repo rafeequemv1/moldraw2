@@ -1,4 +1,5 @@
 import type { ImageResolutionPreset } from '@moldraw/core/canvasPreferences';
+import type { UiLanguage } from '../i18n';
 import type { ShortcutBindingsMap } from '../keyboard/shortcutBindings';
 import type { UiThemeId } from '../theme';
 
@@ -40,6 +41,8 @@ export interface GeneralSettings {
    * Tokens live in `src/styles/theme.css`; structure ink in `src/app/theme.ts`.
    */
   theme: UiThemeId;
+  /** Interface language (English or German). */
+  uiLanguage?: UiLanguage;
   showImplicitHydrogens: boolean;
   /**
    * When true, 2D atom labels use element palette colors (N blue, O red, …).
@@ -71,6 +74,8 @@ export interface GeneralSettings {
   snapToGrid: boolean;
   /** Show the canvas background grid. Default true. */
   showGrid: boolean;
+  /** Background grid appearance. Default lines. */
+  gridPattern?: 'lines' | 'dots';
   /**
    * Touch screens: one finger on empty canvas with the Select tool pans the
    * view instead of drawing a selection box. Default false (two-finger pan).
@@ -95,6 +100,11 @@ export interface GeneralSettings {
   fontFamily: string;
   /** Bold atom / group labels on the 2D canvas. Default false. */
   boldAtomLabels: boolean;
+  /**
+   * When true (default), style panel edits update canvas defaults and all open designs.
+   * When false, edits apply to the active design tab only.
+   */
+  styleApplyGlobally?: boolean;
   /** Atom / group label size in CSS pixels at zoom 1 (20 = 20px Times New Roman). */
   fontSizePt: number;
   /** Subscript size in CSS pixels (NH₂, CH₃, …). */

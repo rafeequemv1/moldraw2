@@ -1,8 +1,9 @@
 /**
  * Compact palette dropdown: color swatches + selection style (font / bond / opacity).
  */
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Palette, RotateCcw } from 'lucide-react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { Palette, RotateCcw, X } from 'lucide-react';
 import type { CanvasShape, CanvasText, Molecule, ReactionArrow } from '@moldraw/domain';
 import {
   CONICAL_FLASK_DEFAULT_FILL,
@@ -21,6 +22,8 @@ import {
   type ColorApplyFlags,
 } from '@moldraw/core/color/selectionColor';
 import type { ColorTargetPrefs } from '../settings/types';
+import { FormatPanelAccordion } from './FormatPanelAccordion';
+import { useI18n } from '../i18n';
 
 export interface TopBarColorMenuProps {
   activeColor: string;
@@ -50,6 +53,12 @@ export interface TopBarColorMenuProps {
   onApplyFontSize?: (pt: number | null) => void;
   onApplyBondThickness?: (px: number | null) => void;
   onApplyOpacity?: (opacity: number | null) => void;
+  /** Theme + grid section (top of panel). */
+  documentStyleThemePanel?: ReactNode;
+  /** Atoms/bonds section (below color). */
+  documentStyleRestPanel?: ReactNode;
+  /** Phone/tablet: peek sheet so the canvas stays visible while styles update. */
+  isCompact?: boolean;
 }
 
 function sharedLabelFontPt(molecule: Molecule, atomIds: string[]): number | undefined {
@@ -104,6 +113,25 @@ function sharedOpacity(
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/i;
 
+function translateColorContextTitle(
+  title: string,
+  t: (key: string) => string,
+): string {
+  const map: Record<string, string> = {
+    'Shape color': 'colorPanel.ctxShapeColor',
+    'Text color': 'colorPanel.ctxTextColor',
+    'Drawing color': 'colorPanel.ctxDrawingColor',
+    'Bond color': 'colorPanel.ctxBondColor',
+    'Bond colors': 'colorPanel.ctxBondColors',
+    'Molecule color': 'colorPanel.ctxMoleculeColor',
+    'Selection color': 'colorPanel.ctxSelectionColor',
+    'Stroke color': 'colorPanel.ctxStrokeColor',
+    'Arrow color': 'colorPanel.ctxArrowColor',
+  };
+  const key = map[title];
+  return key ? t(key) : title;
+}
+
 export function TopBarColorMenu({
   activeColor,
   onActiveColorChange,
@@ -128,9 +156,14 @@ export function TopBarColorMenu({
   onApplyFontSize,
   onApplyBondThickness,
   onApplyOpacity,
+  documentStyleThemePanel,
+  documentStyleRestPanel,
+  isCompact = false,
 }: TopBarColorMenuProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const ringOpacity = colorTargets.ringFillOpacity;
 
@@ -161,13 +194,28 @@ export function TopBarColorMenu({
   const shapeOnly = ctx.mode === 'shape';
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || isCompact) return undefined;
     const onDoc = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (wrapRef.current?.contains(target) || panelRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
     };
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [open]);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, isCompact]);
+
+  useEffect(() => {
+    if (isCompact) return undefined;
+    document.documentElement.classList.toggle('format-left-panel-open', open);
+    return () => document.documentElement.classList.remove('format-left-panel-open');
+  }, [open, isCompact]);
 
   const bondDisplayColor = useMemo(() => {
     if (selectedBondIds.length > 0) {
@@ -257,13 +305,13 @@ export function TopBarColorMenu({
     const cur = normalizeHexColor(current).toLowerCase();
     return (
       <div className="app-top-bar__color-swatches" role="group" aria-label={label}>
-        <label className="app-top-bar__color-custom" title="Custom color">
+        <label className="app-top-bar__color-custom" title={t('colorPanel.customColor')}>
           <input
             type="color"
             className="app-top-bar__color-custom-input"
             value={normalizeHexColor(current)}
             onInput={e => onPick((e.target as HTMLInputElement).value)}
-            aria-label={`${label} custom`}
+            aria-label={`${label} ${t('colorPanel.customColor').toLowerCase()}`}
           />
         </label>
         {COLOR_PRESETS.map(c => {
@@ -317,8 +365,8 @@ export function TopBarColorMenu({
         type="button"
         className={`app-top-bar__color-trigger${open ? ' is-open' : ''}`}
         onClick={() => setOpen(v => !v)}
-        title={`${ctx.title} — color & style`}
-        aria-label="Color and style"
+        title={t('colorPanel.triggerTitle')}
+        aria-label={t('colorPanel.colorAndStyleAria')}
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={menuId}
@@ -330,14 +378,39 @@ export function TopBarColorMenu({
           aria-hidden
         />
       </button>
-      {open && (
-        <div
-          id={menuId}
-          className="app-top-bar__color-menu mol-color-side-panel"
-          role="dialog"
-          aria-label="Color and style"
-        >
-          <div className="mol-color-side-panel-title">{ctx.title}</div>
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              id={menuId}
+              ref={panelRef}
+              className={`format-left-panel mol-color-side-panel${isCompact ? ' format-left-panel--sheet' : ''}`}
+              role="dialog"
+              aria-label={t('colorPanel.colorAndStyleAria')}
+            >
+              {isCompact ? <div className="format-left-panel__handle" aria-hidden /> : null}
+              <div className="format-left-panel__head">
+                <div className="mol-color-side-panel-title">{t('colorPanel.title')}</div>
+                <button
+                  type="button"
+                  className="format-left-panel__close"
+                  onClick={() => setOpen(false)}
+                  aria-label={t('colorPanel.closeAria')}
+                >
+                  <X size={14} strokeWidth={2} aria-hidden />
+                </button>
+              </div>
+
+              <div className="format-left-panel__scroll">
+              {documentStyleThemePanel ? (
+                <div className="format-left-panel__section format-left-panel__section--style">
+                  {documentStyleThemePanel}
+                </div>
+              ) : null}
+
+              <FormatPanelAccordion title={t('colorPanel.sectionColor')} pinned>
+                <div className="format-left-panel__color-subtitle">
+                  {translateColorContextTitle(ctx.title, t)}
+                </div>
 
           {shapeOnly && selectedShape && onUpdateCanvasShape ? (
             <>
@@ -346,10 +419,10 @@ export function TopBarColorMenu({
                   {swatchRow(
                     selectedShape.color || '#0f172a',
                     hex => onUpdateCanvasShape(selectedShape.id, { color: hex }),
-                    'Stroke',
+                    t('colorPanel.stroke'),
                   )}
                   <div className="app-top-bar__color-style-row">
-                    <span className="mol-color-side-label">Width</span>
+                    <span className="mol-color-side-label">{t('colorPanel.width')}</span>
                     <input
                       type="range"
                       className="chrome-range app-top-bar__color-opacity-range"
@@ -357,7 +430,7 @@ export function TopBarColorMenu({
                       max={12}
                       step={1}
                       value={Math.min(12, Math.max(1, Math.round(selectedShape.strokeWidth || 2)))}
-                      aria-label="Stroke width"
+                      aria-label={t('colorPanel.strokeWidthAria')}
                       onInput={e => {
                         const n = parseInt((e.target as HTMLInputElement).value, 10);
                         if (!Number.isNaN(n)) {
@@ -373,8 +446,8 @@ export function TopBarColorMenu({
               )}
               {isLiquidGlass && (
                 <div className="app-top-bar__color-style-row" style={{ flexWrap: 'wrap' }}>
-                  <span className="mol-color-side-label">Liquid</span>
-                  <label className="app-top-bar__color-custom" aria-label="Liquid color">
+                  <span className="mol-color-side-label">{t('colorPanel.liquid')}</span>
+                  <label className="app-top-bar__color-custom" aria-label={t('colorPanel.liquid')}>
                     <input
                       type="color"
                       className="app-top-bar__color-custom-input"
@@ -386,7 +459,7 @@ export function TopBarColorMenu({
                       }
                     />
                   </label>
-                  <span className="mol-color-side-label">Level</span>
+                  <span className="mol-color-side-label">{t('colorPanel.level')}</span>
                   <input
                     type="range"
                     className="chrome-range app-top-bar__color-opacity-range"
@@ -420,8 +493,8 @@ export function TopBarColorMenu({
               )}
               {!isGlass && !isLine && (
                 <div className="app-top-bar__color-style-row">
-                  <span className="mol-color-side-label">Fill</span>
-                  <label className="app-top-bar__color-custom" aria-label="Fill color">
+                  <span className="mol-color-side-label">{t('colorPanel.fill')}</span>
+                  <label className="app-top-bar__color-custom" aria-label={t('colorPanel.fill')}>
                     <input
                       type="color"
                       className="app-top-bar__color-custom-input"
@@ -439,7 +512,7 @@ export function TopBarColorMenu({
                       className="mol-color-side-link"
                       onClick={() => onUpdateCanvasShape(selectedShape.id, { fillColor: '' })}
                     >
-                      Clear
+                      {t('colorPanel.clear')}
                     </button>
                   ) : null}
                 </div>
@@ -448,8 +521,8 @@ export function TopBarColorMenu({
           ) : showSplitStructure ? (
             <>
               {showBondSection && (
-                <section className="app-top-bar__color-section" aria-label="Bond color">
-                  <div className="app-top-bar__color-section-title">Bond</div>
+                <div className="format-left-panel__color-block" aria-label={t('colorPanel.ctxBondColor')}>
+                  <div className="format-left-panel__color-block-title">{t('colorPanel.bond')}</div>
                   {swatchRow(
                     bondDisplayColor,
                     hex =>
@@ -457,15 +530,15 @@ export function TopBarColorMenu({
                         ...emptyApply(),
                         bonds: true,
                       }),
-                    'Bond color',
+                    t('colorPanel.ctxBondColor'),
                   )}
-                </section>
+                </div>
               )}
 
               {showLabelSection && (
-                <section className="app-top-bar__color-section" aria-label="Text color">
-                  <div className="app-top-bar__color-section-title">
-                    {ctx.mode === 'text' ? 'Text' : 'Labels'}
+                <div className="format-left-panel__color-block" aria-label={t('colorPanel.ctxTextColor')}>
+                  <div className="format-left-panel__color-block-title">
+                    {ctx.mode === 'text' ? t('colorPanel.text') : t('colorPanel.labels')}
                   </div>
                   {swatchRow(
                     labelDisplayColor,
@@ -475,14 +548,14 @@ export function TopBarColorMenu({
                         atomLabels: caps.canAtoms,
                         text: caps.canText,
                       }),
-                    'Label color',
+                    t('colorPanel.labelColor'),
                   )}
-                </section>
+                </div>
               )}
 
               {caps.canRingFill && (ctx.mode === 'structure' || ctx.mode === 'molecule') && (
-                <section className="app-top-bar__color-section" aria-label="Ring fill">
-                  <div className="app-top-bar__color-section-title">Ring fill</div>
+                <div className="format-left-panel__color-block" aria-label={t('colorPanel.ringFill')}>
+                  <div className="format-left-panel__color-block-title">{t('colorPanel.ringFill')}</div>
                   {swatchRow(
                     caps.displayColor,
                     hex =>
@@ -490,10 +563,10 @@ export function TopBarColorMenu({
                         ...emptyApply(),
                         ringFill: true,
                       }),
-                    'Ring fill',
+                    t('colorPanel.ringFill'),
                   )}
                   <div className="app-top-bar__color-style-row">
-                    <span className="mol-color-side-label">Opacity</span>
+                    <span className="mol-color-side-label">{t('colorPanel.opacity')}</span>
                     <input
                       type="range"
                       className="chrome-range app-top-bar__color-opacity-range"
@@ -518,26 +591,66 @@ export function TopBarColorMenu({
                       }
                     />
                   </div>
-                </section>
+                </div>
               )}
             </>
           ) : (
-            <section className="app-top-bar__color-section app-top-bar__color-section--first" aria-label="Color">
-              {swatchRow(caps.displayColor, hex => commitColor(hex), 'Color')}
-            </section>
+            <>
+              {swatchRow(caps.displayColor, hex => commitColor(hex), t('colorPanel.sectionColor'))}
+            </>
           )}
 
+          <div className="mol-color-side-footer format-left-panel__color-footer">
+            {caps.canAtoms && (
+              <button type="button" className="mol-color-side-link" onClick={onClearAtomColors}>
+                {t('colorPanel.resetColors')}
+              </button>
+            )}
+            {caps.canRingFill && (
+              <button
+                type="button"
+                className="mol-color-side-link"
+                onClick={() => commitColor(caps.displayColor, { clearRingFill: true })}
+              >
+                {t('colorPanel.clearRing')}
+              </button>
+            )}
+            {caps.hasAnyRingFills && (
+              <button
+                type="button"
+                className="mol-color-side-link"
+                onClick={() => commitColor(caps.displayColor, { clearAllRingFills: true })}
+              >
+                {t('colorPanel.clearAllRings')}
+              </button>
+            )}
+            <button
+              type="button"
+              className="mol-color-side-link"
+              onClick={() => commitColor('#0f172a')}
+            >
+              <RotateCcw size={11} strokeWidth={2} aria-hidden />
+              {t('colorPanel.default')}
+            </button>
+          </div>
+              </FormatPanelAccordion>
+
+              {documentStyleRestPanel ? (
+                <div className="format-left-panel__section format-left-panel__section--style">
+                  {documentStyleRestPanel}
+                </div>
+              ) : null}
+
           {showStyleSection ? (
-            <section className="app-top-bar__color-section" aria-label="Selection style">
-              <div className="app-top-bar__color-section-title">Style</div>
+            <FormatPanelAccordion title={t('colorPanel.sectionSelectionOverrides')}>
               {onApplyFontSize ? (
                 <div className="app-top-bar__color-style-row">
-                  <span className="mol-color-side-label">Font</span>
+                  <span className="mol-color-side-label">{t('stylePanel.font')}</span>
                   <select
                     className="app-top-bar__color-style-select"
                     disabled={!hasAtoms}
                     value={fontPt != null ? String(fontPt) : 'default'}
-                    aria-label="Font size in points"
+                    aria-label={t('colorPanel.fontSizeAria')}
                     onChange={e => {
                       const v = e.target.value;
                       onApplyFontSize(v === 'default' ? null : Number(v));
@@ -554,12 +667,12 @@ export function TopBarColorMenu({
               ) : null}
               {onApplyBondThickness ? (
                 <div className="app-top-bar__color-style-row">
-                  <span className="mol-color-side-label">Bond</span>
+                  <span className="mol-color-side-label">{t('colorPanel.bond')}</span>
                   <select
                     className="app-top-bar__color-style-select"
                     disabled={!hasBonds}
                     value={bondPx != null ? String(bondPx) : 'default'}
-                    aria-label="Bond thickness in pixels"
+                    aria-label={t('colorPanel.bondThicknessAria')}
                     onChange={e => {
                       const v = e.target.value;
                       onApplyBondThickness(v === 'default' ? null : Number(v));
@@ -576,7 +689,7 @@ export function TopBarColorMenu({
               ) : null}
               {onApplyOpacity ? (
                 <div className="app-top-bar__color-style-row">
-                  <span className="mol-color-side-label">Opacity</span>
+                  <span className="mol-color-side-label">{t('colorPanel.opacity')}</span>
                   <input
                     type="range"
                     className="chrome-range app-top-bar__color-opacity-range"
@@ -584,7 +697,7 @@ export function TopBarColorMenu({
                     max={100}
                     step={5}
                     value={opacityPct}
-                    aria-label="Selection opacity"
+                    aria-label={t('colorPanel.opacity')}
                     onChange={e => {
                       const pct = Number(e.target.value);
                       if (pct >= 100) onApplyOpacity(null);
@@ -596,44 +709,13 @@ export function TopBarColorMenu({
                   </span>
                 </div>
               ) : null}
-            </section>
+            </FormatPanelAccordion>
           ) : null}
-
-          <div className="mol-color-side-footer">
-            {caps.canAtoms && (
-              <button type="button" className="mol-color-side-link" onClick={onClearAtomColors}>
-                Reset colors
-              </button>
-            )}
-            {caps.canRingFill && (
-              <button
-                type="button"
-                className="mol-color-side-link"
-                onClick={() => commitColor(caps.displayColor, { clearRingFill: true })}
-              >
-                Clear ring
-              </button>
-            )}
-            {caps.hasAnyRingFills && (
-              <button
-                type="button"
-                className="mol-color-side-link"
-                onClick={() => commitColor(caps.displayColor, { clearAllRingFills: true })}
-              >
-                Clear all rings
-              </button>
-            )}
-            <button
-              type="button"
-              className="mol-color-side-link"
-              onClick={() => commitColor('#0f172a')}
-            >
-              <RotateCcw size={11} strokeWidth={2} aria-hidden />
-              Default
-            </button>
-          </div>
-        </div>
-      )}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

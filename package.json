@@ -21,6 +21,7 @@
                          "react-dom":  "^19.2.5",
                          "react-markdown":  "^10.1.0",
                          "remark-gfm":  "^4.0.1",
+                         "@supabase/supabase-js":  "^2.89.0",
                          "zod":  "^4.3.6",
                          "zod-to-json-schema":  "^3.25.2",
                          "@moldraw/plugin-host":  "workspace:^",

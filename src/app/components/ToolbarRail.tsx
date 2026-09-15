@@ -17,15 +17,12 @@ import {
 import type { CanvasShapeKind, ReactionArrowKind } from '@moldraw/domain';
 import {
   CANVAS_SHAPE_KIND_ORDER,
-  getGlasswareEntry,
   isLabGlasswareShape,
   listGlasswareLibraryByCategory,
-  REACTION_ARROW_KIND_ORDER,
 } from '@moldraw/domain';
 import {
   C6_RING_TOOL_IDS,
   CHARGE_MENU_TOOL_IDS,
-  CHARGE_SYMBOL_TOOL_IDS,
   LONE_PAIR_TOOL_IDS,
   ORBITAL_TOOL_IDS,
   MOBILE_CATEGORY_TOOL_IDS,
@@ -42,7 +39,6 @@ import {
   TOOL_IDS_TOP_BAR,
   type MobileToolCategory,
   type ShapeMenuValue,
-  SRU_BRACKET_SUBSCRIPT_OPTIONS,
   type SruBracketSubscript,
   type ToolDef,
   type ToolGroup,
@@ -55,6 +51,7 @@ import { ToolbarFunctionalGroupsTool } from './ToolbarFunctionalGroupsTool';
 import { ToolbarLigandsTool } from './ToolbarLigandsTool';
 import { ArrowKindPreview, ShapeKindPreview } from './toolOptionPreviews';
 import { GlasswareLibraryModal } from './GlasswareLibraryModal';
+import { useToolbarI18n, type ToolbarI18n } from './toolbarI18n';
 
 export type { ShapeMenuValue };
 
@@ -104,79 +101,19 @@ const categoryForTool = (toolId: string): MobileToolCategory | null => {
   return null;
 };
 
-const reactionArrowKindLabel = (k: ReactionArrowKind): string => {
-  switch (k) {
-    case 'straight':
-      return 'Straight';
-    case 'curved':
-      return 'Curved';
-    case 's_curve':
-      return 'S-curve';
-    case 'path':
-      return 'Path 90°';
-    case 'row_wrap':
-      return 'Row wrap';
-    case 'cycle_arc':
-      return 'Cycle arc';
-    case 'retrosynthetic':
-      return 'Retro';
-    case 'equilibrium':
-      return 'Equilibrium';
-    case 'half_equilibrium':
-      return 'Half eq.';
-    case 'electron_flow':
-      return 'e⁻ flow';
-    case 'resonance':
-      return 'Resonance ↔';
-    default:
-      return k;
-  }
-};
-
-const reactionArrowToolTitle = (tool: ToolDef, reactionArrowKind: ReactionArrowKind): string => {
-  const k = reactionArrowKindLabel(reactionArrowKind);
+const reactionArrowToolTitle = (
+  tool: ToolDef,
+  reactionArrowKind: ReactionArrowKind,
+  i18n: ToolbarI18n,
+): string => {
+  const k = i18n.reactionArrowKindLabel(reactionArrowKind);
   return `${tool.label} (${k}): ${tool.title}${tooltipShortcutSuffix(tool.id)}`;
 };
 
-const canvasShapeKindLabel = (k: CanvasShapeKind): string => {
-  switch (k) {
-    case 'rectangle':
-      return 'Rectangle';
-    case 'line':
-      return 'Line';
-    case 'circle':
-      return 'Circle';
-    case 'triangle':
-      return 'Triangle';
-    case 'star':
-      return 'Star';
-    default: {
-      const gw = getGlasswareEntry(k);
-      return gw?.label ?? k;
-    }
-  }
-};
-
-const shapeToolTitle = (tool: ToolDef, canvasShapeKind: CanvasShapeKind): string => {
-  const k = canvasShapeKindLabel(canvasShapeKind);
+const shapeToolTitle = (tool: ToolDef, canvasShapeKind: CanvasShapeKind, i18n: ToolbarI18n): string => {
+  const k = i18n.canvasShapeKindLabel(canvasShapeKind);
   return `${tool.label} (${k}): ${tool.title}${tooltipShortcutSuffix(tool.id)}`;
 };
-
-const REACTION_ARROW_OPTIONS = REACTION_ARROW_KIND_ORDER.map(k => ({
-  value: k,
-  label: reactionArrowKindLabel(k),
-}));
-
-const SHAPE_DRAW_OPTIONS = CANVAS_SHAPE_KIND_ORDER.map(k => ({
-  value: k as ShapeMenuValue,
-  label: canvasShapeKindLabel(k),
-}));
-
-const SHAPE_MENU_GROUPS: {
-  id: string;
-  label: string;
-  options: { value: ShapeMenuValue; label: string; keywords?: string }[];
-}[] = [{ id: 'shapes', label: 'Shapes', options: SHAPE_DRAW_OPTIONS }];
 
 const shapeMenuPreview = (v: ShapeMenuValue) => (
   <ShapeKindPreview kind={v} size={20} />
@@ -192,11 +129,6 @@ const GLASSWARE_OPTION_GROUPS = listGlasswareLibraryByCategory().map(g => ({
   })),
 }));
 
-const SRU_SUBSCRIPT_OPTIONS = SRU_BRACKET_SUBSCRIPT_OPTIONS.map(o => ({
-  value: o.value as SruBracketSubscript,
-  label: o.label,
-}));
-
 const MOBILE_CATEGORY_ICONS: Record<MobileToolCategory, typeof MousePointer2> = {
   select: MousePointer2,
   draw: Pencil,
@@ -205,31 +137,6 @@ const MOBILE_CATEGORY_ICONS: Record<MobileToolCategory, typeof MousePointer2> = 
   objects: Layers,
   more: MoreHorizontal,
 };
-
-const CHARGE_MENU_GROUPS = [
-  {
-    id: 'charge',
-    label: 'Charge',
-    options: [
-      { value: 'charge_plus', label: 'Positive (+)' },
-      { value: 'charge_minus', label: 'Negative (−)' },
-      { value: 'oplus', label: 'Carbocation (⊕)' },
-      { value: 'ominus', label: 'Carbanion (⊖)' },
-      { value: 'radical_cation', label: 'Radical cation (•+)' },
-      { value: 'radical_anion', label: 'Radical anion (•−)' },
-      { value: 'delta_plus', label: 'δ+' },
-      { value: 'delta_minus', label: 'δ−' },
-    ],
-  },
-  {
-    id: 'symbols',
-    label: 'Symbols',
-    options: CHARGE_SYMBOL_TOOL_IDS.map(id => {
-      const t = TOOL_DEFS.find(x => x.id === id);
-      return { value: id, label: t?.label ?? id, keywords: t?.title };
-    }),
-  },
-] as const;
 
 const sruSubscriptPreview = (v: string) => (
   <span style={{ fontSize: 9, fontWeight: 700, fontFamily: 'ui-monospace, monospace' }}>{v}</span>
@@ -253,8 +160,9 @@ const renderToolOrArrowRow = (
     | 'onBeginLigandPlacement'
     | 'requestFunctionalGroupMolblock'
     | 'preferSheetMenus'
-  > & { onOpenGlasswareLibrary?: () => void; flattenShapes?: boolean },
+  > & { onOpenGlasswareLibrary?: () => void; flattenShapes?: boolean; i18n: ToolbarI18n },
 ) => {
+  tool = props.i18n.localizeTool(tool);
   if (tool.id === 'functional_groups') {
     if (!props.onBeginFunctionalGroupPlacement || !props.requestFunctionalGroupMolblock) return null;
     return (
@@ -281,7 +189,7 @@ const renderToolOrArrowRow = (
     if (tool.id !== 'charge_plus') return null;
     const chargeActive = (CHARGE_MENU_TOOL_IDS as readonly string[]).includes(props.activeTool);
     const chargeToolId = chargeActive ? props.activeTool : 'charge_plus';
-    const chargeTool = TOOL_DEFS.find(t => t.id === chargeToolId) ?? tool;
+    const chargeTool = props.i18n.localizeTool(TOOL_DEFS.find(t => t.id === chargeToolId) ?? tool);
     return (
       <ToolbarSplitTool
         key="charge"
@@ -290,10 +198,10 @@ const renderToolOrArrowRow = (
         toolTitle={`${chargeTool.title}${tooltipShortcutSuffix(chargeToolId)}`}
         isActive={chargeActive}
         value={chargeToolId}
-        groups={CHARGE_MENU_GROUPS}
+        groups={props.i18n.chargeMenuGroups}
         onSelectTool={() => props.onSelect(chargeToolId)}
         onChangeValue={v => props.onSelect(v)}
-        menuAriaLabel="Charge and symbol tools"
+        menuAriaLabel={props.i18n.t('toolbar.menuChargeTools')}
         renderPreview={id => renderToolIcon(id)}
       />
     );
@@ -306,7 +214,7 @@ const renderToolOrArrowRow = (
     if (tool.id !== 'hexagon') return null;
     const c6Active = (C6_RING_TOOL_IDS as readonly string[]).includes(props.activeTool);
     const c6ToolId = c6Active ? props.activeTool : 'hexagon';
-    const c6Tool = TOOL_DEFS.find(t => t.id === c6ToolId) ?? tool;
+    const c6Tool = props.i18n.localizeTool(TOOL_DEFS.find(t => t.id === c6ToolId) ?? tool);
     return (
       <ToolbarSplitTool
         key="c6-ring"
@@ -315,14 +223,10 @@ const renderToolOrArrowRow = (
         toolTitle={`${c6Tool.title}${tooltipShortcutSuffix(c6ToolId)}`}
         isActive={c6Active}
         value={c6ToolId}
-        options={[
-          { value: 'hexagon', label: 'Flat C6' },
-          { value: 'cyclohexane', label: 'Chair' },
-          { value: 'boat_cyclohexane', label: 'Boat' },
-        ]}
+        options={props.i18n.c6Options}
         onSelectTool={() => props.onSelect(c6ToolId)}
         onChangeValue={v => props.onSelect(v)}
-        menuAriaLabel="Cyclohexane conformation"
+        menuAriaLabel={props.i18n.t('toolbar.menuC6Conformation')}
         renderPreview={id => renderToolIcon(id)}
       />
     );
@@ -332,7 +236,7 @@ const renderToolOrArrowRow = (
     if (tool.id !== 'lone_pair') return null;
     const lpActive = (LONE_PAIR_TOOL_IDS as readonly string[]).includes(props.activeTool);
     const lpToolId = lpActive ? props.activeTool : 'lone_pair';
-    const lpTool = TOOL_DEFS.find(t => t.id === lpToolId) ?? tool;
+    const lpTool = props.i18n.localizeTool(TOOL_DEFS.find(t => t.id === lpToolId) ?? tool);
     return (
       <ToolbarSplitTool
         key="lone-pair"
@@ -341,13 +245,10 @@ const renderToolOrArrowRow = (
         toolTitle={`${lpTool.title}${tooltipShortcutSuffix(lpToolId)}`}
         isActive={lpActive}
         value={lpToolId}
-        options={[
-          { value: 'lone_pair', label: 'Lone pair' },
-          { value: 'free_radical', label: 'Free radical' },
-        ]}
+        options={props.i18n.lonePairOptions}
         onSelectTool={() => props.onSelect(lpToolId)}
         onChangeValue={v => props.onSelect(v)}
-        menuAriaLabel="Lone pair / radical tool"
+        menuAriaLabel={props.i18n.t('toolbar.menuLoneRadical')}
         renderPreview={id => renderToolIcon(id)}
       />
     );
@@ -356,7 +257,7 @@ const renderToolOrArrowRow = (
     if (tool.id !== 'orbital_p') return null;
     const orbActive = (ORBITAL_TOOL_IDS as readonly string[]).includes(props.activeTool);
     const orbToolId = orbActive ? props.activeTool : 'orbital_p';
-    const orbTool = TOOL_DEFS.find(t => t.id === orbToolId) ?? tool;
+    const orbTool = props.i18n.localizeTool(TOOL_DEFS.find(t => t.id === orbToolId) ?? tool);
     return (
       <ToolbarSplitTool
         key="orbitals"
@@ -365,16 +266,10 @@ const renderToolOrArrowRow = (
         toolTitle={`${orbTool.title}${tooltipShortcutSuffix(orbToolId)}`}
         isActive={orbActive}
         value={orbToolId}
-        options={[
-          { value: 'orbital_p', label: 'p orbital' },
-          { value: 'orbital_s', label: 's orbital' },
-          { value: 'orbital_p2', label: 'p orbital (\\)' },
-          { value: 'orbital_d', label: 'd orbital' },
-          { value: 'orbital_dz2', label: 'dz² orbital' },
-        ]}
+        options={props.i18n.orbitalOptions}
         onSelectTool={() => props.onSelect(orbToolId)}
         onChangeValue={v => props.onSelect(v)}
-        menuAriaLabel="Atomic orbital tool"
+        menuAriaLabel={props.i18n.t('toolbar.menuOrbitals')}
         renderPreview={id => renderToolIcon(id)}
       />
     );
@@ -389,7 +284,7 @@ const renderToolOrArrowRow = (
     if (tool.id !== 'wedge_bond') return null;
     const stereoActive = (STEREO_BOND_TOOL_IDS as readonly string[]).includes(props.activeTool);
     const stereoToolId = stereoActive ? props.activeTool : 'wedge_bond';
-    const stereoTool = TOOL_DEFS.find(t => t.id === stereoToolId) ?? tool;
+    const stereoTool = props.i18n.localizeTool(TOOL_DEFS.find(t => t.id === stereoToolId) ?? tool);
     return (
       <ToolbarSplitTool
         key="stereo-bond"
@@ -398,15 +293,10 @@ const renderToolOrArrowRow = (
         toolTitle={`${stereoTool.title}${tooltipShortcutSuffix(stereoToolId)}`}
         isActive={stereoActive}
         value={stereoToolId}
-        options={[
-          { value: 'wedge_bond', label: 'Wedge' },
-          { value: 'dash_bond', label: 'Dashed wedge' },
-          { value: 'wavy_bond', label: 'Wavy' },
-          { value: 'dative_bond', label: 'Dative' },
-        ]}
+        options={props.i18n.stereoBondOptions}
         onSelectTool={() => props.onSelect(stereoToolId)}
         onChangeValue={v => props.onSelect(v)}
-        menuAriaLabel="Stereo / specialty bond type"
+        menuAriaLabel={props.i18n.t('toolbar.menuStereoBond')}
         renderPreview={id => renderToolIcon(id)}
       />
     );
@@ -421,10 +311,10 @@ const renderToolOrArrowRow = (
         toolTitle={`${tool.title}${tooltipShortcutSuffix(tool.id)}`}
         isActive={props.activeTool === tool.id}
         value={sub as SruBracketSubscript}
-        options={SRU_SUBSCRIPT_OPTIONS}
+        options={props.i18n.sruSubscriptOptions}
         onSelectTool={() => props.onSelect(tool.id)}
         onChangeValue={v => props.onSruBracketSubscriptChange?.(v)}
-        menuAriaLabel="Polymer bracket repeat label"
+        menuAriaLabel={props.i18n.t('tools.sru_bracket.title')}
         renderPreview={sruSubscriptPreview}
       />
     );
@@ -436,13 +326,13 @@ const renderToolOrArrowRow = (
         key={tool.id}
         toolId={tool.id}
         toolLabel={tool.label}
-        toolTitle={reactionArrowToolTitle(tool, kind)}
+        toolTitle={reactionArrowToolTitle(tool, kind, props.i18n)}
         isActive={props.activeTool === tool.id}
         value={kind}
-        options={REACTION_ARROW_OPTIONS}
+        options={props.i18n.reactionArrowOptions}
         onSelectTool={() => props.onSelect(tool.id)}
         onChangeValue={v => props.onReactionArrowKindChange?.(v)}
-        menuAriaLabel="Reaction arrow style"
+        menuAriaLabel={props.i18n.t('toolbar.menuReactionArrow')}
         renderPreview={k => <ArrowKindPreview kind={k} size={20} />}
       />
     );
@@ -454,16 +344,17 @@ const renderToolOrArrowRow = (
     const menuValue: ShapeMenuValue = props.shapeMenuValue ?? kind;
     if (props.flattenShapes) {
       return (
-        <span key={tool.id} className="toolbar-shape-strip" role="group" aria-label="Shapes">
+        <span key={tool.id} className="toolbar-shape-strip" role="group" aria-label={props.i18n.t('toolbar.menuShapes')}>
           {CANVAS_SHAPE_KIND_ORDER.map(shapeKind => {
             const on = props.activeTool === tool.id && menuValue === shapeKind;
+            const shapeLabel = props.i18n.canvasShapeKindLabel(shapeKind);
             return (
               <button
                 key={shapeKind}
                 type="button"
                 className={`tool-btn${on ? ' active' : ''}`}
-                title={`${canvasShapeKindLabel(shapeKind)}: ${tool.title}${tooltipShortcutSuffix(tool.id)}`}
-                aria-label={canvasShapeKindLabel(shapeKind)}
+                title={`${shapeLabel}: ${tool.title}${tooltipShortcutSuffix(tool.id)}`}
+                aria-label={shapeLabel}
                 aria-pressed={on}
                 onClick={() => {
                   props.onCanvasShapeKindChange?.(shapeKind);
@@ -483,10 +374,10 @@ const renderToolOrArrowRow = (
         key={tool.id}
         toolId={tool.id}
         toolLabel={tool.label}
-        toolTitle={shapeToolTitle(tool, menuValue)}
+        toolTitle={shapeToolTitle(tool, menuValue, props.i18n)}
         isActive={props.activeTool === tool.id}
         value={menuValue}
-        groups={SHAPE_MENU_GROUPS}
+        groups={props.i18n.shapeMenuGroups}
         onSelectTool={() => {
           if (isLabGlasswareShape(props.canvasShapeKind ?? 'rectangle')) {
             props.onCanvasShapeKindChange?.('rectangle');
@@ -498,7 +389,7 @@ const renderToolOrArrowRow = (
           props.onShapeMenuValueChange?.(v);
           props.onSelect(tool.id);
         }}
-        menuAriaLabel="Shapes"
+        menuAriaLabel={props.i18n.t('toolbar.menuShapes')}
         menuSize="wide"
         renderPreview={shapeMenuPreview}
       />
@@ -513,7 +404,7 @@ const renderToolOrArrowRow = (
         key={tool.id}
         toolId={tool.id}
         toolLabel={tool.label}
-        toolTitle={shapeToolTitle(tool, kind)}
+        toolTitle={shapeToolTitle(tool, kind, props.i18n)}
         isActive={props.activeTool === tool.id}
         value={kind}
         groups={GLASSWARE_OPTION_GROUPS}
@@ -527,11 +418,11 @@ const renderToolOrArrowRow = (
           props.onCanvasShapeKindChange?.(v);
           props.onSelect(tool.id);
         }}
-        menuAriaLabel="Lab glassware type"
+        menuAriaLabel={props.i18n.t('toolbar.menuGlassware')}
         menuSize="wide"
         searchable
-        searchPlaceholder="Search apparatus…"
-        libraryButtonLabel="Open library"
+        searchPlaceholder={props.i18n.t('toolbar.searchApparatus')}
+        libraryButtonLabel={props.i18n.t('toolbar.openLibrary')}
         onOpenLibrary={props.onOpenGlasswareLibrary}
         renderPreview={k => <ShapeKindPreview kind={k} size={20} />}
       />
@@ -548,7 +439,7 @@ const renderToolOrArrowRow = (
       type="button"
       className={'tool-btn' + groupClass + activeClass}
       onClick={() => props.onSelect(tool.id)}
-      title={tool.label + ': ' + tool.title + tooltipShortcutSuffix(tool.id)}
+      title={tool.id === 'pencil' ? undefined : tool.label + ': ' + tool.title + tooltipShortcutSuffix(tool.id)}
       aria-label={tool.label}
       aria-pressed={props.activeTool === tool.id}
     >
@@ -579,6 +470,7 @@ export function ToolbarRail({
   onToggleObjectsPanel,
   showDrawTools = false,
 }: ToolbarRailProps) {
+  const i18n = useToolbarI18n();
   const [mobileCategory, setMobileCategory] = useState<MobileToolCategory>('select');
   /** Compact tool strip is closed by default — tap a category to open. */
   const [stripOpen, setStripOpen] = useState(false);
@@ -657,8 +549,9 @@ export function ToolbarRail({
     onBeginFunctionalGroupPlacement,
     onBeginLigandPlacement,
     requestFunctionalGroupMolblock,
-    preferSheetMenus: preferSheetMenus || isCompact,
+    preferSheetMenus: false,
     onOpenGlasswareLibrary: () => setGlasswareLibraryOpen(true),
+    i18n,
   };
 
   const renderGroup = (group: ToolGroup) => (
@@ -673,13 +566,13 @@ export function ToolbarRail({
   );
 
   const settingsControl = onOpenSettings ? (
-    <div className="toolbar-group toolbar-group--settings" role="group" aria-label="Settings">
+    <div className="toolbar-group toolbar-group--settings" role="group" aria-label={i18n.t('toolbar.settingsAria')}>
       <button
         type="button"
         className="tool-btn"
         onClick={onOpenSettings}
-        title="Settings"
-        aria-label="Settings"
+        title={i18n.t('toolbar.settingsAria')}
+        aria-label={i18n.t('toolbar.settingsAria')}
       >
         <Settings size={18} strokeWidth={1.7} />
       </button>
@@ -728,26 +621,27 @@ export function ToolbarRail({
           <div
             className="toolbar toolbar--mobile-strip"
             role="toolbar"
-            aria-label={`${MOBILE_TOOL_CATEGORIES.find(c => c.id === mobileCategory)?.label ?? 'Tools'}`}
+            aria-label={i18n.mobileCategoryLabel(mobileCategory)}
           >
             {stripTools.map(tool => renderToolOrArrowRow(tool, rowProps))}
             {mobileCategory === 'more' ? settingsControl : null}
             <button
               type="button"
               className="tool-btn toolbar--mobile-strip__close"
-              title="Close tool strip"
-              aria-label="Close tool strip"
+              title={i18n.t('toolbar.closeStrip')}
+              aria-label={i18n.t('toolbar.closeStrip')}
               onClick={() => setStripOpen(false)}
             >
-              <X size={18} strokeWidth={1.7} aria-hidden />
+              <X size={14} strokeWidth={1.7} aria-hidden />
             </button>
           </div>
         ) : null}
-        <nav className="toolbar-mobile-categories" aria-label="Tool modes">
+        <nav className="toolbar-mobile-categories" aria-label={i18n.t('topBar.toolbarDrawTools')}>
           {MOBILE_TOOL_CATEGORIES.map(cat => {
             const Icon = MOBILE_CATEGORY_ICONS[cat.id];
             const isObjectsActive = cat.id === 'objects' && showObjectsPanel;
             const isStripActive = stripOpen && mobileCategory === cat.id;
+            const catLabel = i18n.mobileCategoryLabel(cat.id);
             return (
               <button
                 key={cat.id}
@@ -761,16 +655,16 @@ export function ToolbarRail({
                 title={
                   cat.id === 'objects'
                     ? showObjectsPanel
-                      ? 'Close objects list'
-                      : 'Objects list'
+                      ? i18n.t('toolbar.closeObjectsList')
+                      : i18n.t('toolbar.objectsList')
                     : isStripActive
-                      ? `${cat.label} (tap to close)`
-                      : cat.label
+                      ? i18n.t('toolbar.tapToClose', { label: catLabel })
+                      : catLabel
                 }
                 onClick={() => selectCategory(cat.id)}
               >
-                <Icon size={18} strokeWidth={1.8} aria-hidden className="toolbar-mobile-categories__icon" />
-                <span className="toolbar-mobile-categories__label">{cat.label}</span>
+                <Icon size={14} strokeWidth={1.8} aria-hidden className="toolbar-mobile-categories__icon" />
+                <span className="toolbar-mobile-categories__label">{catLabel}</span>
                 {isStripActive ? (
                   <ChevronDown
                     size={10}
@@ -797,7 +691,7 @@ export function ToolbarRail({
   }
 
   const ringsBar = (
-    <div className="toolbar-bottom toolbar-bottom--rings" role="toolbar" aria-label="Ring tools">
+    <div className="toolbar-bottom toolbar-bottom--rings" role="toolbar" aria-label={i18n.t('toolbar.ringTools')}>
       {ringTools.map(tool => renderToolOrArrowRow(tool, rowProps))}
     </div>
   );
@@ -808,10 +702,11 @@ export function ToolbarRail({
 
   return (
     <>
-      <div className="toolbar" aria-label="Select and structure drawing tools">
+      <div className="toolbar" aria-label={i18n.t('toolbar.selectTools')}>
         <div className="toolbar-group toolbar-group--select">
           {leftPointerTools.map(tool => renderToolOrArrowRow(tool, rowProps))}
-          <div className="toolbar-sep" role="separator" aria-hidden />
+        </div>
+        <div className="toolbar-group toolbar-group--marks">
           {leftMarkTools.map(tool => renderToolOrArrowRow(tool, rowProps))}
         </div>
         {TOOL_GROUPS_LEFT_STRUCTURE.map(renderGroup)}
@@ -829,7 +724,7 @@ export function ToolbarRail({
         </div>
       </div>
       {showDrawTools ? (
-        <div className="toolbar-draw-panel" role="toolbar" aria-label="Draw tools">
+        <div className="toolbar-draw-panel" role="toolbar" aria-label={i18n.t('toolbar.drawTools')}>
           {drawPanelTools.map(tool => renderToolOrArrowRow(tool, rowProps))}
         </div>
       ) : null}
@@ -870,6 +765,7 @@ function ToolbarIdStrip({
   flattenShapes = false,
   ...props
 }: TopStripProps & { ids: readonly string[]; ariaLabel: string; flattenShapes?: boolean }) {
+  const i18n = useToolbarI18n();
   const [glasswareLibraryOpen, setGlasswareLibraryOpen] = useState(false);
   const glasswareKind = isLabGlasswareShape(props.canvasShapeKind ?? 'conical_flask')
     ? (props.canvasShapeKind as CanvasShapeKind)
@@ -879,6 +775,7 @@ function ToolbarIdStrip({
     ...props,
     flattenShapes,
     onOpenGlasswareLibrary: () => setGlasswareLibraryOpen(true),
+    i18n,
   };
   return (
     <>
@@ -900,12 +797,16 @@ function ToolbarIdStrip({
 
 /** Annotate / template tools for the home tools row. */
 export function ToolbarTopStrip(props: TopStripProps) {
-  return <ToolbarIdStrip ids={TOOL_IDS_TOP_BAR} ariaLabel="Annotation and other tools" {...props} />;
+  const i18n = useToolbarI18n();
+  return (
+    <ToolbarIdStrip ids={TOOL_IDS_TOP_BAR} ariaLabel={i18n.t('toolbar.annotationTools')} {...props} />
+  );
 }
 
 /** Pencil / shape / image / glassware for the Draw ribbon. */
 export function ToolbarDrawStrip(props: TopStripProps) {
+  const i18n = useToolbarI18n();
   return (
-    <ToolbarIdStrip ids={TOOL_IDS_DRAW_PANEL} flattenShapes ariaLabel="Draw tools" {...props} />
+    <ToolbarIdStrip ids={TOOL_IDS_DRAW_PANEL} flattenShapes ariaLabel={i18n.t('toolbar.drawTools')} {...props} />
   );
 }

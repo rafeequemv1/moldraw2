@@ -55,23 +55,23 @@ export type StructureThemeColors = {
 export const DEFAULT_STRUCTURE_THEME: StructureThemeColors = {
   ink: DEFAULT_ATOM_INK,
   hydrogen: EXPLICIT_HYDROGEN_COLOR,
-  gridMinor: 'rgba(15, 23, 42, 0.035)',
-  gridMajor: 'rgba(15, 23, 42, 0.07)',
+  gridMinor: 'rgba(15, 23, 42, 0.055)',
+  gridMajor: 'rgba(15, 23, 42, 0.11)',
   gridAxis: 'rgba(15, 23, 42, 0.14)',
-  selectionHoverFill: 'rgba(37, 99, 235, 0.08)',
-  selectionFill: 'rgba(59, 130, 246, 0.32)',
-  selectionHoverStroke: 'rgba(37, 99, 235, 1)',
-  selectionStroke: 'rgba(59, 130, 246, 0.4)',
-  selectionBond: 'rgba(59, 130, 246, 0.4)',
+  selectionHoverFill: 'rgba(125, 211, 252, 0.22)',
+  selectionFill: 'rgba(56, 189, 248, 0.38)',
+  selectionHoverStroke: 'rgba(14, 165, 233, 0.85)',
+  selectionStroke: 'rgba(45, 212, 191, 0.45)',
+  selectionBond: 'rgba(56, 189, 248, 0.4)',
   transformHandleFill: '#ffffff',
-  transformHandleStroke: 'rgba(30, 58, 138, 0.95)',
-  transformBoxStroke: 'rgba(30, 58, 138, 0.42)',
-  transformAccent: 'rgba(30, 58, 138, 0.85)',
-  transformBadgeFill: 'rgba(241, 245, 249, 0.96)',
-  transformBadgeText: '#1e3a8a',
-  transformGuideStroke: 'rgba(148, 163, 184, 0.85)',
-  marqueeStroke: 'rgba(30, 58, 138, 0.75)',
-  marqueeFill: 'rgba(30, 58, 138, 0.08)',
+  transformHandleStroke: '#0f172a',
+  transformBoxStroke: 'rgba(13, 148, 136, 0.92)',
+  transformAccent: '#2dd4bf',
+  transformBadgeFill: 'rgba(240, 253, 250, 0.97)',
+  transformBadgeText: '#0f172a',
+  transformGuideStroke: 'rgba(45, 212, 191, 0.55)',
+  marqueeStroke: 'rgba(13, 148, 136, 0.85)',
+  marqueeFill: 'rgba(45, 212, 191, 0.08)',
 };
 
 export type DragActionState =
@@ -266,11 +266,14 @@ export type DragActionState =
     }
   | {
       type: 'scale_selection';
-      cx: number;
-      cy: number;
+      handle: 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w';
+      anchorX: number;
+      anchorY: number;
       snap: Record<string, { x: number; y: number }>;
-      startDist: number;
-      currentFactor: number;
+      startPointerX: number;
+      startPointerY: number;
+      currentFactorX: number;
+      currentFactorY: number;
     }
   | {
       /**

@@ -127,6 +127,12 @@
     <priority>0.66</priority>
   </url>
   <url>
+    <loc>https://www.moldraw.com/course/</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.moldraw.com/course/chapters/3d-viewer.html</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>monthly</changefreq>
@@ -259,13 +265,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.moldraw.com/course/index.html</loc>
-    <lastmod>2026-09-14</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.moldraw.com/course/ketcher-help-complete.html</loc>
+    <loc>https://www.moldraw.com/course/reference.html</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

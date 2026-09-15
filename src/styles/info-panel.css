@@ -266,3 +266,24 @@
   font-size: 11px;
   color: hsl(215 16% 57%);
 }
+
+.molecule-info-panel--sheet {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  z-index: auto;
+  box-shadow: none;
+}
+
+.molecule-info-panel--sheet .molecule-info-panel__body {
+  max-height: min(58vh, 440px);
+  padding: 4px 2px 8px;
+}

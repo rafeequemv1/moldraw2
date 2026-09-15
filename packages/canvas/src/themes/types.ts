@@ -11,7 +11,7 @@ export const SKELETAL_THEME_ID = 'skeletal';
 
 export const BUILTIN_STRUCTURE_THEMES: readonly CanvasStructureTheme[] = [
   { id: SKELETAL_THEME_ID, label: 'Default', drawMode: 'skeletal' },
-  { id: 'simple', label: 'Simple', drawMode: 'ball-stick' },
+  { id: 'simple', label: 'Ball and stick', drawMode: 'ball-stick' },
 ];
 
 export function resolveStructureDrawMode(

@@ -4,6 +4,7 @@ import type { AppSettings } from './types';
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   general: {
     theme: 'light',
+    uiLanguage: 'en',
     structureThemeId: 'skeletal',
     structureDrawMode: 'skeletal',
     showImplicitHydrogens: false,
@@ -25,12 +26,14 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     preferIndigo2d: true,
     snapToGrid: false,
     showGrid: true,
+    gridPattern: 'lines',
     touchPanOnEmptyCanvas: false,
     touchLoupe: true,
     pointerDebugHud: false,
     localSessionEnabled: false,
     localSessionUrl: 'http://127.0.0.1:8787',
     showCipLabels: false,
+    styleApplyGlobally: true,
     fontFamily: 'Times New Roman',
     boldAtomLabels: false,
     fontSizePt: 20,

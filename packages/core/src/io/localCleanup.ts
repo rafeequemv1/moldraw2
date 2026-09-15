@@ -385,14 +385,33 @@ export const alignCleanupCoordsPerComponent = (
     for (let i = 0; i < ids.length; i++) updates.set(ids[i]!, aligned[i]!);
   }
 
-  if (updates.size === 0) return prev;
-  return {
+  if (updates.size === 0) return applyCenteredChargeSeats(prev);
+  return applyCenteredChargeSeats({
     ...prev,
     atoms: prev.atoms.map(a => {
       const u = updates.get(a.id);
       return u ? { ...a, x: u.x, y: u.y } : a;
     }),
-  };
+  });
+};
+
+const CENTERED_CHARGE_OFFSET = { x: 0, y: -16 };
+
+/** ± marks sit on the atom midline (12 o'clock) after cleanup, not leftover drag seats. */
+const applyCenteredChargeSeats = (mol: Molecule): Molecule => {
+  let changed = false;
+  const atoms = mol.atoms.map(a => {
+    const q = a.charge ?? 0;
+    const dq = a.deltaCharge ?? 0;
+    if (!q && !dq) return a;
+    changed = true;
+    return {
+      ...a,
+      ...(q ? { chargeOffset: CENTERED_CHARGE_OFFSET } : {}),
+      ...(dq ? { deltaChargeOffset: CENTERED_CHARGE_OFFSET } : {}),
+    };
+  });
+  return changed ? { ...mol, atoms } : mol;
 };
 
 /**

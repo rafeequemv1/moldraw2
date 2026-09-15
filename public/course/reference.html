@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Full MolDraw 2D editor course: atoms, bonds, ribbons, library, reactions, SMILES, PubChem, 3D, and export.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://www.moldraw.com/course/reference.html">
+  <link rel="icon" type="image/svg+xml" href="/logo-mark.svg">
+  <title>MolDraw Course Reference</title>
+  <link rel="stylesheet" href="/css/site-topbar.css">
+  <style>
+    body { font-family: Inter, Arial, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; }
+    .wrap { max-width: 880px; margin: 28px auto 80px; padding: 0 18px; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 28px 32px; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    .lead { color: #64748b; margin: 0 0 18px; line-height: 1.6; }
+    .links { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 22px; }
+    .links a { color: #2C7A7B; font-weight: 700; text-decoration: none; }
+    #toc a { display: block; color: #0f172a; text-decoration: none; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+    #toc a:hover { color: #2C7A7B; }
+  </style>
+  <script src="/js/site-topbar.js" defer></script>
+</head>
+<body>
+  <main class="wrap">
+    <article class="card">
+      <h1>MolDraw course reference</h1>
+      <p class="lead">This page lists every chapter of the current MolDraw 2D editor course. Screenshots will be added later. Open a chapter, or read the full course with the sidebar navigator.</p>
+      <p class="links">
+        <a href="/course/index.html">Open course navigator</a>
+        <a href="/">Open the 2D editor</a>
+      </p>
+      <nav id="toc">
+        <a href="/course/chapters/getting-started-with-moldraw.html">Getting started with MolDraw</a>
+        <a href="/course/chapters/snake-and-flex-modes.html">Home, Draw, and Style ribbons</a>
+        <a href="/course/chapters/drawing-atoms.html">Drawing atoms</a>
+        <a href="/course/chapters/drawing-bonds.html">Drawing bonds</a>
+        <a href="/course/chapters/drawing-structures-and-bonds.html">Drawing structures and rings</a>
+        <a href="/course/chapters/drawing-graphical-objects.html">Text, shapes, and images</a>
+        <a href="/course/chapters/templates-toolbar.html">Library and templates</a>
+        <a href="/course/chapters/drawing-reactions.html">Reactions and arrows</a>
+        <a href="/course/chapters/stereochemistry.html">Stereochemistry</a>
+        <a href="/course/chapters/add-lone-pair-in-moldraw.html">Lone pairs and radicals</a>
+        <a href="/course/chapters/changing-structure-display.html">Style and structure display</a>
+        <a href="/course/chapters/naming-smiles-and-properties.html">Copy, paste, and SMILES</a>
+        <a href="/course/chapters/export-and-file-formats.html">Download and file formats</a>
+        <a href="/course/chapters/macromolecules-library.html">My designs and local saving</a>
+        <a href="/course/chapters/3d-viewer.html">3D viewer</a>
+        <a href="/course/chapters/creating-antisense-chains.html">AI assistant</a>
+        <a href="/course/chapters/macromolecules-and-molecules-mode-integration.html">Search and PubChem</a>
+        <a href="/course/chapters/drawing-r-groups.html">Atom aliases and R-groups</a>
+        <a href="/course/chapters/marking-s-groups.html">Polymer SRU brackets</a>
+        <a href="/course/chapters/sequence-mode.html">Keyboard shortcuts</a>
+        <a href="/course/chapters/reaction-and-tlc-workflows.html">Reaction workflows</a>
+        <a href="/course/chapters/macromolecules-properties.html">Names, formula, and properties</a>
+      </nav>
+    </article>
+  </main>
+  <script src="/course/course-content.js"></script>
+  <script>
+    (function () {
+      var chapters = window.MOLDRAW_COURSE_CHAPTERS || [];
+      var toc = document.getElementById('toc');
+      if (!chapters.length) {
+        toc.innerHTML = '<p>Open the <a href="/course/index.html">course navigator</a>.</p>';
+        return;
+      }
+      toc.innerHTML = chapters.map(function (ch) {
+        var href = ch.href || ('/course/?ch=' + encodeURIComponent(ch.id));
+        return '<a href="' + href + '">' + ch.title + '</a>';
+      }).join('');
+    })();
+  </script>
+</body>
+</html>

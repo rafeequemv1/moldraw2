@@ -13,6 +13,7 @@ import {
   type ShortcutActionId,
   type ShortcutBindingsMap,
 } from '../keyboard/shortcutBindings';
+import { useI18n } from '../i18n';
 
 export interface ShortcutsSettingsPanelProps {
   bindingsOverride: ShortcutBindingsMap | undefined;
@@ -50,15 +51,16 @@ const Kbd = ({ children }: { children: string }) => (
 );
 
 const ChordDisplay = ({ chords }: { chords: KeyChord[] }) => {
+  const { t } = useI18n();
   const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
   if (!chords.length) {
-    return <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Not set</span>;
+    return <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('settings.shortcuts.notSet')}</span>;
   }
   return (
     <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
       {chords.map((chord, i) => (
         <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-          {i > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>or</span>}
+          {i > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{t('settings.shortcuts.or')}</span>}
           {formatChordKeys(chord, mac).map((k, j) => (
             <span key={j} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
               {j > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>+</span>}
@@ -76,6 +78,7 @@ export function ShortcutsSettingsPanel({
   onChangeBindings,
   onResetAll,
 }: ShortcutsSettingsPanelProps) {
+  const { t } = useI18n();
   const bindings = useMemo(
     () => resolveShortcutBindings(bindingsOverride),
     [bindingsOverride],
@@ -99,7 +102,9 @@ export function ShortcutsSettingsPanel({
       const conflict = findBindingConflict(listeningId, nextChords, bindings);
       if (conflict) {
         const other = SHORTCUT_ACTION_DEFS.find(d => d.id === conflict);
-        setConflictMsg(`Already used by “${other?.label ?? conflict}”. Pick another key.`);
+        setConflictMsg(
+          t('settings.shortcuts.conflict', { action: other?.label ?? conflict }),
+        );
         return;
       }
       onChangeBindings({
@@ -111,7 +116,7 @@ export function ShortcutsSettingsPanel({
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [listeningId, bindings, bindingsOverride, onChangeBindings]);
+  }, [listeningId, bindings, bindingsOverride, onChangeBindings, t]);
 
   const groups = useMemo(() => {
     const map = new Map<string, typeof SHORTCUT_ACTION_DEFS>();
@@ -148,8 +153,9 @@ export function ShortcutsSettingsPanel({
   return (
     <div>
       <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-        Click <strong style={{ color: 'var(--text-main)' }}>Edit</strong>, then press a key or combination
-        (e.g. Ctrl+Shift+K). Esc cancels. Changes save automatically.
+        {t('settings.shortcuts.introBefore')}{' '}
+        <strong style={{ color: 'var(--text-main)' }}>{t('settings.shortcuts.introEdit')}</strong>
+        {t('settings.shortcuts.introAfter')}
       </p>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
         <button
@@ -171,7 +177,7 @@ export function ShortcutsSettingsPanel({
             cursor: 'pointer',
           }}
         >
-          Reset all shortcuts
+          {t('settings.shortcuts.resetAll')}
         </button>
       </div>
       {conflictMsg && (
@@ -202,7 +208,7 @@ export function ShortcutsSettingsPanel({
                   <div style={{ fontWeight: 600 }}>{def.label}</div>
                   {isListening ? (
                     <div style={{ fontSize: 11, color: 'var(--chrome-accent)', marginTop: 2 }}>
-                      Press a key combination…
+                      {t('settings.shortcuts.pressKeyCombination')}
                     </div>
                   ) : null}
                 </div>
@@ -226,12 +232,12 @@ export function ShortcutsSettingsPanel({
                       color: 'var(--text-main)',
                     }}
                   >
-                    {isListening ? 'Listening' : 'Edit'}
+                    {isListening ? t('settings.shortcuts.listening') : t('settings.shortcuts.edit')}
                   </button>
                   {isCustom && (
                     <button
                       type="button"
-                      title="Restore default"
+                      title={t('settings.shortcuts.restoreDefault')}
                       onClick={() => resetOne(def.id)}
                       style={{
                         fontSize: 11,
@@ -242,7 +248,7 @@ export function ShortcutsSettingsPanel({
                         cursor: 'pointer',
                       }}
                     >
-                      Reset
+                      {t('settings.shortcuts.reset')}
                     </button>
                   )}
                 </div>
@@ -255,7 +261,9 @@ export function ShortcutsSettingsPanel({
               <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 {row.keys.map((combo, ci) => (
                   <span key={ci} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    {ci > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>or</span>}
+                    {ci > 0 && (
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{t('settings.shortcuts.or')}</span>
+                    )}
                     {combo.map((k, ki) => (
                       <span key={ki} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                         {ki > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>+</span>}
@@ -290,7 +298,9 @@ export function ShortcutsSettingsPanel({
               <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 {row.keys.map((combo, ci) => (
                   <span key={ci} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    {ci > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>or</span>}
+                    {ci > 0 && (
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{t('settings.shortcuts.or')}</span>
+                    )}
                     {combo.map((k, ki) => (
                       <span key={ki} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                         {ki > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>+</span>}

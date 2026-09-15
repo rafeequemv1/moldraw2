@@ -2,8 +2,7 @@
  * Unified cleanup entry — native clean2d first, full rebuild when needed.
  * Indigo-free path for worker and sync command dispatch.
  */
-import type { Molecule } from '@moldraw/domain';
-import { hasLockedRingConformations } from '@moldraw/domain';
+import { hasLockedRingConformations, type Molecule } from '@moldraw/domain';
 import { clean2d, type Clean2dOptions } from './clean2d';
 import { cleanupStructureWithStatus, type CleanupStructureResult } from './cleanupStructure';
 import { isLayoutCollapsed } from './refineInPlace';
@@ -17,6 +16,25 @@ export interface CleanupMoleculeOptions extends Clean2dOptions {
 
 export type CleanupMoleculeResult = CleanupStructureResult & {
   source: 'native';
+};
+
+/** After layout, sit ± marks on the atom midline (12 o'clock), not leftover drag seats. */
+const CENTERED_CHARGE_OFFSET = { x: 0, y: -16 };
+
+const recenterChargeMarks = (mol: Molecule): Molecule => {
+  let changed = false;
+  const atoms = mol.atoms.map(a => {
+    const q = a.charge ?? 0;
+    const dq = a.deltaCharge ?? 0;
+    if (!q && !dq) return a;
+    changed = true;
+    return {
+      ...a,
+      ...(q ? { chargeOffset: CENTERED_CHARGE_OFFSET } : {}),
+      ...(dq ? { deltaChargeOffset: CENTERED_CHARGE_OFFSET } : {}),
+    };
+  });
+  return changed ? { ...mol, atoms } : mol;
 };
 
 /**
@@ -53,7 +71,7 @@ export const cleanupMolecule = (
       passesSoftGate(soft)
     ) {
       return {
-        molecule: soft,
+        molecule: recenterChargeMarks(soft),
         status: passesHardGate(soft) ? 'certified' : 'degraded',
         source: 'native',
       };
@@ -65,7 +83,7 @@ export const cleanupMolecule = (
     preserveOrientation: options.preserveOrientation ?? true,
     maxRestarts: options.maxRestarts,
   });
-  return { ...full, source: 'native' };
+  return { ...full, molecule: recenterChargeMarks(full.molecule), source: 'native' };
 };
 
 export const cleanupMoleculeCoords = (

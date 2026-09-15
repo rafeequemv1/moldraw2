@@ -138,26 +138,17 @@ export const drawBonds = (ctx: CanvasRenderingContext2D, R: RenderContext): void
           nx = -nx;
           ny = -ny;
         }
-        ctx.beginPath();
-        ctx.moveTo(T.ax, T.ay);
-        ctx.lineTo(T.bx, T.by);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(T.ax + nx + ux * inset, T.ay + ny + uy * inset);
-        ctx.lineTo(T.bx + nx - ux * inset, T.by + ny - uy * inset);
-        ctx.stroke();
-      } else {
-        const hnx = nx / 2;
-        const hny = ny / 2;
-        ctx.beginPath();
-        ctx.moveTo(T.ax + hnx, T.ay + hny);
-        ctx.lineTo(T.bx + hnx, T.by + hny);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(T.ax - hnx, T.ay - hny);
-        ctx.lineTo(T.bx - hnx, T.by - hny);
-        ctx.stroke();
       }
+      const hnx = nx / 2;
+      const hny = ny / 2;
+      ctx.beginPath();
+      ctx.moveTo(T.ax + hnx + ux * inset, T.ay + hny + uy * inset);
+      ctx.lineTo(T.bx + hnx - ux * inset, T.by + hny - uy * inset);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(T.ax - hnx + ux * inset, T.ay - hny + uy * inset);
+      ctx.lineTo(T.bx - hnx - ux * inset, T.by - hny - uy * inset);
+      ctx.stroke();
       return;
     }
 

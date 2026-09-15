@@ -205,13 +205,114 @@ export type SelectionAabb = {
   cy: number;
 };
 
-export const ROTATE_HANDLE_R = 14;
-export const ROTATE_HANDLE_OFFSET = 34;
-/** Move handle below the selection box (mirrors rotate on top). */
+export const ROTATE_HANDLE_R = 11;
+export const ROTATE_HANDLE_OFFSET = 32;
+/** Move handle below the selection box (kept for hit-test compatibility; not drawn). */
 export const MOVE_HANDLE_R = 16;
 export const MOVE_HANDLE_OFFSET = 40;
+/** @deprecated Separate scale disc removed — use box corner/edge handles. */
 export const SCALE_HANDLE_R = 12;
+/** Corner resize hit target (world px radius). */
+export const BOX_CORNER_HANDLE = 8;
+/** Edge resize hit target (world px radius). */
+export const BOX_EDGE_HANDLE = 7;
 export const TRANSFORM_PAD = 14;
+
+export type SelectionBoxHandle = 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w';
+
+export type SelectionBoxHandlePositions = Record<SelectionBoxHandle, { x: number; y: number }>;
+
+export const getSelectionBoxHandles = (L: SelectionTransformLayout): SelectionBoxHandlePositions => {
+  const x0 = L.boxMinX;
+  const y0 = L.boxMinY;
+  const x1 = L.boxMinX + L.boxW;
+  const y1 = L.boxMinY + L.boxH;
+  const cx = L.boxMinX + L.boxW / 2;
+  const cy = L.boxMinY + L.boxH / 2;
+  return {
+    nw: { x: x0, y: y0 },
+    ne: { x: x1, y: y0 },
+    sw: { x: x0, y: y1 },
+    se: { x: x1, y: y1 },
+    n: { x: cx, y: y0 },
+    s: { x: cx, y: y1 },
+    e: { x: x1, y: cy },
+    w: { x: x0, y: cy },
+  };
+};
+
+export const isUniformBoxHandle = (handle: SelectionBoxHandle): boolean =>
+  handle === 'nw' || handle === 'ne' || handle === 'sw' || handle === 'se';
+
+export const anchorForBoxHandle = (
+  handle: SelectionBoxHandle,
+  L: SelectionTransformLayout,
+): { x: number; y: number } => {
+  const h = getSelectionBoxHandles(L);
+  switch (handle) {
+    case 'nw':
+      return h.se;
+    case 'ne':
+      return h.sw;
+    case 'sw':
+      return h.ne;
+    case 'se':
+      return h.nw;
+    case 'n':
+      return h.s;
+    case 's':
+      return h.n;
+    case 'e':
+      return h.w;
+    case 'w':
+      return h.e;
+  }
+};
+
+export const scaleFactorsForBoxHandle = (
+  handle: SelectionBoxHandle,
+  anchorX: number,
+  anchorY: number,
+  startX: number,
+  startY: number,
+  wx: number,
+  wy: number,
+): { factorX: number; factorY: number } => {
+  const clamp = (f: number) => Math.max(0.05, Math.min(20, f));
+  if (isUniformBoxHandle(handle)) {
+    const startDist = Math.max(12, Math.hypot(startX - anchorX, startY - anchorY));
+    const curDist = Math.max(12, Math.hypot(wx - anchorX, wy - anchorY));
+    const f = clamp(curDist / startDist);
+    return { factorX: f, factorY: f };
+  }
+  if (handle === 'e' || handle === 'w') {
+    const startSpan = Math.max(12, Math.abs(startX - anchorX));
+    const curSpan = Math.max(12, Math.abs(wx - anchorX));
+    return { factorX: clamp(curSpan / startSpan), factorY: 1 };
+  }
+  const startSpan = Math.max(12, Math.abs(startY - anchorY));
+  const curSpan = Math.max(12, Math.abs(wy - anchorY));
+  return { factorX: 1, factorY: clamp(curSpan / startSpan) };
+};
+
+export const pickSelectionBoxHandle = (
+  wx: number,
+  wy: number,
+  L: SelectionTransformLayout,
+): SelectionBoxHandle | null => {
+  const handles = getSelectionBoxHandles(L);
+  const corners: SelectionBoxHandle[] = ['nw', 'ne', 'sw', 'se'];
+  for (const id of corners) {
+    const p = handles[id];
+    if (Math.hypot(wx - p.x, wy - p.y) <= BOX_CORNER_HANDLE) return id;
+  }
+  const edges: SelectionBoxHandle[] = ['n', 's', 'e', 'w'];
+  for (const id of edges) {
+    const p = handles[id];
+    if (Math.hypot(wx - p.x, wy - p.y) <= BOX_EDGE_HANDLE) return id;
+  }
+  return null;
+};
 export const TRANSFORM_MIN_SPAN = 28;
 
 /**
@@ -327,7 +428,7 @@ export const isNearTransformRotateHandle = (
   return Math.hypot(wx - L.handleX, wy - L.handleY) <= ROTATE_HANDLE_R;
 };
 
-/** True if the world-space point lies within the scale handle. */
+/** True if the pointer is on a box corner/edge resize handle. */
 export const isNearTransformScaleHandle = (
   wx: number,
   wy: number,
@@ -340,7 +441,22 @@ export const isNearTransformScaleHandle = (
     ? getMarqueeSelectionTransformLayout(mol, marquee, canvasCtx ?? null)
     : getSelectionTransformLayout(mol, ids);
   if (!L) return false;
-  return Math.hypot(wx - L.scaleHandleX, wy - L.scaleHandleY) <= SCALE_HANDLE_R;
+  return pickSelectionBoxHandle(wx, wy, L) != null;
+};
+
+export const pickTransformScaleHandle = (
+  wx: number,
+  wy: number,
+  mol: Molecule,
+  ids: string[],
+  marquee?: MarqueeSelectionBoundsInput,
+  canvasCtx?: CanvasRenderingContext2D | null,
+): SelectionBoxHandle | null => {
+  const L = marquee
+    ? getMarqueeSelectionTransformLayout(mol, marquee, canvasCtx ?? null)
+    : getSelectionTransformLayout(mol, ids);
+  if (!L) return null;
+  return pickSelectionBoxHandle(wx, wy, L);
 };
 
 /** True if the world-space point lies within the move handle. */
@@ -381,31 +497,19 @@ export const isInsideSelectionTransformBox = (
 };
 
 /**
- * Atoms (and atoms whose connecting bond crosses the lasso) inside a freeform
- * lasso path. Returns IDs in arbitrary order.
+ * Atoms whose centre lies inside a freeform lasso path. Bonds that merely cross
+ * the lasso outline do NOT pull their endpoints in — a partially enclosed bond
+ * is left unselected (so a subsequent delete only removes what was circled).
+ * Bond selection is derived afterwards via `bondsFullyInAtomSet`, i.e. a bond
+ * is selected only when both of its atoms are inside. Returns IDs in arbitrary order.
  */
 export const collectAtomIdsFromLasso = (mol: Molecule, path: Point[]): string[] => {
   if (path.length < 3) return [];
-  const picked = new Set<string>();
+  const picked: string[] = [];
   for (const a of mol.atoms) {
-    if (pointInPolygon(a.x, a.y, path)) picked.add(a.id);
+    if (pointInPolygon(a.x, a.y, path)) picked.push(a.id);
   }
-  for (const b of mol.bonds) {
-    const a1 = mol.atoms.find(x => x.id === b.fromAtomId);
-    const a2 = mol.atoms.find(x => x.id === b.toAtomId);
-    if (!a1 || !a2) continue;
-    for (let k = 0; k <= 24; k++) {
-      const t = k / 24;
-      const x = a1.x + t * (a2.x - a1.x);
-      const y = a1.y + t * (a2.y - a1.y);
-      if (pointInPolygon(x, y, path)) {
-        picked.add(a1.id);
-        picked.add(a2.id);
-        break;
-      }
-    }
-  }
-  return [...picked];
+  return picked;
 };
 
 /**

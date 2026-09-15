@@ -486,7 +486,12 @@ export const schemas = {
     atomIds: z.array(atomIdRef).min(1).describe('Atom ids to scale (>= 1).'),
     cx: cxPx,
     cy: cyPx,
-    factor: z.number().positive().describe('Uniform scale factor about the pivot (1 = unchanged, 2 = double).'),
+    factor: z.number().positive().describe('Horizontal scale factor about the pivot (1 = unchanged).'),
+    factorY: z
+      .number()
+      .positive()
+      .optional()
+      .describe('Vertical scale factor; defaults to `factor` for uniform resize.'),
   }),
   reflectAtoms: z.object({
     atomIds: z.array(atomIdRef).min(1).describe('Atom ids to mirror (>= 1).'),
@@ -626,6 +631,12 @@ export const schemas = {
     bondLengthPx: z.number().positive().describe('Target bond length in canvas px (default 40).').default(40),
     cx: z.number().describe('Centre x of the generated sheet in canvas px.'),
     cy: z.number().describe('Centre y of the generated sheet in canvas px (y grows downward).'),
+    oxidation: z
+      .enum(['none', 'rgo'])
+      .describe(
+        'none = pristine graphene; rgo = reduced graphene oxide with sparse residual edge -OH/-COOH, basal -OH and epoxide groups.',
+      )
+      .default('none'),
     replaceAtomIds: z
       .array(atomIdRef)
       .describe('Atom ids of a previous generation to delete before inserting (live preview).')
