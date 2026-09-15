@@ -30,7 +30,9 @@ import { ExportMenu } from './ExportMenu';
 import { CharlaHelpButton } from './CharlaHelpButton';
 import { HeaderInlineSearch, HeaderPromoLinks, HeaderSiteNav } from './HeaderSiteNav';
 import { InstallWindowsLink } from './InstallWindowsLink';
+import { ThemeToggleButton } from './ThemeToggleButton';
 import { MolDrawLogoMark } from './MolDrawLogoMark';
+import type { UiThemeId } from '../theme';
 import { useI18n } from '../i18n';
 import { TopBarColorMenu } from './TopBarColorMenu';
 import { TopBarSelectMenu, type SelectToolId } from './TopBarSelectMenu';
@@ -185,6 +187,8 @@ export interface AppTopBarProps {
   authDisplayName?: string;
   onOpenUpdates?: () => void;
   hasUnreadUpdates?: boolean;
+  uiTheme?: UiThemeId;
+  onChangeUiTheme?: (theme: UiThemeId) => void;
   /** Structure / COF / reaction template library. */
   onOpenTemplateLibrary?: () => void;
   /** Pencil / shape / image flyout beside the left tool rail. */
@@ -325,6 +329,8 @@ export function AppTopBar(props: AppTopBarProps) {
     authDisplayName = '',
     onOpenUpdates,
     hasUnreadUpdates = false,
+    uiTheme = 'light',
+    onChangeUiTheme,
     onOpenTemplateLibrary,
     drawToolsOpen = false,
     onToggleDrawTools,
@@ -535,6 +541,9 @@ export function AppTopBar(props: AppTopBarProps) {
         </div>
         <div className="app-top-bar__fill" aria-hidden />
         <div className="app-top-bar__right">
+          {onChangeUiTheme ? (
+            <ThemeToggleButton theme={uiTheme} onChangeTheme={onChangeUiTheme} />
+          ) : null}
           {!isCompact ? <InstallWindowsLink /> : null}
           {!isCompact ? (
             <button

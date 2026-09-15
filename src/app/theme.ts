@@ -35,9 +35,6 @@ export type StructureThemeInk = {
   gridMinor: string;
   gridMajor: string;
   gridAxis: string;
-  gridDotMinor?: string;
-  gridDotMajor?: string;
-  gridDotAxis?: string;
   /** Selection wash (canvas highlight). */
   selectionHoverFill: string;
   selectionFill: string;
@@ -89,9 +86,6 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
         gridMinor: 'rgba(255, 255, 255, 0.1)',
         gridMajor: 'rgba(255, 255, 255, 0.18)',
         gridAxis: 'rgba(255, 255, 255, 0.28)',
-        gridDotMinor: 'rgba(226, 232, 240, 0.72)',
-        gridDotMajor: 'rgba(248, 250, 252, 0.9)',
-        gridDotAxis: 'rgba(255, 255, 255, 1)',
         selectionHoverFill: 'rgba(45, 212, 191, 0.28)',
         selectionFill: 'rgba(56, 189, 248, 0.38)',
         selectionHoverStroke: 'rgba(125, 211, 252, 0.85)',
@@ -106,9 +100,6 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
         gridMinor: 'rgba(255, 255, 255, 0.12)',
         gridMajor: 'rgba(255, 255, 255, 0.2)',
         gridAxis: 'rgba(255, 255, 255, 0.32)',
-        gridDotMinor: 'rgba(226, 232, 240, 0.74)',
-        gridDotMajor: 'rgba(248, 250, 252, 0.92)',
-        gridDotAxis: 'rgba(255, 255, 255, 1)',
         selectionHoverFill: 'rgba(45, 212, 191, 0.3)',
         selectionFill: 'rgba(56, 189, 248, 0.4)',
         selectionHoverStroke: 'rgba(125, 211, 252, 0.9)',
@@ -124,9 +115,6 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
         gridMinor: 'rgba(15, 23, 42, 0.1)',
         gridMajor: 'rgba(15, 23, 42, 0.18)',
         gridAxis: 'rgba(15, 23, 42, 0.28)',
-        gridDotMinor: 'rgba(15, 23, 42, 0.78)',
-        gridDotMajor: 'rgba(15, 23, 42, 0.94)',
-        gridDotAxis: 'rgba(2, 6, 23, 1)',
         selectionHoverFill: 'rgba(125, 211, 252, 0.28)',
         selectionFill: 'rgba(56, 189, 248, 0.42)',
         selectionHoverStroke: 'rgba(14, 165, 233, 0.7)',
@@ -166,10 +154,50 @@ export function viewer3dBackgroundForTheme(theme: UiThemeId | undefined): string
   }
 }
 
+const LAST_DARK_THEME_KEY = 'moldraw-last-dark-theme';
+
+export function isDarkUiTheme(theme: UiThemeId | string | undefined | null): boolean {
+  return theme === 'elegant-dark' || theme === 'ink-dark';
+}
+
+export function rememberLastDarkUiTheme(theme: UiThemeId): void {
+  if (!isDarkUiTheme(theme) || typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(LAST_DARK_THEME_KEY, theme);
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+export function lastDarkUiTheme(): Exclude<UiThemeId, 'light'> {
+  if (typeof localStorage === 'undefined') return 'elegant-dark';
+  try {
+    const raw = localStorage.getItem(LAST_DARK_THEME_KEY);
+    if (raw === 'ink-dark' || raw === 'elegant-dark') return raw;
+  } catch {
+    /* ignore */
+  }
+  return 'elegant-dark';
+}
+
+/** Cycle light → elegant-dark → ink-dark → light. */
+export function nextToggledUiTheme(current: UiThemeId | undefined): UiThemeId {
+  switch (current) {
+    case 'elegant-dark':
+      return 'ink-dark';
+    case 'ink-dark':
+      return 'light';
+    case 'light':
+    default:
+      return 'elegant-dark';
+  }
+}
+
 /** Apply theme to <html> for CSS variables + native form controls. */
 export function applyUiThemeToDocument(theme: UiThemeId | undefined): void {
   if (typeof document === 'undefined') return;
   const id: UiThemeId = theme ?? 'light';
   document.documentElement.dataset.theme = id;
   document.documentElement.style.colorScheme = id === 'light' ? 'light' : 'dark';
+  if (isDarkUiTheme(id)) rememberLastDarkUiTheme(id);
 }

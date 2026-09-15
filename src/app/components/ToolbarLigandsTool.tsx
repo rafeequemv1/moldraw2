@@ -129,7 +129,13 @@ export function ToolbarLigandsTool({
   );
 
   const panel = preferSheet ? (
-    <MobileBottomSheet open={open} onClose={() => setOpen(false)} title="Ligands" size="auto">
+    <MobileBottomSheet
+      open={open}
+      onClose={() => setOpen(false)}
+      title="Ligands"
+      size="auto"
+      className="mobile-sheet--palette"
+    >
       {grid}
     </MobileBottomSheet>
   ) : open && panelStyle && typeof document !== 'undefined' ? (

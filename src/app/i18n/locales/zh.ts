@@ -74,6 +74,10 @@ export const zh: LocaleMessages = {
     landscapeView: '横屏视图',
     rotatePortrait: '旋转为竖屏',
     rotateLandscape: '旋转为横屏',
+    switchToDark: '切换到深色主题',
+    switchToLight: '切换到浅色主题',
+    switchToElegantDark: '切换到优雅深色',
+    switchToInkDark: '切换到墨黑',
   },
   nav: {
     community: '社区',
@@ -224,9 +228,6 @@ export const zh: LocaleMessages = {
     grid: '网格',
     gridOn: '开',
     gridOff: '关',
-    gridPattern: '样式',
-    gridLines: '线',
-    gridDots: '点',
   },
   tabs: {
     openDesignsAria: '打开的设计',

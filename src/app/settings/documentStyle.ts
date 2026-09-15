@@ -12,7 +12,6 @@ export type DocumentStyleOverrides = {
       | 'subFontSizePt'
       | 'boldAtomLabels'
       | 'showGrid'
-      | 'gridPattern'
     >
   >;
   bonds?: Partial<BondsSettings>;

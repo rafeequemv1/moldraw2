@@ -613,10 +613,11 @@ function Molecule3DPanelInner({
         });
         applyOutlineViewStyle(viewer, displaySettings.mode === 'toonish');
         applyStereoOverlays(viewer, models, stereoHintsRef.current, stereoIssuesRef.current);
-        if (savedView) restoreViewerView(viewer, savedView);
-        else if (!hadModelRef.current) {
-          viewer.zoomTo();
+        if (savedView) {
+          restoreViewerView(viewer, savedView);
           noteViewerPanHome(viewer);
+        } else if (!hadModelRef.current) {
+          frameViewerSelection(viewer, {}, true);
         } else {
           frameViewerSelection(
             viewer,
@@ -756,100 +757,110 @@ function Molecule3DPanelInner({
   const controls = (
     <>
       <div className="viewer3d-toolbar">
-        <DisplayDropdown
-          settings={displaySettings}
-          onChange={next => {
-            setDisplayMode(next.mode);
-            writeDisplayMode(next.mode);
-            if (next.showHydrogens !== showHydrogens) {
-              onToggleHydrogens(next.showHydrogens);
-            }
-          }}
-          onToggleHydrogens={onToggleHydrogens}
-        />
-        <button
-          type="button"
-          className={`viewer3d-rebuild${showHydrogens ? ' is-on' : ''}`}
-          aria-pressed={showHydrogens}
-          title={showHydrogens ? 'Hide hydrogens in 3D' : 'Show hydrogens in 3D'}
-          onClick={() => onToggleHydrogens(!showHydrogens)}
-        >
-          {showHydrogens ? 'H on' : 'H off'}
-        </button>
-        <SurfacesDropdown settings={surfaceSettings} onChange={setSurfaceSettings} />
-        <span className={status.className} title={statusTitle} aria-live="polite">
-          <span className="viewer3d-status__icon" aria-hidden="true" />
-          <span className="viewer3d-status__label">{status.label}</span>
-        </span>
-        {displaySourceLabel ? (
-          <span className="viewer3d-toggle__source" title={displaySourceLabel}>
-            {displaySourceLabel}
-          </span>
-        ) : null}
-        {stereoIssues.length > 0 ? (
-          <span className="viewer3d-stereo-warn" title={stereoIssues.map(i => i.label).join('\n')}>
-            Stereo!
-          </span>
-        ) : null}
-        {displayEnergyKind &&
-        typeof displayEnergyKcal === 'number' &&
-        Number.isFinite(displayEnergyKcal) ? (
-          <span
-            className="viewer3d-toggle__energy"
-            title={
-              displayEnergyKind === 'mmff94'
-                ? 'MMFF94 total energy after minimization (OpenChemLib)'
-                : 'UFF energy of this conformer (native engine)'
-            }
-          >
-            {`${displayEnergyKind === 'mmff94' ? 'MMFF94' : 'UFF'} ${displayEnergyKcal.toFixed(1)} kcal/mol`}
-          </span>
-        ) : null}
-        {showConformerGallery ? (
+        <div className="viewer3d-toolbar__cluster viewer3d-toolbar__cluster--display">
+          <span className="mobile-sheet-section__label">Appearance</span>
+          <DisplayDropdown
+            settings={displaySettings}
+            onChange={next => {
+              setDisplayMode(next.mode);
+              writeDisplayMode(next.mode);
+              if (next.showHydrogens !== showHydrogens) {
+                onToggleHydrogens(next.showHydrogens);
+              }
+            }}
+            onToggleHydrogens={onToggleHydrogens}
+          />
           <button
             type="button"
-            className={`viewer3d-rebuild${
-              typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
-                ? ' viewer3d-rebuild--muted'
-                : ''
-            }`}
-            onClick={() => setGalleryOpen(true)}
-            title={
-              typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
-                ? `Conformers not supported for larger molecules (${heavyAtomCount} heavy atoms; limit ${CONFORMER_MAX_HEAVY}). Use Calculate structure.`
-                : `OpenChemLib ConformerGenerator — collision-free torsion poses (up to ${CONFORMER_MAX_HEAVY} heavy atoms)`
-            }
+            className={`viewer3d-rebuild${showHydrogens ? ' is-on' : ''}`}
+            aria-pressed={showHydrogens}
+            title={showHydrogens ? 'Hide hydrogens in 3D' : 'Show hydrogens in 3D'}
+            onClick={() => onToggleHydrogens(!showHydrogens)}
           >
-            {typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
-              ? 'Conformers (N/A)'
-              : 'Conformers…'}
+            {showHydrogens ? 'H on' : 'H off'}
           </button>
-        ) : null}
-        {showMmff94 ? (
-          <button
-            type="button"
-            className="viewer3d-rebuild"
-            disabled={mmffBusy || isBuilding}
-            onClick={() => void runMmff94()}
-            title="MMFF94 minimize — organic force field (OpenChemLib). Needs a 3D pose first."
-          >
-            {mmffBusy ? 'MMFF94…' : 'MMFF94'}
-          </button>
-        ) : null}
-        {showRebuild ? (
-          <button
-            type="button"
-            className="viewer3d-rebuild"
-            onClick={onRebuild3D}
-            title="Calculate 3D structure (progressive center-out optimization)"
-          >
-            {isBuilding ? 'Building… · Calculate' : 'Calculate structure'}
-          </button>
-        ) : null}
-        {mmffError ? (
-          <span className="viewer3d-toggle__error" title={mmffError}>
-            {mmffError}
+          <SurfacesDropdown settings={surfaceSettings} onChange={setSurfaceSettings} />
+        </div>
+        <div className="viewer3d-toolbar__cluster viewer3d-toolbar__cluster--meta">
+          <span className={status.className} title={statusTitle} aria-live="polite">
+            <span className="viewer3d-status__icon" aria-hidden="true" />
+            <span className="viewer3d-status__label">{status.label}</span>
           </span>
+          {displaySourceLabel ? (
+            <span className="viewer3d-toggle__source" title={displaySourceLabel}>
+              {displaySourceLabel}
+            </span>
+          ) : null}
+          {stereoIssues.length > 0 ? (
+            <span className="viewer3d-stereo-warn" title={stereoIssues.map(i => i.label).join('\n')}>
+              Stereo!
+            </span>
+          ) : null}
+          {displayEnergyKind &&
+          typeof displayEnergyKcal === 'number' &&
+          Number.isFinite(displayEnergyKcal) ? (
+            <span
+              className="viewer3d-toggle__energy"
+              title={
+                displayEnergyKind === 'mmff94'
+                  ? 'MMFF94 total energy after minimization (OpenChemLib)'
+                  : 'UFF energy of this conformer (native engine)'
+              }
+            >
+              {`${displayEnergyKind === 'mmff94' ? 'MMFF94' : 'UFF'} ${displayEnergyKcal.toFixed(1)} kcal/mol`}
+            </span>
+          ) : null}
+        </div>
+        {showConformerGallery || showMmff94 || showRebuild || mmffError ? (
+        <div className="viewer3d-toolbar__cluster viewer3d-toolbar__cluster--compute">
+          <span className="mobile-sheet-section__label">Calculate</span>
+          {showConformerGallery ? (
+            <button
+              type="button"
+              className={`viewer3d-rebuild${
+                typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
+                  ? ' viewer3d-rebuild--muted'
+                  : ''
+              }`}
+              onClick={() => setGalleryOpen(true)}
+              title={
+                typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
+                  ? `Conformers not supported for larger molecules (${heavyAtomCount} heavy atoms; limit ${CONFORMER_MAX_HEAVY}). Use Calculate structure.`
+                  : `OpenChemLib ConformerGenerator — collision-free torsion poses (up to ${CONFORMER_MAX_HEAVY} heavy atoms)`
+              }
+            >
+              {typeof heavyAtomCount === 'number' && heavyAtomCount > CONFORMER_MAX_HEAVY
+                ? 'Conformers (N/A)'
+                : 'Conformers…'}
+            </button>
+          ) : null}
+          {showMmff94 ? (
+            <button
+              type="button"
+              className="viewer3d-rebuild"
+              disabled={mmffBusy || isBuilding}
+              onClick={() => void runMmff94()}
+              title="MMFF94 minimize — organic force field (OpenChemLib). Needs a 3D pose first."
+            >
+              {mmffBusy ? 'MMFF94…' : 'MMFF94'}
+            </button>
+          ) : null}
+          {showRebuild ? (
+            <button
+              type="button"
+              className="viewer3d-rebuild"
+              onClick={onRebuild3D}
+              title="Calculate 3D structure (progressive center-out optimization)"
+            >
+              {isBuilding ? 'Building… · Calculate' : 'Calculate structure'}
+            </button>
+          ) : null}
+          {mmffError ? (
+            <span className="viewer3d-toggle__error" title={mmffError}>
+              {mmffError}
+            </span>
+          ) : null}
+        </div>
         ) : null}
       </div>
       <Viewer3DExportBar
@@ -876,7 +887,9 @@ function Molecule3DPanelInner({
                 <div className="mobile-sheet__handle" aria-hidden />
               </div>
               <header className="mobile-sheet__header">
-                <h2 className="mobile-sheet__title">3D controls</h2>
+                <div className="mobile-sheet__heading">
+                  <h2 className="mobile-sheet__title">3D controls</h2>
+                </div>
                 <button
                   type="button"
                   className="mobile-sheet__close"
@@ -886,7 +899,9 @@ function Molecule3DPanelInner({
                   ✕
                 </button>
               </header>
-              <div className="mobile-sheet__body">{controls}</div>
+              <div className="mobile-sheet__body">
+                <div className="viewer3d-sheet">{controls}</div>
+              </div>
             </div>
           </div>,
           document.body,

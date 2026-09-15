@@ -90,6 +90,7 @@ export function CanvasSmilesBar({
             onClose={() => setCopyOpen(false)}
             title="Copy as…"
             size="auto"
+            className="mobile-sheet--menu"
           >
             <div id={menuId} className="mobile-sheet-list" role="menu" aria-label="Copy as">
               {copyItems}

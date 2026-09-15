@@ -134,6 +134,7 @@ export function ToolbarFunctionalGroupsTool({
       onClose={() => setOpen(false)}
       title="Functional groups"
       size="auto"
+      className="mobile-sheet--palette"
     >
       {grid}
     </MobileBottomSheet>

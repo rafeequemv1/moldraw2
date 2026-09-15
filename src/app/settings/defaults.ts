@@ -26,7 +26,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     preferIndigo2d: true,
     snapToGrid: false,
     showGrid: true,
-    gridPattern: 'dots',
     touchPanOnEmptyCanvas: false,
     touchLoupe: true,
     pointerDebugHud: false,

@@ -414,7 +414,6 @@ function App() {
         subFontSizePt: effectiveGeneral.subFontSizePt,
         boldAtomLabels: effectiveGeneral.boldAtomLabels,
         showGrid: effectiveGeneral.showGrid,
-        gridPattern: effectiveGeneral.gridPattern,
       },
       bonds: effectiveBonds,
     });
@@ -424,7 +423,6 @@ function App() {
     effectiveGeneral.boldAtomLabels,
     effectiveGeneral.fontFamily,
     effectiveGeneral.fontSizePt,
-    effectiveGeneral.gridPattern,
     effectiveGeneral.showGrid,
     effectiveGeneral.subFontSizePt,
     globalCanvasPreferences,
@@ -2189,6 +2187,8 @@ function App() {
               markMolDrawUpdatesSeen();
             }}
             hasUnreadUpdates={hasUnreadUpdates}
+            uiTheme={appSettings.general.theme}
+            onChangeUiTheme={theme => updateAppSettingsGeneral({ theme })}
             onOpenTemplateLibrary={() => {
               setTemplateLibraryTab('structures');
               setShowTemplateLibrary(true);

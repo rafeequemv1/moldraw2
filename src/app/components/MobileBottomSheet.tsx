@@ -9,7 +9,8 @@ export interface MobileBottomSheetProps {
   open: boolean;
   onClose: () => void;
   title?: string;
-  /** `full` ≈ phone full-screen drawer; `tall` ≈ ~88dvh sheet; `peek` ≈ half so the canvas stays visible; `auto` sizes to content. */
+  subtitle?: string;
+  /** `full` ≈ phone full-screen drawer; `tall` ≈ ~78dvh sheet; `peek` ≈ half so the canvas stays visible; `auto` sizes to content. */
   size?: 'auto' | 'tall' | 'full' | 'peek';
   children: ReactNode;
   /** Optional footer pinned below scroll body. */
@@ -27,6 +28,7 @@ export function MobileBottomSheet({
   open,
   onClose,
   title,
+  subtitle,
   size = 'auto',
   children,
   footer,
@@ -121,7 +123,10 @@ export function MobileBottomSheet({
           <div className="mobile-sheet__handle" aria-hidden />
         </div>
         <header className="mobile-sheet__header">
-          {title ? <h2 className="mobile-sheet__title">{title}</h2> : <span className="mobile-sheet__title" />}
+          <div className="mobile-sheet__heading">
+            {title ? <h2 className="mobile-sheet__title">{title}</h2> : <span className="mobile-sheet__title" />}
+            {subtitle ? <p className="mobile-sheet__subtitle">{subtitle}</p> : null}
+          </div>
           <button
             type="button"
             className="mobile-sheet__close"
@@ -131,7 +136,7 @@ export function MobileBottomSheet({
             }}
             aria-label="Close"
           >
-            <X size={18} strokeWidth={2} aria-hidden />
+            <X size={16} strokeWidth={2} aria-hidden />
           </button>
         </header>
         <div className="mobile-sheet__body">{children}</div>

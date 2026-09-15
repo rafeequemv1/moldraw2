@@ -1,4 +1,4 @@
-/* Shared mobile bottom sheets / full-screen drawers */
+/* Shared mobile bottom sheets — quiet chrome, short header, compact controls */
 
 .mobile-sheet {
   position: fixed;
@@ -32,7 +32,9 @@
   background: var(--chrome-bg-elevated);
   color: var(--text-main);
   border-radius: 16px 16px 0 0;
-  box-shadow: var(--shadow-elevated);
+  border: 1px solid var(--chrome-border);
+  border-bottom: none;
+  box-shadow: none;
   padding-bottom: env(safe-area-inset-bottom, 0);
   transform: translateY(0);
   transition: transform 180ms ease-out;
@@ -43,23 +45,24 @@
 }
 
 .mobile-sheet__panel--auto {
-  max-height: min(85dvh, 640px);
+  max-height: min(72dvh, 560px);
 }
 
 .mobile-sheet__panel--tall {
-  height: min(88dvh, 760px);
-  max-height: 88dvh;
+  height: min(78dvh, 680px);
+  max-height: 78dvh;
 }
 
 .mobile-sheet__panel--peek {
-  height: min(42dvh, 380px);
-  max-height: min(42dvh, 380px);
+  height: min(38dvh, 340px);
+  max-height: min(38dvh, 340px);
 }
 
 .mobile-sheet__panel--full {
   height: 100dvh;
   max-height: 100dvh;
   border-radius: 0;
+  border: none;
 }
 
 .mobile-sheet--canvas-visible .mobile-sheet__panel {
@@ -71,47 +74,64 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 28px;
+  min-height: 20px;
   padding-top: 8px;
   touch-action: none;
   cursor: grab;
 }
 
 .mobile-sheet__handle {
-  width: 40px;
-  height: 4px;
+  width: 36px;
+  height: 3px;
   border-radius: 999px;
   background: var(--chrome-border-strong);
 }
 
 .mobile-sheet__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  padding: 4px 12px 8px 16px;
-  border-bottom: 1px solid var(--chrome-border);
+  padding: 2px 10px 10px 16px;
+  border-bottom: none;
   flex: 0 0 auto;
 }
 
-.mobile-sheet__title {
+.mobile-sheet__heading {
   flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-sheet__title {
+  flex: 0 1 auto;
   margin: 0;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-main);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
   min-height: 1.2em;
+}
+
+.mobile-sheet__subtitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--text-muted);
 }
 
 .mobile-sheet__close {
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
@@ -127,21 +147,43 @@
   min-height: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 8px 12px 16px;
+  padding: 0 16px 18px;
 }
 
 .mobile-sheet__footer {
   flex: 0 0 auto;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0));
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0));
   border-top: 1px solid var(--chrome-border);
-  background: var(--chrome-bg);
+  background: var(--chrome-bg-elevated);
 }
 
-/* Compact list rows (Copy as / Chemistry sheets) */
+.mobile-sheet-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-sheet-section + .mobile-sheet-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--chrome-border);
+}
+
+.mobile-sheet-section__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Compact list rows (File / Copy as / Chemistry) */
 .mobile-sheet-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .mobile-sheet-list__btn {
@@ -150,13 +192,13 @@
   gap: 10px;
   width: 100%;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 10px;
   border: none;
   border-radius: 10px;
   background: transparent;
   color: var(--text-main);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
 }
@@ -172,12 +214,14 @@
 }
 
 .mobile-sheet-list__btn--on {
-  background: color-mix(in srgb, var(--primary) 14%, var(--chrome-bg-elevated));
-  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--chrome-bg-elevated));
+  color: var(--text-main);
+  font-weight: 600;
 }
 
 .mobile-sheet-list .app-top-bar__file-menu-sep {
   margin: 6px 8px;
+  border-color: var(--chrome-border);
 }
 
 .mobile-sheet-list__btn .app-top-bar__file-menu-text {
@@ -192,26 +236,28 @@
   width: 100%;
 }
 
-.mobile-sheet--search-min .mobile-sheet__panel {
-  border-radius: 20px 20px 0 0;
-  background: #fff;
-  box-shadow: 0 -10px 36px rgba(15, 23, 42, 0.1);
-  border-top: 1px solid #e8eef2;
-}
-
-.mobile-sheet--search-min .mobile-sheet__header {
-  padding: 6px 18px 6px;
+.mobile-sheet--search-min .mobile-sheet__panel,
+.mobile-sheet--search .mobile-sheet__panel {
+  background: var(--chrome-bg-elevated);
+  border: 1px solid var(--chrome-border);
   border-bottom: none;
+  box-shadow: none;
 }
 
-.mobile-sheet--search-min .mobile-sheet__title {
-  font-size: 13px;
-  font-weight: 650;
-  color: #334155;
-  letter-spacing: -0.01em;
+.mobile-sheet--search-min .mobile-sheet__header,
+.mobile-sheet--search .mobile-sheet__header {
+  padding: 2px 10px 8px 16px;
 }
 
-.mobile-sheet--search-min .mobile-sheet__body {
+.mobile-sheet--search-min .mobile-sheet__title,
+.mobile-sheet--search .mobile-sheet__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.mobile-sheet--search-min .mobile-sheet__body,
+.mobile-sheet--search .mobile-sheet__body {
   padding: 0 16px 16px;
 }
 
@@ -219,11 +265,13 @@
   gap: 8px;
 }
 
-.mobile-sheet--search-min .app-top-bar__search--sheet {
+.mobile-sheet--search-min .app-top-bar__search--sheet,
+.mobile-sheet--search .app-top-bar__search--sheet {
   min-height: 44px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
+  border: 1px solid var(--chrome-border);
+  border-radius: 10px;
+  background: var(--chrome-input-bg);
+  color: var(--text-main);
   padding: 0 12px;
 }
 
@@ -237,13 +285,14 @@
 .mobile-sheet-search .app-top-bar__search--sheet {
   width: 100%;
   min-height: 44px;
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .mobile-sheet-search .app-top-bar__search-input {
   width: 100%;
   max-width: none;
   font-size: 16px;
+  color: var(--text-main);
 }
 
 html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
@@ -252,14 +301,14 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 }
 
 .mobile-sheet--search .md-btn--primary {
-  background: #0d9488;
-  color: #fff;
-  border-color: #0d9488;
+  background: var(--primary);
+  color: var(--chrome-bg-elevated);
+  border-color: var(--primary);
 }
 
 .mobile-sheet--search .md-btn--primary:hover:not(:disabled) {
-  background: #0f766e;
-  border-color: #0f766e;
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .mobile-sheet-search__actions {
@@ -291,40 +340,27 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
   border: none;
   flex: 1 1 auto;
   min-height: 0;
+  background: transparent;
 }
 
-/* Arrange sheet: short, undimmed peek so the canvas shows the live result. */
-.mobile-sheet--arrange .mobile-sheet__panel {
-  height: auto;
-  max-height: min(40dvh, 340px);
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.16);
+.mobile-sheet--objects .objects-panel__header {
+  padding: 0 16px 8px;
+  border-bottom: none;
 }
 
-.mobile-sheet--arrange .mobile-sheet__handle-hit {
-  min-height: 18px;
-  padding-top: 5px;
-}
-
-.mobile-sheet--arrange .mobile-sheet__header {
-  padding: 0 8px 4px 14px;
-}
-
-.mobile-sheet--arrange .mobile-sheet__title {
-  font-size: 13px;
-}
-
-.mobile-sheet--arrange .mobile-sheet__close {
-  width: 32px;
-  height: 32px;
+/* Arrange / params: short, undimmed peek so the canvas stays visible. */
+.mobile-sheet--arrange .mobile-sheet__panel,
+.mobile-sheet--params .mobile-sheet__panel {
+  border-radius: 16px 16px 0 0;
+  box-shadow: none;
 }
 
 .mobile-sheet--arrange .mobile-sheet__body {
-  padding: 6px 12px 10px;
+  padding: 0 16px 14px;
 }
 
 .mobile-sheet--arrange .mobile-sheet-arrange__section {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .mobile-sheet--arrange .mobile-sheet-arrange__grid {
@@ -333,9 +369,11 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 }
 
 .mobile-sheet--arrange .mobile-sheet-arrange__btn {
-  min-height: 48px;
-  padding: 5px 2px;
-  font-size: 9px;
+  min-height: 52px;
+  padding: 6px 2px;
+  font-size: 10px;
+  border: none;
+  background: var(--chrome-hover);
 }
 
 .mobile-sheet--arrange .mobile-sheet-arrange__list {
@@ -346,15 +384,16 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 .mobile-sheet--arrange .mobile-sheet-arrange__list-btn {
   width: auto;
   flex: 1 1 calc(50% - 4px);
-  min-height: 36px;
-  padding: 6px 10px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: none;
+  background: var(--chrome-hover);
 }
 
 .mobile-sheet--arrange .mobile-sheet-arrange__list-title {
-  font-size: 12px;
+  font-size: 13px;
 }
 
-/* Arrange sheet action grid */
 .mobile-sheet-arrange__section {
   margin-bottom: 14px;
 }
@@ -362,7 +401,7 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 .mobile-sheet-arrange__label {
   display: block;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -381,11 +420,11 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: 64px;
+  min-height: 56px;
   padding: 8px 4px;
-  border: 1px solid var(--chrome-border);
+  border: none;
   border-radius: 10px;
-  background: var(--chrome-bg-elevated);
+  background: var(--chrome-hover);
   color: var(--text-main);
   font-size: 10px;
   font-weight: 600;
@@ -398,13 +437,13 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 }
 
 .mobile-sheet-arrange__btn:not(:disabled):active {
-  background: var(--chrome-hover);
+  background: var(--chrome-active);
 }
 
 .mobile-sheet-arrange__list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .mobile-sheet-arrange__list-btn {
@@ -415,9 +454,9 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid var(--chrome-border);
+  border: none;
   border-radius: 10px;
-  background: var(--chrome-bg-elevated);
+  background: var(--chrome-hover);
   text-align: left;
   cursor: pointer;
   color: var(--text-main);
@@ -428,8 +467,7 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 }
 
 .mobile-sheet-arrange__list-btn--on {
-  border-color: var(--chrome-border-strong);
-  background: var(--chrome-hover);
+  background: color-mix(in srgb, var(--primary) 12%, var(--chrome-bg-elevated));
 }
 
 .mobile-sheet-arrange__list-btn:disabled {
@@ -439,7 +477,7 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 
 .mobile-sheet-arrange__list-title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .mobile-sheet-arrange__list-hint {
@@ -451,18 +489,26 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 .mobile-sheet .context-menu-sheet {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   padding: 0;
 }
 
 .mobile-sheet .context-menu-sheet .menu-item {
   min-height: 44px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
 }
 
-/* Chat / settings sheet body fill */
+.mobile-sheet .context-menu-sheet .menu-item:hover,
+.mobile-sheet .context-menu-sheet .menu-item:active {
+  background: var(--chrome-hover);
+}
+
+/* Chat / settings / objects fill the sheet body */
 .mobile-sheet--chat .mobile-sheet__body,
 .mobile-sheet--settings .mobile-sheet__body,
 .mobile-sheet--objects .mobile-sheet__body {
@@ -479,7 +525,72 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
   height: 100%;
 }
 
-/* FG palette in sheet */
+.mobile-sheet--settings .app-settings-sheet-inner {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  max-height: none;
+}
+
+.mobile-sheet--settings .app-settings-sheet-head {
+  padding: 0 16px 10px;
+  border-bottom: none;
+}
+
+.mobile-sheet--settings .app-settings-sheet-title {
+  display: none;
+}
+
+.mobile-sheet--settings .app-settings-sheet-intro {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mobile-sheet--settings .app-settings-sheet-layout {
+  display: flex !important;
+  flex-direction: column;
+  max-height: none !important;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.mobile-sheet--settings .app-settings-modal__sidebar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-right: none !important;
+  border-bottom: 1px solid var(--chrome-border);
+  background: transparent !important;
+  padding: 0 12px 10px !important;
+}
+
+.mobile-sheet--settings .app-settings-modal__sidebar > div:first-child {
+  display: none;
+}
+
+.mobile-sheet--settings .app-settings-modal__nav-btn {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-height: 36px;
+  margin-top: 0 !important;
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  white-space: nowrap;
+  background: var(--chrome-hover) !important;
+  color: var(--text-main) !important;
+  border: none;
+}
+
+.mobile-sheet--settings .app-settings-modal__nav-btn.is-active {
+  background: var(--chrome-active) !important;
+}
+
 .mobile-sheet-fg__search {
   width: 100%;
   margin-bottom: 10px;
@@ -490,6 +601,25 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
   box-sizing: border-box;
   background: var(--chrome-input-bg);
   color: var(--text-main);
+}
+
+.mobile-sheet--palette .toolbar-fg-grid {
+  max-height: none;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mobile-sheet--palette .toolbar-fg-item {
+  min-height: 72px;
+  padding: 6px 4px 8px;
+  border: none;
+  border-radius: 10px;
+  background: var(--chrome-hover);
+}
+
+.mobile-sheet--palette .toolbar-fg-item__label {
+  font-size: 10px;
+  color: var(--text-muted);
 }
 
 .mobile-sheet .toolbar-fg-grid {
@@ -527,6 +657,7 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 .mobile-sheet--viewer3d .mobile-sheet__panel {
   overflow: hidden;
   padding-top: env(safe-area-inset-top, 0);
+  background: var(--chrome-bg-elevated);
 }
 
 .mobile-sheet--viewer3d .mobile-sheet__handle-hit,
@@ -538,15 +669,15 @@ html.app-mobile-compact .mobile-sheet-search .app-top-bar__search-input {
 }
 
 .mobile-sheet--viewer3d .mobile-sheet__header {
-  border-bottom: 1px solid var(--chrome-border);
+  border-bottom: none;
   box-shadow: none;
 }
 
 .mobile-sheet--viewer3d .mobile-sheet__close {
-  width: 44px;
-  height: 44px;
-  background: var(--chrome-hover);
-  color: var(--text-main);
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  color: var(--text-muted);
 }
 
 .mobile-sheet--viewer3d .mobile-sheet__body {
@@ -594,28 +725,97 @@ html.app-mobile-compact .viewer3d-island.viewer3d-island--sheet-launch {
 }
 
 .mobile-sheet--viewer3d-controls .mobile-sheet__panel {
-  max-height: min(70dvh, 560px);
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.22);
+  max-height: min(62dvh, 520px);
+  border-radius: 16px 16px 0 0;
+  border: 1px solid var(--chrome-border);
+  border-bottom: none;
+  box-shadow: none;
+  background: var(--chrome-bg-elevated);
+  color: var(--text-main);
 }
 
 .mobile-sheet--viewer3d-controls .mobile-sheet__body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 8px 14px calc(16px + env(safe-area-inset-bottom, 0));
+  gap: 0;
+  padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0));
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .mobile-sheet--viewer3d-controls .viewer3d-toolbar {
+  display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 10px;
   min-height: 0;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--compute {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--chrome-border);
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster .mobile-sheet-section__label {
+  display: block;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--display {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--display .mobile-sheet-section__label {
+  grid-column: 1 / -1;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--display > .viewer3d-menu:last-of-type {
+  grid-column: 1 / -1;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--meta {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--compute {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--compute .mobile-sheet-section__label {
+  grid-column: 1 / -1;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--compute .viewer3d-rebuild:last-of-type {
+  grid-column: 1 / -1;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--compute .viewer3d-toggle__error {
+  grid-column: 1 / -1;
 }
 
 .mobile-sheet--viewer3d-controls .viewer3d-menu {
   display: block;
   width: 100%;
+  min-width: 0;
 }
 
 .mobile-sheet--viewer3d-controls .viewer3d-menu__trigger {
@@ -623,11 +823,24 @@ html.app-mobile-compact .viewer3d-island.viewer3d-island--sheet-launch {
   width: 100%;
   max-width: none;
   justify-content: space-between;
+  align-items: center;
   min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 10px;
+  background: var(--chrome-input-bg);
+  color: var(--text-main);
   font-size: 13px;
+  font-weight: 600;
 }
 
-/* Dropdown panels expand inline inside the scrolling sheet (no floating popover). */
+.mobile-sheet--viewer3d-controls .viewer3d-menu__trigger-hint {
+  max-width: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
 .mobile-sheet--viewer3d-controls .viewer3d-menu__panel {
   position: static;
   top: auto;
@@ -639,18 +852,108 @@ html.app-mobile-compact .viewer3d-island.viewer3d-island--sheet-launch {
   max-height: none;
   margin-top: 4px;
   box-shadow: none;
+  border: 1px solid var(--chrome-border);
+  border-radius: 10px;
+  background: var(--chrome-input-bg);
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-menu__row {
+  min-height: 36px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text-main);
 }
 
 .mobile-sheet--viewer3d-controls .viewer3d-rebuild,
 .mobile-sheet--viewer3d-controls .viewer3d-toolbar > button {
   min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 10px;
+  background: var(--chrome-input-bg);
+  color: var(--text-main);
   font-size: 13px;
+  font-weight: 600;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-rebuild.is-on {
+  background: var(--chrome-hover);
+  border-color: var(--chrome-border-strong);
+  color: var(--text-main);
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-toolbar__cluster--display > .viewer3d-rebuild {
+  min-width: 64px;
+  padding-inline: 12px;
 }
 
 .mobile-sheet--viewer3d-controls .viewer3d-status,
 .mobile-sheet--viewer3d-controls .viewer3d-toggle__source,
-.mobile-sheet--viewer3d-controls .viewer3d-toggle__energy {
+.mobile-sheet--viewer3d-controls .viewer3d-toggle__energy,
+.mobile-sheet--viewer3d-controls .viewer3d-stereo-warn {
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-status--error,
+.mobile-sheet--viewer3d-controls .viewer3d-toggle__error {
+  color: var(--md-danger-soft);
+  font-size: 12px;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-export {
+  padding-top: 14px;
+  border-top: 1px solid var(--chrome-border);
+  gap: 10px;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-export__heading {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-export__row {
+  gap: 6px;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-export__chip {
+  min-height: 36px;
+  padding: 8px 4px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 8px;
+  background: var(--chrome-input-bg);
+  color: var(--text-main);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-export__chip.is-active,
+.mobile-sheet--viewer3d-controls .viewer3d-export__chip--advanced.is-active {
+  background: var(--chrome-hover);
+  border-color: var(--chrome-border-strong);
+  color: var(--text-main);
+}
+
+.mobile-sheet--viewer3d-controls .viewer3d-export__transparent {
+  align-self: stretch;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-input-bg);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .mobile-sheet--viewer3d .workspace-pane-3d__viewer--sheet .viewer3d-shell,

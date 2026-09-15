@@ -178,7 +178,7 @@ type StructurePaintKey = {
 };
 
 const prefsFingerprint = (p: ResolvedCanvasPreferences): string =>
-  `${p.bondThicknessPx}|${p.bondSpacingFraction}|${p.bondLengthPx}|${p.stereoWedgeWidthPx}|${p.hashSpacingPx}|${p.elementFontCss}|${p.subFontCss}|${p.showGrid}|${p.gridPattern}|${p.gridSizePx}`;
+  `${p.bondThicknessPx}|${p.bondSpacingFraction}|${p.bondLengthPx}|${p.stereoWedgeWidthPx}|${p.hashSpacingPx}|${p.elementFontCss}|${p.subFontCss}|${p.showGrid}|${p.gridSizePx}`;
 
 const idsKey = (ids: readonly string[] | undefined): string =>
   ids && ids.length ? ids.slice().sort().join(',') : '';
@@ -348,7 +348,6 @@ const paintBackgroundGrid = (
   theme: StructureThemeColors,
   showGrid: boolean,
   gridSizePx: number,
-  gridPattern: 'lines' | 'dots',
 ): void => {
   if (showGrid === false) return;
   if (canvas.width < 1 || canvas.height < 1) return;
@@ -365,7 +364,6 @@ const paintBackgroundGrid = (
     { ...viewport, zoom: effectiveZoom },
     theme,
     gridSizePx,
-    gridPattern,
   );
   ctx.restore();
 };
@@ -797,7 +795,6 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
     const theme = opts.structureTheme ?? DEFAULT_STRUCTURE_THEME;
     const showGrid = opts.displayPrefs.showGrid !== false;
     const gridSizePx = opts.displayPrefs.gridSizePx || 50;
-    const gridPattern = opts.displayPrefs.gridPattern === 'dots' ? 'dots' : 'lines';
 
     if (panOnly && prev) {
       // Shift the cached *structure* bitmap. Do not bake the blit back into the
@@ -816,7 +813,6 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
         theme,
         showGrid,
         gridSizePx,
-        gridPattern,
       );
     } else if (!sameStructure || !prev) {
       applyWorldTransform(sctx, structureCanvas, viewport, displayScale);
@@ -851,7 +847,6 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
         theme,
         showGrid,
         gridSizePx,
-        gridPattern,
       );
     }
 

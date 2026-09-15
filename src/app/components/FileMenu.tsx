@@ -363,7 +363,13 @@ export function FileMenu({
           <FolderOpen size={14} strokeWidth={2} aria-hidden />
           {t('file.menu')}
         </button>
-        <MobileBottomSheet open={menuOpen} onClose={close} title={t('file.menu')} size="auto">
+        <MobileBottomSheet
+          open={menuOpen}
+          onClose={close}
+          title={t('file.menu')}
+          size="auto"
+          className="mobile-sheet--menu"
+        >
           <div className="mobile-sheet-list" role="menu" aria-label={t('file.menu')}>
             {menuItems}
           </div>

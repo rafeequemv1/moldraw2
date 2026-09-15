@@ -259,34 +259,36 @@ html.app-mobile-compact .format-left-panel.format-left-panel--sheet {
   border-radius: 16px 16px 0 0;
   border: 1px solid var(--chrome-border);
   border-bottom: none;
-  border-left: 1px solid var(--chrome-border);
-  box-shadow: 0 -12px 36px rgba(15, 23, 42, 0.16);
+  box-shadow: none;
   z-index: 80;
   background: var(--chrome-bg-elevated, #fff);
+  color: var(--text-main);
 }
 
 .format-left-panel__handle {
   flex-shrink: 0;
   width: 36px;
-  height: 4px;
+  height: 3px;
   margin: 8px auto 0;
   border-radius: 999px;
-  background: #cbd5e1;
+  background: var(--chrome-border-strong);
 }
 
 html.app-mobile-compact .format-left-panel--sheet .format-left-panel__head {
-  padding: 6px 14px 4px;
+  padding: 4px 16px 8px;
+  border-bottom: none;
 }
 
 html.app-mobile-compact .format-left-panel--sheet .format-left-panel__scroll {
-  padding: 0 14px 14px;
+  padding: 0 16px 16px;
 }
 
 html.app-mobile-compact .format-left-panel--sheet .format-left-panel__close {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
-  background: #f1f5f9;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
 }
 
 html.app-mobile-compact .format-left-panel--sheet .app-top-bar__color-preset.is-selected {

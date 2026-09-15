@@ -443,8 +443,66 @@ body,
   }
 
   /* Top bar brand / search / import — no white chips */
-  .app-top-bar__brand {
+  .app-top-bar__brand,
+  .app-top-bar__brand-name,
+  .app-top-bar__brand-btn {
     color: var(--text-main) !important;
+  }
+
+  .app-top-bar__site-row,
+  .app-top-bar__promo-row {
+    background: var(--chrome-bg) !important;
+    border-color: var(--chrome-border) !important;
+    color: var(--text-main);
+  }
+
+  .molecule-status-bar {
+    background: var(--chrome-bg) !important;
+    border-top-color: var(--chrome-border) !important;
+    color: var(--text-main) !important;
+    box-shadow: none;
+  }
+
+  .molecule-status-bar__label,
+  .molecule-status-bar__hint {
+    color: var(--text-muted) !important;
+  }
+
+  .molecule-status-bar__value {
+    color: var(--text-main) !important;
+  }
+
+  .site-footer-root,
+  .app-site-footer-slot .site-footer-root {
+    background: var(--chrome-bg) !important;
+    border-top-color: var(--chrome-border) !important;
+    color: var(--text-muted);
+  }
+
+  .site-footer-lede,
+  .site-footer-entity,
+  .site-footer-copy,
+  .site-footer-by,
+  .site-footer-sep,
+  .site-footer-nav a {
+    color: var(--text-muted) !important;
+  }
+
+  .site-footer-nav a:hover,
+  .site-footer-by:hover {
+    color: var(--text-main) !important;
+  }
+
+  .site-footer-social-link {
+    color: var(--text-muted) !important;
+    border-color: var(--chrome-border) !important;
+    background: transparent !important;
+  }
+
+  .site-footer-social-link:hover {
+    color: var(--text-main) !important;
+    background: var(--chrome-hover) !important;
+    border-color: var(--chrome-border-strong) !important;
   }
 
   .app-top-bar__beta {
@@ -917,9 +975,27 @@ body,
     color: var(--text-main) !important;
   }
 
+  .mobile-sheet__subtitle,
+  .mobile-sheet-section__label,
   .mobile-sheet__close,
   .mobile-sheet-arrange__label,
   .mobile-sheet-arrange__list-hint {
+    color: var(--text-muted) !important;
+  }
+
+  .mobile-sheet--viewer3d-controls .viewer3d-menu__trigger,
+  .mobile-sheet--viewer3d-controls .viewer3d-rebuild,
+  .mobile-sheet--viewer3d-controls .viewer3d-export__chip,
+  .mobile-sheet--viewer3d-controls .viewer3d-export__transparent {
+    background: var(--chrome-input-bg) !important;
+    border-color: var(--chrome-border) !important;
+    color: var(--text-main) !important;
+  }
+
+  .mobile-sheet--viewer3d-controls .viewer3d-menu__trigger-hint,
+  .mobile-sheet--viewer3d-controls .viewer3d-status,
+  .mobile-sheet--viewer3d-controls .viewer3d-toggle__source,
+  .mobile-sheet--viewer3d-controls .viewer3d-toggle__energy {
     color: var(--text-muted) !important;
   }
 

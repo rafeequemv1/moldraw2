@@ -1,4 +1,4 @@
-/* In-flow strip at the bottom of .app-frame. Always light — not the UI theme. */
+/* In-flow strip at the bottom of .app-frame (formula / MW / charge). */
 
 .molecule-status-bar {
   position: relative;
@@ -21,11 +21,11 @@
   padding: 0 12px;
   box-sizing: border-box;
   overflow: hidden;
-  background: #ffffff;
-  border-top: 1px solid #cbd5e1;
+  background: var(--chrome-bg-elevated, #ffffff);
+  border-top: 1px solid var(--chrome-border, #cbd5e1);
   box-shadow: 0 -1px 0 rgba(15, 23, 42, 0.06);
   pointer-events: auto;
-  color: #0f172a;
+  color: var(--text-main, #0f172a);
   font-size: 8px;
   font-family: var(--font-ui);
   user-select: none;
@@ -42,7 +42,7 @@
 }
 
 .molecule-status-bar__label {
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -52,7 +52,7 @@
 .molecule-status-bar__value {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main, #0f172a);
 }
 
 .molecule-status-bar__formula {
@@ -73,7 +73,7 @@
   padding: 1px 6px;
   border-radius: var(--radius-control);
   background: var(--chrome-hover, #e5e7eb);
-  color: hsl(215 16% 42%);
+  color: var(--text-muted, hsl(215 16% 42%));
   font-size: 8px;
   font-weight: 600;
 }
@@ -84,11 +84,10 @@
   text-overflow: ellipsis;
 }
 
-html.elegant-dark .molecule-status-bar,
-html.ink-dark .molecule-status-bar,
 [data-theme='elegant-dark'] .molecule-status-bar,
 [data-theme='ink-dark'] .molecule-status-bar {
-  background: #ffffff;
-  color: #0f172a;
-  border-top-color: #cbd5e1;
+  background: var(--chrome-bg);
+  color: var(--text-main);
+  border-top-color: var(--chrome-border);
+  box-shadow: none;
 }

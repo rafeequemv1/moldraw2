@@ -75,6 +75,10 @@ export const ja: LocaleMessages = {
     landscapeView: '横向き',
     rotatePortrait: '縦向きに回転',
     rotateLandscape: '横向きに回転',
+    switchToDark: 'ダークテーマに切り替え',
+    switchToLight: 'ライトテーマに切り替え',
+    switchToElegantDark: 'エレガントダークに切り替え',
+    switchToInkDark: 'インクダークに切り替え',
   },
   nav: {
     community: 'コミュニティ',
@@ -225,9 +229,6 @@ export const ja: LocaleMessages = {
     grid: 'グリッド',
     gridOn: 'オン',
     gridOff: 'オフ',
-    gridPattern: 'パターン',
-    gridLines: '線',
-    gridDots: '点',
   },
   tabs: {
     openDesignsAria: '開いているデザイン',

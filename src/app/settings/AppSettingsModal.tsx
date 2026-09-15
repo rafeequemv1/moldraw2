@@ -289,20 +289,21 @@ export function AppSettingsModal({
         style={panelStyle}
       >
         <div
+          className="app-settings-sheet-head"
           style={{
-            padding: '10px 14px',
-            borderBottom: '1px solid var(--chrome-border)',
+            padding: isCompact ? undefined : '10px 14px',
+            borderBottom: isCompact ? undefined : '1px solid var(--chrome-border)',
             background: 'var(--chrome-bg-elevated)',
             flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div>
-              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
+              <span className="app-settings-sheet-title" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
                 {t('settings.title')}
                 <SettingsBetaTag />
               </span>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>
+              <div className="app-settings-sheet-intro" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>
                 {t('settings.intro')}
               </div>
             </div>
@@ -352,6 +353,7 @@ export function AppSettingsModal({
         </div>
 
         <div
+          className={isCompact ? 'app-settings-sheet-layout' : undefined}
           style={{
             display: 'grid',
             gridTemplateColumns: '148px minmax(0, 1fr)',

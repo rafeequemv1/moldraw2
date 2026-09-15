@@ -73,6 +73,10 @@ export const en = {
     landscapeView: 'Landscape view',
     rotatePortrait: 'Rotate to portrait view',
     rotateLandscape: 'Rotate to landscape view',
+    switchToDark: 'Switch to dark theme',
+    switchToLight: 'Switch to light theme',
+    switchToElegantDark: 'Switch to elegant dark',
+    switchToInkDark: 'Switch to ink dark',
   },
   nav: {
     community: 'Community',
@@ -223,9 +227,6 @@ export const en = {
     grid: 'Grid',
     gridOn: 'On',
     gridOff: 'Off',
-    gridPattern: 'Pattern',
-    gridLines: 'Lines',
-    gridDots: 'Dots',
   },
   tabs: {
     openDesignsAria: 'Open designs',

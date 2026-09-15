@@ -74,8 +74,6 @@ export interface GeneralSettings {
   snapToGrid: boolean;
   /** Show the canvas background grid. Default true. */
   showGrid: boolean;
-  /** Background grid appearance. Default lines. */
-  gridPattern?: 'lines' | 'dots';
   /**
    * Touch screens: one finger on empty canvas with the Select tool pans the
    * view instead of drawing a selection box. Default false (two-finger pan).

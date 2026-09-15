@@ -301,8 +301,6 @@ export function StyleToolbar({
     onStructureThemeChange?.(next.id, next.drawMode);
   };
 
-  const gridPattern = general.gridPattern === 'dots' ? 'dots' : 'lines';
-
   const themeSection = (
     <FormatPanelAccordion title={t('stylePanel.theme')} pinned defaultOpen>
       <PanelRow label={t('stylePanel.look')}>
@@ -331,20 +329,6 @@ export function StyleToolbar({
         >
           {general.showGrid !== false ? t('stylePanel.gridOn') : t('stylePanel.gridOff')}
         </button>
-      </PanelRow>
-      <PanelRow label={t('stylePanel.gridPattern')}>
-        <select
-          className="app-top-bar__color-style-select"
-          value={gridPattern}
-          disabled={general.showGrid === false}
-          aria-label={t('stylePanel.gridPattern')}
-          onChange={e =>
-            updateGeneral({ gridPattern: e.target.value === 'dots' ? 'dots' : 'lines' })
-          }
-        >
-          <option value="lines">{t('stylePanel.gridLines')}</option>
-          <option value="dots">{t('stylePanel.gridDots')}</option>
-        </select>
       </PanelRow>
     </FormatPanelAccordion>
   );

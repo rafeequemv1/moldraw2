@@ -803,6 +803,7 @@ export function CanvasContextMenu({
         onClose={onDismiss ?? (() => undefined)}
         title="Actions"
         size="auto"
+        className="mobile-sheet--menu"
       >
         {menuBody}
       </MobileBottomSheet>

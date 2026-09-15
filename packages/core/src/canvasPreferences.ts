@@ -20,8 +20,6 @@ export interface ResolveCanvasPreferencesInput {
     snapToGrid?: boolean;
     /** Draw the background grid. Default true when omitted. */
     showGrid?: boolean;
-    /** Grid appearance: dots (default) or lines. */
-    gridPattern?: 'lines' | 'dots';
   };
   bonds: {
     bondLengthPx: number;
@@ -46,8 +44,6 @@ export interface ResolvedCanvasPreferences {
   snapToGrid: boolean;
   /** Draw the background grid. */
   showGrid: boolean;
-  /** Background grid style. */
-  gridPattern: 'lines' | 'dots';
   /** Background / snap grid spacing in world units. */
   gridSizePx: number;
   labelFontFamily: string;
@@ -155,7 +151,6 @@ export function resolveCanvasPreferences(s: ResolveCanvasPreferencesInput): Reso
     bondAngleSnapRad,
     snapToGrid: g.snapToGrid === true,
     showGrid: g.showGrid !== false,
-    gridPattern: g.gridPattern === 'lines' ? 'lines' : 'dots',
     gridSizePx: 50,
     labelFontFamily: family,
     elementFontCss: `${weight}${fontPx}px ${family}`,

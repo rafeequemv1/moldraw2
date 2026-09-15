@@ -354,6 +354,17 @@ body.workspace-pane-resizing * {
   flex-wrap: wrap;
 }
 
+.viewer3d-toolbar__cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.viewer3d-toolbar__cluster .mobile-sheet-section__label {
+  display: none;
+}
+
 /* Menus open upward from the bottom-left island. */
 .viewer3d-island .viewer3d-menu__panel {
   top: auto;

@@ -75,6 +75,10 @@ export const de: LocaleMessages = {
     landscapeView: 'Querformat',
     rotatePortrait: 'Zum Hochformat drehen',
     rotateLandscape: 'Zum Querformat drehen',
+    switchToDark: 'Zum dunklen Design wechseln',
+    switchToLight: 'Zum hellen Design wechseln',
+    switchToElegantDark: 'Zu Elegant Dunkel wechseln',
+    switchToInkDark: 'Zu Tinten-Dunkel wechseln',
   },
   nav: {
     community: 'Community',
@@ -225,9 +229,6 @@ export const de: LocaleMessages = {
     grid: 'Raster',
     gridOn: 'An',
     gridOff: 'Aus',
-    gridPattern: 'Muster',
-    gridLines: 'Linien',
-    gridDots: 'Punkte',
   },
   tabs: {
     openDesignsAria: 'Geöffnete Entwürfe',

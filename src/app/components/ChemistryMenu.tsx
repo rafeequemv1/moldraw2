@@ -209,12 +209,13 @@ export function ChemistryMenu({
           onClose={() => setOpen(false)}
           title="Chemistry"
           size="auto"
+          className="mobile-sheet--menu"
         >
           <div className="mobile-sheet-list" role="menu" aria-label="Chemistry">
             {chemistryItems}
           </div>
           {pluginMenus.map(menu => (
-            <div key={menu.id} className="mobile-sheet-arrange__section" style={{ marginTop: 12 }}>
+            <div key={menu.id} className="mobile-sheet-arrange__section">
               <span className="mobile-sheet-arrange__label">{menu.label}</span>
               <div className="mobile-sheet-list" role="menu" aria-label={menu.label}>
                 {menu.items?.map(item => (
