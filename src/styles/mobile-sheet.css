@@ -244,6 +244,10 @@
   flex-shrink: 0;
 }
 
+.mobile-sheet--menu .mobile-sheet__panel--auto {
+  max-height: min(82dvh, 680px);
+}
+
 .mobile-sheet-search {
   display: flex;
   flex-direction: column;
