@@ -11,6 +11,13 @@
     "api/mcp.js": {
       "maxDuration": 10,
       "memory": 256
+    },
+    "api/community.js": {
+      "maxDuration": 10,
+      "includeFiles": "public/community/index.html"
+    },
+    "api/community-sitemap.js": {
+      "maxDuration": 10
     }
   },
   "headers": [

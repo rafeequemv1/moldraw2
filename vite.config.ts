@@ -1,10 +1,73 @@
 import path from 'node:path'
+import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const require = createRequire(import.meta.url)
+
 const root = path.dirname(fileURLToPath(import.meta.url))
 const pkg = (name: string) => path.resolve(root, `packages/${name}/src`)
+
+/** Serve crawlable community HTML in Vite (dev + preview), matching Vercel SSR. */
+function communitySeoPlugin(): Plugin {
+  const communitySeo = require('./server/community-seo.js') as {
+    isCommunitySeoPath: (pathname: string) => boolean
+    renderCommunityPage: (pathname: string, options?: { accept?: string }) => Promise<{
+      status: number
+      headers: Record<string, string>
+      body: string
+    }>
+    renderCommunitySitemap: () => Promise<{
+      status: number
+      headers: Record<string, string>
+      body: string
+    }>
+  }
+
+  const handle = async (
+    req: { url?: string; headers?: { accept?: string } },
+    res: { statusCode: number; setHeader: (key: string, value: string) => void; end: (body: string) => void },
+    next: (err?: unknown) => void,
+  ) => {
+    const urlPath = (req.url || '').split('?')[0]
+    if (urlPath === '/community/sitemap.xml') {
+      try {
+        const result = await communitySeo.renderCommunitySitemap()
+        res.statusCode = result.status
+        Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value))
+        res.end(result.body)
+      } catch {
+        next()
+      }
+      return
+    }
+    if (!communitySeo.isCommunitySeoPath(urlPath)) {
+      next()
+      return
+    }
+    try {
+      const result = await communitySeo.renderCommunityPage(urlPath, {
+        accept: req.headers?.accept || '',
+      })
+      res.statusCode = result.status
+      Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value))
+      res.end(result.body)
+    } catch (error) {
+      next()
+    }
+  }
+
+  return {
+    name: 'moldraw-community-seo',
+    configureServer(server) {
+      server.middlewares.stack.unshift({ route: '', handle })
+    },
+    configurePreviewServer(server) {
+      server.middlewares.stack.unshift({ route: '', handle })
+    },
+  }
+}
 
 /** Serve the static addons page at /addons and /addons/ in Vite (dev + preview). */
 function addonsHtmlPlugin(): Plugin {
@@ -33,7 +96,7 @@ function addonsHtmlPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), addonsHtmlPlugin()],
+  plugins: [react(), communitySeoPlugin(), addonsHtmlPlugin()],
   resolve: {
     alias: [
       {

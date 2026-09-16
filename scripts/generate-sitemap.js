@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const PUBLIC = path.join(ROOT, "public");
-const OUT = path.join(PUBLIC, "sitemap.xml");
+const OUT_PAGES = path.join(PUBLIC, "sitemap-pages.xml");
+const OUT_INDEX = path.join(PUBLIC, "sitemap.xml");
 const BASE = "https://www.moldraw.com";
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -115,5 +116,20 @@ ${body}
 </urlset>
 `;
 
-fs.writeFileSync(OUT, xml);
-console.log(`Wrote ${ordered.length} URLs to ${OUT} (lastmod ${TODAY})`);
+fs.writeFileSync(OUT_PAGES, xml);
+
+const indexXml = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>${BASE}/sitemap-pages.xml</loc>
+    <lastmod>${TODAY}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${BASE}/community/sitemap.xml</loc>
+    <lastmod>${TODAY}</lastmod>
+  </sitemap>
+</sitemapindex>
+`;
+
+fs.writeFileSync(OUT_INDEX, indexXml);
+console.log(`Wrote ${ordered.length} URLs to ${OUT_PAGES} and sitemap index ${OUT_INDEX} (lastmod ${TODAY})`);

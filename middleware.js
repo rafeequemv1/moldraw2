@@ -40,6 +40,19 @@ function resolveJunkPathRedirect(pathname) {
   return '/';
 }
 
+function resolveCommunityRewrite(pathname) {
+  if (pathname === '/community/sitemap.xml') return '/api/community-sitemap';
+  if (pathname === '/community/index.html') return null;
+  if (
+    pathname === '/community'
+    || pathname === '/community/'
+    || /^\/community\/(page\/\d+|features(?:\/page\/\d+)?|p\/[^/]+(?:\/[^/]+)?|c\/[^/]+|f\/[^/]+(?:\/[^/]+)?|fc\/[^/]+)\/?$/.test(pathname)
+  ) {
+    return `/api/community?path=${encodeURIComponent(pathname)}`;
+  }
+  return null;
+}
+
 export default function middleware(request) {
   const url = new URL(request.url);
 
@@ -57,6 +70,15 @@ export default function middleware(request) {
   if (staticTarget) {
     url.pathname = staticTarget;
     return Response.redirect(url.toString(), 301);
+  }
+
+  const communityTarget = resolveCommunityRewrite(url.pathname);
+  if (communityTarget) {
+    const apiUrl = new URL(communityTarget, url.origin);
+    url.searchParams.forEach((value, key) => {
+      if (!apiUrl.searchParams.has(key)) apiUrl.searchParams.set(key, value);
+    });
+    return Response.rewrite(apiUrl);
   }
 
   // Never content-negotiate machine-readable discovery / static assets through /api/markdown

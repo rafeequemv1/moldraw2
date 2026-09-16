@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
+import { persistWorkingDocumentForAuth } from './authLeavePersist';
 
 export const DESIGNATION_OPTIONS = [
   'Student',
@@ -130,6 +131,7 @@ export function useMolDrawAuth() {
   }, []);
 
   const openAuthModal = useCallback((mode: AuthMode = 'signin', notice = '') => {
+    void persistWorkingDocumentForAuth();
     setAuthMode(mode);
     setAuthError('');
     setAuthNotice(notice);
@@ -190,6 +192,7 @@ export function useMolDrawAuth() {
       }
 
       setIsAuthLoading(true);
+      await persistWorkingDocumentForAuth();
       try {
         if (authMode === 'reset') {
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -254,6 +257,30 @@ export function useMolDrawAuth() {
     [authForm, authMode, fetchUserProfile, saveUserProfile],
   );
 
+  const handleOAuthSignIn = useCallback(
+    async (provider: 'google' | 'github' | 'azure') => {
+      setAuthError('');
+      setAuthNotice('');
+      if (!isSupabaseConfigured || !supabase) {
+        setAuthError('Supabase is not configured yet.');
+        return;
+      }
+      setIsAuthLoading(true);
+      try {
+        await persistWorkingDocumentForAuth();
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: window.location.origin },
+        });
+        if (error) throw error;
+      } catch (err) {
+        setAuthError(err instanceof Error ? err.message : 'Could not start sign in.');
+        setIsAuthLoading(false);
+      }
+    },
+    [],
+  );
+
   return {
     session,
     signedIn,
@@ -269,6 +296,7 @@ export function useMolDrawAuth() {
     closeAuthModal,
     updateAuthForm,
     handleAuthSubmit,
+    handleOAuthSignIn,
     handleSignOut,
     defaultFeatureEmail: session?.user?.email || '',
   };

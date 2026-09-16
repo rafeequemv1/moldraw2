@@ -29,6 +29,14 @@ import {
   readSessionProjectId,
   writeOpenTabsSession,
 } from './tabSession';
+import {
+  pickHydrationDocument,
+  readWorkingDocumentSnapshot,
+  resolveBootTabs,
+  shouldKeepStoredMolecule,
+  writeWorkingDocumentSnapshot,
+} from './workingDocument';
+import { registerAuthLeavePersist } from '../auth/authLeavePersist';
 import type { DocumentTab, ProjectFolder, SavedProject, SavedProjectMeta } from './types';
 
 /** Debounced canvas → IndexedDB write. Short enough that a refresh keeps work. */
@@ -41,12 +49,12 @@ function urlHasEditorSeedQuery(): boolean {
 }
 
 export function useProjectPersistence(editorStore: MoleculeEditor) {
+  const snapshot = readWorkingDocumentSnapshot();
   const tabsSession = readOpenTabsSession();
-  const fallbackId = readSessionProjectId() ?? crypto.randomUUID();
-  const initialActiveId = tabsSession?.activeTabId ?? fallbackId;
-  const initialTabs: DocumentTab[] = tabsSession?.tabs ?? [
-    { id: initialActiveId, name: 'Untitled design' },
-  ];
+  const fallbackId = snapshot?.activeTabId ?? readSessionProjectId() ?? crypto.randomUUID();
+  const bootTabs = resolveBootTabs(tabsSession, snapshot, fallbackId);
+  const initialActiveId = bootTabs.activeTabId;
+  const initialTabs: DocumentTab[] = bootTabs.tabs;
 
   const [projectId, setProjectId] = useState(initialActiveId);
   const [projectName, setProjectName] = useState(
@@ -131,9 +139,13 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
       },
     ) => {
       const molecule = opts?.molecule ?? editorStore.getMolecule();
+      const savedOnce = opts?.savedOnce ?? savedOnceByTabRef.current.get(id) ?? savedOnceRef.current;
+      if (!opts?.molecule && !moleculeHasProjectContent(molecule) && !savedOnce) {
+        const existing = await getProject(id);
+        if (shouldKeepStoredMolecule(molecule, existing?.molecule, savedOnce)) return;
+      }
       const storedMol = cloneMolecule(molecule);
       moleculeCacheRef.current.set(id, storedMol);
-      const savedOnce = opts?.savedOnce ?? savedOnceByTabRef.current.get(id) ?? savedOnceRef.current;
       const isOpenTab = openTabsRef.current.some(t => t.id === id) || id === projectIdRef.current;
       // Open / working tabs always upsert so My Designs lists the current canvas,
       // including empty untitled files. Background records still skip blanks.
@@ -167,6 +179,13 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
       if (id === projectIdRef.current) {
         setProjectName(record.name);
         savedOnceRef.current = true;
+        writeWorkingDocumentSnapshot({
+          tabs: openTabsRef.current.map(t => (t.id === id ? { ...t, name: record.name } : t)),
+          activeTabId: id,
+          name: record.name,
+          molecule: storedMol,
+          savedAt: Date.now(),
+        });
       }
       setOpenTabs(prev => {
         const next = prev.map(t => (t.id === id ? { ...t, name: record.name } : t));
@@ -179,11 +198,61 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
     [editorStore, refreshLibrary, showSavedNotice, syncTabsSession],
   );
 
+  const captureWorkingSnapshot = useCallback(() => {
+    const currentId = projectIdRef.current;
+    const molecule = cloneMolecule(editorStore.getMolecule());
+    const tabs = openTabsRef.current.length
+      ? openTabsRef.current
+      : [{ id: currentId, name: projectNameRef.current || 'Untitled design' }];
+    writeWorkingDocumentSnapshot({
+      tabs,
+      activeTabId: currentId,
+      name: projectNameRef.current,
+      molecule,
+      savedAt: Date.now(),
+    });
+    syncTabsSession(openTabsRef.current.length ? openTabsRef.current : tabs, currentId);
+  }, [editorStore, syncTabsSession]);
+
   const persistAllOpenTabs = useCallback(
     async (opts?: { skipThumbnail?: boolean; refresh?: boolean }) => {
-      const currentId = projectIdRef.current;
-      const currentMol = cloneMolecule(editorStore.getMolecule());
+      let currentId = projectIdRef.current;
+      let currentMol = cloneMolecule(editorStore.getMolecule());
+      if (!moleculeHasProjectContent(currentMol) && !savedOnceRef.current) {
+        const existing = await getProject(currentId);
+        if (existing && moleculeHasProjectContent(existing.molecule)) {
+          currentMol = cloneMolecule(existing.molecule);
+          if (!moleculeHasProjectContent(editorStore.getMolecule())) {
+            editorStore.resetMolecule(cloneMolecule(existing.molecule));
+            setProjectName(existing.name);
+            projectNameRef.current = existing.name;
+          }
+        } else {
+          const snap = readWorkingDocumentSnapshot();
+          if (snap && moleculeHasProjectContent(snap.molecule)) {
+            currentMol = cloneMolecule(snap.molecule);
+            if (snap.activeTabId !== currentId) {
+              openTabsRef.current = snap.tabs;
+              projectIdRef.current = snap.activeTabId;
+              projectNameRef.current = snap.name;
+              currentId = snap.activeTabId;
+              setOpenTabs(snap.tabs);
+              setProjectId(snap.activeTabId);
+              setProjectName(snap.name);
+              syncTabsSession(snap.tabs, snap.activeTabId);
+              editorStore.resetMolecule(cloneMolecule(snap.molecule));
+            }
+          }
+        }
+      }
       moleculeCacheRef.current.set(currentId, currentMol);
+      writeWorkingDocumentSnapshot({
+        tabs: openTabsRef.current,
+        activeTabId: currentId,
+        name: projectNameRef.current,
+        molecule: currentMol,
+        savedAt: Date.now(),
+      });
       const records: SavedProject[] = [];
       for (const tab of openTabsRef.current) {
         let molecule = tab.id === currentId ? currentMol : moleculeCacheRef.current.get(tab.id);
@@ -225,8 +294,17 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
       }
       if (opts?.refresh !== false) await refreshLibrary();
     },
-    [editorStore, refreshLibrary],
+    [editorStore, refreshLibrary, syncTabsSession],
   );
+
+  const flushWorkingDocument = useCallback(async () => {
+    captureWorkingSnapshot();
+    try {
+      await persistAllOpenTabs({ skipThumbnail: true, refresh: false });
+    } catch (err) {
+      console.warn('[useProjectPersistence] auth leave persist failed', err);
+    }
+  }, [captureWorkingSnapshot, persistAllOpenTabs]);
 
   const flushOpenTabsAndRefresh = useCallback(async () => {
     try {
@@ -613,19 +691,28 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
           /* already logged above */
         }
         const saved = await getProject(projectId);
-        if (!saved || !moleculeHasProjectContent(saved.molecule)) return;
-        editorStore.resetMolecule(saved.molecule);
-        setProjectName(saved.name);
-        savedOnceRef.current = true;
-        savedOnceByTabRef.current.set(projectId, true);
-        setOpenTabs(prev =>
-          prev.map(t => (t.id === projectId ? { ...t, name: saved.name } : t)),
-        );
+        const picked = pickHydrationDocument({
+          projectId,
+          snapshot: readWorkingDocumentSnapshot(),
+          saved,
+          sessionTabs: openTabsRef.current,
+        });
+        if (!picked) return;
+        editorStore.resetMolecule(cloneMolecule(picked.molecule));
+        moleculeCacheRef.current.set(picked.activeTabId, cloneMolecule(picked.molecule));
+        projectIdRef.current = picked.activeTabId;
+        projectNameRef.current = picked.name;
+        savedOnceRef.current = moleculeHasProjectContent(picked.molecule);
+        savedOnceByTabRef.current.set(picked.activeTabId, true);
+        setProjectId(picked.activeTabId);
+        setProjectName(picked.name);
+        setOpenTabs(picked.tabs);
+        syncTabsSession(picked.tabs, picked.activeTabId);
       } finally {
         setInitialHydrationDone(true);
       }
     })();
-  }, [editorStore, projectId]);
+  }, [editorStore, projectId, syncTabsSession]);
 
   useEffect(() => {
     if (!initialHydrationDone || bootUpsertedRef.current) return;
@@ -669,10 +756,12 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
 
   useEffect(() => {
     const flush = () => {
+      captureWorkingSnapshot();
       void persistAllOpenTabs({ skipThumbnail: true, refresh: false });
     };
     const onHidden = () => {
       if (document.visibilityState === 'hidden') {
+        captureWorkingSnapshot();
         void persistAllOpenTabs({ skipThumbnail: true, refresh: false });
       }
     };
@@ -684,7 +773,12 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
       window.removeEventListener('beforeunload', flush);
       document.removeEventListener('visibilitychange', onHidden);
     };
-  }, [persistAllOpenTabs]);
+  }, [persistAllOpenTabs, captureWorkingSnapshot]);
+
+  useEffect(() => {
+    registerAuthLeavePersist(flushWorkingDocument);
+    return () => registerAuthLeavePersist(null);
+  }, [flushWorkingDocument]);
 
   const visibleProjectMetas = useMemo(
     () => mergeLibraryMetasWithOpenTabs(projectMetas, openTabs),
@@ -714,6 +808,7 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
     moveProjectsToFolder: moveProjectsToFolderId,
     refreshLibrary,
     refreshMetas: flushOpenTabsAndRefresh,
+    flushWorkingDocument,
     initialHydrationDone,
   };
 }

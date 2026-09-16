@@ -137,7 +137,6 @@ import type { MoleculeWorkerResponse } from '@moldraw/core/moleculeWorker/messag
 
 const IMAGE_FILE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg';
 const VIEWER3D_OPEN_KEY = 'moldraw.viewer3d.open';
-const EXPORT_SIGNUP_NOTICE = 'Sign up to copy, download, and export files.';
 const NEW_TAB_SIGNUP_NOTICE = 'Sign up to open more design tabs.';
 
 function readViewer3DOpenPref(): boolean {
@@ -222,11 +221,6 @@ function App() {
   const [showUpdatesModal, setShowUpdatesModal] = useState(false);
   const [hasUnreadUpdates, setHasUnreadUpdates] = useState(hasUnreadMolDrawUpdates);
   const auth = useMolDrawAuth();
-  const requireExportSignup = useCallback((): boolean => {
-    if (auth.signedIn) return true;
-    auth.openAuthModal('signup', EXPORT_SIGNUP_NOTICE);
-    return false;
-  }, [auth.signedIn, auth.openAuthModal]);
   const requireNewTabSignup = useCallback((): boolean => {
     if (auth.signedIn) return true;
     auth.openAuthModal('signup', NEW_TAB_SIGNUP_NOTICE);
@@ -1479,7 +1473,6 @@ function App() {
     if (!contextMenu || contextMenu.pointerType !== 'touch') return null;
     const actions = {
       copySmiles: () => {
-        if (!requireExportSignup()) return;
         handleContextCopySmiles();
       },
       paste: () => void handleContextPasteSmiles(),
@@ -1709,60 +1702,15 @@ function App() {
   /* eslint-disable react-hooks/refs -- intentional circular-dep bridge */
   pasteFromClipboardRef.current = handlePasteFromSystemClipboard;
   pasteWithFallbackRef.current = handlePasteWithFallback;
-  saveMoldrawRef.current = () => {
-    if (!requireExportSignup()) return;
-    return handleSaveMoldrawToDisk();
-  };
+  saveMoldrawRef.current = handleSaveMoldrawToDisk;
   /* eslint-enable react-hooks/refs */
 
-  const gatedSaveAs = useCallback(
-    (format: Parameters<typeof handleSaveAs>[0]) => {
-      if (!requireExportSignup()) return;
-      handleSaveAs(format);
-    },
-    [handleSaveAs, requireExportSignup],
-  );
-  const gatedDownload = useCallback(
-    (format: Parameters<typeof handleDownload>[0]) => {
-      if (!requireExportSignup()) return;
-      handleDownload(format);
-    },
-    [handleDownload, requireExportSignup],
-  );
-  const gatedSaveMoldrawToDisk = useCallback(() => {
-    if (!requireExportSignup()) return;
-    void handleSaveMoldrawToDisk();
-  }, [handleSaveMoldrawToDisk, requireExportSignup]);
-  const gatedDownloadProject = useCallback(
-    (id: string) => {
-      if (!requireExportSignup()) return;
-      void downloadProjectMoldrawFile(id);
-    },
-    [requireExportSignup],
-  );
-  const gatedDownloadAll = useCallback(
-    (asZip: boolean) => {
-      if (!requireExportSignup()) return;
-      void downloadAllProjectsMoldraw({ asZip });
-    },
-    [requireExportSignup],
-  );
-
-  const gatedCopyAs = useCallback(
-    (format: Parameters<typeof handleCopyAs>[0]) => {
-      if (!requireExportSignup()) return;
-      return handleCopyAs(format);
-    },
-    [handleCopyAs, requireExportSignup],
-  );
-  const gatedHeaderCopySmiles = useCallback(() => {
-    if (!requireExportSignup()) return;
+  const handleHeaderCopySmiles = useCallback(() => {
     handleCopyAs('smiles');
     setSmilesCopied(true);
     window.setTimeout(() => setSmilesCopied(false), 1800);
-  }, [handleCopyAs, requireExportSignup]);
-  const gatedHeaderCopySvg = useCallback(() => {
-    if (!requireExportSignup()) return;
+  }, [handleCopyAs]);
+  const handleHeaderCopySvg = useCallback(() => {
     setSvgCopyError(false);
     void Promise.resolve(handleCopyAs('svg')).then(ok => {
       if (ok === false) {
@@ -1773,11 +1721,7 @@ function App() {
       setSvgCopied(true);
       window.setTimeout(() => setSvgCopied(false), 1800);
     });
-  }, [handleCopyAs, requireExportSignup]);
-  const gatedContextCopySmiles = useCallback(() => {
-    if (!requireExportSignup()) return;
-    handleContextCopySmiles();
-  }, [handleContextCopySmiles, requireExportSignup]);
+  }, [handleCopyAs]);
 
   const handleHeaderPasteSmiles = useCallback(async () => {
     const paste = async (raw: string) => {
@@ -1963,8 +1907,8 @@ function App() {
         onRenameFolder={renameFolder}
         onDeleteFolder={deleteFolder}
         onMoveProjectsToFolder={moveProjectsToFolder}
-        onDownloadProject={gatedDownloadProject}
-        onDownloadAll={gatedDownloadAll}
+        onDownloadProject={downloadProjectMoldrawFile}
+        onDownloadAll={downloadAllProjectsMoldraw}
         onBackToEditor={handleBackToEditor}
       />
       </Suspense>
@@ -2065,8 +2009,8 @@ function App() {
         onRenameFolder={renameFolder}
         onDeleteFolder={deleteFolder}
         onMoveProjectsToFolder={moveProjectsToFolder}
-        onDownloadProject={gatedDownloadProject}
-        onDownloadAll={gatedDownloadAll}
+        onDownloadProject={downloadProjectMoldrawFile}
+        onDownloadAll={downloadAllProjectsMoldraw}
       />
 
       {showAppSettings ? (
@@ -2292,10 +2236,10 @@ function App() {
               void refreshMetas();
               setShowProjectLibrary(true);
             }}
-            onCopySmiles={gatedHeaderCopySmiles}
-            onCopySvg={gatedHeaderCopySvg}
+            onCopySmiles={handleHeaderCopySmiles}
+            onCopySvg={handleHeaderCopySvg}
             onPaste={() => void handleHeaderPasteSmiles()}
-            onCopyAs={gatedCopyAs}
+            onCopyAs={handleCopyAs}
             smilesCopied={smilesCopied}
             svgCopied={svgCopied}
             svgCopyError={svgCopyError}
@@ -2329,8 +2273,8 @@ function App() {
             onGoHome={() => {
               setShowDrawTools(false);
             }}
-            onSaveAs={gatedSaveAs}
-            onSave={gatedSaveMoldrawToDisk}
+            onSaveAs={handleSaveAs}
+            onSave={handleSaveMoldrawToDisk}
             activeColor={activeColor}
             onActiveColorChange={setActiveColor}
             colorTargets={appSettings.general.colorTargets}
@@ -2682,8 +2626,6 @@ function App() {
                       rebuildBusy={viewer3DComputeStatus === 'computing'}
                       onApplyOclConformer={handleApplyOclConformer}
                       onApplyMmff94={handleApplyMmff94}
-                      onBeforeExport={requireExportSignup}
-                      canExport={auth.signedIn}
                       backgroundColor={viewer3dBackground}
                       controlsAsSheet={isCompactViewport}
                     />
@@ -2762,7 +2704,6 @@ function App() {
             runBatchPipeline: runBatchSmilesPipeline,
             onImportMolblockToCanvas: handleBatchImportMolblockOnly,
             onImportMolblocksToCanvas: handleBatchImportMolblocksToCanvas,
-            onBeforeDownload: requireExportSignup,
           }}
         />
         </Suspense>
@@ -2888,8 +2829,8 @@ function App() {
           detectedAliasAtCursor={contextAtomDetectedAlias}
           asSheet={isCompactViewport}
           onDismiss={closeContextMenu}
-          onCopySmiles={gatedContextCopySmiles}
-          onCopyAs={gatedCopyAs}
+          onCopySmiles={handleContextCopySmiles}
+          onCopyAs={handleCopyAs}
           onPasteSmiles={handleContextPasteSmiles}
           onHighlightColor={color => {
             const atomIds =
@@ -2942,7 +2883,7 @@ function App() {
           onInvertStereoAtAtom={handleContextInvertStereoAtAtom}
           onSwapSelectedAtomPositions={handleContextSwapAtomPositions}
           onEditSruBracketSubscript={handleContextEditSruBracketSubscript}
-          onDownload={gatedDownload}
+          onDownload={handleDownload}
           onAddExplicitHydrogen={handleContextAddExplicitHydrogen}
           onToggleAllExplicitHydrogens={() => {
             const unfolding = !molecule.atoms.some(a => a.element === 'H');

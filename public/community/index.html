@@ -18,10 +18,11 @@
   <meta name="twitter:title" content="MolDraw Community | Chemistry Discussion Forum">
   <meta name="twitter:description" content="Community discussions and feature requests for MolDraw, the free browser-based chemistry structure editor and 3D molecule viewer.">
   <meta name="twitter:image" content="https://www.moldraw.com/og-image.png">
-  <link rel="canonical" href="https://www.moldraw.com/community/">
+  <link rel="canonical" id="canonical-url" href="https://www.moldraw.com/community/">
   <link rel="alternate" type="text/plain" href="https://www.moldraw.com/llms.txt" title="MolDraw LLM index">
+  <link rel="sitemap" type="application/xml" title="Community sitemap" href="/community/sitemap.xml">
   <link rel="stylesheet" href="/css/site-topbar.css">
-  <script type="application/ld+json">
+  <script type="application/ld+json" id="community-jsonld">
     {
       "@context": "https://schema.org",
       "@graph": [
@@ -135,6 +136,10 @@
       gap: 18px;
       justify-content: center;
     }
+    .community-shell.thread-open {
+      width: min(1280px, 96vw);
+      grid-template-columns: 200px minmax(0, 540px) minmax(320px, 400px);
+    }
     .community-sidebar,
     .community-right-rail,
     .community-card,
@@ -189,11 +194,126 @@
       text-align: left;
       padding: 0 12px;
       cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      box-sizing: border-box;
     }
     .tab-btn.active {
       border-color: #2C7A7B;
       background: #eefafa;
       color: #1a5a5b;
+    }
+    .community-page-title {
+      margin: 0 0 12px;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+    .card-title-link {
+      color: inherit;
+      text-decoration: none;
+    }
+    .card-title-link:hover,
+    .card-title-link:focus {
+      text-decoration: underline;
+    }
+    .comment-permalink,
+    a.more-thread {
+      font-size: 12px;
+      font-weight: 700;
+      color: #2C7A7B;
+      text-decoration: none;
+    }
+    .comment-permalink:hover,
+    a.more-thread:hover {
+      text-decoration: underline;
+    }
+    .comments-heading,
+    .comment-heading {
+      font-size: 14px;
+      margin: 0 0 8px;
+    }
+    a.pill {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .community-pagination {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 14px 0 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .community-pagination a,
+    .community-pagination span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 0 10px;
+      border: 1px solid #dbe4ea;
+      border-radius: 10px;
+      background: #fff;
+      color: #1a5a5b;
+      text-decoration: none;
+    }
+    .community-pagination span[aria-current="page"] {
+      border-color: #2C7A7B;
+      background: #eefafa;
+    }
+    .community-card.is-selected {
+      border-color: #2C7A7B;
+      box-shadow: 0 0 0 1px #2C7A7B;
+    }
+    .community-card {
+      cursor: pointer;
+    }
+    .thread-panel {
+      display: none;
+    }
+    .community-shell.thread-open .thread-panel {
+      display: block;
+    }
+    .community-shell.thread-open #community-rail-default {
+      display: none;
+    }
+    .thread-panel-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .thread-panel-head a,
+    .thread-copy,
+    .thread-close {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1a5a5b;
+      text-decoration: none;
+      background: #fff;
+      border: 1px solid #dbe4ea;
+      border-radius: 8px;
+      min-height: 28px;
+      padding: 0 9px;
+      cursor: pointer;
+    }
+    .thread-close {
+      width: 28px;
+      padding: 0;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .thread-panel-body .community-card {
+      border: 0;
+      box-shadow: none;
+      padding: 0;
+      cursor: default;
+    }
+    .thread-panel-body .card-title {
+      font-size: 20px;
     }
     .auth-panel {
       margin-top: 12px;
@@ -1072,6 +1192,21 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
       }
+      .community-shell.thread-open {
+        grid-template-columns: 1fr;
+      }
+      .community-shell.thread-open .community-right-rail {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: block;
+        overflow: auto;
+        width: auto;
+        margin: 0;
+        padding: 16px;
+        border-radius: 0;
+        background: #f3f6f8;
+      }
       .community-right-rail .auth-panel,
       .community-right-rail .cta-card {
         margin: 0;
@@ -1246,8 +1381,8 @@
       <h2 class="sidebar-title">MolDraw Community</h2>
       <p class="sidebar-text">Share chemistry workflows, ask questions, vote on ideas, and follow feature requests.</p>
       <div class="tabs" role="tablist">
-        <button id="tab-discussions" class="tab-btn active" type="button">Discussions</button>
-        <button id="tab-features" class="tab-btn" type="button">Feature requests</button>
+        <a id="tab-discussions" class="tab-btn active" href="/community/">Discussions</a>
+        <a id="tab-features" class="tab-btn" href="/community/features">Feature requests</a>
       </div>
       <section class="seo-summary" aria-labelledby="community-summary-title">
         <h2 id="community-summary-title">Ask chemistry drawing questions and shape MolDraw features</h2>
@@ -1271,7 +1406,7 @@
     </aside>
 
     <section class="community-main">
-      <h1 class="sr-only">MolDraw Community</h1>
+      <h1 class="community-page-title">MolDraw Community</h1>
 
       <div id="composer" class="composer post-launcher">
         <div class="post-launcher-top">
@@ -1286,26 +1421,40 @@
       </div>
 
       <div id="status" class="status">Loading community...</div>
+      <noscript>
+        <p>Public community posts, comments, and feature requests are included in this HTML. JavaScript is only required to sign in and write.</p>
+      </noscript>
       <div id="feed" class="feed"></div>
+      <nav id="community-pagination" class="community-pagination" aria-label="Community pagination"></nav>
     </section>
 
-    <aside class="community-right-rail" aria-label="Community signup">
-      <div class="auth-panel">
-        <strong id="auth-title">Join the community</strong>
-        <p id="auth-copy">Read freely. Sign in to post, comment, upload images, or upvote.</p>
-        <div id="auth-actions" class="auth-row">
-          <button class="btn btn-primary" type="button" data-auth-open>Sign in / Sign up</button>
+    <aside class="community-right-rail" id="community-right-rail" aria-label="Community sidebar">
+      <div id="thread-panel" class="thread-panel" hidden>
+        <div class="thread-panel-head">
+          <button type="button" id="thread-panel-close" class="thread-close" aria-label="Close thread">×</button>
+          <a id="thread-panel-back" href="/community/">Back to feed</a>
+          <button type="button" id="thread-copy-link" class="thread-copy">Copy link</button>
         </div>
+        <div id="thread-panel-body"></div>
       </div>
-      <div class="cta-card">
-        <h2>Build MolDraw together</h2>
-        <p>Vote on feature requests, share workflows, and help prioritize the chemistry tools researchers need next.</p>
-        <ul class="stat-list">
-          <li><strong>Discussions</strong>Ask and answer workflow questions.</li>
-          <li><strong>Feature requests</strong>Support ideas and track progress.</li>
-          <li><strong>Admin updates</strong>Request status changes appear here.</li>
-        </ul>
-        <a class="community-policy-link" href="/pages/community-guidelines.html" target="_blank" rel="noopener noreferrer">Read Community Guidelines</a>
+      <div id="community-rail-default">
+        <div class="auth-panel">
+          <strong id="auth-title">Join the community</strong>
+          <p id="auth-copy">Read freely. Sign in to post, comment, upload images, or upvote.</p>
+          <div id="auth-actions" class="auth-row">
+            <button class="btn btn-primary" type="button" data-auth-open>Sign in / Sign up</button>
+          </div>
+        </div>
+        <div class="cta-card">
+          <h2>Build MolDraw together</h2>
+          <p>Vote on feature requests, share workflows, and help prioritize the chemistry tools researchers need next.</p>
+          <ul class="stat-list">
+            <li><strong>Discussions</strong>Ask and answer workflow questions.</li>
+            <li><strong>Feature requests</strong>Support ideas and track progress.</li>
+            <li><strong>Admin updates</strong>Request status changes appear here.</li>
+          </ul>
+          <a class="community-policy-link" href="/pages/community-guidelines.html" target="_blank" rel="noopener noreferrer">Read Community Guidelines</a>
+        </div>
       </div>
     </aside>
   </main>
@@ -1461,6 +1610,212 @@
       under_progress: 'Under progress',
       done: 'Done'
     };
+    const COMMUNITY_PAGE_SIZE = 20;
+
+    function slugifyTitle(title) {
+      return String(title || 'post').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'post';
+    }
+    function discussionUrl(post) {
+      const id = post?.id || post;
+      const slug = post?.title ? slugifyTitle(post.title) : '';
+      return slug ? `/community/p/${encodeURIComponent(id)}/${slug}` : `/community/p/${encodeURIComponent(id)}`;
+    }
+    function featureUrl(request) {
+      const id = request?.id || request;
+      const slug = request?.title ? slugifyTitle(request.title) : '';
+      return slug ? `/community/f/${encodeURIComponent(id)}/${slug}` : `/community/f/${encodeURIComponent(id)}`;
+    }
+    function commentPermalink(id) {
+      return `/community/c/${encodeURIComponent(id)}`;
+    }
+    function featureCommentPermalink(id) {
+      return `/community/fc/${encodeURIComponent(id)}`;
+    }
+    function parseCommunityRoute(loc = window.location) {
+      let path = loc.pathname || '/';
+      try { path = decodeURIComponent(path); } catch {}
+      path = path.replace(/\/+$/, '') || '/';
+      const hash = String(loc.hash || '').replace(/^#/, '');
+      if (path === '/community' && hash === 'feature-requests') return { view: 'features', page: 1 };
+      if (path === '/community') return { view: 'list', page: 1 };
+      let match = path.match(/^\/community\/page\/(\d+)$/);
+      if (match) return { view: 'list', page: Math.max(1, Number(match[1])) };
+      if (path === '/community/features') return { view: 'features', page: 1 };
+      match = path.match(/^\/community\/features\/page\/(\d+)$/);
+      if (match) return { view: 'features', page: Math.max(1, Number(match[1])) };
+      match = path.match(/^\/community\/p\/([^/]+)(?:\/([^/]+))?$/);
+      if (match) return { view: 'post', id: match[1], slug: match[2] || '' };
+      match = path.match(/^\/community\/c\/([^/]+)$/);
+      if (match) return { view: 'comment', id: match[1] };
+      match = path.match(/^\/community\/f\/([^/]+)(?:\/([^/]+))?$/);
+      if (match) return { view: 'feature', id: match[1], slug: match[2] || '' };
+      match = path.match(/^\/community\/fc\/([^/]+)$/);
+      if (match) return { view: 'feature-comment', id: match[1] };
+      return { view: 'list', page: 1 };
+    }
+    function renderPaginationNav(kind, page, total) {
+      const nav = document.getElementById('community-pagination');
+      if (!nav) return;
+      const pages = Math.max(1, Math.ceil((Number(total) || 0) / COMMUNITY_PAGE_SIZE));
+      if (pages <= 1) {
+        nav.innerHTML = '';
+        return;
+      }
+      const hrefFor = (n) => {
+        if (kind === 'features') return n <= 1 ? '/community/features' : `/community/features/page/${n}`;
+        return n <= 1 ? '/community/' : `/community/page/${n}`;
+      };
+      const items = [];
+      if (page > 1) items.push(`<a rel="prev" href="${hrefFor(page - 1)}">Previous</a>`);
+      const start = Math.max(1, page - 2);
+      const end = Math.min(pages, page + 2);
+      for (let n = start; n <= end; n += 1) {
+        items.push(n === page
+          ? `<span aria-current="page">${n}</span>`
+          : `<a href="${hrefFor(n)}">${n}</a>`);
+      }
+      if (page < pages) items.push(`<a rel="next" href="${hrefFor(page + 1)}">Next</a>`);
+      nav.innerHTML = items.join('');
+    }
+
+    const threadPanel = document.getElementById('thread-panel');
+    const threadPanelBody = document.getElementById('thread-panel-body');
+    const threadPanelBack = document.getElementById('thread-panel-back');
+    const communityShell = document.querySelector('.community-shell');
+    const railDefault = document.getElementById('community-rail-default');
+    let lastDiscussionItems = [];
+    let lastFeatureItems = [];
+    let activeThread = null;
+
+    function isModifiedClick(event) {
+      return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
+    }
+    function isThreadRoute(route = parseCommunityRoute()) {
+      return ['post', 'comment', 'feature', 'feature-comment'].includes(route.view);
+    }
+    function listUrlFor(kind) {
+      return kind === 'feature' ? '/community/features' : '/community/';
+    }
+    function setThreadOpen(open) {
+      communityShell?.classList.toggle('thread-open', open);
+      if (threadPanel) threadPanel.hidden = !open;
+      if (railDefault) railDefault.hidden = open;
+    }
+    function hideThreadPanel() {
+      activeThread = null;
+      setThreadOpen(false);
+      if (threadPanelBody) threadPanelBody.innerHTML = '';
+      feed.querySelectorAll('.community-card.is-selected').forEach((card) => card.classList.remove('is-selected'));
+    }
+    function closeThreadToList() {
+      const kind = activeThread?.kind === 'feature' ? 'feature' : 'post';
+      const url = listUrlFor(kind);
+      if (window.location.pathname.replace(/\/$/, '') !== url.replace(/\/$/, '')) {
+        window.history.pushState({ community: true }, '', url);
+      }
+      hideThreadPanel();
+    }
+    function renderThreadPanel(kind, item, comments, highlightId) {
+      if (!threadPanelBody || !item) return;
+      activeThread = { kind, id: item.id };
+      const isFeature = kind === 'feature';
+      const url = isFeature ? featureUrl(item) : discussionUrl(item);
+      const commentsHtml = isFeature
+        ? renderFeatureCommentThread(item.id, comments, comments.length)
+        : renderCommentThread(item.id, comments, item.comment_count || comments.length, { threadUrl: url });
+      threadPanelBack.href = listUrlFor(kind);
+      threadPanelBody.innerHTML = `
+        <article class="community-card">
+          <div class="author" style="margin-bottom:8px;">
+            <span class="avatar ${isFeature ? '' : escapeHtml(safeAvatarKey(item.author_avatar_key))}">${escapeHtml(initials(isFeature ? item.name : item.author_name))}</span>
+            <div>
+              <div class="author-name">${escapeHtml((isFeature ? item.name : item.author_name) || 'Community member')}</div>
+              <div class="author-meta">${isFeature ? 'Feature request' : escapeHtml(item.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(item.created_at))}</div>
+            </div>
+          </div>
+          <h1 class="card-title">${escapeHtml(item.title)}</h1>
+          <p class="card-body">${escapeHtml(isFeature ? item.description : item.body)}</p>
+          ${renderImages(item.image_urls, isFeature ? 'Feature request attachment' : 'Community attachment')}
+          <div class="${isFeature ? 'comments visible' : 'comments visible'}" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
+        </article>
+      `;
+      setThreadOpen(true);
+      const selectedId = isFeature ? `feature-${item.id}` : `post-${item.id}`;
+      feed.querySelectorAll('.community-card.is-selected').forEach((card) => card.classList.remove('is-selected'));
+      document.getElementById(selectedId)?.classList.add('is-selected');
+      if (isFeature) bindFeatureCommentThread(threadPanelBody.querySelector('[data-feature-comments]'), item.id);
+      else bindCommentThread(threadPanelBody.querySelector('[data-comments]'), item.id);
+      if (highlightId) document.getElementById(`comment-${highlightId}`)?.scrollIntoView({ block: 'nearest' });
+    }
+    async function openDiscussionThread(post, { url, highlightId, replace = false } = {}) {
+      if (!post) return;
+      const href = url || discussionUrl(post);
+      const current = window.location.pathname.replace(/\/$/, '');
+      if (current !== href.replace(/\/$/, '')) {
+        if (replace) window.history.replaceState({ community: true }, '', href);
+        else window.history.pushState({ community: true }, '', href);
+      }
+      document.title = `${post.title || 'Community post'} | MolDraw Community`;
+      expandedCommentThreads.add(post.id);
+      let comments = commentCache.get(post.id);
+      if (!comments) {
+        const { data } = await client
+          .from('community_comments')
+          .select('id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at')
+          .eq('post_id', post.id)
+          .order('created_at', { ascending: true })
+          .limit(100);
+        comments = data || [];
+        commentCache.set(post.id, comments);
+      }
+      renderThreadPanel('post', post, comments, highlightId);
+    }
+    async function openFeatureThread(request, { url, highlightId, replace = false } = {}) {
+      if (!request) return;
+      const href = url || featureUrl(request);
+      const current = window.location.pathname.replace(/\/$/, '');
+      if (current !== href.replace(/\/$/, '')) {
+        if (replace) window.history.replaceState({ community: true }, '', href);
+        else window.history.pushState({ community: true }, '', href);
+      }
+      document.title = `${request.title || 'Feature request'} | MolDraw Community`;
+      expandedFeatureCommentThreads.add(request.id);
+      let comments = featureCommentCache.get(request.id);
+      if (!comments && featureCommentsAvailable) {
+        const { data, error } = await client
+          .from('feature_request_comments')
+          .select('id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at')
+          .eq('feature_request_id', request.id)
+          .order('created_at', { ascending: true })
+          .limit(100);
+        if (!error) {
+          comments = data || [];
+          featureCommentCache.set(request.id, comments);
+        } else comments = [];
+      }
+      renderThreadPanel('feature', request, comments || [], highlightId);
+    }
+    function bindFeedOpeners(kind, items) {
+      feed.querySelectorAll('article.community-card').forEach((card) => {
+        const id = card.getAttribute(kind === 'feature' ? 'data-feature-id' : 'data-post-id');
+        const item = items.find((entry) => entry.id === id);
+        const open = (event, href) => {
+          if (!item || isModifiedClick(event)) return;
+          event.preventDefault();
+          if (kind === 'feature') openFeatureThread(item, { url: href });
+          else openDiscussionThread(item, { url: href });
+        };
+        card.querySelectorAll('a.card-title-link, a[data-open-thread]').forEach((link) => {
+          link.addEventListener('click', (event) => open(event, link.getAttribute('href')));
+        });
+        card.addEventListener('click', (event) => {
+          if (event.target.closest('button, select, textarea, input, label, a[target="_blank"]')) return;
+          if (event.target.closest('a.card-title-link, a[data-open-thread]')) return;
+          const link = card.querySelector('a.card-title-link');
+          if (link) open(event, link.getAttribute('href'));
+        });
+      });
+    }
 
     const escapeHtml = (value) => String(value || '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -1759,6 +2114,11 @@
         return;
       }
       statusEl.textContent = '';
+      const route = parseCommunityRoute();
+      if (route.view === 'post' || route.view === 'comment') {
+        window.location.href = '/community/';
+        return;
+      }
       await loadDiscussions();
     }
 
@@ -1874,10 +2234,12 @@
            <button class="comment-tool" type="button" data-delete-comment="${escapeHtml(comment.id)}">Delete</button>`
         : '';
       const allReplies = comment.replies || [];
-      const repliesExpanded = replyThreads.has(comment.id);
+      const threadExpanded = (options.expandedCommentThreads || expandedCommentThreads).has(postId);
+      const repliesExpanded = threadExpanded || replyThreads.has(comment.id);
       const visibleReplies = repliesExpanded ? allReplies : allReplies.slice(0, 2);
       const replies = visibleReplies.map((reply) => renderSingleComment(reply, postId, true, comment.id, options)).join('');
       const hiddenReplies = Math.max(allReplies.length - visibleReplies.length, 0);
+      const moreRepliesHref = (options.permalinkHref || commentPermalink)(comment.id);
       const images = renderImages(comment.image_urls, 'Reply attachment', 'card-images comment-images');
       return `
         <div class="comment ${isReply ? 'comment-reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
@@ -1891,6 +2253,7 @@
           <div class="comment-body">${escapeHtml(comment.body)}</div>
           ${images}
           <div class="comment-tools">
+            <a class="comment-permalink" href="${escapeHtml((options.permalinkHref || commentPermalink)(comment.id))}">Permalink</a>
             <button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(rootCommentId)}">Reply</button>
             <button class="comment-tool" type="button" data-report-type="${escapeHtml(reportType)}" data-report-id="${escapeHtml(comment.id)}" data-report-label="${escapeHtml(reportLabel)}">Report</button>
             ${ownerTools}
@@ -1899,7 +2262,7 @@
           ${replies || hiddenReplies ? `
             <div class="comment-replies">
               ${replies}
-              ${hiddenReplies > 0 ? `<button class="more-thread" type="button" data-more-replies="${escapeHtml(comment.id)}">View ${hiddenReplies} more repl${hiddenReplies === 1 ? 'y' : 'ies'}</button>` : ''}
+              ${hiddenReplies > 0 ? `<a class="more-thread" href="${escapeHtml(moreRepliesHref)}">View ${hiddenReplies} more repl${hiddenReplies === 1 ? 'y' : 'ies'}</a>` : ''}
             </div>
           ` : ''}
         </div>
@@ -1913,10 +2276,11 @@
       const visibleComments = expanded ? roots : roots.slice(0, 3);
       const rendered = visibleComments.map((comment) => renderSingleComment(comment, postId, false, comment.id, options)).join('');
       const hiddenCount = Math.max(roots.length - visibleComments.length, 0);
+      const threadUrl = options.threadUrl || discussionUrl(postId);
 
       return `
         ${rendered || '<p class="author-meta">No replies yet. Be the first to reply.</p>'}
-        ${hiddenCount > 0 ? `<button class="more-thread" type="button" data-more-comments="${escapeHtml(postId)}">View ${hiddenCount} more thread${hiddenCount === 1 ? '' : 's'}</button>` : ''}
+        ${hiddenCount > 0 ? `<a class="more-thread" href="${escapeHtml(threadUrl)}">View ${hiddenCount} more thread${hiddenCount === 1 ? '' : 's'}</a>` : ''}
         <div class="comment-form" data-comment-form="main">
           <textarea placeholder="Write a reply..."></textarea>
           <label class="comment-image-chip">
@@ -2034,7 +2398,9 @@
         expandedCommentThreads: expandedFeatureCommentThreads,
         expandedReplyThreads: expandedFeatureReplyThreads,
         reportType: 'feature_request_comment',
-        reportLabel: 'feature request reply'
+        reportLabel: 'feature request reply',
+        permalinkHref: featureCommentPermalink,
+        threadUrl: featureUrl(requestId)
       });
     }
 
@@ -2193,24 +2559,60 @@
     }
 
     async function loadDiscussions(setLoading = true) {
-      activeTab = 'discussions';
-      if (window.location.hash === '#feature-requests') {
-        window.history.replaceState(null, '', window.location.pathname);
+      const route = parseCommunityRoute();
+      if (route.view === 'features' || route.view === 'feature' || route.view === 'feature-comment') {
+        return loadFeatureRequests();
       }
+      activeTab = 'discussions';
       tabDiscussions.classList.add('active');
       tabFeatures.classList.remove('active');
       composer.style.display = 'block';
-      if (setLoading) statusEl.textContent = 'Loading discussions...';
-      const { data, error } = await client
+      const hasSsr = Boolean(feed.querySelector('article.community-card'));
+      if (setLoading && !hasSsr) statusEl.textContent = 'Loading discussions...';
+
+      let highlightCommentId = null;
+      let selectedPostId = route.view === 'post' ? route.id : null;
+      if (route.view === 'comment') {
+        const { data: comment } = await client
+          .from('community_comments')
+          .select('id,post_id')
+          .eq('id', route.id)
+          .maybeSingle();
+        if (!comment?.post_id) {
+          statusEl.textContent = 'Comment not found.';
+          hideThreadPanel();
+          renderPaginationNav('discussions', 1, 0);
+          if (!hasSsr) feed.innerHTML = '<p>This comment is unavailable. <a href="/community/">Back to community</a></p>';
+          return;
+        }
+        selectedPostId = comment.post_id;
+        highlightCommentId = comment.id;
+        expandedCommentThreads.add(comment.post_id);
+      }
+
+      const page = route.view === 'list' ? (route.page || 1) : 1;
+      const from = (page - 1) * COMMUNITY_PAGE_SIZE;
+      let query = client
         .from('community_posts')
-        .select('id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at')
+        .select('id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at', { count: 'exact' })
         .order('created_at', { ascending: false })
-        .limit(40);
+        .range(from, from + COMMUNITY_PAGE_SIZE - 1);
+
+      const { data, error, count } = await query;
+      let posts = data || [];
+      if (selectedPostId && !posts.some((post) => post.id === selectedPostId)) {
+        const { data: selected } = await client
+          .from('community_posts')
+          .select('id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at')
+          .eq('id', selectedPostId)
+          .maybeSingle();
+        if (selected) posts = [selected, ...posts];
+      }
       if (error) {
         statusEl.textContent = error.message;
         return;
       }
-      const postIds = (data || []).map((post) => post.id);
+      const postIds = posts.map((post) => post.id);
       let myVotes = new Set();
       if (session?.user && postIds.length) {
         const { data: votes } = await client.from('community_post_votes').select('post_id').eq('user_id', session.user.id).in('post_id', postIds);
@@ -2230,8 +2632,9 @@
         });
         commentsByPost.forEach((comments, postId) => commentCache.set(postId, comments));
       }
-      statusEl.textContent = data?.length ? '' : 'No discussions yet. Start the first one.';
-      feed.innerHTML = (data || []).map((post) => {
+      statusEl.textContent = posts.length ? '' : 'No discussions yet. Start the first one.';
+      lastDiscussionItems = posts;
+      feed.innerHTML = posts.map((post) => {
         const voted = myVotes.has(post.id);
         const comments = commentsByPost.get(post.id) || [];
         commentTotalCache.set(post.id, post.comment_count || comments.length);
@@ -2239,8 +2642,9 @@
           ? `<button class="pill" type="button" data-edit-post="${escapeHtml(post.id)}">Edit post</button>
              <button class="pill" type="button" data-delete-post="${escapeHtml(post.id)}">Delete post</button>`
           : '';
+        const url = discussionUrl(post);
         return `
-          <article class="community-card">
+          <article class="community-card${selectedPostId === post.id ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}">
             <div class="card-top">
               <div class="author">
                 <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
@@ -2250,44 +2654,41 @@
                 </div>
               </div>
             </div>
-            <h2 class="card-title">${escapeHtml(post.title)}</h2>
+            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a></h2>
             <p class="card-body">${escapeHtml(post.body)}</p>
             ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
               <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-post="${escapeHtml(post.id)}" data-voted="${voted ? '1' : '0'}">▲ ${post.upvote_count || 0}</button>
-              <button class="pill" type="button" data-open-comments="${escapeHtml(post.id)}">Reply ${post.comment_count || 0}</button>
+              <a class="pill" data-open-thread href="${escapeHtml(url)}">${post.comment_count || comments.length || 0} replies</a>
               <button class="pill" type="button" data-report-type="post" data-report-id="${escapeHtml(post.id)}" data-report-label="post">Report</button>
               ${ownerActions}
             </div>
-            <div class="comments visible" data-comments="${escapeHtml(post.id)}">${renderCommentThread(post.id, comments, post.comment_count || comments.length)}</div>
           </article>
         `;
-      }).join('');
+      }).join('') || '<p>No discussions yet. Start the first one.</p>';
+      renderPaginationNav('discussions', page, count || 0);
       feed.querySelectorAll('[data-vote-post]').forEach((btn) => {
-        btn.addEventListener('click', () => togglePostVote(btn.getAttribute('data-vote-post'), btn.getAttribute('data-voted') === '1'));
-      });
-      feed.querySelectorAll('[data-open-comments]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          if (!session?.user) {
-            openAuthModal('Sign in to reply');
-            return;
-          }
-          const wrap = document.querySelector(`[data-comments="${btn.getAttribute('data-open-comments')}"]`);
-          const input = wrap?.querySelector('[data-comment-form="main"] textarea');
-          if (input) input.focus();
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          togglePostVote(btn.getAttribute('data-vote-post'), btn.getAttribute('data-voted') === '1');
         });
       });
       feed.querySelectorAll('[data-edit-post]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const post = (data || []).find((item) => item.id === btn.getAttribute('data-edit-post'));
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const post = posts.find((item) => item.id === btn.getAttribute('data-edit-post'));
           if (post) openPostModal(null, post);
         });
       });
       feed.querySelectorAll('[data-delete-post]').forEach((btn) => {
-        btn.addEventListener('click', () => deletePost(btn.getAttribute('data-delete-post')));
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          deletePost(btn.getAttribute('data-delete-post'));
+        });
       });
       feed.querySelectorAll('[data-report-type="post"]').forEach((btn) => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
           openReportModal(
             btn.getAttribute('data-report-type'),
             btn.getAttribute('data-report-id'),
@@ -2295,7 +2696,13 @@
           );
         });
       });
-      feed.querySelectorAll('[data-comments]').forEach((wrap) => bindCommentThread(wrap, wrap.getAttribute('data-comments')));
+      bindFeedOpeners('post', posts);
+      const selectedPost = posts.find((post) => post.id === selectedPostId);
+      if (selectedPost) {
+        await openDiscussionThread(selectedPost, { url: discussionUrl(selectedPost), highlightId: highlightCommentId, replace: true });
+      } else if (!isThreadRoute(route)) {
+        hideThreadPanel();
+      }
     }
 
     async function toggleFeatureVote(featureRequestId, active) {
@@ -2358,25 +2765,56 @@
     }
 
     async function loadFeatureRequests() {
+      const route = parseCommunityRoute();
       activeTab = 'features';
-      if (window.location.hash !== '#feature-requests') {
-        window.history.replaceState(null, '', '#feature-requests');
-      }
       tabFeatures.classList.add('active');
       tabDiscussions.classList.remove('active');
       composer.style.display = 'none';
-      statusEl.textContent = 'Loading feature requests...';
-      const { data, error } = await client
+      const hasSsr = Boolean(feed.querySelector('article.community-card'));
+      if (!hasSsr) statusEl.textContent = 'Loading feature requests...';
+
+      let highlightCommentId = null;
+      let selectedRequestId = route.view === 'feature' ? route.id : null;
+      if (route.view === 'feature-comment') {
+        const { data: comment } = await client
+          .from('feature_request_comments')
+          .select('id,feature_request_id')
+          .eq('id', route.id)
+          .maybeSingle();
+        if (!comment?.feature_request_id) {
+          statusEl.textContent = 'Comment not found.';
+          hideThreadPanel();
+          renderPaginationNav('features', 1, 0);
+          if (!hasSsr) feed.innerHTML = '<p>This comment is unavailable. <a href="/community/features">Back to feature requests</a></p>';
+          return;
+        }
+        selectedRequestId = comment.feature_request_id;
+        highlightCommentId = comment.id;
+        expandedFeatureCommentThreads.add(comment.feature_request_id);
+      }
+
+      const page = route.view === 'features' ? (route.page || 1) : 1;
+      const from = (page - 1) * COMMUNITY_PAGE_SIZE;
+      const { data, error, count } = await client
         .from('community_feature_requests')
-        .select('id,name,title,description,image_urls,status,upvote_count,created_at')
+        .select('id,name,title,description,image_urls,status,upvote_count,created_at', { count: 'exact' })
         .order('upvote_count', { ascending: false })
         .order('created_at', { ascending: false })
-        .limit(60);
+        .range(from, from + COMMUNITY_PAGE_SIZE - 1);
+      let requests = data || [];
+      if (selectedRequestId && !requests.some((request) => request.id === selectedRequestId)) {
+        const { data: selected } = await client
+          .from('community_feature_requests')
+          .select('id,name,title,description,image_urls,status,upvote_count,created_at')
+          .eq('id', selectedRequestId)
+          .maybeSingle();
+        if (selected) requests = [selected, ...requests];
+      }
       if (error) {
         statusEl.textContent = error.message;
         return;
       }
-      const requestIds = (data || []).map((request) => request.id);
+      const requestIds = requests.map((request) => request.id);
       let myVotes = new Set();
       if (session?.user && requestIds.length) {
         const { data: votes } = await client.from('feature_request_votes').select('feature_request_id').eq('user_id', session.user.id).in('feature_request_id', requestIds);
@@ -2400,8 +2838,9 @@
           commentsByRequest.forEach((comments, requestId) => featureCommentCache.set(requestId, comments));
         }
       }
-      statusEl.textContent = data?.length ? '' : 'No feature requests yet.';
-      const requestCards = (data || []).map((request) => {
+      statusEl.textContent = requests.length ? '' : 'No feature requests yet.';
+      lastFeatureItems = requests;
+      const requestCards = requests.map((request) => {
         const images = Array.isArray(request.image_urls) ? request.image_urls.filter(isSafeRemoteUrl) : [];
         const voted = myVotes.has(request.id);
         const comments = commentsByRequest.get(request.id) || [];
@@ -2413,8 +2852,9 @@
               ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === currentStatus ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
             </select>`
           : `<span class="pill">${escapeHtml(statusLabels[currentStatus] || currentStatus)}</span>`;
+        const url = featureUrl(request);
         return `
-          <article class="community-card">
+          <article class="community-card${selectedRequestId === request.id ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}">
             <div class="card-top">
               <div class="author">
                 <span class="avatar">${escapeHtml(initials(request.name))}</span>
@@ -2425,15 +2865,14 @@
               </div>
               ${statusControl}
             </div>
-            <h2 class="card-title">${escapeHtml(request.title)}</h2>
+            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a></h2>
             <p class="card-body">${escapeHtml(request.description)}</p>
             ${images.length ? `<div class="card-images">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="Feature request attachment"></a>`).join('')}</div>` : ''}
             <div class="card-actions">
               <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-feature="${escapeHtml(request.id)}" data-voted="${voted ? '1' : '0'}">▲ ${request.upvote_count || 0}</button>
-              <button class="pill" type="button" data-open-feature-comments="${escapeHtml(request.id)}">Reply ${commentTotal}</button>
+              <a class="pill" data-open-thread href="${escapeHtml(url)}">${commentTotal} replies</a>
               <button class="pill" type="button" data-report-type="feature_request" data-report-id="${escapeHtml(request.id)}" data-report-label="feature request">Report</button>
             </div>
-            <div class="comments visible" data-feature-comments="${escapeHtml(request.id)}">${renderFeatureCommentThread(request.id, comments, commentTotal)}</div>
           </article>
         `;
       }).join('');
@@ -2445,28 +2884,24 @@
           </div>
           <button id="open-community-feature-request" class="btn btn-primary" type="button">Request feature</button>
         </section>
-        ${requestCards}
+        ${requestCards || '<p>No feature requests yet.</p>'}
       `;
       document.getElementById('open-community-feature-request')?.addEventListener('click', openFeatureRequestModal);
       feed.querySelectorAll('[data-vote-feature]').forEach((btn) => {
-        btn.addEventListener('click', () => toggleFeatureVote(btn.getAttribute('data-vote-feature'), btn.getAttribute('data-voted') === '1'));
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          toggleFeatureVote(btn.getAttribute('data-vote-feature'), btn.getAttribute('data-voted') === '1');
+        });
       });
       feed.querySelectorAll('[data-feature-status]').forEach((select) => {
-        select.addEventListener('change', () => updateFeatureStatus(select.getAttribute('data-feature-status'), select.value));
-      });
-      feed.querySelectorAll('[data-open-feature-comments]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          if (!session?.user) {
-            openAuthModal('Sign in to reply');
-            return;
-          }
-          const wrap = document.querySelector(`[data-feature-comments="${btn.getAttribute('data-open-feature-comments')}"]`);
-          const input = wrap?.querySelector('[data-comment-form="main"] textarea');
-          if (input) input.focus();
+        select.addEventListener('change', (event) => {
+          event.stopPropagation();
+          updateFeatureStatus(select.getAttribute('data-feature-status'), select.value);
         });
       });
       feed.querySelectorAll('[data-report-type="feature_request"]').forEach((btn) => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
           openReportModal(
             btn.getAttribute('data-report-type'),
             btn.getAttribute('data-report-id'),
@@ -2474,11 +2909,22 @@
           );
         });
       });
-      feed.querySelectorAll('[data-feature-comments]').forEach((wrap) => bindFeatureCommentThread(wrap, wrap.getAttribute('data-feature-comments')));
+      bindFeedOpeners('feature', requests);
+      renderPaginationNav('features', page, count || 0);
+      const selectedRequest = requests.find((request) => request.id === selectedRequestId);
+      if (selectedRequest) {
+        await openFeatureThread(selectedRequest, { url: featureUrl(selectedRequest), highlightId: highlightCommentId, replace: true });
+      } else if (!isThreadRoute(route)) {
+        hideThreadPanel();
+      }
     }
 
     async function loadActiveTab() {
-      return activeTab === 'features' ? loadFeatureRequests() : loadDiscussions();
+      const route = parseCommunityRoute();
+      if (route.view === 'features' || route.view === 'feature' || route.view === 'feature-comment') {
+        return loadFeatureRequests();
+      }
+      return loadDiscussions();
     }
 
     document.getElementById('open-post-modal').addEventListener('click', () => openPostModal());
@@ -2495,16 +2941,32 @@
     document.getElementById('report-modal-close').addEventListener('click', closeReportModal);
     reportModal.addEventListener('click', (event) => { if (event.target === reportModal) closeReportModal(); });
     document.getElementById('community-report-form').addEventListener('submit', submitReport);
-    tabDiscussions.addEventListener('click', loadDiscussions);
-    tabFeatures.addEventListener('click', loadFeatureRequests);
+    document.getElementById('thread-panel-close')?.addEventListener('click', closeThreadToList);
+    document.getElementById('thread-panel-back')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeThreadToList();
+    });
+    document.getElementById('thread-copy-link')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        document.getElementById('thread-copy-link').textContent = 'Copied';
+        setTimeout(() => { document.getElementById('thread-copy-link').textContent = 'Copy link'; }, 1200);
+      } catch {
+        document.getElementById('thread-copy-link').textContent = 'Copy failed';
+      }
+    });
+    window.addEventListener('popstate', () => {
+      loadActiveTab();
+    });
     document.querySelectorAll('[data-auth-open]').forEach((btn) => btn.addEventListener('click', () => openAuthModal('Sign in to continue')));
     document.getElementById('auth-cancel').addEventListener('click', closeAuthModal);
     authModal.addEventListener('click', (event) => { if (event.target === authModal) closeAuthModal(); });
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && authModal.classList.contains('visible')) closeAuthModal();
-      if (event.key === 'Escape' && postModal.classList.contains('visible')) closePostModal();
-      if (event.key === 'Escape' && featureRequestModal.classList.contains('visible')) closeFeatureRequestModal();
-      if (event.key === 'Escape' && reportModal.classList.contains('visible')) closeReportModal();
+      else if (event.key === 'Escape' && postModal.classList.contains('visible')) closePostModal();
+      else if (event.key === 'Escape' && featureRequestModal.classList.contains('visible')) closeFeatureRequestModal();
+      else if (event.key === 'Escape' && reportModal.classList.contains('visible')) closeReportModal();
+      else if (event.key === 'Escape' && communityShell?.classList.contains('thread-open')) closeThreadToList();
     });
     authSignin.addEventListener('click', async () => {
       authMessage.textContent = 'Signing in...';
@@ -2572,12 +3034,16 @@
     });
 
     window.addEventListener('hashchange', () => {
-      if (window.location.hash === '#feature-requests') loadFeatureRequests();
+      if (window.location.hash === '#feature-requests') {
+        window.location.replace('/community/features');
+      }
     });
 
     refreshSession().then(() => {
-      if (window.location.hash === '#feature-requests') return loadFeatureRequests();
-      return loadDiscussions();
+      if (window.location.hash === '#feature-requests') {
+        window.history.replaceState(null, '', '/community/features');
+      }
+      return loadActiveTab();
     });
   </script>
 </body>

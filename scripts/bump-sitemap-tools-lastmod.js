@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const file = path.join(__dirname, "..", "public", "sitemap.xml");
+const file = path.join(__dirname, "..", "public", "sitemap-pages.xml");
 let xml = fs.readFileSync(file, "utf8");
 
 xml = xml.replace(/<lastmod>2024-01-01<\/lastmod>/g, "<lastmod>2026-03-29</lastmod>");

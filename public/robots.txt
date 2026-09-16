@@ -16,3 +16,5 @@ Allow: /.well-known/
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 Sitemap: https://www.moldraw.com/sitemap.xml
+Sitemap: https://www.moldraw.com/sitemap-pages.xml
+Sitemap: https://www.moldraw.com/community/sitemap.xml

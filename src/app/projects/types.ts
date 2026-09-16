@@ -22,6 +22,8 @@ export type SavedProject = SavedProjectMeta & {
 
 export const CURRENT_PROJECT_SESSION_KEY = 'moldraw-current-project-id';
 export const OPEN_TABS_SESSION_KEY = 'moldraw-open-tabs';
+/** Sync snapshot of the working canvas so OAuth / email redirects cannot boot a blank Untitled. */
+export const WORKING_DOCUMENT_SNAPSHOT_KEY = 'moldraw-working-document';
 
 export type DocumentTab = {
   id: string;
