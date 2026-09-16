@@ -228,7 +228,7 @@ export const TOOL_DEFS: ToolDef[] = [
   },
   { id: 'text', label: 'Text', title: 'Text: click empty canvas to place; click existing text to move (select or text tool)', category: 'edit', group: 'annotate' },
   { id: 'atom_label', label: 'Atom Label', shortLabel: 'Label', title: 'Atom label (A): click an atom — type R, Me, Ph, CH3, COOH, etc. R/R1/R2 are generic substituents on C or heteroatoms.', category: 'edit', group: 'annotate' },
-  { id: 'reaction_arrow', label: 'Reaction Arrow', shortLabel: 'Arrow', title: 'Drag tail→head on canvas. Use the menu beside the tool to pick arrow type. SMILES react>>prod uses the first arrow that is not equilibrium / half-equilibrium / resonance.', category: 'edit', group: 'annotate' },
+  { id: 'reaction_arrow', label: 'Reaction Arrow', shortLabel: 'Arrow', title: 'Drag tail→head on canvas. Use the menu beside the tool to pick arrow type (Electron flow / Mechanism snaps to lone pairs, bonds, and atoms). SMILES react>>prod uses the first arrow that is not equilibrium / half-equilibrium / resonance.', category: 'edit', group: 'annotate' },
   { id: 'shape', label: 'Shape', title: 'Click and drag to draw an annotation shape. Use the menu beside the tool for rectangle, line, circle, triangle, or star.', category: 'edit', group: 'annotate' },
   {
     id: 'glassware',
@@ -244,7 +244,7 @@ export const TOOL_DEFS: ToolDef[] = [
     label: 'Polymer',
     shortLabel: 'SRU',
     title:
-      'Polymer SRU brackets: select ≥2 atoms then click, or drag a box over the repeat unit. Click the subscript to edit n/m.',
+      'Polymer (n): select a fragment or drag a box over the repeat unit, then set n. Click the subscript on the canvas to edit.',
     category: 'edit',
     group: 'annotate',
   },
@@ -335,7 +335,7 @@ export const TOOL_IDS_TOP_BAR: readonly string[] = [
   'text',
 ];
 
-/** Phone/tablet category dock: Select | Draw | Rings | Annotate | Objects | More */
+/** Phone/tablet category dock: Select | Draw | Rings | Bonds | Objects | More */
 export type MobileToolCategory = 'select' | 'draw' | 'rings' | 'annotate' | 'objects' | 'more';
 
 export const MOBILE_TOOL_CATEGORIES: {
@@ -345,7 +345,7 @@ export const MOBILE_TOOL_CATEGORIES: {
   { id: 'select', label: 'Select' },
   { id: 'draw', label: 'Draw' },
   { id: 'rings', label: 'Rings' },
-  { id: 'annotate', label: 'Annotate' },
+  { id: 'annotate', label: 'Bonds' },
   // 'objects' is a valid category id (header objects-list button) but is not a
   // dock tab: on compact the list icon lives in the header, like desktop.
   { id: 'more', label: 'More' },

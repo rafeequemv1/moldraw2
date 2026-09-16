@@ -7,6 +7,8 @@ import type {
   CanvasShape,
   CanvasShapeKind,
   CanvasText,
+  ArrowHeadStyle,
+  ArrowTailStyle,
   Molecule,
   ReactionArrow,
   ReactionArrowKind,
@@ -59,6 +61,9 @@ export interface InteractionContext {
   activeTool: string;
   /** Kind used when placing a new arrow with the reaction-arrow tool. */
   reactionArrowKind: ReactionArrowKind;
+  reactionArrowHeadStyle?: ArrowHeadStyle;
+  reactionArrowTailStyle?: ArrowTailStyle;
+  reactionArrowHeadScale?: number;
   /** Kind used when placing a shape with the shape tool. */
   canvasShapeKind: CanvasShapeKind;
   placementElement: string;

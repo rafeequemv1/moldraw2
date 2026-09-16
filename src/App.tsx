@@ -91,7 +91,7 @@ import {
   StereochemistryDialogs,
   StyleToolbar,
   TextStylePanel,
-  ArrowPropertiesTopBar,
+  ArrowPropertiesPanel,
   InlineArrowReagentEditor,
   TemplateLibraryModal,
   type TemplateLibraryTab,
@@ -127,7 +127,8 @@ import { useMolDrawAuth } from './app/auth/useMolDrawAuth';
 import { hasUnreadMolDrawUpdates, markMolDrawUpdatesSeen } from './app/components/UpdatesModal';
 import { CanvasWithResolvedTheme } from './app/components/StructureThemeControls';
 import { nativeSmilesTo2DMolblock } from '@moldraw/core/io/smilesToMolblock';
-import { SELECTION_SMI } from './app/data/selectionSmi';
+import { STARTUP_PUBCHEM_CID } from './app/data/selectionSmi';
+import { pubchemMolblockFromCid } from './app/advanced/batchExport';
 import { importReactionSchemeFromSmiles } from './app/importExport/importReactionSmiles';
 import { getAppSettingsPreset, type AppSettingsPresetId } from './app/settings';
 import type { MoleculeWorkerResponse } from '@moldraw/core/moleculeWorker/messages';
@@ -334,6 +335,7 @@ function App() {
     deleteFolder,
     moveProjectsToFolder,
     refreshMetas,
+    initialHydrationDone,
   } = useProjectPersistence(editorStore);
 
   const handleOpenMyProjects = useCallback(() => {
@@ -687,10 +689,10 @@ function App() {
           queueMicrotask(() => importReactionQuery(query.reaction!));
           return;
         }
+        if (!query.smiles) return;
         if (selectionSmiLoadedRef.current || moleculeRef.current.atoms.length > 0) return;
         selectionSmiLoadedRef.current = true;
-        const smiles = query.smiles ?? SELECTION_SMI;
-        const localMolblock = nativeSmilesTo2DMolblock(smiles);
+        const localMolblock = nativeSmilesTo2DMolblock(query.smiles);
         if (localMolblock?.trim()) {
           // Defer so useEngineMessageRouter has wired engineMsgRef.
           queueMicrotask(() => {
@@ -705,7 +707,7 @@ function App() {
         client.post({
           type: 'SMILES_TO_MOLBLOCK',
           payload: {
-            smiles,
+            smiles: query.smiles,
             preferIndigo: preferIndigo2dRef.current,
           },
           id: 'import_smiles',
@@ -801,6 +803,12 @@ function App() {
     activeToolRef,
     reactionArrowKind,
     setReactionArrowKind,
+    reactionArrowHeadStyle,
+    setReactionArrowHeadStyle,
+    reactionArrowTailStyle,
+    setReactionArrowTailStyle,
+    reactionArrowHeadScale,
+    setReactionArrowHeadScale,
     sruBracketSubscript,
     setSruBracketSubscript,
     canvasShapeKind,
@@ -958,6 +966,52 @@ function App() {
     [],
   );
   const [smilesBarHint, setSmilesBarHint] = useState('');
+
+  // First empty editor visit: live PubChem SDF, then the same 2D cleanup as import.
+  useEffect(() => {
+    if (!initialHydrationDone || docRoute.kind !== 'editor') return;
+    const query = initialQueryRef.current();
+    if (query.smiles || query.reaction) return;
+    if (moleculeRef.current.atoms.length > 0) {
+      selectionSmiLoadedRef.current = true;
+      return;
+    }
+    if (selectionSmiLoadedRef.current) return;
+    let cancelled = false;
+    selectionSmiLoadedRef.current = true;
+    setSmilesBarHint('Loading structure from PubChem…');
+    const timeout = window.setTimeout(() => {
+      if (!cancelled && moleculeRef.current.atoms.length === 0) setSmilesBarHint('');
+    }, 10000);
+    void (async () => {
+      try {
+        const mb = await pubchemMolblockFromCid(STARTUP_PUBCHEM_CID);
+        if (cancelled) return;
+        if (!mb?.trim() || moleculeRef.current.atoms.length > 0) {
+          setSmilesBarHint('');
+          return;
+        }
+        setSmilesBarHint('Optimizing structure…');
+        engineMsgRef.current({
+          type: 'SMILES_TO_MOLBLOCK_SUCCESS',
+          id: 'import_smiles',
+          payload: { molBlock: mb },
+        });
+      } catch {
+        if (!cancelled) setSmilesBarHint('');
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+      // StrictMode remounts this effect; allow a real retry while the canvas is still empty.
+      if (moleculeRef.current.atoms.length === 0) {
+        selectionSmiLoadedRef.current = false;
+      }
+    };
+  }, [docRoute.kind, initialHydrationDone]);
 
   const focusAtomsOnCanvas = useCallback(
     (atomIds: string[]) => {
@@ -1121,6 +1175,11 @@ function App() {
       // Polymer tool: if a repeat unit is already selected, wrap it immediately.
       if (toolId === 'sru_bracket') {
         const sel = editorStore.getSelection().atomIds;
+        if (sel.length < 2) {
+          setSmilesBarHint(
+            'Polymer (n): select ≥2 atoms then click, or drag a box over the repeat unit. Click n on the canvas to edit.',
+          );
+        }
         if (sel.length >= 2) {
           const mol = editorStore.getMolecule();
           const box = sruBracketBoxForAtoms(mol, sel);
@@ -1236,6 +1295,7 @@ function App() {
     contextMenuRef,
     contextAtomDetectedAlias,
     closeContextMenu,
+    openSelectionContextMenu,
     handleCanvasContextMenu,
     handleContextCopySmiles,
     handleContextPasteSmiles,
@@ -2043,6 +2103,8 @@ function App() {
                   onSelect={handleToolbarSelectWithPerspective}
                   reactionArrowKind={reactionArrowKind}
                   onReactionArrowKindChange={setReactionArrowKind}
+                  reactionArrowHeadStyle={reactionArrowHeadStyle}
+                  onReactionArrowHeadStyleChange={setReactionArrowHeadStyle}
                   sruBracketSubscript={sruBracketSubscript}
                   onSruBracketSubscriptChange={setSruBracketSubscript}
                   canvasShapeKind={canvasShapeKind}
@@ -2062,6 +2124,8 @@ function App() {
                   onSelect={handleToolbarSelectWithPerspective}
                   reactionArrowKind={reactionArrowKind}
                   onReactionArrowKindChange={setReactionArrowKind}
+                  reactionArrowHeadStyle={reactionArrowHeadStyle}
+                  onReactionArrowHeadStyleChange={setReactionArrowHeadStyle}
                   sruBracketSubscript={sruBracketSubscript}
                   onSruBracketSubscriptChange={setSruBracketSubscript}
                   canvasShapeKind={canvasShapeKind}
@@ -2074,16 +2138,7 @@ function App() {
                 />
               ) : null
             }
-            arrowRow={
-              selectedReactionArrow ? (
-                <ArrowPropertiesTopBar
-                  key={selectedReactionArrow.id}
-                  arrow={selectedReactionArrow}
-                  onUpdate={handleUpdateReactionArrow}
-                  focusSlot={topBarReagentFocusSlot}
-                />
-              ) : null
-            }
+            arrowRow={null}
             pencilRow={
               activeTool === 'pencil' || activeTool === 'smart_draw' ? (
                 <PencilOptionsBar
@@ -2184,6 +2239,7 @@ function App() {
             }}
             onCopySmiles={handleHeaderCopySmiles}
             onCopySvg={handleHeaderCopySvg}
+            onCopyAs={handleCopyAs}
             smilesCopied={smilesCopied}
             svgCopied={svgCopied}
             svgCopyError={svgCopyError}
@@ -2318,6 +2374,9 @@ function App() {
               }
               onCanvasTextTransforming={setCanvasTextTransforming}
               reactionArrowKind={reactionArrowKind}
+              reactionArrowHeadStyle={reactionArrowHeadStyle}
+              reactionArrowTailStyle={reactionArrowTailStyle}
+              reactionArrowHeadScale={reactionArrowHeadScale}
               canvasShapeKind={canvasShapeKind}
               sruBracketSubscript={sruBracketSubscript}
               placementElement={activePlacementElement}
@@ -2385,6 +2444,24 @@ function App() {
               onReflect={handleReflectSelection}
               onDuplicate={handleContextDuplicate}
               onDelete={handleDelete}
+              showContextMenuChip={isCompactViewport}
+              contextMenuOpen={Boolean(contextMenu)}
+              onOpenContextMenu={e => {
+                e.stopPropagation();
+                if (contextMenu) {
+                  closeContextMenu();
+                  return;
+                }
+                openSelectionContextMenu(
+                  { clientX: e.clientX, clientY: e.clientY },
+                  {
+                    canvasImageId: selectedCanvasImageId,
+                    strokeId: colorEditStrokeId,
+                    sruBracketId: selectedSruBracketId,
+                    canvasShapeId: colorEditCanvasShapeId,
+                  },
+                );
+              }}
             />
             <AtomPalette
               activePlacementElement={activePlacementElement}
@@ -2400,6 +2477,8 @@ function App() {
               groupedTools={groupedTools}
               reactionArrowKind={reactionArrowKind}
               onReactionArrowKindChange={setReactionArrowKind}
+              reactionArrowHeadStyle={reactionArrowHeadStyle}
+              onReactionArrowHeadStyleChange={setReactionArrowHeadStyle}
               sruBracketSubscript={sruBracketSubscript}
               onSruBracketSubscriptChange={setSruBracketSubscript}
               canvasShapeKind={canvasShapeKind}
@@ -2413,6 +2492,21 @@ function App() {
               showObjectsPanel={showObjectsPanel}
               onToggleObjectsPanel={() => setShowObjectsPanel(v => !v)}
               showDrawTools={false}
+            />
+            <ArrowPropertiesPanel
+              arrow={selectedReactionArrow}
+              toolActive={activeTool === 'reaction_arrow'}
+              toolKind={reactionArrowKind}
+              defaultHeadStyle={reactionArrowHeadStyle}
+              defaultTailStyle={reactionArrowTailStyle}
+              defaultHeadScale={reactionArrowHeadScale}
+              onUpdateArrow={handleUpdateReactionArrow}
+              onChangeDefaults={patch => {
+                if (patch.headStyle) setReactionArrowHeadStyle(patch.headStyle);
+                if (patch.tailStyle) setReactionArrowTailStyle(patch.tailStyle);
+                if (patch.headScale != null) setReactionArrowHeadScale(patch.headScale);
+              }}
+              focusSlot={topBarReagentFocusSlot}
             />
             {showObjectsPanel ? (
               (() => {
@@ -2541,12 +2635,16 @@ function App() {
       />
       </div>
 
-      <MoleculeStatusBar
-        molecule={molecule}
-        selectedAtomIds={selectedAtomIds}
-        selectedCanvasShapeId={colorEditCanvasShapeId}
-      />
-      <SiteFooterHost />
+      {isCompactViewport ? null : (
+        <>
+          <MoleculeStatusBar
+            molecule={molecule}
+            selectedAtomIds={selectedAtomIds}
+            selectedCanvasShapeId={colorEditCanvasShapeId}
+          />
+          <SiteFooterHost />
+        </>
+      )}
       </div>
 
       {editingArrowReagent && inlineArrowReagentPos ? (

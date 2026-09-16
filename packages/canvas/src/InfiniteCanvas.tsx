@@ -7,6 +7,8 @@ import type {
   CanvasShape,
   Molecule,
   ReactionArrow,
+  ArrowHeadStyle,
+  ArrowTailStyle,
   ReactionArrowKind,
   ReactionArrowUpdatePatch,
   CanvasText,
@@ -200,6 +202,9 @@ export interface InfiniteCanvasProps {
   onUpdateReactionArrow?: (id: string, patch: ReactionArrowUpdatePatch) => void;
   /** Kind used for the next reaction-arrow placement; parent cycles via toolbar. */
   reactionArrowKind?: ReactionArrowKind;
+  reactionArrowHeadStyle?: ArrowHeadStyle;
+  reactionArrowTailStyle?: ArrowTailStyle;
+  reactionArrowHeadScale?: number;
   /** Shape kind for the annotation shape tool (toolbar dropdown). */
   canvasShapeKind?: CanvasShapeKind;
   /** Wrap ≥2 atoms in polymer SRU brackets (Polymer toolbar tool). */
@@ -355,6 +360,9 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       setSelectedSruBracketId,
       onEditSruBracketSubscript,
       reactionArrowKind = 'straight',
+      reactionArrowHeadStyle = 'pair',
+      reactionArrowTailStyle = 'none',
+      reactionArrowHeadScale,
       canvasShapeKind = 'rectangle',
       onAddCanvasShape,
       onAddCanvasOrbital,
@@ -512,6 +520,9 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       onRequestArrowReagentEdit,
       onContextMenu,
       reactionArrowKind,
+      reactionArrowHeadStyle,
+      reactionArrowTailStyle,
+      reactionArrowHeadScale,
       canvasShapeKind,
       onAddCanvasShape,
       onAddCanvasOrbital,
@@ -547,6 +558,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       structureTheme,
       structureDrawMode,
       activeTool,
+      reactionArrowKind,
       isRingTool: isRingToolName(activeTool),
       numSides: ringSidesForTool(activeTool),
       isBenzene: activeTool === 'benzene' || activeTool === 'cyclopentadiene',

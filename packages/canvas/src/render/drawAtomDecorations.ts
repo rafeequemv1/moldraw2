@@ -8,7 +8,8 @@
  * All three live together because they share the same upright-counter-rotation
  * logic and the same charge / H-count math.
  */
-import { clampChargeMarkOffset, resolveAtomLabelFonts } from '@moldraw/core';
+import { clampChargeMarkOffset } from '@moldraw/core';
+import { resolveAtomLabelFonts } from '@moldraw/core/canvasPreferences';
 import {
   explicitHydrogenLabelColor,
   resolveAtomLabelColor,

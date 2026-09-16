@@ -29,17 +29,58 @@ export function triggerIsInLowerViewport(anchor: DOMRect, ratio = 0.45): boolean
 
 /** Trigger lives in the phone/tablet bottom dock (strip, categories, rings). */
 export function isBottomDockTrigger(el: HTMLElement): boolean {
-  if (
-    el.closest(
-      '.toolbar--mobile-strip, .toolbar-mobile-categories, .toolbar-bottom, .toolbar-draw-panel',
-    )
-  ) {
+  if (el.closest('.toolbar--mobile-strip, .toolbar-mobile-categories, .toolbar-bottom')) {
     return true;
   }
   return (
     document.documentElement.classList.contains('app-mobile-compact') &&
     Boolean(el.closest('.toolbar'))
   );
+}
+
+/**
+ * Vertical left tool column (or the Draw flyout beside it). Bottom dock /
+ * mobile strip stay upward; compact class must not reclassify a left rail.
+ */
+export function isLeftRailTrigger(el: HTMLElement): boolean {
+  if (el.closest('.toolbar--mobile-strip, .toolbar-mobile-categories, .toolbar-bottom')) {
+    return false;
+  }
+  return Boolean(el.closest('.toolbar, .toolbar-draw-panel'));
+}
+
+export function leftRailColumnRect(el: HTMLElement): DOMRect | null {
+  const col = el.closest('.toolbar, .toolbar-draw-panel') as HTMLElement | null;
+  return col?.getBoundingClientRect() ?? null;
+}
+
+/**
+ * Place a flyout in the canvas, flush to the **right edge of the left toolbar
+ * column**. Never flips above/over the rail.
+ */
+export function placeLeftRailFlyout(
+  trigger: DOMRect,
+  opts?: {
+    menuWidth?: number;
+    menuHeight?: number;
+    gap?: number;
+    pad?: number;
+  },
+  column?: DOMRect | null,
+): SideFlyoutPos {
+  const gap = opts?.gap ?? 4;
+  const pad = opts?.pad ?? 8;
+  const menuH = opts?.menuHeight ?? 280;
+  const { height: vh } = visualViewportBox();
+  const colRight = column?.right ?? trigger.right;
+  const left = Math.max(pad, colRight + gap);
+  let top = trigger.top;
+  const maxHeight = Math.max(96, vh - pad * 2);
+  if (top + Math.min(menuH, maxHeight) > vh - pad) {
+    top = Math.max(pad, vh - pad - Math.min(menuH, maxHeight));
+  }
+  if (top < pad) top = pad;
+  return { top, left, maxHeight: Math.min(maxHeight, vh - pad - top) };
 }
 
 export function placeAnchoredMenu(
@@ -113,9 +154,34 @@ export function menuBottomAboveAnchor(anchor: DOMRect): number {
 
 /** Bottom-dock / lower-viewport triggers must open onto the canvas above. */
 export function shouldOpenMenuAbove(el: HTMLElement, anchor: DOMRect): boolean {
+  if (isLeftRailTrigger(el)) return false;
   if (isBottomDockTrigger(el)) return true;
   const vh = visualViewportBox().height;
   return anchor.bottom > vh - 180 || triggerIsInLowerViewport(anchor, 0.45);
+}
+
+/** Inline `!important` so drop-up CSS cannot pin a left-rail menu over the tools. */
+export function pinMenuRightOfRail(menu: HTMLElement, trigger: HTMLElement, menuWidth?: number) {
+  const col = leftRailColumnRect(trigger);
+  const anchor = trigger.getBoundingClientRect();
+  const pos = placeLeftRailFlyout(anchor, { menuWidth: menuWidth ?? 168, menuHeight: 280 }, col);
+  const top = `${pos.top}px`;
+  const left = `${pos.left}px`;
+  const width = px(menuWidth ?? Math.max(148, menu.offsetWidth || 168), '168px');
+  menu.style.setProperty('position', 'fixed', 'important');
+  menu.style.setProperty('top', top, 'important');
+  menu.style.setProperty('bottom', 'auto', 'important');
+  menu.style.setProperty('left', left, 'important');
+  menu.style.setProperty('right', 'auto', 'important');
+  menu.style.setProperty('width', width, 'important');
+  menu.style.setProperty('max-height', `${pos.maxHeight}px`, 'important');
+  menu.style.setProperty('z-index', '24000', 'important');
+  menu.style.setProperty('overflow-y', 'auto', 'important');
+  menu.style.setProperty('transform', 'none', 'important');
+  menu.style.setProperty('--split-menu-top', top);
+  menu.style.setProperty('--split-menu-left', left);
+  menu.style.setProperty('--split-menu-bottom', 'auto');
+  menu.dataset.placement = 'right';
 }
 
 /** CSS for a portal menu whose bottom edge sits just above `anchor` (no transform — WebView-safe). */
@@ -197,6 +263,8 @@ export function placeSideFlyout(
     gap?: number;
     pad?: number;
     prefer?: 'right' | 'left';
+    /** Keep the panel on the preferred side (do not flip over a left rail). */
+    lockPrefer?: boolean;
   },
 ): SideFlyoutPos {
   const gap = opts?.gap ?? 4;
@@ -209,8 +277,12 @@ export function placeSideFlyout(
   const openRight = anchor.right + gap;
   const openLeft = anchor.left - gap - menuW;
   let left = prefer === 'left' ? openLeft : openRight;
-  if (left + menuW > vw - pad) left = Math.max(pad, openLeft);
-  if (left < pad) left = Math.min(openRight, Math.max(pad, vw - pad - menuW));
+  if (!opts?.lockPrefer) {
+    if (left + menuW > vw - pad) left = Math.max(pad, openLeft);
+    if (left < pad) left = Math.min(openRight, Math.max(pad, vw - pad - menuW));
+  } else if (left < pad) {
+    left = pad;
+  }
 
   let top = anchor.top;
   const maxHeight = Math.max(96, vh - pad * 2);

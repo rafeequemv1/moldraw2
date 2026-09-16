@@ -48,6 +48,7 @@ import {
 import { hitCanvasShapeTransformed } from '../geometry/canvasShapeTransform';
 import type { Point } from '../geometry';
 import {
+  applyElectronFlowEndpointResnap,
   clampChargeMarkOffset,
   expandAtomIdsToObjectCollections,
   molblock3DFromPerspectivePose,
@@ -1149,13 +1150,27 @@ export const commitDragAction = (ctx: InteractionContext): boolean => {
         basePatch.bulgeSide = signed >= 0 ? 1 : -1;
         basePatch.curveAmount = Math.min(0.55, Math.max(0.08, Math.abs(signed) / chordLen));
       }
-      // Free three-point edit (tail / mid / head): drop anchors so draw-time
-      // resolve cannot overwrite the user's handle positions.
-      ctx.onUpdateReactionArrow(dragAction.arrowId, {
-        ...basePatch,
-        fromAnchor: null,
-        toAnchor: null,
-      });
+      const isElectronFlow = (dragAction.origArrow.kind ?? 'straight') === 'electron_flow';
+      if (isElectronFlow && (dragAction.endpoint === 'tail' || dragAction.endpoint === 'head')) {
+        const geom = { ...dragAction.origArrow, ...basePatch };
+        const snapPatch = applyElectronFlowEndpointResnap(
+          ctx.molecule,
+          geom,
+          dragAction.endpoint,
+        );
+        ctx.onUpdateReactionArrow(dragAction.arrowId, { ...basePatch, ...snapPatch });
+      } else if (isElectronFlow && dragAction.endpoint === 'curve') {
+        // Keep chemistry anchors; curveAmount / bulgeSide drive the arc at draw time.
+        ctx.onUpdateReactionArrow(dragAction.arrowId, basePatch);
+      } else {
+        // Free three-point edit (tail / mid / head): drop anchors so draw-time
+        // resolve cannot overwrite the user's handle positions.
+        ctx.onUpdateReactionArrow(dragAction.arrowId, {
+          ...basePatch,
+          fromAnchor: null,
+          toAnchor: null,
+        });
+      }
     }
   } else if (dragAction.type === 'rotate_perspective' && ctx.onRotate3DPoseCommit) {
     const DEG = 0.01;

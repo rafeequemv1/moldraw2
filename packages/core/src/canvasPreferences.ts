@@ -79,7 +79,9 @@ export function canvasFontFamilyStack(primary: string): string {
   if (!t) return 'sans-serif';
   if (/^system-ui|sans-serif|serif|monospace$/i.test(t)) return t;
   const escaped = t.includes(',') ? t : `"${t.replace(/"/g, '\\"')}"`;
-  return `${escaped}, Inter, sans-serif`;
+  if (/\bmono\b/i.test(t)) return `${escaped}, ui-monospace, monospace`;
+  if (/(?:times|georgia)/i.test(t)) return `${escaped}, "Times New Roman", serif`;
+  return `${escaped}, "Noto Sans", Inter, sans-serif`;
 }
 
 /** Per-atom label font CSS strings (document defaults when `labelFontSizePt` omitted). */

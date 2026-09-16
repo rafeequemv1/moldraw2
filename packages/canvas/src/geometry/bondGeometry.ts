@@ -2,7 +2,10 @@
  * Bond endpoint trimming so heteroatom labels (O, N, OH, …) get a small visual
  * gap. Carbon-carbon bonds stay flush except at condensed teaching labels (CH₃…).
  */
-import { resolveAtomLabelFonts, type ResolvedCanvasPreferences } from '@moldraw/core';
+import {
+  resolveAtomLabelFonts,
+  type ResolvedCanvasPreferences,
+} from '@moldraw/core/canvasPreferences';
 import {
   DEFAULT_ATOM_INK,
   getEffectiveValencyForImplicitHydrogen,

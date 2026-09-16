@@ -18,8 +18,12 @@ import { ChevronDown, LayoutGrid, Search } from 'lucide-react';
 import { renderToolIcon } from '../toolIcons';
 import {
   dropUpMenuStyle,
+  isLeftRailTrigger,
+  leftRailColumnRect,
   pinMenuAboveAnchor,
+  pinMenuRightOfRail,
   placeAnchoredMenu,
+  placeLeftRailFlyout,
   shouldOpenMenuAbove,
 } from '../menuPlacement';
 
@@ -58,6 +62,8 @@ export interface ToolbarSplitToolProps<T extends string> {
   /** Optional “open full library” control above the menu list. */
   onOpenLibrary?: () => void;
   libraryButtonLabel?: string;
+  /** One-line usage hint shown at the top of the menu (e.g. polymer tool). */
+  menuHint?: string;
 }
 
 type MenuPlacement = 'right' | 'below' | 'above' | 'slider';
@@ -69,14 +75,19 @@ function matchesQuery(opt: ToolbarSplitToolOption<string>, q: string): boolean {
 }
 
 function detectPlacement(el: HTMLElement): MenuPlacement {
+  if (isLeftRailTrigger(el)) return 'right';
   const rect = el.getBoundingClientRect();
   if (shouldOpenMenuAbove(el, rect)) return 'above';
   if (el.closest('.toolbar-top-strip') || el.closest('.app-top-bar__tools-row')) return 'below';
   return 'right';
 }
 
-function menuFixedStyle(anchor: DOMRect, placement: MenuPlacement, menuWidth: number): CSSProperties {
-  const gap = 4;
+function menuFixedStyle(
+  anchor: DOMRect,
+  placement: MenuPlacement,
+  menuWidth: number,
+  trigger?: HTMLElement | null,
+): CSSProperties {
   const compact = document.documentElement.classList.contains('app-mobile-compact');
   const tall = compact ? Math.max(280, window.innerHeight * 0.55) : 280;
   if (placement === 'above' || placement === 'slider') {
@@ -98,18 +109,15 @@ function menuFixedStyle(anchor: DOMRect, placement: MenuPlacement, menuWidth: nu
       zIndex: 24000,
     };
   }
-  const rings = document.querySelector('.toolbar-bottom') as HTMLElement | null;
-  const floor = rings
-    ? Math.max(8, window.innerHeight - rings.getBoundingClientRect().top + gap)
-    : 8;
-  const right = placeAnchoredMenu(anchor, { menuWidth, menuHeight: 280 });
-  const top = Math.min(anchor.top, window.innerHeight - Math.min(280, right.maxHeight) - floor);
+  const col = trigger ? leftRailColumnRect(trigger) : null;
+  const pos = placeLeftRailFlyout(anchor, { menuWidth, menuHeight: 280 }, col);
   return {
     position: 'fixed',
-    top: Math.max(8, top),
-    left: anchor.right + gap,
+    top: pos.top,
+    left: pos.left,
     right: 'auto',
-    maxHeight: Math.max(96, window.innerHeight - Math.max(8, top) - floor),
+    bottom: 'auto',
+    maxHeight: pos.maxHeight,
     zIndex: 24000,
   };
 }
@@ -131,6 +139,7 @@ export function ToolbarSplitTool<T extends string>({
   searchPlaceholder = 'Search…',
   onOpenLibrary,
   libraryButtonLabel = 'Browse all',
+  menuHint,
 }: ToolbarSplitToolProps<T>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -168,10 +177,16 @@ export function ToolbarSplitTool<T extends string>({
       if (!el) return;
       const placement = detectPlacement(el);
       const rect = el.getBoundingClientRect();
-      const dropUp = placement === 'above' || placement === 'slider' || shouldOpenMenuAbove(el, rect);
-      setMenuCompact(dropUp || placement === 'right' || placement === 'above');
+      const dropUp = !isLeftRailTrigger(el) && (placement === 'above' || placement === 'slider');
+      setMenuCompact(true);
       setMenuDropUp(dropUp);
-      setMenuStyle(dropUp ? dropUpMenuStyle(rect, menuWidth) : menuFixedStyle(rect, placement, menuWidth));
+      setMenuStyle(
+        dropUp ? dropUpMenuStyle(rect, menuWidth) : menuFixedStyle(rect, placement, menuWidth, el),
+      );
+      const menu = menuRef.current;
+      if (menu && isLeftRailTrigger(el)) {
+        pinMenuRightOfRail(menu, el, menuWidth);
+      }
     };
     update();
     const raf = window.requestAnimationFrame(update);
@@ -189,11 +204,16 @@ export function ToolbarSplitTool<T extends string>({
   }, [open, menuSize]);
 
   useLayoutEffect(() => {
-    if (!open || !menuDropUp) return;
+    if (!open) return;
     const menu = menuRef.current;
     const el = wrapRef.current;
     if (!menu || !el) return;
     const menuWidth = menuSize === 'wide' ? 196 : 168;
+    if (isLeftRailTrigger(el)) {
+      pinMenuRightOfRail(menu, el, menuWidth);
+      return;
+    }
+    if (!menuDropUp) return;
     pinMenuAboveAnchor(menu, el.getBoundingClientRect(), menuWidth);
   }, [open, menuDropUp, menuStyle, menuSize]);
 
@@ -287,10 +307,11 @@ export function ToolbarSplitTool<T extends string>({
             ref={menuRef}
             id={menuId}
             className={`toolbar-split-tool__menu toolbar-split-tool__menu--portal${menuSize === 'wide' ? ' toolbar-split-tool__menu--wide' : ''}${menuCompact ? ' toolbar-split-tool__menu--compact' : ''}${menuDropUp ? ' toolbar-split-tool__menu--drop-up' : ''}${searchable || onOpenLibrary ? ' toolbar-split-tool__menu--searchable' : ''}`}
-            data-placement={menuDropUp ? 'above' : 'side'}
+            data-placement={menuDropUp ? 'above' : 'right'}
             role="menu"
             style={menuStyle ?? undefined}
           >
+            {menuHint ? <p className="toolbar-split-tool__hint">{menuHint}</p> : null}
             {onOpenLibrary ? (
               <button
                 type="button"

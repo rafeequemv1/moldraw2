@@ -268,6 +268,22 @@ body,
     stroke: currentColor;
   }
 
+  .selection-action-toolbar__chip {
+    background: var(--chrome-bg-elevated) !important;
+    border-color: var(--chrome-border-strong) !important;
+    color: var(--text-main) !important;
+  }
+
+  .selection-action-toolbar__chip:hover:not(:disabled) {
+    background: var(--chrome-hover) !important;
+    border-color: var(--chrome-border-strong) !important;
+  }
+
+  .selection-action-toolbar__chip:active,
+  .selection-action-toolbar__chip.is-open {
+    background: var(--chrome-active) !important;
+  }
+
   .viewer3d-menu__trigger,
   .viewer3d-menu__file-btn,
   .viewer3d-menu__clear,
@@ -398,6 +414,18 @@ body,
     background: var(--chrome-input-bg) !important;
     border-color: var(--chrome-border) !important;
     color: var(--text-main) !important;
+  }
+
+  .auth-submit {
+    background: #14b8a6 !important;
+    border-color: #14b8a6 !important;
+    color: #fff !important;
+  }
+
+  .auth-submit:hover:not(:disabled) {
+    background: #0d9488 !important;
+    border-color: #0d9488 !important;
+    color: #fff !important;
   }
 
   .auth-field input,
@@ -1075,7 +1103,8 @@ body,
   .mobile-sheet__footer,
   .mobile-sheet-list__btn,
   .mobile-sheet-arrange__btn,
-  .mobile-sheet-arrange__list-btn {
+  .mobile-sheet-arrange__list-btn,
+  .mobile-sheet-accordion__trigger {
     color: var(--text-main) !important;
   }
 
@@ -1088,7 +1117,8 @@ body,
   .mobile-sheet-section__label,
   .mobile-sheet__close,
   .mobile-sheet-arrange__label,
-  .mobile-sheet-arrange__list-hint {
+  .mobile-sheet-arrange__list-hint,
+  .mobile-sheet-accordion__chevron {
     color: var(--text-muted) !important;
   }
 
@@ -1135,7 +1165,7 @@ body,
   }
 
   .toolbar-mobile-categories__btn {
-    color: var(--text-muted) !important;
+    color: var(--text-main) !important;
   }
 
   .toolbar-mobile-categories__btn--active {

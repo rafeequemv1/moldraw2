@@ -9,7 +9,7 @@ import { ChevronDown } from 'lucide-react';
 import { LIGAND_TEMPLATES } from '@moldraw/templates';
 import { FunctionalGroupPreviewCell } from './FunctionalGroupPreviewCell';
 import { computeToolbarFgPanelStyle } from './toolbarFgPanelPosition';
-import { pinMenuAboveAnchor, shouldOpenMenuAbove } from '../menuPlacement';
+import { isLeftRailTrigger, pinMenuAboveAnchor, pinMenuRightOfRail, shouldOpenMenuAbove } from '../menuPlacement';
 import { MobileBottomSheet } from './MobileBottomSheet';
 
 const TOOL_ID = 'ligands';
@@ -42,11 +42,12 @@ export function ToolbarLigandsTool({
       const el = wrapRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const openAbove = shouldOpenMenuAbove(el, rect);
+      const openAbove = !isLeftRailTrigger(el) && shouldOpenMenuAbove(el, rect);
       setDropUp(openAbove);
       setPanelStyle(computeToolbarFgPanelStyle(rect, el));
       const panel = panelRef.current;
-      if (openAbove && panel) pinMenuAboveAnchor(panel, rect, 280);
+      if (panel && isLeftRailTrigger(el)) pinMenuRightOfRail(panel, el, 280);
+      else if (openAbove && panel) pinMenuAboveAnchor(panel, rect, 280);
     };
     update();
     window.addEventListener('resize', update);
@@ -60,10 +61,15 @@ export function ToolbarLigandsTool({
   }, [open, preferSheet]);
 
   useLayoutEffect(() => {
-    if (!open || preferSheet || !dropUp) return;
+    if (!open || preferSheet) return;
     const panel = panelRef.current;
     const el = wrapRef.current;
     if (!panel || !el) return;
+    if (isLeftRailTrigger(el)) {
+      pinMenuRightOfRail(panel, el, 280);
+      return;
+    }
+    if (!dropUp) return;
     pinMenuAboveAnchor(panel, el.getBoundingClientRect(), 280);
   }, [open, preferSheet, dropUp, panelStyle]);
 
@@ -146,7 +152,7 @@ export function ToolbarLigandsTool({
         className={`toolbar-fg-tool__panel toolbar-fg-tool__panel--portal${
           dropUp ? ' toolbar-fg-tool__panel--drop-up' : ''
         }`}
-        data-placement={dropUp ? 'above' : 'side'}
+        data-placement={dropUp ? 'above' : 'right'}
         role="dialog"
         aria-label="Ligands"
         style={panelStyle}

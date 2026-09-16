@@ -6,7 +6,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { anchoredMenuStyle, placeAnchoredMenu, type AnchoredMenuPos } from '../menuPlacement';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, MousePointer2 } from 'lucide-react';
 import type { Molecule } from '@moldraw/domain';
 import {
   presentElements,
@@ -254,6 +254,8 @@ export interface TopBarSelectMenuProps {
   onSelectTool: (toolId: SelectToolId) => void;
   onQuickSelect: (action: QuickSelectActionId, options?: QuickSelectOptions) => void;
   disabled?: boolean;
+  /** Phone/tablet: same menu, icon-only trigger (no “Select” label). */
+  iconOnly?: boolean;
   /** Persisted Settings → Shortcuts overrides (live chords in the menu). */
   shortcutOverrides?: ShortcutBindingsMap | null;
 }
@@ -265,6 +267,7 @@ export function TopBarSelectMenu({
   onSelectTool,
   onQuickSelect,
   disabled = false,
+  iconOnly = false,
   shortcutOverrides = null,
 }: TopBarSelectMenuProps) {
   const [open, setOpen] = useState(false);
@@ -457,16 +460,23 @@ export function TopBarSelectMenu({
     <div className="app-top-bar__select-wrap" ref={rootRef}>
       <button
         type="button"
-        className={`app-top-bar__select-trigger${selectToolActive ? ' is-active' : ''}${open ? ' is-open' : ''}`}
+        className={`app-top-bar__select-trigger${iconOnly ? ' app-top-bar__select-trigger--icon' : ''}${selectToolActive ? ' is-active' : ''}${open ? ' is-open' : ''}`}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
         disabled={disabled}
         title="Selection tools and quick selects"
+        aria-label="Select"
         onClick={() => (open ? closeMenu() : setOpen(true))}
       >
-        <span>Select</span>
-        <ChevronDown size={11} strokeWidth={2} aria-hidden />
+        {iconOnly ? (
+          <MousePointer2 size={16} strokeWidth={2} aria-hidden />
+        ) : (
+          <>
+            <span>Select</span>
+            <ChevronDown size={11} strokeWidth={2} aria-hidden />
+          </>
+        )}
       </button>
       {open && menuPos && typeof document !== 'undefined'
         ? createPortal(

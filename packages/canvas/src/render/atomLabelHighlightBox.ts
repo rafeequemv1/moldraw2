@@ -5,7 +5,7 @@
 import type { Atom, Bond } from '@moldraw/domain';
 import { atomUsesHeteroStyleTrim } from '@moldraw/domain';
 import { condensedGroupLabelForAtom } from '@moldraw/domain';
-import { resolveAtomLabelFonts } from '@moldraw/core';
+import { resolveAtomLabelFonts } from '@moldraw/core/canvasPreferences';
 import { measureDeltaLabelExtents } from './drawAtomDecorations';
 import type { RenderContext } from './types';
 

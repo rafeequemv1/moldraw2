@@ -16,6 +16,7 @@ export { PencilOptionsBar } from './PencilOptionsBar';
 export { TextStylePanel } from './TextStylePanel';
 export { StyleToolbar } from './StyleToolbar';
 export { ArrowPropertiesTopBar } from './ArrowPropertiesTopBar';
+export { ArrowPropertiesPanel } from './ArrowPropertiesPanel';
 export { InlineArrowReagentEditor } from './InlineArrowReagentEditor';
 export { InlineAliasEditor } from './InlineAliasEditor';
 export { InlineTextEditor } from './InlineTextEditor';

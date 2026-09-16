@@ -239,8 +239,14 @@ const reactionArrow = z.object({
     .optional(),
   toAnchor: arrowAnchor.describe('Optional chemistry anchor for the head; overrides x2/y2 when resolvable.').optional(),
   headStyle: z
-    .enum(['single', 'pair'])
-    .describe('electron_flow head: single = fish-hook (one electron, default), pair = full head (electron pair).')
+    .enum(['filled', 'open', 'pair', 'single', 'none'])
+    .describe(
+      'Arrow head: filled triangle, open/pair angular 2e, single fish-hook, none.',
+    )
+    .optional(),
+  tailStyle: z
+    .enum(['none', 'bar', 'reverse', 'circle'])
+    .describe('Arrow tail: none, bar, reverse head, or circle.')
     .optional(),
   curveAmount: z
     .number()
@@ -785,8 +791,12 @@ export const schemas = {
       .describe('Chemistry anchor for the head; null detaches and keeps free x2/y2.')
       .optional(),
     headStyle: z
-      .enum(['single', 'pair'])
-      .describe('electron_flow head: single = fish-hook (one electron), pair = full head (electron pair).')
+      .enum(['filled', 'open', 'pair', 'single', 'none'])
+      .describe('Arrow head: filled, open/pair, single fish-hook, none.')
+      .optional(),
+    tailStyle: z
+      .enum(['none', 'bar', 'reverse', 'circle'])
+      .describe('Arrow tail: none, bar, reverse head, or circle.')
       .optional(),
     curveAmount: z
       .number()

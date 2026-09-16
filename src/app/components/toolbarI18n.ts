@@ -16,6 +16,35 @@ import {
   type ToolDef,
 } from '../toolDefs';
 
+/** Split-menu values: scheme kinds plus mechanism 2e / 1e variants. */
+export type ReactionArrowMenuValue =
+  | Exclude<ReactionArrowKind, 'electron_flow'>
+  | 'electron_flow_pair'
+  | 'electron_flow_single';
+
+const SCHEME_ARROW_KINDS = REACTION_ARROW_KIND_ORDER.filter(
+  (k): k is Exclude<ReactionArrowKind, 'electron_flow'> => k !== 'electron_flow',
+);
+
+export function toReactionArrowMenuValue(
+  kind: ReactionArrowKind,
+  headStyle?: import('@moldraw/domain').ArrowHeadStyle,
+): ReactionArrowMenuValue {
+  if (kind === 'electron_flow') {
+    return headStyle === 'single' ? 'electron_flow_single' : 'electron_flow_pair';
+  }
+  return kind;
+}
+
+export function fromReactionArrowMenuValue(value: ReactionArrowMenuValue): {
+  kind: ReactionArrowKind;
+  headStyle?: 'single' | 'pair';
+} {
+  if (value === 'electron_flow_pair') return { kind: 'electron_flow', headStyle: 'pair' };
+  if (value === 'electron_flow_single') return { kind: 'electron_flow', headStyle: 'single' };
+  return { kind: value };
+}
+
 export function useToolbarI18n() {
   const { t } = useI18n();
 
@@ -24,6 +53,15 @@ export function useToolbarI18n() {
       const key = `toolbar.reactionArrows.${k}`;
       const v = t(key);
       return v === key ? k : v;
+    };
+
+    const reactionArrowMenuLabel = (v: ReactionArrowMenuValue): string => {
+      if (v === 'electron_flow_pair' || v === 'electron_flow_single') {
+        const key = `toolbar.reactionArrows.${v}`;
+        const label = t(key);
+        return label === key ? v : label;
+      }
+      return reactionArrowKindLabel(v);
     };
 
     const canvasShapeKindLabel = (k: CanvasShapeKind): string => {
@@ -49,6 +87,33 @@ export function useToolbarI18n() {
       value: k,
       label: reactionArrowKindLabel(k),
     }));
+
+    const reactionArrowGroups = [
+      {
+        id: 'mechanism',
+        label: t('toolbar.reactionArrowGroups.mechanism'),
+        options: [
+          {
+            value: 'electron_flow_pair' as const,
+            label: reactionArrowMenuLabel('electron_flow_pair'),
+            keywords: 'mechanism electron flow curly pair 2e',
+          },
+          {
+            value: 'electron_flow_single' as const,
+            label: reactionArrowMenuLabel('electron_flow_single'),
+            keywords: 'mechanism fishhook fish-hook radical 1e',
+          },
+        ],
+      },
+      {
+        id: 'scheme',
+        label: t('toolbar.reactionArrowGroups.scheme'),
+        options: SCHEME_ARROW_KINDS.map(k => ({
+          value: k,
+          label: reactionArrowKindLabel(k),
+        })),
+      },
+    ];
 
     const shapeDrawOptions = CANVAS_SHAPE_KIND_ORDER.map(k => ({
       value: k as ShapeMenuValue,
@@ -104,8 +169,10 @@ export function useToolbarI18n() {
       t,
       localizeTool: (tool: ToolDef) => localizeTool(tool, t),
       reactionArrowKindLabel,
+      reactionArrowMenuLabel,
       canvasShapeKindLabel,
       reactionArrowOptions,
+      reactionArrowGroups,
       shapeMenuGroups,
       chargeMenuGroups,
       sruSubscriptOptions,

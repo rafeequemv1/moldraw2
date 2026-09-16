@@ -28,8 +28,10 @@
 .header-links--compact.header-links--actions {
   overflow-x: hidden;
   overflow-y: visible;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   max-width: 100%;
+  row-gap: 4px;
+  column-gap: 3px;
 }
 
 .header-links--compact .header-links__lead,
@@ -38,6 +40,12 @@
   overflow-y: visible;
   flex-wrap: nowrap;
   min-width: 0;
+}
+
+/* Copy / Request stay in the More sheet — never a second compact top-bar row. */
+.header-links__clip-row,
+.header-links--compact .header-links__clip-row {
+  display: none !important;
 }
 
 .header-links__trailing {
@@ -360,28 +368,39 @@
 }
 
 .tb-btn-auth-cta {
-  background: var(--primary, #2563eb);
+  background: #0d9488;
   color: #fff;
-  border: 1px solid var(--primary, #2563eb);
+  border: 1px solid #0d9488;
   border-radius: 999px;
   font-weight: 800;
   padding: 0 10px;
 }
 
 .tb-btn-auth-cta:hover {
-  background: var(--primary-hover, #1d4ed8);
+  background: #0f766e;
   color: #fff;
-  border-color: var(--primary-hover, #1d4ed8);
+  border-color: #0f766e;
 }
 
 .tb-menu-item--auth-cta {
   font-weight: 800;
   color: #fff;
-  background: var(--primary, #2563eb);
+  background: #0d9488;
 }
 
 .tb-menu-item--auth-cta:hover {
-  background: var(--primary-hover, #1d4ed8);
+  background: #0f766e;
+  color: #fff;
+}
+
+.tb-menu-dropdown-list--compact .tb-menu-item.tb-menu-item--auth-cta {
+  font-weight: 800;
+  color: #fff;
+  background: #0d9488;
+}
+
+.tb-menu-dropdown-list--compact .tb-menu-item.tb-menu-item--auth-cta:hover {
+  background: #0f766e;
   color: #fff;
 }
 
@@ -504,23 +523,29 @@ button.viewer-toolbar-extra:hover {
 }
 
 .tb-btn-download {
-  gap: 1px;
+  gap: 4px;
   min-width: 0;
-  padding: 0 5px;
-  font-size: 9px;
-  font-weight: 500;
-  color: #475569;
+  height: 24px;
+  padding: 0 9px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #0f766e;
+  background: transparent;
+  border: 1.5px solid #0d9488;
+  border-radius: 6px;
 }
 
 .tb-btn-download svg {
-  width: 8px;
-  height: 8px;
-  opacity: 0.7;
+  width: 12px;
+  height: 12px;
+  opacity: 1;
 }
 
 .tb-btn-download:hover {
-  background: #f0f0f0;
-  color: #111;
+  background: color-mix(in srgb, #0d9488 12%, #fff);
+  color: #0f766e;
+  border-color: #0f766e;
 }
 
 .tb-menu-dropdown--download {
@@ -810,7 +835,23 @@ button.viewer-toolbar-extra:hover {
   font-weight: 700;
 }
 
-.auth-submit,
+.auth-submit {
+  border: 1px solid #0d9488;
+  background: #0d9488;
+  color: #fff;
+}
+
+.auth-submit:hover:not(:disabled) {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff;
+}
+
+.auth-submit:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
 .feature-request-submit {
   border: 1px solid var(--primary, #2c7a7b);
   background: var(--primary, #2c7a7b);
@@ -979,7 +1020,6 @@ button.viewer-toolbar-extra:hover {
 [data-theme='ink-dark'] {
   .tb-btn,
   .tb-btn-ai,
-  .tb-btn-download,
   .tb-btn-feature-request,
   .tb-btn-auth,
   .tb-btn-my-designs,
@@ -992,7 +1032,6 @@ button.viewer-toolbar-extra:hover {
   .tb-btn:hover,
   .tb-btn-ai:hover,
   .tb-btn-ai-active,
-  .tb-btn-download:hover,
   .tb-btn-feature-request:hover,
   .tb-btn-auth:hover,
   .tb-btn-my-designs:hover,
@@ -1036,26 +1075,44 @@ button.viewer-toolbar-extra:hover {
   }
 
   .tb-btn.tb-btn-auth-cta {
-    background: var(--primary);
+    background: #14b8a6;
     color: #fff;
-    border-color: var(--primary);
+    border-color: #14b8a6;
     font-weight: 800;
   }
 
   .tb-btn.tb-btn-auth-cta:hover {
-    background: var(--primary-hover);
+    background: #0d9488;
     color: #fff;
-    border-color: var(--primary-hover);
+    border-color: #0d9488;
   }
 
   .tb-menu-item--auth-cta {
-    background: var(--primary);
+    background: #14b8a6;
     color: #fff;
   }
 
   .tb-menu-item--auth-cta:hover {
-    background: var(--primary-hover);
+    background: #0d9488;
     color: #fff;
+  }
+
+  .tb-btn.tb-btn-download {
+    color: #5eead4;
+    background: transparent;
+    border: 1.5px solid #14b8a6;
+  }
+
+  .tb-btn.tb-btn-download:hover {
+    color: #99f6e4;
+    background: color-mix(in srgb, #14b8a6 16%, transparent);
+    border-color: #5eead4;
+  }
+
+  .header-links--compact .tb-btn-clip--compact {
+    background: var(--chrome-bg-elevated);
+    border-color: var(--chrome-border);
+    color: var(--text-main);
   }
 
   .tb-btn-windows-app,
@@ -1111,13 +1168,13 @@ button.viewer-toolbar-extra:hover {
   }
 
   .tb-menu-item.tb-menu-item--auth-cta {
-    background: var(--primary) !important;
+    background: #14b8a6 !important;
     color: #fff !important;
     font-weight: 800;
   }
 
   .tb-menu-item.tb-menu-item--auth-cta:hover {
-    background: var(--primary-hover) !important;
+    background: #0d9488 !important;
     color: #fff !important;
   }
 
@@ -1242,7 +1299,18 @@ button.viewer-toolbar-extra:hover {
     color: var(--md-danger-soft);
   }
 
-  .auth-submit,
+  .auth-submit {
+    background: #14b8a6;
+    border-color: #14b8a6;
+    color: #fff;
+  }
+
+  .auth-submit:hover:not(:disabled) {
+    background: #0d9488;
+    border-color: #0d9488;
+    color: #fff;
+  }
+
   .feature-request-submit {
     background: var(--primary);
     border-color: var(--primary);
@@ -1291,15 +1359,20 @@ button.viewer-toolbar-extra:hover {
   }
 }
 
-/* Ink-dark primary is near-white — keep Sign up as a high-contrast CTA. */
+/* Ink-dark primary is near-white — Sign up stays teal filled with white text. */
 [data-theme='ink-dark'] .tb-btn.tb-btn-auth-cta,
 [data-theme='ink-dark'] .tb-btn.tb-btn-auth-cta:hover {
-  color: #0a0a0a;
+  color: #fff;
+}
+
+[data-theme='ink-dark'] .auth-submit,
+[data-theme='ink-dark'] .auth-submit:hover:not(:disabled) {
+  color: #fff;
 }
 
 [data-theme='ink-dark'] .tb-menu-item.tb-menu-item--auth-cta,
 [data-theme='ink-dark'] .tb-menu-item.tb-menu-item--auth-cta:hover {
-  color: #0a0a0a !important;
+  color: #fff !important;
 }
 
 @media (max-width: 1180px) {
@@ -1313,6 +1386,20 @@ button.viewer-toolbar-extra:hover {
   .header-links .tb-btn-auth-cta {
     padding: 0 10px;
     font-weight: 800;
+  }
+
+  .header-links .tb-btn-download {
+    height: 24px;
+    padding: 0 9px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .header-links--compact .tb-btn-clip--compact {
+    height: 26px;
+    min-height: 26px;
+    padding: 0 8px;
+    font-size: 10px;
   }
 
   .header-inline-search {

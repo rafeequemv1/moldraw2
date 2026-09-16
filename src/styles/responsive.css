@@ -2,20 +2,22 @@
    (html.app-phone-landscape) instead of these compact rules. */
 
 html.app-mobile-compact {
-    --app-mobile-tool-strip-height: 40px;
-    --app-mobile-category-height: 40px;
+    --app-status-bar-height: 0px;
+    --app-site-footer-height: 0px;
+    /* Footer / MW row are unmounted on compact — never offset the dock for them. */
+    --app-page-footer-stack: 0px;
+    --app-mobile-tool-strip-height: 44px;
+    /* 56px chrome (icons + labels) + home-indicator padding inside the dock */
+    --app-mobile-category-height: calc(56px + env(safe-area-inset-bottom, 0px));
     /* Rings live inside the active tool strip (category dock), not a second bar */
     --app-mobile-rings-height: 0px;
     /* Default: category dock only (tool strip closed). Opens via .app-mobile-strip-open */
-    --app-mobile-bottom-chrome: calc(
-      var(--app-page-footer-stack) + var(--app-mobile-category-height)
-    );
+    --app-mobile-bottom-chrome: var(--app-mobile-category-height);
 }
 
 html.app-mobile-compact.app-mobile-strip-open {
     --app-mobile-bottom-chrome: calc(
-      var(--app-page-footer-stack) + var(--app-mobile-tool-strip-height) +
-        var(--app-mobile-category-height)
+      var(--app-mobile-tool-strip-height) + var(--app-mobile-category-height)
     );
 }
 
@@ -27,7 +29,7 @@ html.app-mobile-compact {
     height: auto;
     min-height: 0;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: visible;
     overflow-y: visible;
   }
 
@@ -35,17 +37,17 @@ html.app-mobile-compact {
     flex-wrap: nowrap;
     align-items: center;
     row-gap: 0;
-    column-gap: 3px;
-    min-height: 36px;
-    height: 36px;
-    padding: 3px 4px;
+    column-gap: 2px;
+    min-height: 32px;
+    height: 32px;
+    padding: 1px 4px;
     overflow-x: hidden;
     overflow-y: visible;
     max-width: 100%;
   }
 
   .app-top-bar--compact .app-top-bar__left {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     flex-wrap: nowrap;
     align-items: center;
     row-gap: 0;
@@ -57,20 +59,52 @@ html.app-mobile-compact {
   }
 
   .app-top-bar--compact .app-top-bar__right {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    gap: 2px;
+    min-width: 0;
+    justify-content: flex-end;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .app-top-bar--compact .app-top-bar__right .header-links--compact,
+  .app-top-bar--compact .app-top-bar__right .header-links--compact.header-links--actions {
+    width: auto;
+    max-width: none;
     flex: 0 0 auto;
     flex-wrap: nowrap;
-    gap: 4px;
+    row-gap: 0;
+  }
+
+  .app-top-bar--compact .app-top-bar__right .header-links__lead {
+    display: none;
+  }
+
+  .app-top-bar--compact .app-top-bar__right .header-links__trailing {
+    margin-left: 0;
+  }
+
+  .app-top-bar--compact .app-top-bar__help-label {
+    display: none;
+  }
+
+  .app-top-bar--compact .app-top-bar__clip-btn--labeled {
+    width: 26px;
+    min-width: 26px;
+    padding: 0;
   }
 
   .app-top-bar--compact .app-top-bar__tools-row {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    min-height: 0;
-    height: auto;
-    padding: 2px 4px 3px;
-    overflow: visible;
-    row-gap: 2px;
-    column-gap: 2px;
+    min-height: 28px;
+    height: 28px;
+    padding: 0 4px 1px;
+    overflow-x: auto;
+    overflow-y: visible;
+    row-gap: 0;
+    column-gap: 0;
   }
 
   .app-top-bar--compact .app-top-bar__context-row,
@@ -78,14 +112,13 @@ html.app-mobile-compact {
     display: none !important;
   }
 
-  .app-top-bar--compact .app-top-bar__brand {
-    font-size: 13px;
-    margin-right: 2px;
+  .app-top-bar--compact .app-top-bar__brand-name {
+    display: none;
   }
 
   .app-top-bar--compact .app-top-bar__rotate-btn {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
   }
 
   .app-top-bar--compact .md-btn--danger-soft {
@@ -99,6 +132,13 @@ html.app-mobile-compact {
     min-height: 26px;
     padding: 0 6px;
     font-size: 11px;
+  }
+
+  .app-top-bar--compact .app-top-bar__select-trigger--icon {
+    width: 26px;
+    min-width: 26px;
+    padding: 0;
+    justify-content: center;
   }
 
   .app-top-bar--compact .action-btn.icon-only,
@@ -127,13 +167,46 @@ html.app-mobile-compact {
   }
 
   .toolbar-mobile-categories {
-    z-index: 60;
-    bottom: var(--app-page-footer-stack);
-    padding-bottom: 0;
+    z-index: 220;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    transform: none;
+    height: var(--app-mobile-category-height);
+    padding: 2px 6px env(safe-area-inset-bottom, 0px);
+    overflow: visible;
   }
 
   .toolbar--mobile-strip {
-    z-index: 60;
+    z-index: 230;
+  }
+
+  .toolbar--mobile-strip .toolbar-split-tool,
+  .toolbar--mobile-strip .toolbar-fg-tool {
+    position: relative;
+    z-index: 4;
+  }
+
+  .toolbar--mobile-strip .toolbar-split-tool__caret,
+  .toolbar--mobile-strip .toolbar-fg-tool__caret {
+    position: absolute;
+    z-index: 6;
+  }
+
+  .toolbar-mobile-categories__btn {
+    position: relative;
+    overflow: visible;
+    z-index: 1;
+  }
+
+  .toolbar-mobile-categories__caret {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    z-index: 6;
+    pointer-events: none;
   }
 
   .app-top-bar--compact .app-top-bar__select-wrap {
@@ -169,11 +242,38 @@ html.app-mobile-compact {
     overflow-y: visible;
   }
 
-  .app-top-bar__site-row--compact .tb-btn {
+  .app-top-bar__site-row--compact .tb-btn,
+  .app-top-bar--compact .header-links--compact .tb-btn {
     height: 22px;
     min-height: 22px;
     font-size: 9px;
     padding: 0 6px;
+  }
+
+  .app-top-bar--compact .header-links--compact .tb-btn-download,
+  .app-top-bar--compact .header-links--compact .tb-btn-download.tb-btn-download--icon {
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .app-top-bar__site-row--compact .tb-btn-clip--compact {
+    height: 26px;
+    min-height: 26px;
+    padding: 0 8px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .app-top-bar__site-row--compact .tb-btn-auth-cta,
+  .app-top-bar--compact .header-links--compact .tb-btn-auth-cta {
+    height: 24px;
+    min-height: 24px;
+    padding: 0 8px;
+    font-weight: 800;
   }
 
   .app-top-bar__main {
@@ -207,10 +307,10 @@ html.app-mobile-compact {
   }
 
   .app-top-bar__tools-row {
-    flex-wrap: wrap;
-    row-gap: 2px;
-    min-height: 0;
-    height: auto;
+    flex-wrap: nowrap;
+    row-gap: 0;
+    min-height: 28px;
+    height: 28px;
     padding: 0 4px;
   }
 
@@ -323,9 +423,7 @@ html.app-mobile-compact {
        `.workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar { top: … }`
        out-specifies this block and would pin the strip under the header. */
     top: auto !important;
-    bottom: calc(
-      var(--app-page-footer-stack) + var(--app-mobile-category-height)
-    ) !important;
+    bottom: var(--app-mobile-category-height) !important;
     width: auto;
     height: var(--app-mobile-tool-strip-height);
     max-height: none;
@@ -341,7 +439,7 @@ html.app-mobile-compact {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
-    z-index: 50;
+    z-index: 230;
     background: var(--chrome-bg);
     border: none;
     border-top: 1px solid var(--chrome-border);
@@ -357,21 +455,27 @@ html.app-mobile-compact {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0;
-    min-height: 0;
-    padding: 2px 1px;
-    font-size: 9px;
-    border-radius: 6px;
+    gap: 3px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 2px 2px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-main, #0f172a);
+    border-radius: 10px;
   }
 
   .toolbar-mobile-categories__icon,
   .toolbar-mobile-categories__icon svg {
-    width: 14px;
-    height: 14px;
+    width: 22px;
+    height: 22px;
+    color: inherit;
+    stroke: currentColor;
   }
 
   .toolbar-mobile-categories__caret {
-    opacity: 0.7;
+    color: inherit;
+    opacity: 1;
   }
 
   .toolbar--mobile-strip__close {
@@ -392,10 +496,13 @@ html.app-mobile-compact {
   .selection-align-toolbar--compact .app-top-bar__file-btn {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    padding-inline: 10px;
-    width: auto;
-    min-height: 36px;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+    width: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    height: 26px;
   }
 
   .toolbar-group {
@@ -497,44 +604,23 @@ html.app-mobile-compact {
     bottom: auto;
   }
 
-  .molecule-status-bar {
-    overflow: hidden;
-    flex: 0 0 auto;
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    z-index: 80;
-    background: #ffffff;
-    color: #0f172a;
-    border-top: 1px solid #cbd5e1;
-    padding: 0 8px;
-    gap: 0;
-  }
-
-  .molecule-status-bar__sep {
-    margin: 0 6px;
-  }
-
-  .molecule-status-bar__hint,
-  .molecule-status-bar__item--apparatus {
-    display: none;
-  }
-
-  .site-footer-root,
-  .app-site-footer-slot .site-footer-root {
-    overflow: hidden;
-    max-height: 28px;
-  }
-
-  .site-footer-lede,
-  .site-footer-copy,
-  .site-footer-social,
-  .site-footer-line > .site-footer-sep {
-    display: none;
+  .molecule-status-bar,
+  .app-site-footer-slot,
+  .app-site-footer-slot .site-footer-root,
+  .site-footer-root {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    border: none !important;
+    pointer-events: none !important;
   }
 
   .objects-panel {
-    bottom: var(--app-page-footer-stack);
+    bottom: var(--app-mobile-bottom-chrome);
     left: 0;
   }
 }
@@ -542,8 +628,8 @@ html.app-mobile-compact {
 /* Phone: same chrome as tablet; only tighten top-bar density here */
 @media (max-width: 768px) {
   html.app-mobile-compact {
-    --app-mobile-tool-strip-height: 40px;
-    --app-mobile-category-height: 40px;
+    --app-mobile-tool-strip-height: 44px;
+    --app-mobile-category-height: calc(56px + env(safe-area-inset-bottom, 0px));
   }
 
   html.app-mobile-compact .app-top-bar__main {
@@ -746,13 +832,13 @@ html.touch-ui.app-mobile-compact .toolbar--mobile-strip {
 
 html.touch-ui.app-mobile-compact .toolbar--mobile-strip .tool-btn svg,
 html.touch-ui.app-mobile-compact .toolbar--mobile-strip .toolbar-split-tool__icon svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 html.touch-ui.app-mobile-compact .toolbar-mobile-categories__btn {
-  min-width: 0;
-  min-height: 0;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 html.touch-ui.app-mobile-compact .toolbar-split-tool__menu--slider .toolbar-split-tool__item {
@@ -795,7 +881,13 @@ html.touch-ui {
   --app-site-footer-height: calc(28px + env(safe-area-inset-bottom, 0px));
 }
 
-html.touch-ui .molecule-status-bar {
+html.touch-ui.app-mobile-compact {
+  --app-status-bar-height: 0px;
+  --app-site-footer-height: 0px;
+  --app-page-footer-stack: 0px;
+}
+
+html.touch-ui:not(.app-mobile-compact) .molecule-status-bar {
   box-sizing: border-box;
   height: 28px;
   min-height: 28px;
@@ -815,8 +907,17 @@ html.touch-ui .workspace-split {
   right: env(safe-area-inset-right, 0px);
 }
 
-/* The category dock sits above the status bar, which now owns the inset. */
-html.touch-ui .toolbar-mobile-categories {
+/* Compact: dock owns the home-indicator inset now that footer/MW are hidden.
+   Pin to the visual viewport (100svh / bottom: 0). Safe-area padding is inside
+   the bar so icons+labels stay visible and the bottom edge is flush. */
+html.touch-ui.app-mobile-compact .toolbar-mobile-categories {
+  bottom: 0;
+  margin: 0;
+  transform: none;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html.touch-ui:not(.app-mobile-compact) .toolbar-mobile-categories {
   padding-bottom: 0;
 }
 

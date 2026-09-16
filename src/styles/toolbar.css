@@ -8,6 +8,15 @@
   top: calc(2px + var(--canvas-tab-stack-height, 28px) + 2px);
 }
 
+html:not(.app-mobile-compact) .toolbar {
+  left: 0;
+}
+
+html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar,
+html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar-fg-panel {
+  top: var(--canvas-tab-stack-height, 32px);
+}
+
 .toolbar {
   position: absolute;
   left: var(--app-tool-island-inset, 6px);
@@ -297,41 +306,49 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: var(--app-page-footer-stack);
-  z-index: 51;
-  height: var(--app-mobile-category-height, 48px);
-  padding: 0 4px;
-  padding-bottom: 0;
+  bottom: 0;
+  margin: 0;
+  transform: none;
+  z-index: 220;
+  height: var(--app-mobile-category-height, 56px);
+  padding: 2px 6px env(safe-area-inset-bottom, 0px);
   box-sizing: border-box;
-  background: var(--chrome-bg);
+  background: var(--chrome-bg-elevated, #fff);
   border-top: 1px solid var(--chrome-border);
   align-items: stretch;
   justify-content: space-around;
   gap: 2px;
+  overflow: visible;
 }
 
 .toolbar-mobile-categories__btn {
   flex: 1 1 0;
-  min-width: 0;
-  min-height: 0;
+  min-width: 44px;
+  min-height: 44px;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-main, #0f172a);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.01em;
   cursor: pointer;
-  padding: 4px 2px;
+  padding: 2px 2px;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 3px;
 }
 
-.toolbar-mobile-categories__icon {
+.toolbar-mobile-categories__icon,
+.toolbar-mobile-categories__icon svg {
   flex-shrink: 0;
+  color: inherit;
+  stroke: currentColor;
 }
 
 .toolbar-mobile-categories__label {
@@ -408,6 +425,7 @@
   position: absolute;
   right: 1px;
   bottom: 0;
+  z-index: 5;
   width: 9px;
   height: 9px;
   display: flex;
@@ -462,6 +480,15 @@
   border: 1px solid var(--chrome-border);
 }
 
+.toolbar-split-tool__hint {
+  margin: 0 0 4px;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted, #64748b);
+  max-width: 220px;
+}
+
 .toolbar-split-tool__menu--portal {
   position: fixed !important;
   top: auto;
@@ -472,12 +499,27 @@
   z-index: 24000;
 }
 
-.toolbar-split-tool__menu--drop-up,
-.toolbar-fg-tool__panel--drop-up,
+.toolbar-split-tool__menu--portal[data-placement='right'],
+.toolbar-fg-tool__panel--portal[data-placement='right'],
+html.app-mobile-compact .toolbar-split-tool__menu--portal[data-placement='right'],
+html.app-mobile-compact .toolbar-fg-tool__panel--portal[data-placement='right'],
+html.touch-ui .toolbar-split-tool__menu--portal[data-placement='right'],
+html.touch-ui .toolbar-fg-tool__panel--portal[data-placement='right'] {
+  position: fixed !important;
+  top: var(--split-menu-top, 8px) !important;
+  left: var(--split-menu-left, 42px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  z-index: 24000 !important;
+}
+
+.toolbar-split-tool__menu--drop-up:not([data-placement='right']),
+.toolbar-fg-tool__panel--drop-up:not([data-placement='right']),
 .toolbar-split-tool__menu--portal[data-placement='above'],
 .toolbar-fg-tool__panel--portal[data-placement='above'],
-html.touch-ui .toolbar-split-tool__menu--drop-up,
-html.touch-ui .toolbar-fg-tool__panel--drop-up {
+html.touch-ui .toolbar-split-tool__menu--drop-up:not([data-placement='right']),
+html.touch-ui .toolbar-fg-tool__panel--drop-up:not([data-placement='right']) {
   position: fixed !important;
   top: auto !important;
   right: auto !important;
@@ -491,11 +533,12 @@ html.touch-ui .toolbar-fg-tool__panel--drop-up {
   box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.18);
 }
 
-/* Compact dock: sit just above the tool strip, same as the C6 rings menu. */
-html.app-mobile-compact .toolbar-split-tool__menu--portal,
-html.app-mobile-compact .toolbar-fg-tool__panel--portal,
-html.app-mobile-compact .toolbar-split-tool__menu--drop-up,
-html.app-mobile-compact .toolbar-fg-tool__panel--drop-up {
+/* Compact dock: sit just above the tool strip, same as the C6 rings menu.
+   Left-rail [data-placement=right] must never inherit this drop-up pin. */
+html.app-mobile-compact .toolbar-split-tool__menu--portal:not([data-placement='right']),
+html.app-mobile-compact .toolbar-fg-tool__panel--portal:not([data-placement='right']),
+html.app-mobile-compact .toolbar-split-tool__menu--drop-up:not([data-placement='right']),
+html.app-mobile-compact .toolbar-fg-tool__panel--drop-up:not([data-placement='right']) {
   position: fixed !important;
   top: auto !important;
   right: auto !important;
@@ -871,6 +914,7 @@ html.app-mobile-compact .toolbar-split-tool__menu--drop-up {
   position: absolute;
   right: 0;
   bottom: 0;
+  z-index: 5;
   color: var(--text-muted);
   pointer-events: none;
 }

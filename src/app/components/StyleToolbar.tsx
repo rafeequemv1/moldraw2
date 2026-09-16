@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 import { RotateCcw } from 'lucide-react';
 import type { CanvasStructureTheme } from '@moldraw/canvas';
 import type { BondsSettings, GeneralSettings } from '../settings/types';
-import { CANVAS_FONT_FAMILIES } from '../constants/fonts';
+import { CANVAS_FONT_FAMILIES, canvasFontCssFamily } from '../constants/fonts';
 import { useInstalledStructureThemes } from '../hooks/useStructureTheme';
 import { FormatPanelAccordion } from './FormatPanelAccordion';
 import { useI18n } from '../i18n';
@@ -100,7 +100,8 @@ function StyleCombo({
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const menuId = useId();
-  const wide = id === 'font' || id === 'theme';
+  const isFont = id === 'font';
+  const wide = isFont || id === 'theme';
 
   useLayoutEffect(() => {
     if (!open || !wrapRef.current) {
@@ -112,7 +113,7 @@ function StyleCombo({
       if (!el) return;
       const input = el.getBoundingClientRect();
       const bar = el.closest('.app-top-bar__tools-row')?.getBoundingClientRect() ?? input;
-      const width = Math.max(wide ? 120 : 40, Math.round(input.width));
+      const width = Math.max(isFont ? 176 : wide ? 120 : 40, Math.round(input.width));
       const menuH = options.length * 22 + 6;
       const below = bar.bottom + 4;
       const top = below + menuH > window.innerHeight - 8 ? Math.max(8, bar.top - menuH - 4) : below;
@@ -125,7 +126,7 @@ function StyleCombo({
       window.removeEventListener('resize', place);
       window.removeEventListener('scroll', place, true);
     };
-  }, [open, options.length, wide]);
+  }, [open, options.length, wide, isFont]);
 
   useEffect(() => {
     if (!open) return;
@@ -166,6 +167,7 @@ function StyleCombo({
                   role="option"
                   aria-selected={selected}
                   className={`style-toolbar__menu-item${selected ? ' is-selected' : ''}`}
+                  style={isFont ? { fontFamily: canvasFontCssFamily(s) } : undefined}
                   onMouseDown={e => e.preventDefault()}
                   onClick={() => {
                     onCommit(s);
@@ -347,7 +349,7 @@ export function StyleToolbar({
               onChange={e => updateGeneral({ fontFamily: e.target.value })}
             >
               {CANVAS_FONT_FAMILIES.map(f => (
-                <option key={f} value={f}>
+                <option key={f} value={f} style={{ fontFamily: canvasFontCssFamily(f) }}>
                   {f}
                 </option>
               ))}

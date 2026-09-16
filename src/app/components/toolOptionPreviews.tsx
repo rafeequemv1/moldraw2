@@ -22,9 +22,11 @@ function useThemeTick(): number {
 export function ArrowKindPreview({
   kind,
   size = PREVIEW,
+  headStyle,
 }: {
   kind: ReactionArrowKind;
   size?: number;
+  headStyle?: import('@moldraw/domain').ArrowHeadStyle;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const themeTick = useThemeTick();
@@ -50,7 +52,13 @@ export function ArrowKindPreview({
         y2: size / 2,
         kind,
         headScale: 0.5,
-        ...(kind === 'path'
+        ...(kind === 'electron_flow'
+          ? {
+              headStyle: headStyle ?? 'pair',
+              cx: size / 2,
+              cy: size * 0.22,
+            }
+          : kind === 'path'
           ? {
               pathPoints: [
                 { x: pad, y: size * 0.3 },
@@ -78,7 +86,7 @@ export function ArrowKindPreview({
       },
       { color, lineWidth: size > 22 ? 1.35 : 1.1 },
     );
-  }, [kind, size, themeTick]);
+  }, [kind, size, themeTick, headStyle]);
   return <canvas ref={ref} className="toolbar-option-preview" width={size} height={size} aria-hidden />;
 }
 

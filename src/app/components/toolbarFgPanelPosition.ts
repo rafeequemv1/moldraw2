@@ -1,4 +1,10 @@
-import { dropUpMenuStyle, isBottomDockTrigger } from '../menuPlacement';
+import {
+  dropUpMenuStyle,
+  isBottomDockTrigger,
+  isLeftRailTrigger,
+  leftRailColumnRect,
+  placeLeftRailFlyout,
+} from '../menuPlacement';
 import type { CSSProperties } from 'react';
 
 const PANEL_WIDTH = 280;
@@ -7,18 +13,34 @@ const PANEL_MAX_H = 420;
 /**
  * Fixed position for FG / ligand popovers.
  * Bottom-dock tools open upward onto the canvas (same as C6); left-rail tools
- * open to the right and clamp vertically so the panel stays on-screen.
+ * open to the right of the rail and never overlay the column.
  */
 export function computeToolbarFgPanelStyle(anchor: DOMRect, trigger?: HTMLElement): CSSProperties {
   const maxH = Math.min(PANEL_MAX_H, Math.floor(window.innerHeight * 0.78));
   const width = Math.min(PANEL_WIDTH, window.innerWidth - 16);
   const pad = 8;
-  const inTopBar = anchor.top < 120;
+  const inTopBar = Boolean(trigger?.closest('.toolbar-top-strip, .app-top-bar__tools-row')) || anchor.top < 120;
   const compact = document.documentElement.classList.contains('app-mobile-compact');
+  const leftRail = Boolean(trigger && isLeftRailTrigger(trigger));
   const inBottomDock =
-    compact ||
-    (trigger ? isBottomDockTrigger(trigger) : false) ||
-    anchor.bottom > window.innerHeight - 160;
+    !leftRail &&
+    (compact ||
+      (trigger ? isBottomDockTrigger(trigger) : false) ||
+      anchor.bottom > window.innerHeight - 160);
+
+  if (leftRail) {
+    const col = trigger ? leftRailColumnRect(trigger) : null;
+    const pos = placeLeftRailFlyout(anchor, { menuWidth: width, menuHeight: maxH }, col);
+    return {
+      position: 'fixed',
+      left: pos.left,
+      right: 'auto',
+      top: pos.top,
+      bottom: 'auto',
+      width,
+      maxHeight: pos.maxHeight,
+    };
+  }
 
   if (inBottomDock && !inTopBar) {
     return {

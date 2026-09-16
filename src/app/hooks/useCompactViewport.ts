@@ -2,7 +2,7 @@
  * App chrome layout: portrait phones keep the compact dock; landscape (or a
  * forced landscape view) uses desktop-like left toolbar / bottom rings / side panes.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 
 export type AppLayout = {
   /** Portrait phone/tablet chrome (category dock, sheets). */
@@ -134,7 +134,7 @@ export function useAppLayout(breakpoint = 1024): AppLayout {
 
   const layout = deriveLayout(size, forceLandscape, breakpoint);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
     root.classList.toggle('app-mobile-compact', layout.isCompact);
     root.classList.toggle('app-phone-landscape', layout.isPhoneLandscape);

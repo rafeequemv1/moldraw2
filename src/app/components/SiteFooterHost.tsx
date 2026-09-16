@@ -24,9 +24,7 @@ export function SiteFooterHost() {
 
     const applyHeight = () => {
       const height = Math.ceil(footer.getBoundingClientRect().height);
-      if (height > 0) {
-        document.documentElement.style.setProperty(FOOTER_HEIGHT_VAR, `${height}px`);
-      }
+      document.documentElement.style.setProperty(FOOTER_HEIGHT_VAR, `${Math.max(0, height)}px`);
     };
 
     applyHeight();

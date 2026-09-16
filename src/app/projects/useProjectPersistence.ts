@@ -55,6 +55,7 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
   const savedOnceByTabRef = useRef<Map<string, boolean>>(new Map());
   const moleculeCacheRef = useRef(new Map<string, Molecule>());
   const hydratedRef = useRef(false);
+  const [initialHydrationDone, setInitialHydrationDone] = useState(false);
   const openTabsRef = useRef(openTabs);
   const projectIdRef = useRef(projectId);
   const projectNameRef = useRef(projectName);
@@ -497,26 +498,32 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
   }, [refreshLibrary]);
 
   useEffect(() => {
-    if (hydratedRef.current) return;
+    if (hydratedRef.current) {
+      setInitialHydrationDone(true);
+      return;
+    }
     hydratedRef.current = true;
-    // `/?reaction=` and `/?smiles=` must win over the last IndexedDB design.
-    if (urlHasEditorSeedQuery()) return;
     void (async () => {
-      // Wait a tick so migration can finish writing before hydrating the active tab.
       try {
-        await migrateLegacyMyDesigns();
-      } catch {
-        /* already logged above */
+        // `/?reaction=` and `/?smiles=` must win over the last IndexedDB design.
+        if (urlHasEditorSeedQuery()) return;
+        try {
+          await migrateLegacyMyDesigns();
+        } catch {
+          /* already logged above */
+        }
+        const saved = await getProject(projectId);
+        if (!saved || !moleculeHasProjectContent(saved.molecule)) return;
+        editorStore.resetMolecule(saved.molecule);
+        setProjectName(saved.name);
+        savedOnceRef.current = true;
+        savedOnceByTabRef.current.set(projectId, true);
+        setOpenTabs(prev =>
+          prev.map(t => (t.id === projectId ? { ...t, name: saved.name } : t)),
+        );
+      } finally {
+        setInitialHydrationDone(true);
       }
-      const saved = await getProject(projectId);
-      if (!saved) return;
-      editorStore.resetMolecule(saved.molecule);
-      setProjectName(saved.name);
-      savedOnceRef.current = true;
-      savedOnceByTabRef.current.set(projectId, true);
-      setOpenTabs(prev =>
-        prev.map(t => (t.id === projectId ? { ...t, name: saved.name } : t)),
-      );
     })();
   }, [editorStore, projectId]);
 
@@ -575,5 +582,6 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
     moveProjectsToFolder: moveProjectsToFolderId,
     refreshLibrary,
     refreshMetas: refreshLibrary,
+    initialHydrationDone,
   };
 }

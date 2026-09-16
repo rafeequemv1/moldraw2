@@ -207,6 +207,21 @@
   border-bottom: 1px solid var(--chrome-border, #cbd5e1);
 }
 
+/* Desktop: Untitled is the top of the left rail — flush to the viewport, no gutter. */
+html:not(.app-mobile-compact) .canvas-document-tabs {
+  top: 0;
+  left: 0;
+  max-width: min(560px, calc(100% - 24px));
+}
+
+html:not(.app-mobile-compact) .canvas-document-tabs .document-tab-bar {
+  padding: 0;
+}
+
+html:not(.app-mobile-compact) .canvas-document-tabs .document-tab-bar__tabs {
+  padding-left: 0;
+}
+
 .canvas-document-tabs .document-tab-bar {
   min-height: var(--canvas-tab-stack-height, 32px);
   max-height: var(--canvas-tab-stack-height, 32px);
@@ -229,4 +244,113 @@
   .canvas-document-tabs {
     max-width: min(300px, 78vw);
   }
+}
+
+/* Phone/tablet: quiet chip strip — compact, thin border, no desktop tab chrome. */
+html.app-mobile-compact .canvas-document-tabs {
+  top: 6px;
+  left: 0;
+  right: auto;
+  width: max-content;
+  max-width: calc(100% - 16px);
+  align-items: center;
+  border-bottom: none;
+  pointer-events: none;
+}
+
+html.app-mobile-compact .canvas-document-tabs .document-tab-bar {
+  pointer-events: auto;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+  align-items: center;
+  gap: 1px;
+  padding: 1px 1px 1px 2px;
+  background: var(--chrome-bg-elevated);
+  border: 1px solid var(--chrome-border);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+html.app-mobile-compact .document-tab-bar__scroll,
+html.app-mobile-compact .document-tab-bar__tabs {
+  align-items: center;
+}
+
+html.app-mobile-compact .document-tab-bar__tabs {
+  gap: 1px;
+  padding-left: 0;
+}
+
+html.app-mobile-compact .document-tab-bar__tab {
+  height: 26px;
+  min-height: 26px;
+  min-width: 0;
+  max-width: 104px;
+  top: 0;
+  margin: 0;
+  padding: 0 1px 0 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+html.app-mobile-compact .document-tab-bar__tab:hover {
+  background: var(--chrome-hover);
+  color: var(--text-main);
+}
+
+html.app-mobile-compact .document-tab-bar__tab--active {
+  height: 26px;
+  top: 0;
+  background: var(--chrome-hover);
+  color: var(--text-main);
+  border: none;
+  box-shadow: none;
+}
+
+html.app-mobile-compact .document-tab-bar__tab-label {
+  min-height: 26px;
+  padding: 0 6px 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+html.app-mobile-compact .document-tab-bar__tab--editing {
+  min-width: 96px;
+  max-width: 128px;
+}
+
+html.app-mobile-compact .document-tab-bar__tab-input {
+  height: 18px;
+  font-size: 11px;
+}
+
+html.app-mobile-compact .document-tab-bar__tab-close {
+  width: 20px;
+  height: 20px;
+  margin-right: 2px;
+  opacity: 0.5;
+}
+
+html.app-mobile-compact .document-tab-bar__new {
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+html.app-mobile-compact .document-tab-bar__new svg {
+  width: 12px;
+  height: 12px;
+}
+
+html.app-mobile-compact .document-tab-bar__new:hover {
+  background: var(--chrome-hover);
+  border-color: transparent;
+  color: var(--text-main);
 }

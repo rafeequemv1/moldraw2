@@ -150,6 +150,10 @@ export {
   buildElectronFlowArrow,
   type ResolvedPoint,
   type BuildElectronFlowArrowOpts,
+  type ArrowSnapKind,
+  type ArrowEndpointSnap,
+  type SnapArrowEndpointOpts,
+  lonePairSlotCountForAtom,
 } from './molecule/arrowAnchors';
 export {
   getLonePairPlacements,

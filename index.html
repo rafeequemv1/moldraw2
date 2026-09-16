@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
@@ -64,13 +64,17 @@
         min-height: 0;
         width: 100%;
       }
-      /* Visible until React moves it under the formula / MW row. */
+      /* Visible until React moves it under the formula / MW row. Hidden on compact. */
       body > .site-footer-root,
       .app-site-footer-slot .site-footer-root {
         display: block !important;
         flex: 0 0 auto;
         position: relative;
         z-index: 80;
+      }
+      html.app-mobile-compact body > .site-footer-root,
+      html.app-mobile-compact .app-site-footer-slot .site-footer-root {
+        display: none !important;
       }
       html:not(.charla-visible) charla-widget,
       html:not(.charla-visible) iframe[src*="charla"] {

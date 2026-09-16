@@ -129,7 +129,7 @@ export const zhToolOverrides: Record<
   sru_bracket: {
     label: '聚合物',
     title:
-      '聚合物 SRU 括号：选择 ≥2 个原子后点击，或框选重复单元。点击下标编辑 n/m。',
+      '聚合物 (n)：选中片段或框选重复单元，再设置 n。点击画布上的下标可编辑。',
     shortLabel: 'SRU',
   },
   image: { label: '图片', title: '向画布添加 PNG/JPEG/WebP/GIF 图片标注' },

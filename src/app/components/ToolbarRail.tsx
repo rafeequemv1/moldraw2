@@ -1,6 +1,6 @@
 /**
  * Left-side drawing toolbar. Compact viewports use a category dock
- * (Select | Draw | Rings | Annotate | More) with one active tool strip.
+ * (Select | Draw | Rings | Bonds | More) with one active tool strip.
  */
 import { useEffect, useState } from 'react';
 import {
@@ -14,7 +14,7 @@ import {
   Layers,
   MoreHorizontal,
 } from 'lucide-react';
-import type { CanvasShapeKind, ReactionArrowKind } from '@moldraw/domain';
+import type { ArrowHeadStyle, CanvasShapeKind, ReactionArrowKind } from '@moldraw/domain';
 import {
   CANVAS_SHAPE_KIND_ORDER,
   isLabGlasswareShape,
@@ -52,6 +52,11 @@ import { ToolbarLigandsTool } from './ToolbarLigandsTool';
 import { ArrowKindPreview, ShapeKindPreview } from './toolOptionPreviews';
 import { GlasswareLibraryModal } from './GlasswareLibraryModal';
 import { useToolbarI18n, type ToolbarI18n } from './toolbarI18n';
+import {
+  fromReactionArrowMenuValue,
+  toReactionArrowMenuValue,
+  type ReactionArrowMenuValue,
+} from './toolbarI18n';
 
 export type { ShapeMenuValue };
 
@@ -62,6 +67,8 @@ export interface ToolbarRailProps {
   groupedTools: Record<ToolGroup, ToolDef[]>;
   reactionArrowKind?: ReactionArrowKind;
   onReactionArrowKindChange?: (kind: ReactionArrowKind) => void;
+  reactionArrowHeadStyle?: ArrowHeadStyle;
+  onReactionArrowHeadStyleChange?: (style: ArrowHeadStyle) => void;
   canvasShapeKind?: CanvasShapeKind;
   onCanvasShapeKindChange?: (kind: CanvasShapeKind) => void;
   /** Current highlight in the shapes dropdown. */
@@ -105,8 +112,10 @@ const reactionArrowToolTitle = (
   tool: ToolDef,
   reactionArrowKind: ReactionArrowKind,
   i18n: ToolbarI18n,
+  headStyle?: ArrowHeadStyle,
 ): string => {
-  const k = i18n.reactionArrowKindLabel(reactionArrowKind);
+  const menu = toReactionArrowMenuValue(reactionArrowKind, headStyle);
+  const k = i18n.reactionArrowMenuLabel(menu);
   return `${tool.label} (${k}): ${tool.title}${tooltipShortcutSuffix(tool.id)}`;
 };
 
@@ -150,6 +159,8 @@ const renderToolOrArrowRow = (
     | 'onSelect'
     | 'reactionArrowKind'
     | 'onReactionArrowKindChange'
+    | 'reactionArrowHeadStyle'
+    | 'onReactionArrowHeadStyleChange'
     | 'canvasShapeKind'
     | 'onCanvasShapeKindChange'
     | 'shapeMenuValue'
@@ -315,25 +326,39 @@ const renderToolOrArrowRow = (
         onSelectTool={() => props.onSelect(tool.id)}
         onChangeValue={v => props.onSruBracketSubscriptChange?.(v)}
         menuAriaLabel={props.i18n.t('tools.sru_bracket.title')}
+        menuHint={props.i18n.t('toolbar.sruHint')}
         renderPreview={sruSubscriptPreview}
       />
     );
   }
   if (tool.id === 'reaction_arrow') {
     const kind = props.reactionArrowKind ?? 'straight';
+    const headStyle = props.reactionArrowHeadStyle ?? 'pair';
+    const menuValue = toReactionArrowMenuValue(kind, headStyle);
     return (
       <ToolbarSplitTool
         key={tool.id}
         toolId={tool.id}
         toolLabel={tool.label}
-        toolTitle={reactionArrowToolTitle(tool, kind, props.i18n)}
+        toolTitle={reactionArrowToolTitle(tool, kind, props.i18n, headStyle)}
         isActive={props.activeTool === tool.id}
-        value={kind}
-        options={props.i18n.reactionArrowOptions}
+        value={menuValue}
+        groups={props.i18n.reactionArrowGroups}
         onSelectTool={() => props.onSelect(tool.id)}
-        onChangeValue={v => props.onReactionArrowKindChange?.(v)}
+        onChangeValue={(v: ReactionArrowMenuValue) => {
+          const parsed = fromReactionArrowMenuValue(v);
+          props.onReactionArrowKindChange?.(parsed.kind);
+          props.onReactionArrowHeadStyleChange?.(parsed.headStyle ?? 'pair');
+          props.onSelect(tool.id);
+        }}
         menuAriaLabel={props.i18n.t('toolbar.menuReactionArrow')}
-        renderPreview={k => <ArrowKindPreview kind={k} size={20} />}
+        menuHint={props.i18n.t('toolbar.electronFlowHint')}
+        renderPreview={v => {
+          const parsed = fromReactionArrowMenuValue(v);
+          return (
+            <ArrowKindPreview kind={parsed.kind} headStyle={parsed.headStyle} size={20} />
+          );
+        }}
       />
     );
   }
@@ -455,6 +480,8 @@ export function ToolbarRail({
   groupedTools,
   reactionArrowKind = 'straight',
   onReactionArrowKindChange,
+  reactionArrowHeadStyle = 'pair',
+  onReactionArrowHeadStyleChange,
   canvasShapeKind = 'rectangle',
   onCanvasShapeKindChange,
   shapeMenuValue,
@@ -540,6 +567,8 @@ export function ToolbarRail({
     onSelect: selectTool,
     reactionArrowKind,
     onReactionArrowKindChange,
+    reactionArrowHeadStyle,
+    onReactionArrowHeadStyleChange,
     canvasShapeKind,
     onCanvasShapeKindChange,
     shapeMenuValue,
@@ -663,7 +692,7 @@ export function ToolbarRail({
                 }
                 onClick={() => selectCategory(cat.id)}
               >
-                <Icon size={14} strokeWidth={1.8} aria-hidden className="toolbar-mobile-categories__icon" />
+                <Icon size={22} strokeWidth={2.25} aria-hidden className="toolbar-mobile-categories__icon" />
                 <span className="toolbar-mobile-categories__label">{catLabel}</span>
                 {isStripActive ? (
                   <ChevronDown
@@ -748,6 +777,8 @@ type TopStripProps = Pick<
   | 'onSelect'
   | 'reactionArrowKind'
   | 'onReactionArrowKindChange'
+  | 'reactionArrowHeadStyle'
+  | 'onReactionArrowHeadStyleChange'
   | 'canvasShapeKind'
   | 'onCanvasShapeKindChange'
   | 'shapeMenuValue'

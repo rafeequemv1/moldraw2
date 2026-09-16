@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Italic, Subscript, Superscript, Type, Underline } from 'lucide-react';
 import type { CanvasText } from '@moldraw/domain';
-import { CANVAS_FONT_FAMILIES } from '../constants/fonts';
+import { CANVAS_FONT_FAMILIES, canvasFontCssFamily } from '../constants/fonts';
 import { CHEM_TEXT_SYMBOLS } from '../constants/chemTextSymbols';
 
 export interface TextStylePanelProps {
@@ -116,7 +116,7 @@ export function TextStylePanel({
           onChange={e => onUpdate(selectedCanvasText.id, { fontFamily: e.target.value })}
         >
           {CANVAS_FONT_FAMILIES.map(f => (
-            <option key={f} value={f}>
+            <option key={f} value={f} style={{ fontFamily: canvasFontCssFamily(f) }}>
               {f}
             </option>
           ))}
@@ -246,7 +246,7 @@ export function TextStylePanel({
               onChange={e => onUpdate(selectedCanvasText.id, { fontFamily: e.target.value })}
             >
               {CANVAS_FONT_FAMILIES.map(f => (
-                <option key={f} value={f}>
+                <option key={f} value={f} style={{ fontFamily: canvasFontCssFamily(f) }}>
                   {f}
                 </option>
               ))}

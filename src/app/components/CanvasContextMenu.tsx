@@ -30,6 +30,7 @@ import { COPY_AS_FORMAT_ITEMS } from '../copyAsFormats';
 import { isSimpleCycleAtomSet } from '@moldraw/domain';
 import { QUICK_ELEMENT_PALETTE, PERIODIC_TABLE_CELLS } from '@moldraw/domain';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { MobileSheetAccordion } from './MobileSheetAccordion';
 
 const FLYOUT_GAP = 4;
 const FLYOUT_PAD = 8;
@@ -128,7 +129,7 @@ export interface CanvasContextMenuState {
   canvasShapeId?: string;
   canvasImageId?: string;
   sruBracketId?: string;
-  /** Input that opened the menu (`'touch'` → long-press). */
+  /** Input that opened the menu (`'touch'` → long-press, `'chip'` → mobile actions chip). */
   pointerType?: string;
 }
 
@@ -266,6 +267,32 @@ export function CanvasContextMenu({
     [clearFlyoutCloseTimer],
   );
 
+  const closeAllFlyouts = useCallback(() => {
+    clearFlyoutCloseTimer();
+    setExportOpen(false);
+    setCopyAsOpen(false);
+    setElementOpen(false);
+    setIsotopeOpen(false);
+    setHighlightOpen(false);
+  }, [clearFlyoutCloseTimer]);
+
+  const toggleAccordion = useCallback(
+    (which: FlyoutKind) => {
+      const isOpen =
+        (which === 'export' && exportOpen) ||
+        (which === 'copyAs' && copyAsOpen) ||
+        (which === 'element' && elementOpen) ||
+        (which === 'isotope' && isotopeOpen) ||
+        (which === 'highlight' && highlightOpen);
+      if (isOpen) {
+        closeAllFlyouts();
+        return;
+      }
+      openFlyout(which);
+    },
+    [closeAllFlyouts, copyAsOpen, elementOpen, exportOpen, highlightOpen, isotopeOpen, openFlyout],
+  );
+
   const canGroup = selectedAtomIds.length > 0 && Boolean(onGroupSelection);
   const canUngroup =
     selectedAtomIds.length > 0 &&
@@ -346,6 +373,88 @@ export function CanvasContextMenu({
     setPositionReady(true);
   }, [asSheet, menu.x, menu.y, menu.atomId, menu.bondId, atomHasAlias, sixCycleSelected, bondIsDouble]);
 
+  const copyAsButtons = (itemClass: string, nested = false) =>
+    COPY_AS_FORMAT_ITEMS.map(item => (
+      <button
+        key={item.key}
+        type="button"
+        className={itemClass}
+        disabled={!item.available}
+        title={item.unavailableReason}
+        onClick={() => {
+          if (onCopyAs) onCopyAs(item.key);
+          else if (item.key === 'smiles') onCopySmiles();
+        }}
+        style={nested ? undefined : { width: '100%', justifyContent: 'flex-start' }}
+      >
+        {nested ? item.label.replace(/^Copy as /, '') : item.label}
+      </button>
+    ));
+
+  const elementGrid = atom ? (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 42px)',
+        gap: 4,
+        padding: 2,
+      }}
+    >
+      {[
+        ...QUICK_ELEMENT_PALETTE.filter(
+          (e): e is { sym: string; color: string } => e !== 'divider',
+        ),
+        ...PERIODIC_TABLE_CELLS.filter(
+          (c): c is NonNullable<typeof c> =>
+            !!c &&
+            ['P', 'F', 'Cl', 'Br', 'I', 'Fe', 'Pt', 'Pd', 'Cu', 'Zn', 'Au'].includes(c.sym),
+        ),
+      ].map(entry => (
+        <button
+          key={entry.sym}
+          type="button"
+          onClick={() => onChangeAtomElement(atom.id, entry.sym)}
+          title={`Change atom to ${entry.sym}`}
+          style={{
+            height: asSheet ? 36 : 28,
+            border: atom.element === entry.sym ? '1px solid #2563eb' : '1px solid #e2e8f0',
+            background: atom.element === entry.sym ? '#eff6ff' : '#ffffff',
+            color: entry.color,
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          {entry.sym}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
+  const isotopeMenu = atom ? (
+    <>
+      <button type="button" className="menu-item" onClick={() => onSetAtomIsotope(atom.id, undefined)}>
+        Natural abundance
+      </button>
+      {isotopeOptions.map(iso => (
+        <button
+          key={iso}
+          type="button"
+          className="menu-item"
+          onClick={() => onSetAtomIsotope(atom.id, iso)}
+        >
+          {atom.element === 'H' && iso === 2
+            ? 'D (²H)'
+            : atom.element === 'H' && iso === 3
+              ? 'T (³H)'
+              : `${iso}${atom.element}`}
+        </button>
+      ))}
+      <button type="button" className="menu-item" onClick={() => onCustomAtomIsotope(atom.id)}>
+        Custom...
+      </button>
+    </>
+  ) : null;
+
   const menuBody = (
     <div
       ref={menuRef}
@@ -371,120 +480,89 @@ export function CanvasContextMenu({
             {atom.isotope ? `-${atom.isotope}` : ''}
           </div>
 
-          <div
-            ref={elementAnchorRef}
-            style={{ width: '100%' }}
-            onMouseEnter={() => openFlyout('element')}
-            onMouseLeave={() => scheduleCloseFlyout('element')}
-          >
-            <div
-              className="menu-item"
-              onClick={e => {
-                e.stopPropagation();
-                openFlyout('element');
-              }}
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default' }}
-            >
-              <span>Change element</span>
-              <ChevronRight size={14} color="#64748b" />
-            </div>
-            <ContextMenuFlyout
+          {asSheet ? (
+            <MobileSheetAccordion
+              label="Change element"
               open={elementOpen}
-              anchorRef={elementAnchorRef}
-              onKeepOpen={() => openFlyout('element')}
-              onRequestClose={() => scheduleCloseFlyout('element')}
-              minWidth={148}
+              onToggle={() => toggleAccordion('element')}
+              triggerClassName="menu-item"
             >
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 42px)',
-                    gap: 4,
-                  padding: 2,
-                  }}
-                >
-                  {[
-                    ...QUICK_ELEMENT_PALETTE.filter(
-                      (e): e is { sym: string; color: string } => e !== 'divider',
-                    ),
-                    ...PERIODIC_TABLE_CELLS.filter(
-                      (c): c is NonNullable<typeof c> =>
-                        !!c &&
-                        ['P', 'F', 'Cl', 'Br', 'I', 'Fe', 'Pt', 'Pd', 'Cu', 'Zn', 'Au'].includes(
-                          c.sym,
-                        ),
-                    ),
-                  ].map(entry => (
-                    <button
-                      key={entry.sym}
-                      type="button"
-                      onClick={() => onChangeAtomElement(atom.id, entry.sym)}
-                      title={`Change atom to ${entry.sym}`}
-                      style={{
-                        height: 28,
-                        border: atom.element === entry.sym ? '1px solid #2563eb' : '1px solid #e2e8f0',
-                        background: atom.element === entry.sym ? '#eff6ff' : '#ffffff',
-                        color: entry.color,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {entry.sym}
-                    </button>
-                  ))}
-                </div>
-            </ContextMenuFlyout>
-          </div>
-
-          <div
-            ref={isotopeAnchorRef}
-            style={{ width: '100%' }}
-            onMouseEnter={() => openFlyout('isotope')}
-            onMouseLeave={() => scheduleCloseFlyout('isotope')}
-          >
+              {elementGrid}
+            </MobileSheetAccordion>
+          ) : (
             <div
-              className="menu-item"
-              onClick={e => {
-                e.stopPropagation();
-                openFlyout('isotope');
-              }}
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default' }}
+              ref={elementAnchorRef}
+              style={{ width: '100%' }}
+              onMouseEnter={() => openFlyout('element')}
+              onMouseLeave={() => scheduleCloseFlyout('element')}
             >
-              <span>Isotope</span>
-              <span style={{ marginLeft: 'auto', color: '#64748b', paddingRight: 6 }}>
-                {atom.isotope ?? 'natural'}
-              </span>
-              <ChevronRight size={14} color="#64748b" />
+              <div
+                className="menu-item"
+                onClick={e => {
+                  e.stopPropagation();
+                  openFlyout('element');
+                }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default' }}
+              >
+                <span>Change element</span>
+                <ChevronRight size={14} color="#64748b" />
+              </div>
+              <ContextMenuFlyout
+                open={elementOpen}
+                anchorRef={elementAnchorRef}
+                onKeepOpen={() => openFlyout('element')}
+                onRequestClose={() => scheduleCloseFlyout('element')}
+                minWidth={148}
+              >
+                {elementGrid}
+              </ContextMenuFlyout>
             </div>
-            <ContextMenuFlyout
+          )}
+
+          {asSheet ? (
+            <MobileSheetAccordion
+              label="Isotope"
+              hint={
+                <span style={{ color: '#64748b', paddingRight: 6 }}>{atom.isotope ?? 'natural'}</span>
+              }
               open={isotopeOpen}
-              anchorRef={isotopeAnchorRef}
-              onKeepOpen={() => openFlyout('isotope')}
-              onRequestClose={() => scheduleCloseFlyout('isotope')}
-              minWidth={148}
-                >
-                  <button type="button" className="menu-item" onClick={() => onSetAtomIsotope(atom.id, undefined)}>
-                    Natural abundance
-                  </button>
-                  {isotopeOptions.map(iso => (
-                    <button
-                      key={iso}
-                      type="button"
-                      className="menu-item"
-                      onClick={() => onSetAtomIsotope(atom.id, iso)}
-                    >
-                  {atom.element === 'H' && iso === 2
-                    ? 'D (²H)'
-                    : atom.element === 'H' && iso === 3
-                      ? 'T (³H)'
-                      : `${iso}${atom.element}`}
-                    </button>
-                  ))}
-                  <button type="button" className="menu-item" onClick={() => onCustomAtomIsotope(atom.id)}>
-                    Custom...
-                  </button>
-            </ContextMenuFlyout>
-          </div>
+              onToggle={() => toggleAccordion('isotope')}
+              triggerClassName="menu-item"
+            >
+              {isotopeMenu}
+            </MobileSheetAccordion>
+          ) : (
+            <div
+              ref={isotopeAnchorRef}
+              style={{ width: '100%' }}
+              onMouseEnter={() => openFlyout('isotope')}
+              onMouseLeave={() => scheduleCloseFlyout('isotope')}
+            >
+              <div
+                className="menu-item"
+                onClick={e => {
+                  e.stopPropagation();
+                  openFlyout('isotope');
+                }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default' }}
+              >
+                <span>Isotope</span>
+                <span style={{ marginLeft: 'auto', color: '#64748b', paddingRight: 6 }}>
+                  {atom.isotope ?? 'natural'}
+                </span>
+                <ChevronRight size={14} color="#64748b" />
+              </div>
+              <ContextMenuFlyout
+                open={isotopeOpen}
+                anchorRef={isotopeAnchorRef}
+                onKeepOpen={() => openFlyout('isotope')}
+                onRequestClose={() => scheduleCloseFlyout('isotope')}
+                minWidth={148}
+              >
+                {isotopeMenu}
+              </ContextMenuFlyout>
+            </div>
+          )}
 
           <button className="menu-item" onClick={() => onEditAtomAlias(atom.id)}>
             Set alias / abbreviation
@@ -509,76 +587,55 @@ export function CanvasContextMenu({
         </>
       ) : null}
 
-      <div
-        ref={copyAsAnchorRef}
-        style={{ width: '100%' }}
-        onMouseEnter={() => openFlyout('copyAs')}
-        onMouseLeave={() => scheduleCloseFlyout('copyAs')}
-      >
-        <div
-          className="menu-item"
-          onClick={e => {
-            e.stopPropagation();
-            openFlyout('copyAs');
-          }}
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default' }}
-        >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <Copy size={16} /> Copy as
-          </span>
-          <ChevronRight size={14} color="#64748b" />
-        </div>
-        <ContextMenuFlyout
+      {asSheet ? (
+        <MobileSheetAccordion
+          label="Copy as"
+          icon={<Copy size={16} />}
           open={copyAsOpen}
-          anchorRef={copyAsAnchorRef}
-          onKeepOpen={() => openFlyout('copyAs')}
-          onRequestClose={() => scheduleCloseFlyout('copyAs')}
-          minWidth={220}
+          onToggle={() => toggleAccordion('copyAs')}
+          triggerClassName="menu-item"
         >
-          {COPY_AS_FORMAT_ITEMS.map(item => (
-            <button
-              key={item.key}
-              type="button"
-              className="menu-item"
-              disabled={!item.available}
-              title={item.unavailableReason}
-              onClick={() => {
-                if (onCopyAs) onCopyAs(item.key);
-                else if (item.key === 'smiles') onCopySmiles();
-              }}
-              style={{ width: '100%', justifyContent: 'flex-start' }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </ContextMenuFlyout>
-      </div>
-      {onHighlightColor ? (
+          {copyAsButtons('menu-item', true)}
+        </MobileSheetAccordion>
+      ) : (
         <div
-          ref={highlightAnchorRef}
+          ref={copyAsAnchorRef}
           style={{ width: '100%' }}
-          onMouseEnter={() => openFlyout('highlight')}
-          onMouseLeave={() => scheduleCloseFlyout('highlight')}
+          onMouseEnter={() => openFlyout('copyAs')}
+          onMouseLeave={() => scheduleCloseFlyout('copyAs')}
         >
           <div
             className="menu-item"
             onClick={e => {
               e.stopPropagation();
-              openFlyout('highlight');
+              openFlyout('copyAs');
             }}
             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default' }}
           >
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              <Highlighter size={16} /> Highlight
+              <Copy size={16} /> Copy as
             </span>
             <ChevronRight size={14} color="#64748b" />
           </div>
           <ContextMenuFlyout
+            open={copyAsOpen}
+            anchorRef={copyAsAnchorRef}
+            onKeepOpen={() => openFlyout('copyAs')}
+            onRequestClose={() => scheduleCloseFlyout('copyAs')}
+            minWidth={220}
+          >
+            {copyAsButtons('menu-item')}
+          </ContextMenuFlyout>
+        </div>
+      )}
+      {onHighlightColor ? (
+        asSheet ? (
+          <MobileSheetAccordion
+            label="Highlight"
+            icon={<Highlighter size={16} />}
             open={highlightOpen}
-            anchorRef={highlightAnchorRef}
-            onKeepOpen={() => openFlyout('highlight')}
-            onRequestClose={() => scheduleCloseFlyout('highlight')}
-            minWidth={168}
+            onToggle={() => toggleAccordion('highlight')}
+            triggerClassName="menu-item"
           >
             <div className="context-menu-highlight-swatches" role="group" aria-label="Highlight color">
               {COLOR_PRESETS.map(hex => (
@@ -601,8 +658,58 @@ export function CanvasContextMenu({
             >
               None
             </button>
-          </ContextMenuFlyout>
-        </div>
+          </MobileSheetAccordion>
+        ) : (
+          <div
+            ref={highlightAnchorRef}
+            style={{ width: '100%' }}
+            onMouseEnter={() => openFlyout('highlight')}
+            onMouseLeave={() => scheduleCloseFlyout('highlight')}
+          >
+            <div
+              className="menu-item"
+              onClick={e => {
+                e.stopPropagation();
+                openFlyout('highlight');
+              }}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default' }}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Highlighter size={16} /> Highlight
+              </span>
+              <ChevronRight size={14} color="#64748b" />
+            </div>
+            <ContextMenuFlyout
+              open={highlightOpen}
+              anchorRef={highlightAnchorRef}
+              onKeepOpen={() => openFlyout('highlight')}
+              onRequestClose={() => scheduleCloseFlyout('highlight')}
+              minWidth={168}
+            >
+              <div className="context-menu-highlight-swatches" role="group" aria-label="Highlight color">
+                {COLOR_PRESETS.map(hex => (
+                  <button
+                    key={hex}
+                    type="button"
+                    className="context-menu-highlight-swatch"
+                    style={{ background: hex }}
+                    title={hex}
+                    aria-label={`Highlight ${hex}`}
+                    onClick={() => onHighlightColor(hex)}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                className="menu-item"
+                onClick={() => onHighlightColor(null)}
+                style={{ width: '100%', justifyContent: 'flex-start' }}
+              >
+                None
+              </button>
+            </ContextMenuFlyout>
+          </div>
+        )
       ) : null}
       <button className="menu-item" onClick={onPasteSmiles}>
         <ClipboardPaste size={16} /> Paste structure / coords / image

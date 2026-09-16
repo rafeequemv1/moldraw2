@@ -175,6 +175,7 @@ export function useEngineMessageRouter(opts: UseEngineMessageRouterOptions): voi
             alert(localResult.error?.message ?? 'Could not apply cleanup result.');
           } else if (startupSeedCleanupRef?.current) {
             startupSeedCleanupRef.current = false;
+            setSmilesBarHint?.('');
             const mol = getMolecule?.();
             if (mol && mol.atoms.length > 0) {
               setSelectedAtomIds(mol.atoms.map(a => a.id));

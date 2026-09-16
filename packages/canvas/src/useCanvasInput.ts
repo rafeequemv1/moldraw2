@@ -1,6 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import type React from 'react';
-import type { CanvasShapeKind, Molecule, ReactionArrowKind } from '@moldraw/domain';
+import type {
+  ArrowHeadStyle,
+  ArrowTailStyle,
+  CanvasShapeKind,
+  Molecule,
+  ReactionArrowKind,
+} from '@moldraw/domain';
 import type {
   FragmentPlacementCommit,
   FragmentPlacementSession,
@@ -193,6 +199,10 @@ export interface UseCanvasInputOptions {
 
   /** Arrow geometry the reaction-arrow tool will place (toolbar cycle). */
   reactionArrowKind?: ReactionArrowKind;
+  /** electron_flow head style from the Arrow split menu. */
+  reactionArrowHeadStyle?: ArrowHeadStyle;
+  reactionArrowTailStyle?: ArrowTailStyle;
+  reactionArrowHeadScale?: number;
   /** Shape kind for the annotation shape tool (toolbar dropdown). */
   canvasShapeKind?: CanvasShapeKind;
   onAddCanvasShape?: InteractionContext['onAddCanvasShape'];
@@ -548,6 +558,9 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       coalescedWorldPositions,
       activeTool,
       reactionArrowKind: opts.reactionArrowKind ?? 'straight',
+      reactionArrowHeadStyle: opts.reactionArrowHeadStyle ?? 'pair',
+      reactionArrowTailStyle: opts.reactionArrowTailStyle ?? 'none',
+      reactionArrowHeadScale: opts.reactionArrowHeadScale,
       canvasShapeKind: opts.canvasShapeKind ?? 'rectangle',
       placementElement,
       isRingTool: isRingTool(activeTool),

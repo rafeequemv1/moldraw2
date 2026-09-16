@@ -13,6 +13,7 @@ import {
 } from '../keyboard/shortcutBindings';
 import type { DownloadFormat } from '../types';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { MobileSheetAccordion } from './MobileSheetAccordion';
 import { useI18n } from '../i18n';
 import {
   anchoredMenuStyle,
@@ -278,21 +279,19 @@ export function FileMenu({
 
       {onSaveAs ? (
         preferSheet ? (
-          <button
-            type="button"
-            className={itemClass}
-            role="menuitem"
-            aria-haspopup="dialog"
-            aria-expanded={saveAsOpen}
-            onClick={() => setSaveAsOpen(true)}
+          <MobileSheetAccordion
+            open={saveAsOpen}
+            onToggle={() => setSaveAsOpen(v => !v)}
+            icon={<FileDown size={14} strokeWidth={2} aria-hidden />}
+            label={
+              <span className="app-top-bar__file-menu-text">
+                <span className="app-top-bar__file-menu-label">{t('file.saveAs')}</span>
+                <span className="app-top-bar__file-menu-hint">{t('file.saveAsHint')}</span>
+              </span>
+            }
           >
-            <FileDown size={14} strokeWidth={2} aria-hidden />
-            <span className="app-top-bar__file-menu-text">
-              <span className="app-top-bar__file-menu-label">{t('file.saveAs')}</span>
-              <span className="app-top-bar__file-menu-hint">{t('file.saveAsHint')}</span>
-            </span>
-            <ChevronRight size={14} className="app-top-bar__file-menu-chevron" aria-hidden />
-          </button>
+            {saveAsItems}
+          </MobileSheetAccordion>
         ) : (
           <div
             className={`app-top-bar__file-menu-flyout-wrap${saveAsOpen ? ' is-open' : ''}`}
@@ -377,7 +376,7 @@ export function FileMenu({
           {t('file.menu')}
         </button>
         <MobileBottomSheet
-          open={menuOpen && !saveAsOpen}
+          open={menuOpen}
           onClose={close}
           title={t('file.menu')}
           size="auto"
@@ -385,17 +384,6 @@ export function FileMenu({
         >
           <div className="mobile-sheet-list" role="menu" aria-label={t('file.menu')}>
             {menuItems}
-          </div>
-        </MobileBottomSheet>
-        <MobileBottomSheet
-          open={menuOpen && saveAsOpen}
-          onClose={() => setSaveAsOpen(false)}
-          title={t('file.saveAs')}
-          size="auto"
-          className="mobile-sheet--menu"
-        >
-          <div className="mobile-sheet-list" role="menu" aria-label={t('file.saveAs')}>
-            {saveAsItems}
           </div>
         </MobileBottomSheet>
         {hiddenInputs}

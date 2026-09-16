@@ -864,24 +864,40 @@ canvas:active {
   width: 26px;
   height: 26px;
   padding: 0;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--chrome-border-strong, #d1d5db);
   border-radius: 6px;
   background: var(--chrome-bg-elevated);
-  color: #334155;
+  color: var(--text-main, #334155);
   cursor: pointer;
 }
 
 .selection-action-toolbar__chip:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-  color: #0f172a;
+  background: var(--chrome-hover, #f1f5f9);
+  border-color: var(--chrome-border-strong, #94a3b8);
+  color: var(--text-main, #0f172a);
 }
 
-.selection-action-toolbar__chip:active {
-  background: #e2e8f0;
+.selection-action-toolbar__chip:active,
+.selection-action-toolbar__chip.is-open {
+  background: var(--chrome-active, #e2e8f0);
 }
 
 .selection-action-toolbar__chip:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+.selection-action-toolbar__chip--more {
+  width: auto;
+  min-width: 26px;
+  padding: 0 7px;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  font-family: var(--font-ui, inherit);
+}
+
+.selection-action-toolbar__chip-label {
+  line-height: 1;
 }

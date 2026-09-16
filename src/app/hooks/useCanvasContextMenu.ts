@@ -112,7 +112,7 @@ export function useCanvasContextMenu({
       // finger lifts a moment after the menu opened — don't let it dismiss us.
       const menu = contextMenuRef.current;
       if (
-        menu?.pointerType === 'touch' &&
+        (menu?.pointerType === 'touch' || menu?.pointerType === 'chip') &&
         performance.now() - contextMenuOpenedAtRef.current < TOUCH_OPEN_CLICK_GUARD_MS
       ) {
         return;
@@ -753,6 +753,53 @@ export function useCanvasContextMenu({
     [applyCommand, closeContextMenu, molecule.sruBrackets],
   );
 
+  const openSelectionContextMenu = useCallback(
+    (
+      screen: { clientX: number; clientY: number },
+      extras?: {
+        canvasImageId?: string | null;
+        strokeId?: string | null;
+        sruBracketId?: string | null;
+        canvasShapeId?: string | null;
+      },
+    ) => {
+      const atomIds =
+        selectedAtomIds.length > 0 ? selectedAtomIds : molecule.atoms.map(a => a.id);
+      const aabb = atomIds.length > 0 ? getSelectionAabb(molecule, atomIds) : null;
+      const newMenu: CanvasContextMenuState = {
+        x: screen.clientX,
+        y: screen.clientY,
+        worldX: aabb?.cx ?? 0,
+        worldY: aabb?.cy ?? 0,
+        atomId:
+          selectedAtomIds.length === 1
+            ? selectedAtomIds[0]
+            : selectedAtomIds.length === 0 && molecule.atoms.length === 1
+              ? molecule.atoms[0].id
+              : undefined,
+        bondId: selectedBondIds.length === 1 ? selectedBondIds[0] : undefined,
+        canvasTextId: selectedCanvasTextId ?? undefined,
+        reactionArrowId: selectedReactionArrowId ?? undefined,
+        canvasShapeId: extras?.canvasShapeId ?? colorEditCanvasShapeId ?? undefined,
+        canvasImageId: extras?.canvasImageId ?? undefined,
+        strokeId: extras?.strokeId ?? undefined,
+        sruBracketId: extras?.sruBracketId ?? undefined,
+        pointerType: 'chip',
+      };
+      setContextMenu(newMenu);
+      contextMenuRef.current = newMenu;
+      contextMenuOpenedAtRef.current = performance.now();
+    },
+    [
+      molecule,
+      selectedAtomIds,
+      selectedBondIds,
+      selectedCanvasTextId,
+      selectedReactionArrowId,
+      colorEditCanvasShapeId,
+    ],
+  );
+
   const handleCanvasContextMenu = useCallback(
     (e: { clientX: number; clientY: number }, worldPos: { x: number; y: number }) => {
       const wx = worldPos.x;
@@ -854,6 +901,7 @@ export function useCanvasContextMenu({
     contextMenuRef,
     contextAtomDetectedAlias,
     closeContextMenu,
+    openSelectionContextMenu,
     handleCanvasContextMenu,
     handleContextCopySmiles,
     handleContextCopyCoordsTable,

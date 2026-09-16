@@ -89,6 +89,7 @@ export interface UseCanvasRendererOptions {
   structureDrawMode?: 'skeletal' | 'ball-stick';
 
   activeTool: string;
+  reactionArrowKind?: import('@moldraw/domain').ReactionArrowKind;
   isRingTool: boolean;
   numSides: number;
   isBenzene: boolean;
@@ -579,6 +580,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       displayScale,
       displayPrefs: o.displayPrefs,
       activeTool: o.activeTool,
+      reactionArrowKind: o.reactionArrowKind,
       isRingTool: o.isRingTool,
       numSides: o.numSides,
       isBenzene: o.isBenzene,
@@ -875,6 +877,18 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
     };
     window.addEventListener(CANVAS_IMAGE_LOAD_EVENT, onImageLoaded);
     return () => window.removeEventListener(CANVAS_IMAGE_LOAD_EVENT, onImageLoaded);
+  }, [render]);
+
+  useEffect(() => {
+    const fonts = document.fonts;
+    if (!fonts) return;
+    const onFontsReady = () => {
+      structureCacheRef.current = null;
+      render();
+    };
+    fonts.addEventListener('loadingdone', onFontsReady);
+    void fonts.ready.then(onFontsReady);
+    return () => fonts.removeEventListener('loadingdone', onFontsReady);
   }, [render]);
 
   return { render };

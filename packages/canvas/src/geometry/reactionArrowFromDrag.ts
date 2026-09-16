@@ -17,7 +17,19 @@ export const buildReactionArrowFromDrag = (
   id: string,
 ): ReactionArrow => {
   const { x1, y1, x2, y2, kind } = d;
-  const base: ReactionArrow = { id, x1, y1, x2, y2, kind };
+  const base: ReactionArrow = {
+    id,
+    x1,
+    y1,
+    x2,
+    y2,
+    kind,
+    ...(d.headStyle ? { headStyle: d.headStyle } : {}),
+    ...(d.tailStyle ? { tailStyle: d.tailStyle } : {}),
+    ...(d.headScale != null ? { headScale: d.headScale } : {}),
+    ...(d.fromAnchor ? { fromAnchor: d.fromAnchor } : {}),
+    ...(d.toAnchor ? { toAnchor: d.toAnchor } : {}),
+  };
   if (kind === 'curved' || kind === 'electron_flow') {
     const { cx, cy } = defaultCurveControl(x1, y1, x2, y2);
     return { ...base, cx, cy };

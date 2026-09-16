@@ -2,6 +2,7 @@
  * Reaction-arrow drawing, sampling for hit-tests, and chord-based helpers.
  */
 import type { Molecule, ReactionArrow, ReactionArrowKind } from '@moldraw/domain';
+import { resolveArrowHeadKind } from '@moldraw/domain';
 import { resolveReactionArrowGeometry } from '@moldraw/core';
 import { pointSegDist } from './angles';
 
@@ -637,6 +638,89 @@ export const pickReactionArrowReagentSlot = (
   return null;
 };
 
+const drawHeadFilled = (
+  ctx: CanvasRenderingContext2D,
+  tipX: number,
+  tipY: number,
+  ux: number,
+  uy: number,
+  headLen: number,
+  headW: number,
+) => {
+  const px = -uy;
+  const py = ux;
+  const baseX = tipX - ux * headLen;
+  const baseY = tipY - uy * headLen;
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(baseX + px * headW, baseY + py * headW);
+  ctx.lineTo(baseX - px * headW, baseY - py * headW);
+  ctx.closePath();
+  ctx.fill();
+};
+
+const drawTailBar = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  ux: number,
+  uy: number,
+  size: number,
+) => {
+  const px = -uy;
+  const py = ux;
+  ctx.beginPath();
+  ctx.moveTo(x + px * size, y + py * size);
+  ctx.lineTo(x - px * size, y - py * size);
+  ctx.stroke();
+};
+
+const drawTailCircle = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  ux: number,
+  uy: number,
+  r: number,
+) => {
+  const cx = x + ux * r;
+  const cy = y + uy * r;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+};
+
+const drawTailDecoration = (
+  ctx: CanvasRenderingContext2D,
+  a: ReactionArrow,
+  tailX: number,
+  tailY: number,
+  ux: number,
+  uy: number,
+  color: string,
+  lineWidth: number,
+  size: number,
+) => {
+  const style = a.tailStyle ?? 'none';
+  if (style === 'none') return;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  if (style === 'bar') {
+    drawTailBar(ctx, tailX, tailY, ux, uy, size);
+    return;
+  }
+  if (style === 'circle') {
+    drawTailCircle(ctx, tailX, tailY, ux, uy, size * 0.45);
+    return;
+  }
+  if (style === 'reverse') {
+    drawHeadAngular(ctx, tailX, tailY, -ux, -uy, size * 1.1, size * 0.55);
+  }
+};
+
 /** ChemDraw-style open angular arrowhead (two strokes meeting at the tip). */
 const drawHeadAngular = (
   ctx: CanvasRenderingContext2D,
@@ -822,57 +906,50 @@ const drawElectronFlow = (
   const { x1, y1, x2, y2 } = a;
   const { cx, cy } = resolveQuadControl(a);
   const chord = Math.hypot(x2 - x1, y2 - y1) || 1;
-  const pairHead = a.headStyle === 'pair';
-  // Short chords (π→heteroatom) must keep a tiny head or the triangle swallows the shaft.
-  const headScale = a.headScale ?? 1;
+  const headKind = resolveArrowHeadKind(a.headStyle);
+  const headScale = a.headScale ?? 0.72;
   const headLen =
-    (pairHead
-      ? Math.min(14, Math.max(3.5, chord * 0.2), chord * 0.38)
-      : Math.min(10, Math.max(3.5, chord * 0.16), chord * 0.34)) * headScale;
+    (headKind === 'single'
+      ? Math.min(8, Math.max(3, chord * 0.14), chord * 0.3)
+      : Math.min(11, Math.max(3, chord * 0.16), chord * 0.32)) * headScale;
   const headW =
-    (pairHead ? Math.min(7, Math.max(2.5, headLen * 0.55)) : Math.min(6, Math.max(2.5, headLen * 0.6))) *
+    (headKind === 'single' ? Math.min(5, Math.max(2.2, headLen * 0.58)) : Math.min(6, Math.max(2.2, headLen * 0.52))) *
     headScale;
   const tEnd = quadTan(x1, y1, cx, cy, x2, y2, 1);
   const tanEnd = norm(tEnd.x, tEnd.y);
+  const tStart = quadTan(x1, y1, cx, cy, x2, y2, 0);
+  const tanStart = norm(tStart.x, tStart.y);
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
   ctx.lineWidth = lineWidth;
   ctx.lineCap = 'round';
   if (dashedGhost) ctx.setLineDash([6, 5]);
   else ctx.setLineDash([]);
-  if (pairHead) {
-    strokeQuadShaft(ctx, x1, y1, cx, cy, x2, y2);
-    ctx.setLineDash([]);
-    drawHeadAngular(ctx, x2, y2, tanEnd.x, tanEnd.y, headLen, headW);
-    return;
-  }
-  // Fish-hook: full curve to tip + side barb.
-  const samples = 28;
-  ctx.beginPath();
-  for (let i = 0; i <= samples; i++) {
-    const t = i / samples;
-    const p = quadPt(x1, y1, cx, cy, x2, y2, t);
-    if (i === 0) ctx.moveTo(p.x, p.y);
-    else ctx.lineTo(p.x, p.y);
-  }
-  ctx.stroke();
+  strokeQuadShaft(ctx, x1, y1, cx, cy, x2, y2);
   ctx.setLineDash([]);
-  drawFishHookHead(
-    ctx,
-    x1,
-    y1,
-    x2,
-    y2,
-    tanEnd.x,
-    tanEnd.y,
-    cx,
-    cy,
-    color,
-    lineWidth,
-    headLen,
-    headW,
-    dashedGhost,
-  );
+  if (headKind === 'filled') {
+    drawHeadFilled(ctx, x2, y2, tanEnd.x, tanEnd.y, headLen, headW);
+  } else if (headKind === 'open') {
+    drawHeadAngular(ctx, x2, y2, tanEnd.x, tanEnd.y, headLen, headW);
+  } else if (headKind === 'single') {
+    drawFishHookHead(
+      ctx,
+      x1,
+      y1,
+      x2,
+      y2,
+      tanEnd.x,
+      tanEnd.y,
+      cx,
+      cy,
+      color,
+      lineWidth,
+      headLen,
+      headW,
+      dashedGhost,
+    );
+  }
+  drawTailDecoration(ctx, a, x1, y1, tanStart.x, tanStart.y, color, lineWidth, headLen * 0.7);
 };
 
 const drawCurvedOrResonance = (
@@ -900,9 +977,18 @@ const drawCurvedOrResonance = (
   else ctx.setLineDash([]);
   strokeQuadShaft(ctx, x1, y1, cx, cy, x2, y2);
   ctx.setLineDash([]);
-  drawHeadAngular(ctx, x2, y2, tanEnd.x, tanEnd.y, headLen, headW);
+  const headKind = resolveArrowHeadKind(a.headStyle);
+  if (headKind === 'filled') {
+    drawHeadFilled(ctx, x2, y2, tanEnd.x, tanEnd.y, headLen, headW);
+  } else if (headKind !== 'none' && headKind !== 'single') {
+    drawHeadAngular(ctx, x2, y2, tanEnd.x, tanEnd.y, headLen, headW);
+  } else if (headKind === 'single') {
+    drawFishHookHead(ctx, x1, y1, x2, y2, tanEnd.x, tanEnd.y, cx, cy, color, lineWidth, headLen, headW, dashedGhost);
+  }
   if (doubleHead) {
     drawHeadAngular(ctx, x1, y1, startHeadDir.x, startHeadDir.y, headLen, headW);
+  } else {
+    drawTailDecoration(ctx, a, x1, y1, -startHeadDir.x, -startHeadDir.y, color, lineWidth, headLen * 0.7);
   }
 };
 

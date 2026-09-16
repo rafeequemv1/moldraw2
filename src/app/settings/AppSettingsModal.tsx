@@ -20,7 +20,7 @@ import { APP_SETTINGS_PRESETS, type AppSettingsPresetId } from './presets';
 import { StylePresetPreview } from './StylePresetPreview';
 import { ShortcutsSettingsPanel } from './ShortcutsSettingsPanel';
 import { PluginsSettingsPanel } from './PluginsSettingsPanel';
-import { CANVAS_FONT_FAMILIES } from '../constants/fonts';
+import { CANVAS_FONT_FAMILIES, canvasFontCssFamily } from '../constants/fonts';
 import { UI_THEME_OPTIONS, type UiThemeId } from '../theme';
 import { useInstalledStructureThemes } from '../hooks/useStructureTheme';
 import { resolveUiLanguage, UI_LANGUAGES, useI18n, type UiLanguage } from '../i18n';
@@ -845,7 +845,7 @@ export function AppSettingsModal({
                       aria-label={t('settings.style.font')}
                     >
                       {CANVAS_FONT_FAMILIES.map(f => (
-                        <option key={f} value={f}>
+                        <option key={f} value={f} style={{ fontFamily: canvasFontCssFamily(f) }}>
                           {f}
                         </option>
                       ))}

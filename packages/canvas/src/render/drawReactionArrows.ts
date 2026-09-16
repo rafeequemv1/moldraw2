@@ -3,7 +3,16 @@
  */
 import type { ReactionArrow } from '@moldraw/domain';
 import { reactionArrowSupportsReagentLabels } from '@moldraw/domain';
-import { formatReagentLineForCanvas, resolveReactionArrowGeometry } from '@moldraw/core';
+import {
+  formatReagentLineForCanvas,
+  getLonePairPlacements,
+  lonePairSlotCountForAtom,
+  moleculeCentroid,
+  quadraticControlAwayFromCentroid,
+  resolveReactionArrowGeometry,
+  LONE_PAIR_DOT_R_PX,
+  LONE_PAIR_DOT_SEP_PX,
+} from '@moldraw/core';
 import {
   buildReactionArrowFromDrag,
   drawReactionArrowShape,
@@ -173,16 +182,74 @@ export const drawReactionArrows = (ctx: CanvasRenderingContext2D, R: RenderConte
  * In-progress drag ghost — must paint on the overlay layer so structure-cache
  * reuse during drag still shows a live preview.
  */
+const drawImplicitLonePairLoci = (ctx: CanvasRenderingContext2D, R: RenderContext): void => {
+  const ink = R.structureTheme.ink;
+  const mol = R.renderedMolecule;
+  ctx.save();
+  ctx.globalAlpha = 0.38;
+  ctx.fillStyle = ink;
+  for (const atom of mol.atoms) {
+    const drawn = atom.lonePairs ?? 0;
+    const slots = lonePairSlotCountForAtom(mol, atom);
+    if (slots <= drawn) continue;
+    const placements = getLonePairPlacements(atom, mol, slots, {
+      preferSide: atom.lonePairSide ?? 'above',
+    });
+    const sep = LONE_PAIR_DOT_SEP_PX;
+    const r = LONE_PAIR_DOT_R_PX * 0.92;
+    for (let i = drawn; i < placements.length; i++) {
+      const p = placements[i];
+      if (!p) continue;
+      const cx = atom.x + p.dir.x * p.dist;
+      const cy = atom.y + p.dir.y * p.dist;
+      const nx = -p.dir.y;
+      const ny = p.dir.x;
+      ctx.beginPath();
+      ctx.arc(cx + nx * sep, cy + ny * sep, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx - nx * sep, cy - ny * sep, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+};
+
 export const drawReactionArrowGhost = (
   ctx: CanvasRenderingContext2D,
   R: RenderContext,
 ): void => {
+  const showLoci =
+    R.activeTool === 'reaction_arrow' &&
+    (R.reactionArrowKind === 'electron_flow' || R.drawingReactionArrow?.kind === 'electron_flow');
+  if (showLoci) drawImplicitLonePairLoci(ctx, R);
+
   if (!R.drawingReactionArrow) return;
   const d = R.drawingReactionArrow;
+  const vz = R.viewport.zoom;
   const len = Math.hypot(d.x2 - d.x1, d.y2 - d.y1);
+
+  const drawSnapHint = (x: number, y: number) => {
+    const r = 7.5 / vz;
+    const ink = R.structureTheme.ink;
+    ctx.save();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 1.6 / vz;
+    ctx.globalAlpha = 0.9;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, 2.4 / vz, 0, Math.PI * 2);
+    ctx.fillStyle = ink;
+    ctx.globalAlpha = 1;
+    ctx.fill();
+    ctx.restore();
+  };
+
   // Parked first click: show the start handle so the user knows to click the end.
   if (len < 6) {
-    const vz = R.viewport.zoom;
     const r = ENDPOINT_HANDLE_R / vz;
     ctx.save();
     ctx.beginPath();
@@ -193,15 +260,32 @@ export const drawReactionArrowGhost = (
     ctx.fill();
     ctx.stroke();
     ctx.restore();
+    if (d.fromSnapKind) drawSnapHint(d.x1, d.y1);
     return;
   }
-  const ghost = buildReactionArrowFromDrag(d, '_ghost');
+  let ghost = buildReactionArrowFromDrag(d, '_ghost');
+  if (d.kind === 'electron_flow') {
+    const centroid = moleculeCentroid(R.renderedMolecule);
+    const ctrl = quadraticControlAwayFromCentroid(d.x1, d.y1, d.x2, d.y2, centroid);
+    ghost = {
+      ...ghost,
+      ...ctrl,
+      headStyle: d.headStyle ?? 'pair',
+      tailStyle: d.tailStyle ?? 'none',
+      headScale: d.headScale ?? 0.72,
+    };
+    if (d.fromAnchor || d.toAnchor) {
+      ghost = resolveReactionArrowGeometry(R.renderedMolecule, ghost);
+    }
+  }
   ctx.save();
-  ctx.globalAlpha = 0.5;
+  ctx.globalAlpha = 0.55;
   drawReactionArrowShape(ctx, ghost, {
     color: R.structureTheme.ink,
     lineWidth: 2,
     dashedGhost: true,
   });
   ctx.restore();
+  if (d.fromSnapKind) drawSnapHint(ghost.x1, ghost.y1);
+  if (d.toSnapKind) drawSnapHint(ghost.x2, ghost.y2);
 };

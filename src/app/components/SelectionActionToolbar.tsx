@@ -1,10 +1,11 @@
 /**
  * Compact on-canvas chips: Reflect / Duplicate / Delete for molecules and
- * annotations (glassware, shapes, text, arrows, images).
- * Tracks live drag/rotate previews; clamped inside the 2D pane.
+ * annotations (glassware, shapes, text, arrows, images). On compact (mobile)
+ * viewports a More chip is appended so context-menu actions open without a
+ * right-click. Tracks live drag/rotate previews; clamped inside the 2D pane.
  */
-import { useEffect, useRef, type RefObject } from 'react';
-import { CopyPlus, Trash2 } from 'lucide-react';
+import { useEffect, useRef, type MouseEvent, type RefObject } from 'react';
+import { CopyPlus, MoreHorizontal, Trash2 } from 'lucide-react';
 import type { Molecule } from '@moldraw/domain';
 import { siblingShapeIdsInCollection } from '@moldraw/core';
 import type { InfiniteCanvasHandle, SelectionDragPreview } from '@moldraw/canvas';
@@ -46,6 +47,13 @@ export interface SelectionActionToolbarProps {
   onReflect: (axis: SelectionReflectAxis) => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  /**
+   * Compact viewport only: extra chip that opens the canvas context-menu
+   * actions (Copy, Export, …) without a right-click / long-press.
+   */
+  showContextMenuChip?: boolean;
+  contextMenuOpen?: boolean;
+  onOpenContextMenu?: (e: MouseEvent<HTMLButtonElement>) => void;
 }
 
 function ReflectHorizontalIcon() {
@@ -229,6 +237,9 @@ export function SelectionActionToolbar({
   onReflect,
   onDuplicate,
   onDelete,
+  showContextMenuChip = false,
+  contextMenuOpen = false,
+  onOpenContextMenu,
 }: SelectionActionToolbarProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
@@ -239,19 +250,23 @@ export function SelectionActionToolbar({
   const viewportRef = useRef(viewport);
   const annotationRef = useRef(annotationTarget);
   const marqueeRef = useRef(marqueeSelection);
+  const contextChipRef = useRef(showContextMenuChip);
   moleculeRef.current = molecule;
   selectionRef.current = selectionAtomIds;
   bondRef.current = bondIds;
   viewportRef.current = viewport;
   annotationRef.current = annotationTarget;
   marqueeRef.current = marqueeSelection;
+  contextChipRef.current = showContextMenuChip;
 
   const isAnnotation =
     annotationTarget != null && annotationTarget.kind !== 'atoms';
   const canReflect =
     selectionAtomIds.length > 0 || annotationTarget?.kind === 'shape';
+  const hasSelectionActions = selectionAtomIds.length > 0 || isAnnotation;
   const showBar =
-    visible && (selectionAtomIds.length > 0 || isAnnotation);
+    (visible && hasSelectionActions) ||
+    (showContextMenuChip && molecule.atoms.length > 0);
 
   useEffect(() => {
     const bar = barRef.current;
@@ -331,14 +346,22 @@ export function SelectionActionToolbar({
         worldX = anchor.x;
         worldY = anchor.y;
       } else {
-        const aabb = getSelectionAabb(mol, ids);
+        const aabbIds =
+          ids.length > 0
+            ? ids
+            : contextChipRef.current
+              ? mol.atoms.map(a => a.id)
+              : [];
+        const aabb = aabbIds.length > 0 ? getSelectionAabb(mol, aabbIds) : null;
         if (!aabb) {
           el.style.display = 'none';
           raf = requestAnimationFrame(tick);
           return;
         }
         worldX = aabb.cx;
-        worldY = aabb.minY - 22;
+        // No selection box: sit just below the molecule so the chip does not
+        // clamp into the document tab bar above the canvas.
+        worldY = aabb.maxY + 22;
       }
 
       const live = applyPreview(worldX, worldY, preview);
@@ -369,7 +392,7 @@ export function SelectionActionToolbar({
         barRef.current.style.top = '';
       }
     };
-  }, [showBar, selectionAtomIds.length, annotationTarget?.kind, annotationTarget && 'id' in annotationTarget ? annotationTarget.id : null, canvasRef]);
+  }, [showBar, selectionAtomIds.length, annotationTarget?.kind, annotationTarget && 'id' in annotationTarget ? annotationTarget.id : null, canvasRef, showContextMenuChip]);
 
   if (!showBar) return null;
 
@@ -395,52 +418,73 @@ export function SelectionActionToolbar({
         aria-label="Selection actions"
         onPointerDown={e => e.stopPropagation()}
       >
-        <button
-          type="button"
-          className="selection-action-toolbar__chip"
-          title={
-            canReflect
-              ? `Reflect ${subject} horizontally (left ↔ right)`
-              : 'Reflect (select a molecule or glassware)'
-          }
-          aria-label={`Reflect ${subject} horizontally`}
-          disabled={!canReflect}
-          onClick={() => onReflect('horizontal')}
-        >
-          <ReflectHorizontalIcon />
-        </button>
-        <button
-          type="button"
-          className="selection-action-toolbar__chip"
-          title={
-            canReflect
-              ? `Reflect ${subject} vertically (top ↔ bottom)`
-              : 'Reflect (select a molecule or glassware)'
-          }
-          aria-label={`Reflect ${subject} vertically`}
-          disabled={!canReflect}
-          onClick={() => onReflect('vertical')}
-        >
-          <ReflectVerticalIcon />
-        </button>
-        <button
-          type="button"
-          className="selection-action-toolbar__chip"
-          title={`Duplicate ${subject}`}
-          aria-label={`Duplicate ${subject}`}
-          onClick={onDuplicate}
-        >
-          <CopyPlus size={14} strokeWidth={1.85} aria-hidden />
-        </button>
-        <button
-          type="button"
-          className="selection-action-toolbar__chip"
-          title={`Delete ${subject} (Del / Backspace)`}
-          aria-label={`Delete ${subject}`}
-          onClick={onDelete}
-        >
-          <Trash2 size={14} strokeWidth={1.85} aria-hidden />
-        </button>
+        {hasSelectionActions ? (
+          <>
+            <button
+              type="button"
+              className="selection-action-toolbar__chip"
+              title={
+                canReflect
+                  ? `Reflect ${subject} horizontally (left ↔ right)`
+                  : 'Reflect (select a molecule or glassware)'
+              }
+              aria-label={`Reflect ${subject} horizontally`}
+              disabled={!canReflect}
+              onClick={() => onReflect('horizontal')}
+            >
+              <ReflectHorizontalIcon />
+            </button>
+            <button
+              type="button"
+              className="selection-action-toolbar__chip"
+              title={
+                canReflect
+                  ? `Reflect ${subject} vertically (top ↔ bottom)`
+                  : 'Reflect (select a molecule or glassware)'
+              }
+              aria-label={`Reflect ${subject} vertically`}
+              disabled={!canReflect}
+              onClick={() => onReflect('vertical')}
+            >
+              <ReflectVerticalIcon />
+            </button>
+            <button
+              type="button"
+              className="selection-action-toolbar__chip"
+              title={`Duplicate ${subject}`}
+              aria-label={`Duplicate ${subject}`}
+              onClick={onDuplicate}
+            >
+              <CopyPlus size={14} strokeWidth={1.85} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className="selection-action-toolbar__chip"
+              title={`Delete ${subject} (Del / Backspace)`}
+              aria-label={`Delete ${subject}`}
+              onClick={onDelete}
+            >
+              <Trash2 size={14} strokeWidth={1.85} aria-hidden />
+            </button>
+          </>
+        ) : null}
+        {showContextMenuChip && onOpenContextMenu ? (
+          <button
+            type="button"
+            className={`selection-action-toolbar__chip selection-action-toolbar__chip--more${contextMenuOpen ? ' is-open' : ''}`}
+            title="Copy, export, and more"
+            aria-label="More actions"
+            aria-haspopup="menu"
+            aria-expanded={contextMenuOpen}
+            onClick={e => {
+              e.stopPropagation();
+              onOpenContextMenu(e);
+            }}
+          >
+            <MoreHorizontal size={14} strokeWidth={1.85} aria-hidden />
+            <span className="selection-action-toolbar__chip-label">More</span>
+          </button>
+        ) : null}
       </div>
     </div>
   );

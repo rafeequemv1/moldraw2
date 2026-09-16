@@ -9,6 +9,7 @@
  *   → cached x1,y1,x2,y2,cx,cy for drawing
  */
 import type { ArrowAnchor, Atom, Molecule, ReactionArrow } from '@moldraw/domain';
+import { getMaxLonePairsForAtom } from '@moldraw/domain';
 import {
   getLonePairPlacements,
   LONE_PAIR_DOT_R_PX,
@@ -577,45 +578,184 @@ export const buildElectronFlowArrow = (
   };
 };
 
-/** Pick nearest atom or bond center within `tol` for draw-tool snap. */
+export type ArrowSnapKind = 'atom' | 'bond' | 'lone_pair' | 'forming_bond';
+
+export type ArrowEndpointSnap = {
+  point: ResolvedPoint;
+  /** Null for forming-bond loci (free midpoint between unbonded atoms). */
+  anchor: ArrowAnchor | null;
+  kind: ArrowSnapKind;
+};
+
+export type SnapArrowEndpointOpts = {
+  /** Start prefers lone pair / bond / atom; end prefers atom / bond / forming bond. */
+  role?: 'start' | 'end';
+  /** Other endpoint — used to pick bond perpendicular side and atom offset. */
+  awayFrom?: ResolvedPoint;
+  bondLengthPx?: number;
+  includeLonePairs?: boolean;
+  includeBonds?: boolean;
+  includeAtoms?: boolean;
+  includeFormingBonds?: boolean;
+  /**
+   * If the pointer is within this radius of an atom that has lone-pair slots,
+   * snap the start to the nearest lone pair of that atom (even if closer to the nucleus).
+   */
+  atomToLonePairTol?: number;
+};
+
+/** Prefer specific chemistry targets when distances are close (world px subtracted from d). */
+const SNAP_BIAS: Record<ArrowSnapKind, number> = {
+  lone_pair: 5,
+  bond: 2.5,
+  forming_bond: 1.5,
+  atom: 0,
+};
+
+const bondOrderSumOf = (mol: Molecule, atomId: string): number =>
+  mol.bonds.reduce((s, b) => {
+    if (b.fromAtomId !== atomId && b.toAtomId !== atomId) return s;
+    return s + (b.dative || b.dotted ? 0 : b.order);
+  }, 0);
+
+const considerSnap = (
+  best: { score: number; snap: ArrowEndpointSnap } | null,
+  d: number,
+  kind: ArrowSnapKind,
+  point: ResolvedPoint,
+  anchor: ArrowAnchor | null,
+  tol: number,
+): { score: number; snap: ArrowEndpointSnap } | null => {
+  if (d > tol) return best;
+  const score = d - SNAP_BIAS[kind];
+  if (!best || score < best.score) {
+    return { score, snap: { point, anchor, kind } };
+  }
+  return best;
+};
+
+/**
+ * Magnetic snap for electron-flow (and similar) arrow endpoints.
+ * Does not force a hit: returns null when the pointer is outside `tol`.
+ *
+ * Start: lone-pair slots (drawn or implicit VSEPR on heteroatoms), bond
+ * electron-pair locus, atom. End: atom, bond, forming-bond midpoint.
+ */
+export const lonePairSlotCountForAtom = (mol: Molecule, atom: Atom): number => {
+  const drawn = atom.lonePairs ?? 0;
+  const theoretical = getMaxLonePairsForAtom(
+    atom.element,
+    atom.charge ?? 0,
+    bondOrderSumOf(mol, atom.id),
+  );
+  return Math.max(drawn, theoretical);
+};
+
 export const snapArrowEndpointToStructure = (
   mol: Molecule,
   x: number,
   y: number,
   tol = 16,
-): { point: ResolvedPoint; anchor: ArrowAnchor } | null => {
-  let best: { d: number; point: ResolvedPoint; anchor: ArrowAnchor } | null = null;
+  opts?: SnapArrowEndpointOpts,
+): ArrowEndpointSnap | null => {
+  const role = opts?.role;
+  const awayFrom = opts?.awayFrom;
+  const includeLonePairs = opts?.includeLonePairs !== false;
+  const includeBonds = opts?.includeBonds !== false;
+  const includeAtoms = opts?.includeAtoms !== false;
+  const allowForming = opts?.includeFormingBonds ?? role !== 'start';
+  const atomToLpTol = opts?.atomToLonePairTol ?? 0;
+  let best: { score: number; snap: ArrowEndpointSnap } | null = null;
 
-  for (const a of mol.atoms) {
-    const d = Math.hypot(a.x - x, a.y - y);
-    if (d > tol) continue;
-    if (!best || d < best.d) {
-      best = {
-        d,
-        point: { x: a.x, y: a.y },
-        anchor: { type: 'atom', atomId: a.id },
+  for (const atom of mol.atoms) {
+    const dAtom = Math.hypot(atom.x - x, atom.y - y);
+    if (includeAtoms) {
+      const atomAnchor: ArrowAnchor = { type: 'atom', atomId: atom.id };
+      const atomPt = resolveArrowAnchor(mol, atomAnchor, awayFrom) ?? { x: atom.x, y: atom.y };
+      best = considerSnap(best, dAtom, 'atom', atomPt, atomAnchor, tol);
+    }
+
+    const lpCount = lonePairSlotCountForAtom(mol, atom);
+    if (!includeLonePairs || lpCount <= 0) continue;
+    const placements = getLonePairPlacements(atom, mol, lpCount, {
+      preferSide: atom.lonePairSide ?? 'above',
+    });
+    let nearestOnAtom: { d: number; slot: number; vis: ResolvedPoint; point: ResolvedPoint } | null =
+      null;
+    for (let slot = 0; slot < placements.length; slot++) {
+      const p = placements[slot]!;
+      const vis = { x: atom.x + p.dir.x * p.dist, y: atom.y + p.dir.y * p.dist };
+      const dLp = Math.hypot(vis.x - x, vis.y - y);
+      const lpAnchor: ArrowAnchor = { type: 'lone_pair', atomId: atom.id, slot };
+      const lpPt = resolveArrowAnchor(mol, lpAnchor, awayFrom) ?? vis;
+      best = considerSnap(best, dLp, 'lone_pair', lpPt, lpAnchor, tol);
+      if (!nearestOnAtom || dLp < nearestOnAtom.d) {
+        nearestOnAtom = { d: dLp, slot, vis, point: lpPt };
+      }
+    }
+    // Clicking the heteroatom itself still starts on its nearest lone-pair slot.
+    if (atomToLpTol > 0 && nearestOnAtom && dAtom <= atomToLpTol) {
+      const lpAnchor: ArrowAnchor = {
+        type: 'lone_pair',
+        atomId: atom.id,
+        slot: nearestOnAtom.slot,
       };
+      best = considerSnap(best, dAtom, 'lone_pair', nearestOnAtom.point, lpAnchor, atomToLpTol);
     }
   }
 
+  if (includeBonds) {
   for (const b of mol.bonds) {
     const from = mol.atoms.find(a => a.id === b.fromAtomId);
     const to = mol.atoms.find(a => a.id === b.toAtomId);
     if (!from || !to) continue;
-    const mx = (from.x + to.x) / 2;
-    const my = (from.y + to.y) / 2;
-    const d = Math.hypot(mx - x, my - y);
-    if (d > tol) continue;
-    if (!best || d < best.d) {
-      best = {
-        d,
-        point: { x: mx, y: my },
-        anchor: { type: 'bond', bondId: b.id, t: 0.5 },
-      };
+    const vx = to.x - from.x;
+    const vy = to.y - from.y;
+    const len2 = vx * vx + vy * vy || 1;
+    let t = ((x - from.x) * vx + (y - from.y) * vy) / len2;
+    if (t < 0.18 || t > 0.82) continue;
+    t = Math.min(0.8, Math.max(0.2, t));
+    const onx = from.x + vx * t;
+    const ony = from.y + vy * t;
+    const blen = Math.hypot(vx, vy) || 1;
+    const nx = -vy / blen;
+    const ny = vx / blen;
+    const perp = BOND_PERP_OFFSET_PX;
+    const dOn = Math.hypot(x - onx, y - ony);
+    const dA = Math.hypot(x - (onx + nx * perp), y - (ony + ny * perp));
+    const dB = Math.hypot(x - (onx - nx * perp), y - (ony - ny * perp));
+    const dBond = Math.min(dOn, dA, dB);
+    const bondAnchor: ArrowAnchor = { type: 'bond', bondId: b.id, t };
+    const bondPt = resolveArrowAnchor(mol, bondAnchor, awayFrom) ?? { x: onx, y: ony };
+    best = considerSnap(best, dBond, 'bond', bondPt, bondAnchor, tol);
+  }
+  }
+
+  if (allowForming) {
+    const L = opts?.bondLengthPx ?? 40;
+    const bonded = new Set<string>();
+    for (const b of mol.bonds) {
+      const a = b.fromAtomId < b.toAtomId ? b.fromAtomId : b.toAtomId;
+      const c = b.fromAtomId < b.toAtomId ? b.toAtomId : b.fromAtomId;
+      bonded.add(`${a}|${c}`);
+    }
+    for (let i = 0; i < mol.atoms.length; i++) {
+      const a = mol.atoms[i]!;
+      for (let j = i + 1; j < mol.atoms.length; j++) {
+        const c = mol.atoms[j]!;
+        const key = a.id < c.id ? `${a.id}|${c.id}` : `${c.id}|${a.id}`;
+        if (bonded.has(key)) continue;
+        const sep = Math.hypot(c.x - a.x, c.y - a.y);
+        if (sep < L * 0.55 || sep > L * 1.8) continue;
+        const mx = (a.x + c.x) / 2;
+        const my = (a.y + c.y) / 2;
+        const dForm = Math.hypot(mx - x, my - y);
+        best = considerSnap(best, dForm, 'forming_bond', { x: mx, y: my }, null, tol);
+      }
     }
   }
 
-  return best ? { point: best.point, anchor: best.anchor } : null;
+  return best?.snap ?? null;
 };
 
 /** Re-snap electron-flow tail/head to structure after endpoint drag; clears anchor when away. */
@@ -642,7 +782,32 @@ export const applyElectronFlowEndpointResnap = (
 
   const x = end === 'tail' ? arrow.x1 : arrow.x2;
   const y = end === 'tail' ? arrow.y1 : arrow.y2;
-  const snap = snapArrowEndpointToStructure(mol, x, y, tol);
+  const awayFrom =
+    end === 'tail' ? { x: arrow.x2, y: arrow.y2 } : { x: arrow.x1, y: arrow.y1 };
+  const snap = snapArrowEndpointToStructure(
+    mol,
+    x,
+    y,
+    end === 'tail' ? 22 : 11,
+    end === 'tail'
+      ? {
+          role: 'start',
+          awayFrom,
+          includeAtoms: false,
+          includeBonds: false,
+          includeFormingBonds: false,
+          includeLonePairs: true,
+          atomToLonePairTol: 16,
+        }
+      : {
+          role: 'end',
+          awayFrom,
+          includeAtoms: true,
+          includeBonds: false,
+          includeFormingBonds: false,
+          includeLonePairs: false,
+        },
+  );
 
   const patch: ElectronFlowEndpointResnapPatch = {};
 

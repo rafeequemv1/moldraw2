@@ -5,7 +5,8 @@
  * Regular CSS rules MUST come after every @import (Vite/PostCSS).
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Canvas + UI webfonts (latin unicode-range files, font-display: swap). */
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fira+Sans:wght@400;700&family=IBM+Plex+Sans:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Mono:wght@400;700&family=Noto+Sans:wght@400;700&family=Nunito+Sans:wght@400;700&family=Source+Sans+3:wght@400;700&display=swap');
 @import './design-system/index.css';
 @import './styles/tokens.css';
 @import './styles/theme.css';
@@ -46,6 +47,14 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* Compact: pin to the small visual viewport so the dock is not below the
+   visible bottom (100vh / leftover footer chrome). */
+html.app-mobile-compact,
+html.app-mobile-compact body {
+  height: 100svh;
+  max-height: 100svh;
 }
 #root {
   position: relative;
@@ -90,6 +99,12 @@ body > .site-footer-root {
   position: relative;
   z-index: 80;
   width: 100%;
+}
+
+html.app-mobile-compact .app-site-footer-slot,
+html.app-mobile-compact .site-footer-root,
+html.app-mobile-compact .molecule-status-bar {
+  display: none !important;
 }
 
 #app-status-host {

@@ -4,7 +4,7 @@
  *
  * Stateless — every interaction is driven by callbacks from `App.tsx`.
  */
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Wand2,
   SlidersHorizontal,
@@ -24,11 +24,13 @@ import {
   Pencil,
   Trash2,
   X,
+  Search,
 } from 'lucide-react';
 import { FileMenu } from './FileMenu';
 import { ExportMenu } from './ExportMenu';
 import { CharlaHelpButton } from './CharlaHelpButton';
 import { HeaderInlineSearch, HeaderPromoLinks, HeaderSiteNav } from './HeaderSiteNav';
+import { MobileBottomSheet } from './MobileBottomSheet';
 import { InstallWindowsLink } from './InstallWindowsLink';
 import { ThemeToggleButton } from './ThemeToggleButton';
 import { MolDrawLogoMark } from './MolDrawLogoMark';
@@ -39,7 +41,7 @@ import { TopBarSelectMenu, type SelectToolId } from './TopBarSelectMenu';
 import type { CanvasShape, CanvasText, Molecule, ReactionArrow } from '@moldraw/domain';
 import type { ColorApplyFlags } from '@moldraw/core/color/selectionColor';
 import type { ColorTargetPrefs } from '../settings/types';
-import type { DownloadFormat } from '../types';
+import type { CopyAsFormat, DownloadFormat } from '../types';
 import type { QuickSelectActionId, QuickSelectOptions } from '../selection/quickSelect';
 
 /** Compact tool cluster in the second header row (no section labels). */
@@ -176,6 +178,7 @@ export interface AppTopBarProps {
   onOpenLibrary?: () => void;
   onCopySmiles?: () => void;
   onCopySvg?: () => void;
+  onCopyAs?: (format: CopyAsFormat) => void;
   smilesCopied?: boolean;
   svgCopied?: boolean;
   svgCopyError?: boolean;
@@ -318,6 +321,7 @@ export function AppTopBar(props: AppTopBarProps) {
     onOpenLibrary,
     onCopySmiles,
     onCopySvg,
+    onCopyAs,
     smilesCopied = false,
     svgCopied = false,
     svgCopyError = false,
@@ -363,6 +367,8 @@ export function AppTopBar(props: AppTopBarProps) {
 
   const headerRef = useRef<HTMLElement | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [searchSheetOpen, setSearchSheetOpen] = useState(false);
+  const searchWasLoading = useRef(false);
   const hasStyleSelection =
     selectedAtomCount > 0 ||
     selectedBondIds.length > 0 ||
@@ -372,7 +378,6 @@ export function AppTopBar(props: AppTopBarProps) {
     Boolean(selectedReactionArrow) ||
     Boolean(ringPaintActive);
   const showExplicitH = selectedAtomCount > 0;
-  const showFormula = selectedAtomCount > 0 || showInfoPanel;
   const showFormatCluster = hasStyleSelection || showExplicitH || perspectiveActive;
 
   // Keep workspace top offset in sync with content height (header is height:auto).
@@ -398,32 +403,34 @@ export function AppTopBar(props: AppTopBarProps) {
     };
   }, []);
 
-  /** Phone/tablet: same inline name/CAS search as the web header, sitting in the tools row. */
-  const compactInlineSearch = isCompact ? (
-    <div className="app-top-bar__compact-search" role="search">
-      <HeaderInlineSearch
-        quickSearch={quickSearch}
-        setQuickSearch={setQuickSearch}
-        quickSearchLoading={quickSearchLoading}
-        quickSearchError={quickSearchError}
-        setQuickSearchError={setQuickSearchError}
-        onQuickSearch={onQuickSearch}
-        searchPlaceholder={t('topBar.searchNameOrCas')}
-        searchAriaLabel={t('search.aria')}
-      />
-      <button
-        type="button"
-        className="action-btn icon-only app-top-bar__compact-search-adv"
-        onClick={onOpenAdvancedSearch}
-        title="Advanced PubChem search"
-        aria-label="Advanced PubChem search"
-      >
-        <SlidersHorizontal size={14} strokeWidth={2} aria-hidden />
-      </button>
-    </div>
-  ) : null;
+  useEffect(() => {
+    if (!searchSheetOpen) {
+      searchWasLoading.current = false;
+      return;
+    }
+    if (quickSearchLoading) {
+      searchWasLoading.current = true;
+      return;
+    }
+    if (searchWasLoading.current && !quickSearchError) {
+      setSearchSheetOpen(false);
+    }
+    searchWasLoading.current = false;
+  }, [quickSearchLoading, quickSearchError, searchSheetOpen]);
 
   const ribbonMode: 'draw' | 'home' = !isCompact && drawToolsOpen ? 'draw' : 'home';
+
+  const selectMenu = (
+    <TopBarSelectMenu
+      activeTool={activeTool}
+      molecule={molecule}
+      selectedAtomIds={selectedAtomIds}
+      onSelectTool={onSelectTool}
+      onQuickSelect={onQuickSelect}
+      shortcutOverrides={shortcutOverrides}
+      iconOnly={isCompact}
+    />
+  );
 
   const fileMenu = (
     <FileMenu
@@ -448,16 +455,29 @@ export function AppTopBar(props: AppTopBarProps) {
       <div className="app-top-bar__main">
         <div className="app-top-bar__left">
           <div className="app-top-bar__brand-cluster">
-          <button
-            type="button"
-            className="app-top-bar__brand app-top-bar__brand-btn app-top-bar__brand--inline"
-            onClick={() => onOpenMyProjects?.()}
-            title={t('topBar.myDesignsTitle')}
-          >
-            <MolDrawLogoMark size={isCompact ? 22 : 24} />
-            <span className="app-top-bar__brand-name">MolDraw</span>
-          </button>
-          {isCompact ? fileMenu : null}
+            <button
+              type="button"
+              className="app-top-bar__brand app-top-bar__brand-btn app-top-bar__brand--inline"
+              onClick={() => onOpenMyProjects?.()}
+              title={t('topBar.myDesignsTitle')}
+            >
+              <MolDrawLogoMark size={isCompact ? 22 : 24} />
+              <span className="app-top-bar__brand-name">MolDraw</span>
+            </button>
+            {isCompact ? fileMenu : null}
+            {isCompact ? (
+              <button
+                type="button"
+                className={`app-top-bar__search-launch${searchSheetOpen ? ' is-open' : ''}`}
+                onClick={() => setSearchSheetOpen(true)}
+                title={t('search.aria')}
+                aria-label={t('search.aria')}
+                aria-expanded={searchSheetOpen}
+                aria-haspopup="dialog"
+              >
+                <Search size={15} strokeWidth={2} aria-hidden />
+              </button>
+            ) : null}
           </div>
           {isCompact ? null : (
             <HeaderInlineSearch
@@ -535,7 +555,7 @@ export function AppTopBar(props: AppTopBarProps) {
         </div>
         <div className="app-top-bar__fill" aria-hidden />
         <div className="app-top-bar__right">
-          {onChangeUiTheme ? (
+          {onChangeUiTheme && !isCompact ? (
             <ThemeToggleButton theme={uiTheme} onChangeTheme={onChangeUiTheme} />
           ) : null}
           {!isCompact ? <InstallWindowsLink /> : null}
@@ -563,17 +583,36 @@ export function AppTopBar(props: AppTopBarProps) {
               <RotateCw size={14} strokeWidth={2.2} aria-hidden />
             </button>
           ) : null}
-          {isCompact && showFormula ? (
-            <button
-              type="button"
-              className={`app-top-bar__clip-btn app-top-bar__clip-btn--icon${showInfoPanel ? ' is-open' : ''}`}
-              title={showInfoPanel ? t('topBar.infoCloseTitle') : t('topBar.infoCompactTitle')}
-              aria-label={t('topBar.selectionInfo')}
-              aria-pressed={showInfoPanel}
-              onClick={onToggleInfoPanel}
-            >
-              <Info size={14} strokeWidth={2} aria-hidden />
-            </button>
+          {isCompact ? (
+            <HeaderSiteNav
+              compactLayout
+              onOpenMyDesigns={() => onOpenLibrary?.()}
+              onCopySmiles={() => onCopySmiles?.()}
+              onCopySvg={() => onCopySvg?.()}
+              onCopyAs={onCopyAs}
+              smilesCopied={Boolean(smilesCopied)}
+              svgCopied={Boolean(svgCopied)}
+              svgCopyError={Boolean(svgCopyError)}
+              onRequestFeature={() => onRequestFeature?.()}
+              onSignIn={() => onSignIn?.()}
+              onSignUp={() => onSignUp?.()}
+              onSignOut={() => onSignOut?.()}
+              signedIn={Boolean(signedIn)}
+              authDisplayName={authDisplayName ?? ''}
+              onOpenAdvancedSearch={onOpenAdvancedSearch}
+              onOpenShortcuts={onOpenShortcuts}
+              downloadMenu={
+                <ExportMenu
+                  open={exportOpen}
+                  preferSheet
+                  onToggle={() => setExportOpen(v => !v)}
+                  onSaveAs={format => {
+                    setExportOpen(false);
+                    onSaveAs(format);
+                  }}
+                />
+              }
+            />
           ) : null}
           {!isCompact ? (
             <HeaderPromoLinks
@@ -588,7 +627,7 @@ export function AppTopBar(props: AppTopBarProps) {
               onSignUp={() => onSignUp?.()}
             />
           ) : null}
-          <CharlaHelpButton compact={isCompact} />
+          {isCompact ? null : <CharlaHelpButton compact={isCompact} />}
         </div>
       </div>
 
@@ -622,45 +661,20 @@ export function AppTopBar(props: AppTopBarProps) {
             }
           />
         </div>
-      ) : (
-        <div className="app-top-bar__site-row app-top-bar__site-row--compact">
-          <HeaderSiteNav
-            compactLayout
-            onOpenMyDesigns={() => onOpenLibrary?.()}
-            onCopySmiles={() => onCopySmiles?.()}
-            onCopySvg={() => onCopySvg?.()}
-            smilesCopied={Boolean(smilesCopied)}
-            svgCopied={Boolean(svgCopied)}
-            svgCopyError={Boolean(svgCopyError)}
-            onRequestFeature={() => onRequestFeature?.()}
-            onSignIn={() => onSignIn?.()}
-            onSignUp={() => onSignUp?.()}
-            onSignOut={() => onSignOut?.()}
-            signedIn={Boolean(signedIn)}
-            authDisplayName={authDisplayName ?? ''}
-            downloadMenu={
-              <ExportMenu
-                open={exportOpen}
-                preferSheet
-                onToggle={() => setExportOpen(v => !v)}
-                onSaveAs={format => {
-                  setExportOpen(false);
-                  onSaveAs(format);
-                }}
-              />
-            }
-          />
-        </div>
-      )}
+      ) : null}
 
       <div
         className={`app-top-bar__tools-row${ribbonMode !== 'home' ? ' app-top-bar__tools-row--focus' : ''}`}
         role="toolbar"
         aria-label={ribbonMode === 'draw' ? t('topBar.toolbarDrawTools') : t('topBar.toolbarHomeExtras')}
       >
-        {compactInlineSearch}
-        <ToolCluster label={t('topBar.clusterPanels')}>
-          {onToggleObjectsPanel ? (
+        <ToolCluster label={isCompact ? t('topBar.clusterArrange') : t('topBar.clusterPanels')}>
+          {isCompact ? (
+            <>
+              {selectMenu}
+              {contextRow}
+            </>
+          ) : onToggleObjectsPanel ? (
             <button
               type="button"
               className={`action-btn icon-only${showObjectsPanel ? ' active' : ''}`}
@@ -694,6 +708,18 @@ export function AppTopBar(props: AppTopBarProps) {
           >
             <span className="app-top-bar__3d-label">{t('topBar.threeD')}</span>
           </button>
+          {isCompact ? (
+            <button
+              type="button"
+              className={`action-btn icon-only${showInfoPanel ? ' active' : ''}`}
+              title={showInfoPanel ? t('topBar.infoCloseTitle') : t('topBar.infoCompactTitle')}
+              aria-label={t('topBar.selectionInfo')}
+              aria-pressed={showInfoPanel}
+              onClick={onToggleInfoPanel}
+            >
+              <Info size={16} strokeWidth={2} aria-hidden />
+            </button>
+          ) : null}
           {onUndo ? (
             <button
               type="button"
@@ -861,6 +887,7 @@ export function AppTopBar(props: AppTopBarProps) {
         </ToolCluster>
         ) : null}
 
+        {!isCompact ? (
         <ToolCluster label={t('topBar.clusterView')}>
           {(!toolsRow || ribbonMode !== 'home') && onOpenSettings ? (
             <button
@@ -874,6 +901,7 @@ export function AppTopBar(props: AppTopBarProps) {
             </button>
           ) : null}
         </ToolCluster>
+        ) : null}
 
         {toolsRow ? (
           <ToolCluster label={t('topBar.clusterAnnotate')}>
@@ -917,34 +945,74 @@ export function AppTopBar(props: AppTopBarProps) {
             </button>
           </ToolCluster>
         ) : null}
-        {(ribbonMode === 'home' || isCompact) ? (
+        {!isCompact && ribbonMode === 'home' ? (
         <ToolCluster label={t('topBar.clusterArrange')}>
           {contextRow}
-          {ribbonMode === 'home' || isCompact ? (
-            <>
-            <TopBarSelectMenu
-              activeTool={activeTool}
-              molecule={molecule}
-              selectedAtomIds={selectedAtomIds}
-              onSelectTool={onSelectTool}
-              onQuickSelect={onQuickSelect}
-              shortcutOverrides={shortcutOverrides}
-            />
-            <a
-              className="app-top-bar__select-trigger app-top-bar__tools-link"
-              href="/tools/"
-              target="_blank"
-              rel="noopener noreferrer"
-              title={t('nav.toolsTitle')}
-              aria-label={t('nav.tools')}
-            >
-              {t('nav.tools')}
-            </a>
-            </>
-          ) : null}
+          {selectMenu}
+          <a
+            className="app-top-bar__select-trigger app-top-bar__tools-link"
+            href="/tools/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title={t('nav.toolsTitle')}
+            aria-label={t('nav.tools')}
+          >
+            {t('nav.tools')}
+          </a>
         </ToolCluster>
         ) : null}
       </div>
+      {isCompact ? (
+        <MobileBottomSheet
+          open={searchSheetOpen}
+          onClose={() => setSearchSheetOpen(false)}
+          title={t('topBar.search')}
+          size="auto"
+          className="mobile-sheet--search"
+          ariaLabel={t('search.aria')}
+        >
+          <div className="mobile-sheet-search">
+            <HeaderInlineSearch
+              quickSearch={quickSearch}
+              setQuickSearch={setQuickSearch}
+              quickSearchLoading={quickSearchLoading}
+              quickSearchError={quickSearchError}
+              setQuickSearchError={setQuickSearchError}
+              onQuickSearch={onQuickSearch}
+              searchPlaceholder={t('topBar.searchNameOrCas')}
+              searchAriaLabel={t('search.aria')}
+              autoFocus={searchSheetOpen}
+            />
+            {quickSearchError ? (
+              <p className="mobile-sheet-search__error" role="status">
+                {quickSearchError}
+              </p>
+            ) : null}
+            <div className="mobile-sheet-search__actions">
+              <button
+                type="button"
+                className="mobile-sheet-search__go md-btn md-btn--primary"
+                onClick={onQuickSearch}
+                disabled={quickSearchLoading || !quickSearch.trim()}
+              >
+                {t('topBar.search')}
+              </button>
+              <button
+                type="button"
+                className="mobile-sheet-list__btn mobile-sheet-search__advanced"
+                onClick={() => {
+                  setSearchSheetOpen(false);
+                  onOpenAdvancedSearch();
+                }}
+                title={t('nav.pubchemSearchTitle')}
+              >
+                <SlidersHorizontal size={16} strokeWidth={2} aria-hidden />
+                {t('nav.pubchemSearch')}
+              </button>
+            </div>
+          </div>
+        </MobileBottomSheet>
+      ) : null}
     </header>
   );
 }

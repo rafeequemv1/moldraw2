@@ -1,7 +1,5 @@
 /**
- * Seed structure loaded onto an empty canvas on first visit.
- * Chloramphenicol — isomeric SMILES. Converted locally (no PubChem).
+ * First-visit canvas seed: fetched live from PubChem (no bundled SDF/MOL).
+ * Chloramphenicol — CID 5959.
  */
-export const SELECTION_SMI =
-  'C1=CC(=CC=C1[C@H]([C@@H](CO)NC(=O)C(Cl)Cl)O)[N+](=O)[O-]';
-
+export const STARTUP_PUBCHEM_CID = 5959;

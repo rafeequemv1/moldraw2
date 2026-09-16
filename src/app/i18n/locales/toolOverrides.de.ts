@@ -197,7 +197,7 @@ export const deToolOverrides: Record<
   sru_bracket: {
     label: 'Polymer',
     title:
-      'Polymer-SRU-Klammern: ≥2 Atome auswählen und klicken oder Kasten über Wiederholeinheit ziehen. Subskript n/m anklicken zum Bearbeiten.',
+      'Polymer (n): Fragment wählen oder Kasten über die Wiederholeinheit ziehen, dann n setzen. Subskript auf der Leinwand anklicken zum Bearbeiten.',
     shortLabel: 'SRU',
   },
   image: {

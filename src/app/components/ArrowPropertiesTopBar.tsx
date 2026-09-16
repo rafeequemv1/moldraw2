@@ -15,7 +15,7 @@ const KIND_LABELS: Record<ReactionArrowKind, string> = {
   retrosynthetic: 'Retro',
   equilibrium: 'Equilibrium',
   half_equilibrium: 'Half eq.',
-  electron_flow: 'e⁻ flow',
+  electron_flow: 'Electron flow',
   resonance: '↔',
 };
 
@@ -66,8 +66,8 @@ export function ArrowPropertiesTopBar({ arrow, onUpdate, focusSlot }: ArrowPrope
             onUpdate(arrow.id, { headStyle: e.target.value as 'single' | 'pair' })
           }
         >
-          <option value="pair">2e⁻</option>
-          <option value="single">1e⁻</option>
+          <option value="pair">2e⁻ pair</option>
+          <option value="single">Fishhook 1e⁻</option>
         </select>
       ) : null}
       <label className="arrow-topbar__weight" title="Line weight">

@@ -4,6 +4,8 @@ import { createPortal } from 'react-dom';
 
 import { ChevronRight, Copy, FolderOpen, Image, Search } from 'lucide-react';
 
+import { COPY_AS_FORMAT_ITEMS } from '../copyAsFormats';
+import type { CopyAsFormat } from '../types';
 import { useI18n } from '../i18n';
 import {
   anchoredMenuStyle,
@@ -13,6 +15,8 @@ import {
   type AnchoredMenuPos,
   type SideFlyoutPos,
 } from '../menuPlacement';
+import { MobileBottomSheet } from './MobileBottomSheet';
+import { MobileSheetAccordion } from './MobileSheetAccordion';
 
 /** Keep the More trigger put; shift the portal panel slightly left of the right edge. */
 const MORE_MENU_NUDGE_X = -20;
@@ -26,6 +30,9 @@ export interface HeaderSiteNavProps {
   onCopySmiles: () => void;
 
   onCopySvg: () => void;
+
+  /** Compact More sheet: Copy as accordion uses the full format catalog. */
+  onCopyAs?: (format: CopyAsFormat) => void;
 
   smilesCopied: boolean;
 
@@ -61,10 +68,14 @@ export interface HeaderSiteNavProps {
   accountInMoreMenu?: boolean;
 
   /**
-   * Phone/tablet site row: keep Community + auth visible, fold the rest into More.
-   * File is rendered next to the logo by AppTopBar, not here.
+   * Phone/tablet site row: File stays next to the logo in AppTopBar.
+   * Copy SMILES / Copy SVG / Request live in the More sheet, not the top row.
    */
   compactLayout?: boolean;
+
+  onOpenAdvancedSearch?: () => void;
+
+  onOpenShortcuts?: () => void;
 
 }
 
@@ -98,7 +109,9 @@ type MoreMenuItem =
 
   | { kind: 'disabled'; label: string; title: string; hint: string }
 
-  | { kind: 'submenu'; label: string; title: string; hint: string };
+  | { kind: 'submenu'; label: string; title: string; hint: string }
+
+  | { kind: 'accordion'; label: string; title: string; items: MoreMenuItem[] };
 
 
 
@@ -113,6 +126,7 @@ function buildMoreItems(
     onSignIn?: () => void;
     onSignUp?: () => void;
   },
+  extraActions?: MoreMenuItem[],
 ): MoreMenuItem[] {
 
   const accountItems: MoreMenuItem[] =
@@ -139,18 +153,20 @@ function buildMoreItems(
               title: t('nav.signInTitle'),
               onClick: account.onSignIn,
             },
-          {
-            kind: 'action',
-            label: t('nav.signUp'),
-            title: t('nav.signUpTitle'),
-            onClick: account.onSignUp,
-            className: 'tb-menu-item--auth-cta',
-          },
+            {
+              kind: 'action',
+              label: t('nav.signUp'),
+              title: t('nav.signUpTitle'),
+              onClick: account.onSignUp,
+              className: 'tb-menu-item--auth-cta',
+            },
           ]
         : [];
 
   return [
     ...accountItems,
+
+    ...(extraActions ?? []),
 
     { kind: 'link', href: '/pages/about.html', label: t('nav.homepage'), title: t('nav.homepageTitle') },
 
@@ -241,6 +257,107 @@ function buildMoreItems(
 }
 
 
+
+function MoreMenuBody({
+  items,
+  variant,
+  onDismiss,
+}: {
+  items: MoreMenuItem[];
+  variant: 'dropdown' | 'sheet';
+  onDismiss: () => void;
+}) {
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+  const itemClass = variant === 'sheet' ? 'mobile-sheet-list__btn' : 'tb-menu-item';
+  const hintClass = variant === 'sheet' ? 'mobile-sheet-list__hint' : 'tb-menu-item-hint';
+  const disabledClass = variant === 'sheet' ? ' mobile-sheet-list__btn--disabled' : ' tb-menu-item--disabled';
+
+  const renderItem = (item: MoreMenuItem, nested = false) => {
+        if (item.kind === 'link') {
+          return (
+            <a
+              key={item.href}
+              className={itemClass}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={item.title}
+              role={variant === 'sheet' ? 'menuitem' : undefined}
+              onClick={onDismiss}
+            >
+              {item.label}
+            </a>
+          );
+        }
+        if (item.kind === 'action') {
+          const authCta = item.className?.includes('tb-menu-item--auth-cta');
+          return (
+            <button
+              key={item.label}
+              type="button"
+              className={`${itemClass}${item.className ? ` ${item.className}` : ''}${
+                variant === 'sheet' && authCta ? ' mobile-sheet-list__btn--auth-cta' : ''
+              }`}
+              title={item.title}
+              role={variant === 'sheet' ? 'menuitem' : undefined}
+              onClick={() => {
+                onDismiss();
+                item.onClick();
+              }}
+            >
+              {item.label}
+            </button>
+          );
+        }
+        if (item.kind === 'accordion') {
+          if (variant !== 'sheet' || nested) {
+            return item.items.map(child => renderItem(child, true));
+          }
+          return (
+            <MobileSheetAccordion
+              key={item.label}
+              label={item.label}
+              icon={item.label === 'Copy as' ? <Copy size={16} aria-hidden /> : undefined}
+              open={openAccordion === item.label}
+              onToggle={() => setOpenAccordion(v => (v === item.label ? null : item.label))}
+            >
+              {item.items.map(child => renderItem(child, true))}
+            </MobileSheetAccordion>
+          );
+        }
+        if (item.kind === 'submenu') {
+          if (variant === 'dropdown') {
+            return <MoreMenuSubmenuRow key={item.label} item={item} />;
+          }
+          return (
+            <button
+              key={item.label}
+              type="button"
+              className={`${itemClass}${disabledClass}`}
+              title={item.title}
+              disabled
+            >
+              <span>{item.label}</span>
+              <span className={hintClass}>{item.hint}</span>
+            </button>
+          );
+        }
+        return (
+          <button
+            key={item.label}
+            type="button"
+            className={`${itemClass}${disabledClass}`}
+            title={item.title}
+            disabled
+          >
+            <span>{item.label}</span>
+            {item.hint ? <span className={hintClass}>{item.hint}</span> : null}
+          </button>
+        );
+  };
+
+  return <>{items.map(item => renderItem(item))}</>;
+}
 
 function MoreMenuSubmenuRow({ item }: { item: Extract<MoreMenuItem, { kind: 'submenu' }> }) {
   const [open, setOpen] = useState(false);
@@ -495,101 +612,7 @@ export function HeaderPromoLinks({
 
               >
 
-                {moreItems.map(item => {
-
-                  if (item.kind === 'link') {
-
-                    return (
-
-                      <a
-
-                        key={item.href}
-
-                        className="tb-menu-item"
-
-                        href={item.href}
-
-                        target="_blank"
-
-                        rel="noopener noreferrer"
-
-                        title={item.title}
-
-                        onClick={() => setMoreOpen(false)}
-
-                      >
-
-                        {item.label}
-
-                      </a>
-
-                    );
-
-                  }
-
-                  if (item.kind === 'action') {
-
-                    return (
-
-                      <button
-
-                        key={item.label}
-
-                        type="button"
-
-                        className={`tb-menu-item${item.className ? ` ${item.className}` : ''}`}
-
-                        title={item.title}
-
-                        onClick={() => {
-
-                          setMoreOpen(false);
-
-                          item.onClick();
-
-                        }}
-
-                      >
-
-                        {item.label}
-
-                      </button>
-
-                    );
-
-                  }
-
-                  if (item.kind === 'submenu') {
-
-                    return <MoreMenuSubmenuRow key={item.label} item={item} />;
-
-                  }
-
-                  return (
-
-                    <button
-
-                      key={item.label}
-
-                      type="button"
-
-                      className="tb-menu-item tb-menu-item--disabled"
-
-                      title={item.title}
-
-                      disabled
-
-                    >
-
-                      <span>{item.label}</span>
-
-                      <span className="tb-menu-item-hint">{item.hint}</span>
-
-                    </button>
-
-                  );
-
-                })}
+                <MoreMenuBody items={moreItems} variant="dropdown" onDismiss={() => setMoreOpen(false)} />
 
               </div>,
 
@@ -627,10 +650,20 @@ export function HeaderInlineSearch({
 
   searchAriaLabel = 'Search PubChem by molecule name or CAS',
 
+  autoFocus = false,
+
 }: HeaderPromoRowProps & {
   searchPlaceholder?: string;
   searchAriaLabel?: string;
+  autoFocus?: boolean;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    const id = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => window.cancelAnimationFrame(id);
+  }, [autoFocus]);
 
   return (
 
@@ -649,6 +682,8 @@ export function HeaderInlineSearch({
         </button>
 
         <input
+
+          ref={inputRef}
 
           className="header-inline-search__input"
 
@@ -672,6 +707,8 @@ export function HeaderInlineSearch({
 
           aria-label={searchAriaLabel}
 
+          autoFocus={autoFocus}
+
         />
 
       </div>
@@ -690,6 +727,7 @@ export function HeaderSiteNav({
   onOpenMyDesigns,
   onCopySmiles,
   onCopySvg,
+  onCopyAs,
   smilesCopied,
   svgCopied,
   svgCopyError,
@@ -703,72 +741,79 @@ export function HeaderSiteNav({
   fileMenu,
   accountInMoreMenu = false,
   compactLayout = false,
+  onOpenAdvancedSearch,
+  onOpenShortcuts,
 }: HeaderSiteNavProps) {
   const { t } = useI18n();
   const [moreOpen, setMoreOpen] = useState(false);
-  const [moreMenuPos, setMoreMenuPos] = useState<AnchoredMenuPos | null>(null);
-  const moreRef = useRef<HTMLDivElement>(null);
-  const moreMenuRef = useRef<HTMLDivElement>(null);
 
-  useLayoutEffect(() => {
-    if (!compactLayout || !moreOpen || !moreRef.current) {
-      setMoreMenuPos(null);
-      return;
-    }
-    const rect = moreRef.current.getBoundingClientRect();
-    setMoreMenuPos(
-      placeAnchoredMenu(rect, {
-        menuWidth: 180,
-        menuHeight: 280,
-        align: 'right',
-        offsetX: MORE_MENU_NUDGE_X,
-      }),
-    );
-  }, [compactLayout, moreOpen]);
-
-  useEffect(() => {
-    if (!compactLayout || !moreOpen) return undefined;
-    const onDoc = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (moreRef.current?.contains(target) || moreMenuRef.current?.contains(target)) return;
-      setMoreOpen(false);
-    };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [compactLayout, moreOpen]);
-
-  const compactMoreItems: MoreMenuItem[] = [
-    {
-      kind: 'action',
-      label: t('nav.myDesigns'),
-      title: t('nav.openSavedDesigns'),
-      onClick: onOpenMyDesigns,
-    },
-    {
-      kind: 'action',
-      label: smilesCopied ? t('nav.copied') : t('nav.copySmiles'),
-      title: t('nav.copySmilesTitle'),
-      onClick: onCopySmiles,
-    },
-    {
-      kind: 'action',
-      label: svgCopied ? t('nav.copiedSvg') : svgCopyError ? t('nav.copyFailed') : t('nav.copySvg'),
-      title: t('nav.copySvgTitle'),
-      onClick: onCopySvg,
-    },
-    {
-      kind: 'action',
-      label: t('nav.requestFeature'),
-      title: t('nav.requestFeatureTitle'),
-      onClick: onRequestFeature,
-    },
-    {
-      kind: 'link',
-      href: '/tools/',
-      label: t('nav.tools'),
-      title: t('nav.toolsTitle'),
-    },
-  ];
+  const compactMoreItems = compactLayout
+    ? buildMoreItems(
+        t,
+        () => onOpenAdvancedSearch?.(),
+        () => onOpenShortcuts?.(),
+        {
+          signedIn,
+          displayName: authDisplayName,
+          onSignOut,
+          onSignIn,
+          onSignUp,
+        },
+        [
+          {
+            kind: 'link',
+            href: '/tools/',
+            label: t('nav.tools'),
+            title: t('nav.toolsTitle'),
+          },
+          {
+            kind: 'link',
+            href: '/community/',
+            label: t('nav.community'),
+            title: t('nav.openCommunity'),
+          },
+          {
+            kind: 'accordion',
+            label: 'Copy as',
+            title: 'Copy as…',
+            items: onCopyAs
+              ? COPY_AS_FORMAT_ITEMS.filter(item => item.available).map(item => ({
+                  kind: 'action' as const,
+                  label:
+                    item.key === 'smiles' && smilesCopied
+                      ? t('nav.copied')
+                      : item.key === 'svg' && svgCopied
+                        ? t('nav.copiedSvg')
+                        : item.key === 'svg' && svgCopyError
+                          ? t('nav.copyFailed')
+                          : item.label.replace(/^Copy as /, ''),
+                  title: item.label,
+                  onClick: () => onCopyAs(item.key),
+                }))
+              : [
+                  {
+                    kind: 'action' as const,
+                    label: smilesCopied ? t('nav.copied') : t('nav.copySmiles'),
+                    title: t('nav.copySmilesTitle'),
+                    onClick: onCopySmiles,
+                  },
+                  {
+                    kind: 'action' as const,
+                    label: svgCopied ? t('nav.copiedSvg') : svgCopyError ? t('nav.copyFailed') : t('nav.copySvg'),
+                    title: t('nav.copySvgTitle'),
+                    onClick: onCopySvg,
+                  },
+                ],
+          },
+          {
+            kind: 'action',
+            label: t('nav.requestFeature'),
+            title: t('nav.requestFeatureTitle'),
+            onClick: onRequestFeature,
+          },
+        ],
+      )
+    : [];
 
   return (
     <nav
@@ -777,15 +822,17 @@ export function HeaderSiteNav({
     >
       <div className="header-links__lead">
         {compactLayout ? null : fileMenu}
-        <a
-          className="tb-btn tb-btn-community"
-          href="/community/"
-          target="_blank"
-          rel="noopener noreferrer"
-          title={t('nav.openCommunity')}
-        >
-          {t('nav.community')}
-        </a>
+        {compactLayout ? null : (
+          <a
+            className="tb-btn tb-btn-community"
+            href="/community/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title={t('nav.openCommunity')}
+          >
+            {t('nav.community')}
+          </a>
+        )}
         {compactLayout ? null : (
           <>
             <button
@@ -853,60 +900,32 @@ export function HeaderSiteNav({
             </button>
           </>
         )}
-        {compactLayout ? null : downloadMenu}
+        {downloadMenu}
         {compactLayout ? (
-          <div className="tb-menu-dropdown viewer-toolbar-more" ref={moreRef}>
+          <div className="tb-menu-dropdown viewer-toolbar-more">
             <button
               type="button"
-              className="viewer-toolbar-extra"
+              className={`viewer-toolbar-extra${signedIn ? ' viewer-toolbar-more--account' : ''}`}
               onClick={() => setMoreOpen(v => !v)}
-              title={t('nav.moreLinksTitle')}
+              title={signedIn ? t('nav.signedInTitle', { name: authDisplayName }) : t('nav.moreLinksTitle')}
               aria-expanded={moreOpen}
+              aria-haspopup="dialog"
             >
+              {signedIn ? <span className="viewer-toolbar-more__dot" aria-hidden /> : null}
               {t('nav.more')}
             </button>
-            {moreOpen && moreMenuPos
-              ? createPortal(
-                  <div
-                    ref={moreMenuRef}
-                    className="tb-menu-dropdown-list tb-menu-dropdown-list--portal tb-menu-dropdown-list--compact"
-                    role="menu"
-                    aria-label={t('nav.moreLinksTitle')}
-                    style={anchoredMenuStyle(moreMenuPos)}
-                    onMouseDown={e => e.stopPropagation()}
-                  >
-                    {compactMoreItems.map(item =>
-                      item.kind === 'link' ? (
-                        <a
-                          key={item.href}
-                          className="tb-menu-item"
-                          href={item.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={item.title}
-                          onClick={() => setMoreOpen(false)}
-                        >
-                          {item.label}
-                        </a>
-                      ) : item.kind === 'action' ? (
-                        <button
-                          key={item.label}
-                          type="button"
-                          className="tb-menu-item"
-                          title={item.title}
-                          onClick={() => {
-                            setMoreOpen(false);
-                            item.onClick();
-                          }}
-                        >
-                          {item.label}
-                        </button>
-                      ) : null,
-                    )}
-                  </div>,
-                  document.body,
-                )
-              : null}
+            <MobileBottomSheet
+              open={moreOpen}
+              onClose={() => setMoreOpen(false)}
+              title={t('nav.more')}
+              size="auto"
+              className="mobile-sheet--menu"
+              ariaLabel={t('nav.moreLinksTitle')}
+            >
+              <div className="mobile-sheet-list" role="menu" aria-label={t('nav.moreLinksTitle')}>
+                <MoreMenuBody items={compactMoreItems} variant="sheet" onDismiss={() => setMoreOpen(false)} />
+              </div>
+            </MobileBottomSheet>
           </div>
         ) : null}
       </span>

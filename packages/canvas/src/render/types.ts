@@ -4,9 +4,11 @@
  * to a handful of focused `drawXxx(ctx, R)` functions instead of threading 30+
  * positional args through the call site.
  */
-import type { ResolvedCanvasPreferences } from '@moldraw/core';
-import type { FragmentPlacementSession } from '@moldraw/core';
+import type { ArrowSnapKind, FragmentPlacementSession, ResolvedCanvasPreferences } from '@moldraw/core';
 import type {
+  ArrowAnchor,
+  ArrowHeadStyle,
+  ArrowTailStyle,
   CanvasOrbital,
   CanvasShape,
   CanvasShapeKind,
@@ -327,6 +329,13 @@ export interface DrawingReactionArrowState {
   x2: number;
   y2: number;
   kind: ReactionArrowKind;
+  headStyle?: ArrowHeadStyle;
+  tailStyle?: ArrowTailStyle;
+  headScale?: number;
+  fromAnchor?: ArrowAnchor;
+  toAnchor?: ArrowAnchor;
+  fromSnapKind?: ArrowSnapKind;
+  toSnapKind?: ArrowSnapKind;
 }
 
 export interface DrawingCanvasShapeState {
@@ -377,6 +386,8 @@ export interface RenderContext {
 
   /** Active drawing/selection tool. */
   activeTool: string;
+  /** Current reaction-arrow kind from the toolbar (for implicit lone-pair loci). */
+  reactionArrowKind?: import('@moldraw/domain').ReactionArrowKind;
   /** Whether the active tool is one of the ring tools. */
   isRingTool: boolean;
   /** Number of sides for the active ring tool (or 6 by default). */

@@ -473,6 +473,22 @@ export type ReactionArrowKind =
   | 'electron_flow'
   | 'resonance';
 
+export const ARROW_HEAD_STYLES = ['filled', 'open', 'pair', 'single', 'none'] as const;
+export type ArrowHeadStyle = (typeof ARROW_HEAD_STYLES)[number];
+
+export const ARROW_TAIL_STYLES = ['none', 'bar', 'reverse', 'circle'] as const;
+export type ArrowTailStyle = (typeof ARROW_TAIL_STYLES)[number];
+
+/** Default head size for newly drawn electron-flow arrows (slightly smaller than 1). */
+export const ELECTRON_FLOW_DEFAULT_HEAD_SCALE = 0.72;
+
+export const resolveArrowHeadKind = (
+  style?: ArrowHeadStyle,
+): 'filled' | 'open' | 'single' | 'none' => {
+  if (style === 'filled' || style === 'single' || style === 'none') return style;
+  return 'open';
+};
+
 /** Toolbar / cycle order (must include every `ReactionArrowKind`). */
 export const REACTION_ARROW_KIND_ORDER: readonly ReactionArrowKind[] = [
   'straight',
@@ -540,9 +556,12 @@ export interface ReactionArrow {
   fromAnchor?: ArrowAnchor;
   toAnchor?: ArrowAnchor;
   /**
-   * `electron_flow` head: `single` = fish-hook (default); `pair` = angular pair-electron head.
+   * Arrow head: `filled` triangle, `open`/`pair` angular 2e head, `single` fish-hook,
+   * `none`. New mechanism arrows store `pair` (open) with a reduced `headScale`.
    */
-  headStyle?: 'single' | 'pair';
+  headStyle?: ArrowHeadStyle;
+  /** Tail decoration at the start of the shaft. */
+  tailStyle?: ArrowTailStyle;
   /**
    * Quadratic bend for electron_flow as a signed fraction of chord length
    * (default ~0.28; sign picks side when `bulgeSide` is omitted). Canvas may
@@ -557,7 +576,7 @@ export interface ReactionArrow {
   bulgeSide?: 1 | -1;
   color?: string;
   strokeWidth?: number;
-  /** Scales arrowhead relative to default (1 = default). */
+  /** Scales arrowhead relative to default (1 = legacy; new electron-flow uses ~0.72). */
   headScale?: number;
   /** Reagents / conditions drawn above the arrow shaft (multi-line: newline). */
   reagentAbove?: string;

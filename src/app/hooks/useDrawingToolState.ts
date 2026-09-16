@@ -5,7 +5,8 @@
  * Fragment placement session stays in App — it needs the molecule worker.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { CanvasShapeKind, ReactionArrowKind } from '@moldraw/domain';
+import type { ArrowHeadStyle, ArrowTailStyle, CanvasShapeKind, ReactionArrowKind } from '@moldraw/domain';
+import { ELECTRON_FLOW_DEFAULT_HEAD_SCALE } from '@moldraw/domain';
 import { PLACE_FRAGMENT_TOOL_ID } from '@moldraw/core/molecule/fragmentPlacement';
 import { TOOL_DEFS, type ShapeMenuValue, type ToolDef, type ToolGroup } from '../toolDefs';
 
@@ -30,6 +31,9 @@ export function useDrawingToolState(options: UseDrawingToolStateOptions = {}) {
   activeToolRef.current = activeTool;
 
   const [reactionArrowKind, setReactionArrowKind] = useState<ReactionArrowKind>('straight');
+  const [reactionArrowHeadStyle, setReactionArrowHeadStyle] = useState<ArrowHeadStyle>('pair');
+  const [reactionArrowTailStyle, setReactionArrowTailStyle] = useState<ArrowTailStyle>('none');
+  const [reactionArrowHeadScale, setReactionArrowHeadScale] = useState(ELECTRON_FLOW_DEFAULT_HEAD_SCALE);
   const [sruBracketSubscript, setSruBracketSubscript] = useState<string>('n');
   const [canvasShapeKind, setCanvasShapeKind] = useState<CanvasShapeKind>('rectangle');
   const [shapeMenuValue, setShapeMenuValue] = useState<ShapeMenuValue>('rectangle');
@@ -82,6 +86,12 @@ export function useDrawingToolState(options: UseDrawingToolStateOptions = {}) {
     activeToolRef,
     reactionArrowKind,
     setReactionArrowKind,
+    reactionArrowHeadStyle,
+    setReactionArrowHeadStyle,
+    reactionArrowTailStyle,
+    setReactionArrowTailStyle,
+    reactionArrowHeadScale,
+    setReactionArrowHeadScale,
     sruBracketSubscript,
     setSruBracketSubscript,
     canvasShapeKind,

@@ -4,7 +4,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Download } from 'lucide-react';
 import { DOWNLOAD_FORMAT_ITEMS } from '../downloadFormats';
 import { useCompactViewport } from '../hooks/useCompactViewport';
 import type { DownloadFormat } from '../types';
@@ -68,13 +68,20 @@ export function ExportMenu({ open, onToggle, onSaveAs, preferSheet }: ExportMenu
     <div className="tb-menu-dropdown tb-menu-dropdown--download" ref={wrapRef}>
       <button
         type="button"
-        className="tb-btn tb-btn-download"
+        className={`tb-btn tb-btn-download${useSheet ? ' tb-btn-download--icon' : ''}`}
         onClick={onToggle}
         aria-expanded={open}
         aria-haspopup={useSheet ? 'dialog' : 'menu'}
+        aria-label={useSheet ? t('export.download') : undefined}
+        title={t('export.download')}
       >
-        {t('export.download')}
-        {!useSheet ? <ChevronDown size={10} strokeWidth={2.5} aria-hidden /> : null}
+        <Download size={12} strokeWidth={2.4} aria-hidden />
+        {useSheet ? null : (
+          <>
+            {t('export.download')}
+            <ChevronDown size={11} strokeWidth={2.5} aria-hidden />
+          </>
+        )}
       </button>
       {useSheet ? (
         <MobileBottomSheet
