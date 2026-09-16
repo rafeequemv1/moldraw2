@@ -185,6 +185,11 @@
       "source": "/reaction/diels-alder-reaction/",
       "destination": "/reaction/diels-alder-reaction",
       "permanent": true
+    },
+    {
+      "source": "/addons/index.html",
+      "destination": "/addons/",
+      "permanent": true
     }
   ]
 }

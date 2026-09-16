@@ -119,7 +119,7 @@ export function resolveAtomLabelFonts(
     elementFontCss: `${weight}${fontPx}px ${family}`,
     subFontCss: `${subPx}px ${family}`,
     chargeFontCss: `${Math.max(10, fontPx * 0.65)}px ${family}`,
-    implicitHFontCss: `${weight}${Math.max(11, fontPx * 0.72)}px ${family}`,
+    implicitHFontCss: `${weight}${fontPx}px ${family}`,
     isoFontCss: `${Math.max(10, fontPx * 0.65)}px ${family}`,
   };
 }
@@ -158,7 +158,7 @@ export function resolveCanvasPreferences(s: ResolveCanvasPreferencesInput): Reso
     elementFontCss: `${weight}${fontPx}px ${family}`,
     subFontCss: `${subPx}px ${family}`,
     chargeFontCss: `${Math.max(10, fontPx * 0.65)}px ${family}`,
-    implicitHFontCss: `${weight}${Math.max(11, fontPx * 0.72)}px ${family}`,
+    implicitHFontCss: `${weight}${fontPx}px ${family}`,
     isoFontCss: `${Math.max(10, fontPx * 0.65)}px ${family}`,
     reactionComponentMarginPx: marginPx,
     imageExportScale: imageResolutionToScale(g.imageResolution),

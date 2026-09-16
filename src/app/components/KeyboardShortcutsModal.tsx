@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { SHORTCUT_MODAL_GROUPS } from '../keyboard/shortcutCatalog';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface KeyboardShortcutsModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ function sectionNavLabel(title: string): string {
 
 export function KeyboardShortcutsModal({ open, onClose }: KeyboardShortcutsModalProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  useChromeOverlay(open, onClose, 'modal');
 
   useEffect(() => {
     if (open) setActiveIndex(0);

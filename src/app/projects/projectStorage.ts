@@ -185,10 +185,19 @@ export async function getProject(id: string): Promise<SavedProject | null> {
 }
 
 export async function saveProjectRecord(project: SavedProject): Promise<void> {
+  await saveProjectRecords([project]);
+}
+
+/** One transaction for every open tab — used by unload / visibility flush. */
+export async function saveProjectRecords(projects: SavedProject[]): Promise<void> {
+  if (projects.length === 0) return;
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(PROJECT_STORE, 'readwrite');
-    tx.objectStore(PROJECT_STORE).put(normalizeProject(project), project.id);
+    const store = tx.objectStore(PROJECT_STORE);
+    for (const project of projects) {
+      store.put(normalizeProject(project), project.id);
+    }
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error ?? new Error('IndexedDB write failed'));
   });

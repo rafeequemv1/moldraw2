@@ -12,6 +12,7 @@ import { FunctionalGroupPreviewCell } from './FunctionalGroupPreviewCell';
 import { computeToolbarFgPanelStyle } from './toolbarFgPanelPosition';
 import { isLeftRailTrigger, pinMenuAboveAnchor, pinMenuRightOfRail, shouldOpenMenuAbove } from '../menuPlacement';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { useChromeOverlay } from '../chromeDismiss';
 
 const TOOL_ID = 'functional_groups';
 
@@ -35,6 +36,10 @@ export function ToolbarFunctionalGroupsTool({
   const wrapRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
+  useChromeOverlay(open, () => {
+    setOpen(false);
+    setFilter('');
+  });
 
   useLayoutEffect(() => {
     if (!open || preferSheet || !wrapRef.current) {

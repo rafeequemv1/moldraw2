@@ -10,6 +10,7 @@ import {
   LABEL_FONT_SIZE_PRESETS_PT,
 } from '@moldraw/core';
 import type { Molecule } from '@moldraw/domain';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface TopBarStyleControlsProps {
   molecule: Molecule;
@@ -87,6 +88,7 @@ export function TopBarStyleControls({
 }: TopBarStyleControlsProps) {
   const [opacityOpen, setOpacityOpen] = useState(false);
   const opacityWrapRef = useRef<HTMLDivElement>(null);
+  useChromeOverlay(opacityOpen, () => setOpacityOpen(false));
 
   const hasAtoms = selectedAtomIds.length > 0;
   const hasBonds =

@@ -1,10 +1,15 @@
 import { DEFAULT_DOC_SLUG, getDocSection, getDocSectionBySlug } from './docNav';
 
-export type AppDocRoute = { kind: 'editor' } | { kind: 'docs'; slug: string } | { kind: 'my' };
+export type AppDocRoute =
+  | { kind: 'editor' }
+  | { kind: 'docs'; slug: string }
+  | { kind: 'my' }
+  | { kind: 'addons' };
 
 export const parseAppRoute = (loc: Pick<Location, 'pathname' | 'hash'>): AppDocRoute => {
   const path = loc.pathname.replace(/\/$/, '') || '/';
   if (path === '/my') return { kind: 'my' };
+  if (path === '/addons') return { kind: 'addons' };
   if (path === '/docs' || path.startsWith('/docs/')) {
     const raw =
       path === '/docs' ? DEFAULT_DOC_SLUG : decodeURIComponent(path.slice('/docs/'.length));
@@ -37,4 +42,9 @@ export const navigateToEditor = (replace = false): void => {
 export const navigateToMy = (replace = false): void => {
   if (replace) window.history.replaceState(null, '', '/my');
   else window.history.pushState(null, '', '/my');
+};
+
+export const navigateToAddons = (replace = false): void => {
+  if (replace) window.history.replaceState(null, '', '/addons');
+  else window.history.pushState(null, '', '/addons');
 };

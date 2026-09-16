@@ -18,6 +18,7 @@ import {
   AlignEndHorizontal,
   AlignEndVertical,
   AlignHorizontalDistributeCenter,
+  AlignHorizontalSpaceAround,
   AlignStartHorizontal,
   AlignStartVertical,
   AlignVerticalDistributeCenter,
@@ -41,6 +42,7 @@ import {
 } from '../graphene/grapheneSession';
 import type { Molecule } from '@moldraw/domain';
 import type { InfiniteCanvasHandle } from '@moldraw/canvas/InfiniteCanvas';
+import { useChromeOverlay } from '../chromeDismiss';
 import type { Viewport } from '@moldraw/canvas/geometry';
 import { getSelectionAabb } from '@moldraw/canvas/geometry';
 import {
@@ -54,6 +56,7 @@ import {
   suggestLinearSpacing,
   virtualAtomIdsForArray,
 } from '@moldraw/core';
+import { useI18n } from '../i18n';
 
 export type SelectionArrangeAction =
   | 'alignTop'
@@ -64,6 +67,7 @@ export type SelectionArrangeAction =
   | 'alignRight'
   | 'distributeHorizontal'
   | 'distributeVertical'
+  | 'arrange'
   | 'layoutGrid'
   | 'layoutCircle';
 
@@ -160,6 +164,11 @@ const ACTIONS: {
     title: 'Distribute vertically',
     Icon: AlignVerticalDistributeCenter,
   },
+  {
+    id: 'arrange',
+    title: 'Arrange',
+    Icon: AlignHorizontalSpaceAround,
+  },
 ];
 
 const GENERATE_MODES: { id: GenerateMode; label: string; title?: string; Icon: LucideIcon }[] = [
@@ -221,6 +230,7 @@ export function SelectionAlignToolbar({
   variant = 'floating',
   isCompact = false,
 }: SelectionAlignToolbarProps) {
+  const { t } = useI18n();
   const [arrangeSheetOpen, setArrangeSheetOpen] = useState(false);
   const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null);
   const boxes = useMemo(
@@ -258,6 +268,7 @@ export function SelectionAlignToolbar({
   const [bondLength, setBondLength] = useState(BOND_LEN_DEFAULT);
   const [generateMode, setGenerateMode] = useState<GenerateMode>('circular');
   const [menuOpen, setMenuOpen] = useState(false);
+  useChromeOverlay(menuOpen, () => setMenuOpen(false));
   const [generateActive, setGenerateActive] = useState(false);
   /** User closed the params panel; reopens on the next mode pick / selection change. */
   const [paramsDismissed, setParamsDismissed] = useState(false);
@@ -691,15 +702,16 @@ export function SelectionAlignToolbar({
   };
 
   const buttons = (canDistribute ? ACTIONS : []).map(({ id, title, Icon }, index) => {
-    const sepBefore = index === 3 || index === 6;
+    const sepBefore = index === 3 || index === 6 || index === 8;
+    const tooltip = id === 'arrange' ? t('alignBar.arrangeTitle') : title;
     return (
       <span key={id} className="selection-align-toolbar__item">
         {sepBefore ? <span className="selection-align-toolbar__sep" aria-hidden /> : null}
         <button
           type="button"
           className="selection-align-toolbar__btn"
-          title={title}
-          aria-label={title}
+          title={tooltip}
+          aria-label={tooltip}
           onClick={() => onArrange(id)}
         >
           <Icon size={16} strokeWidth={2} aria-hidden />
@@ -1041,21 +1053,25 @@ export function SelectionAlignToolbar({
         <>
         <span className="mobile-sheet-arrange__label">Align & distribute</span>
         <div className="mobile-sheet-arrange__grid">
-          {ACTIONS.map(({ id, title, Icon }) => (
+          {ACTIONS.map(({ id, title, Icon }) => {
+            const label = id === 'arrange' ? t('alignBar.arrange') : title.replace(/^Align /, '').replace(/^Distribute /, 'Dist. ');
+            const tooltip = id === 'arrange' ? t('alignBar.arrangeTitle') : title;
+            return (
               <button
                 key={id}
                 type="button"
                 className="mobile-sheet-arrange__btn"
-                title={title}
+                title={tooltip}
                 onClick={() => {
                   onArrange(id);
                   setArrangeSheetOpen(false);
                 }}
               >
                 <Icon size={18} strokeWidth={2} aria-hidden />
-                <span>{title.replace(/^Align /, '').replace(/^Distribute /, 'Dist. ')}</span>
+                <span>{label}</span>
               </button>
-          ))}
+            );
+          })}
         </div>
         </>
         ) : null}

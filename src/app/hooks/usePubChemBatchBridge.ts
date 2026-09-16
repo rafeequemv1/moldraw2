@@ -27,6 +27,7 @@ export interface UsePubChemBatchBridgeOptions {
       useViewportGrid?: boolean;
       startFreshGrid?: boolean;
       placeBesideExisting?: boolean;
+      placement?: 'origin' | 'viewport_center';
     },
   ) => Promise<string[]>;
   setShowPubChem: React.Dispatch<React.SetStateAction<boolean>>;
@@ -45,6 +46,8 @@ export interface UsePubChemBatchBridgeOptions {
   > | null>;
   /** Mirrored settings flag for SMILES→2D (default true). */
   preferIndigo2dRef?: React.MutableRefObject<boolean>;
+  /** Pan imported atoms into view without changing zoom (search / PubChem). */
+  revealAtomsInView?: (atomIds: string[]) => void;
 }
 
 export function usePubChemBatchBridge({
@@ -56,16 +59,23 @@ export function usePubChemBatchBridge({
   workerRef,
   worker3dRef,
   preferIndigo2dRef,
+  revealAtomsInView,
 }: UsePubChemBatchBridgeOptions) {
   // Called from PubChemSearch modal — receives the raw SDF molblock fetched by the modal.
   const handlePubChemImport = useCallback(async (molblock: string, name: string, iupacName?: string) => {
     setShowPubChem(false);
-    await importMolblock(molblock, { compoundName: name, iupacName });
-  }, [importMolblock]);
+    const ids = await importMolblock(molblock, {
+      compoundName: name,
+      iupacName,
+      placement: 'viewport_center',
+    });
+    revealAtomsInView?.(ids);
+  }, [importMolblock, revealAtomsInView]);
 
   const handlePubChemImportQuiet = useCallback(async (molblock: string, name: string, iupacName?: string) => {
-    await importMolblock(molblock, { compoundName: name, iupacName, useViewportGrid: true });
-  }, [importMolblock]);
+    const ids = await importMolblock(molblock, { compoundName: name, iupacName, useViewportGrid: true });
+    revealAtomsInView?.(ids);
+  }, [importMolblock, revealAtomsInView]);
 
   const waitBatchWorker = useCallback((id: string) => {
     return new Promise<unknown>((resolve, reject) => {
@@ -180,9 +190,7 @@ export function usePubChemBatchBridge({
         await importMolblock(item.molblock, {
           compoundName: item.displayName,
           useViewportGrid: true,
-          ...(i === 0
-            ? { startFreshGrid: true, placeBesideExisting: true }
-            : {}),
+          ...(i === 0 ? { startFreshGrid: true } : {}),
         });
       }
     },

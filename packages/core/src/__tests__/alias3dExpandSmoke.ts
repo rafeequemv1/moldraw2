@@ -182,6 +182,24 @@ const tips = expandAliasesFor3D(mol('TIPS', 'O'));
 if (count(tips, 'Si') < 1) throw new Error('TIPS should add Si');
 if (tips.atoms.find(a => a.id === 'a1')?.alias) throw new Error('TIPS clear');
 
+const coona = expandAliasesFor3D(mol('COONa'));
+if (coona.atoms.find(a => a.id === 'a1')?.alias) throw new Error('COONa alias not cleared');
+if (count(coona, 'O') !== 2) throw new Error(`COONa should add two O, got ${count(coona, 'O')}`);
+if (count(coona, 'Na') !== 1) throw new Error(`COONa should place Na⁺, got ${count(coona, 'Na')}`);
+if (!coona.atoms.some(a => a.element === 'O' && (a.charge ?? 0) === -1)) {
+  throw new Error('COONa should have O⁻');
+}
+if (!coona.atoms.some(a => a.element === 'Na' && (a.charge ?? 0) === 1)) {
+  throw new Error('COONa Na should be +1');
+}
+if (coona.bonds.some(b => {
+  const ends = [b.fromAtomId, b.toAtomId];
+  const na = coona.atoms.find(a => a.element === 'Na');
+  return na ? ends.includes(na.id) : false;
+})) {
+  throw new Error('COONa Na⁺ must not be covalently bonded');
+}
+
 // Tokenizer must consume common linear strings fully
 for (const s of [
   'CH2CH2COOME',

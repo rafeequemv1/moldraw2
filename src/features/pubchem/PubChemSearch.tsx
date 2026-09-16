@@ -13,6 +13,7 @@ import {
 } from '../../app/advanced/batchExport';
 import { withPubChemThrottle } from '../../app/advanced/batchExport/pubchemRateLimit';
 import { nativeSmilesTo2DMolblock } from '@moldraw/core/io/smilesToMolblock';
+import { useChromeOverlay } from '../../app/chromeDismiss';
 
 interface PubChemResult {
   cid: number;
@@ -125,6 +126,7 @@ export const PubChemSearch: React.FC<PubChemSearchProps> = ({
     append: boolean;
   } | null>(null);
   const suggestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useChromeOverlay(true, onClose, 'modal');
 
   useEffect(() => {
     inputRef.current?.focus();

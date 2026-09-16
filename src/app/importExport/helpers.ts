@@ -202,6 +202,9 @@ export const readSystemClipboardPayload = async (): Promise<SystemClipboardPaylo
 export const looksLikeStructureClipboardText = (text: string): boolean => {
   const trimmed = normalizeClipboardStructureText(text);
   if (!trimmed) return false;
+  // Copy SVG writes a picture (PNG/HTML). If an OS still exposes SVG markup as
+  // text, do not treat Ctrl+V as a chemical import (Excel-style double-paste).
+  if (/<svg[\s>]/i.test(trimmed)) return false;
   if (/^InChI=/i.test(trimmed)) return true;
   if (/<CDXML|<cdxml/i.test(trimmed)) return true;
   if (/\$RXN/i.test(trimmed)) return true;

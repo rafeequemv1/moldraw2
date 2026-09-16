@@ -11,6 +11,7 @@ import { CANVAS_FONT_FAMILIES, canvasFontCssFamily } from '../constants/fonts';
 import { useInstalledStructureThemes } from '../hooks/useStructureTheme';
 import { FormatPanelAccordion } from './FormatPanelAccordion';
 import { useI18n } from '../i18n';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface StyleToolbarProps {
   general: GeneralSettings;
@@ -102,6 +103,7 @@ function StyleCombo({
   const menuId = useId();
   const isFont = id === 'font';
   const wide = isFont || id === 'theme';
+  useChromeOverlay(open, () => setOpen(false));
 
   useLayoutEffect(() => {
     if (!open || !wrapRef.current) {

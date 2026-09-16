@@ -11,6 +11,7 @@ import type { DownloadFormat } from '../types';
 import { useI18n } from '../i18n';
 import { anchoredMenuStyle, placeAnchoredMenu, type AnchoredMenuPos } from '../menuPlacement';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { useChromeOverlay } from '../chromeDismiss';
 
 const COMPACT_DOWNLOAD_LABEL: Partial<Record<DownloadFormat, string>> = {
   png_white: 'PNG white',
@@ -39,6 +40,9 @@ export function ExportMenu({ open, onToggle, onSaveAs, preferSheet }: ExportMenu
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuPos, setMenuPos] = useState<AnchoredMenuPos | null>(null);
+  useChromeOverlay(open && !useSheet, () => {
+    if (open) onToggle();
+  });
 
   useLayoutEffect(() => {
     if (!open || useSheet || !wrapRef.current) {

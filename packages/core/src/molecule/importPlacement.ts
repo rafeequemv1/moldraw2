@@ -3,8 +3,10 @@
  *  - strip explicit hydrogens
  *  - normalise bond length to the app target px (default 40)
  *  - position: either a fixed-size viewport/world grid, or centroid at world (0,0)
+ *  - merge into an existing canvas: stay in the current view, scan to avoid overlap
  */
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
+import { documentFragmentBoxes } from '../align/selectionArrange';
 
 const avgBondLen = (mol: Molecule, fallbackLen: number): number => {
   if (mol.bonds.length === 0) return fallbackLen;
@@ -59,6 +61,36 @@ export interface PlacementSlot {
 
 export type ImportPlacementMode = 'viewport_grid' | 'world_origin';
 
+export type ViewportPanZoom = { x: number; y: number; zoom: number };
+
+/**
+ * World-space point at the canvas view centre.
+ * Matches `useCanvasViewport` / `getWorldPos`: screen = size/2 + pan + world * zoom.
+ */
+export function viewportWorldCenter(viewport: ViewportPanZoom): { x: number; y: number } {
+  const z = viewport.zoom || 1;
+  return { x: -viewport.x / z, y: -viewport.y / z };
+}
+
+/** Visible world AABB for a pan/zoom viewport and CSS canvas size. */
+export function viewportWorldRect(
+  viewport: ViewportPanZoom,
+  windowWidth: number,
+  windowHeight: number,
+): { minX: number; maxX: number; minY: number; maxY: number } {
+  const z = viewport.zoom || 1;
+  const c = viewportWorldCenter(viewport);
+  const hw = windowWidth / (2 * z);
+  const hh = windowHeight / (2 * z);
+  return { minX: c.x - hw, maxX: c.x + hw, minY: c.y - hh, maxY: c.y + hh };
+}
+
+export type ImportViewPlacement = {
+  viewport: ViewportPanZoom;
+  windowWidth: number;
+  windowHeight: number;
+};
+
 /** Columns used for multi-structure imports (AI chat, PubChem batch). */
 export const IMPORT_GRID_COLS = 3;
 
@@ -112,8 +144,7 @@ export function defaultImportGridOrigin(opts: {
 }): { x: number; y: number } {
   const cols = opts.cols ?? IMPORT_GRID_COLS;
   const { cellW, gapX } = importGridCellSize(opts.bondLengthPx);
-  const vpCX = (opts.windowWidth / 2 - opts.viewport.x) / opts.viewport.zoom;
-  const vpCY = (opts.windowHeight / 2 - opts.viewport.y) / opts.viewport.zoom;
+  const { x: vpCX, y: vpCY } = viewportWorldCenter(opts.viewport);
   return {
     x: vpCX - ((cols - 1) * (cellW + gapX)) / 2,
     y: vpCY - cellW * 0.15,
@@ -204,22 +235,181 @@ export const atomBounds = (
 export const importBesideGapPx = (bondLengthPx = 40): number =>
   Math.max(40, bondLengthPx * 1.5);
 
+/**
+ * Place an unbonded neighbor ~1.5 bond lengths from `anchor` (salt pair / paste gap).
+ * Prefers the left (cation beside anion), then right / up / down to avoid clashes.
+ */
+export function placeUnbondedNeighbor(
+  existing: ReadonlyArray<{ id: string; x: number; y: number }>,
+  anchor: { id: string; x: number; y: number },
+  bondLengthPx = 40,
+): { x: number; y: number } {
+  const gap = importBesideGapPx(bondLengthPx);
+  const minDist = Math.max(bondLengthPx * 0.75, 28);
+  const candidates = [
+    { x: anchor.x - gap, y: anchor.y },
+    { x: anchor.x + gap, y: anchor.y },
+    { x: anchor.x, y: anchor.y - gap },
+    { x: anchor.x, y: anchor.y + gap },
+  ];
+  for (const p of candidates) {
+    const clash = existing.some(
+      a => a.id !== anchor.id && Math.hypot(a.x - p.x, a.y - p.y) < minDist,
+    );
+    if (!clash) return p;
+  }
+  return candidates[1]!;
+}
+
 const boundsOverlapWithGap = (a: AtomBounds, b: AtomBounds, gap: number): boolean =>
   a.minX < b.maxX + gap &&
   a.maxX > b.minX - gap &&
   a.minY < b.maxY + gap &&
   a.maxY > b.minY - gap;
 
+const shiftBounds = (b: AtomBounds, dx: number, dy: number): AtomBounds => ({
+  minX: b.minX + dx,
+  maxX: b.maxX + dx,
+  minY: b.minY + dy,
+  maxY: b.maxY + dy,
+  cx: b.cx + dx,
+  cy: b.cy + dy,
+});
+
+type ViewAabb = { minX: number; maxX: number; minY: number; maxY: number };
+
+const boxFullyOutside = (box: AtomBounds, view: ViewAabb): boolean =>
+  box.maxX < view.minX || box.minX > view.maxX || box.maxY < view.minY || box.minY > view.maxY;
+
+const boxFullyInside = (box: AtomBounds, view: ViewAabb, pad = 0): boolean =>
+  box.minX >= view.minX + pad &&
+  box.maxX <= view.maxX - pad &&
+  box.minY >= view.minY + pad &&
+  box.maxY <= view.maxY - pad;
+
+const axisOrder = (span: number): number[] => {
+  const out = [0];
+  for (let i = 1; i <= span; i++) out.push(i);
+  for (let i = 1; i <= span; i++) out.push(-i);
+  return out;
+};
+
+export type OffsetImportedInViewportOptions = {
+  bondLengthPx?: number;
+  viewport?: ViewportPanZoom;
+  windowWidth?: number;
+  windowHeight?: number;
+};
+
+/**
+ * Translate `incoming` so it stays in the current camera view and does not
+ * overlap existing molecules (connected-component AABBs + a short gap).
+ *
+ * Scan order: current / view-centre, then right, then down (then left / up).
+ * Prefers a fully in-view slot; if the fragment must sit slightly outside,
+ * the caller should pan with `ensureWorldRectVisible` (no zoom).
+ */
+export const offsetImportedInViewport = <T extends { x: number; y: number }>(
+  existing: Molecule,
+  incomingAtoms: T[],
+  opts: OffsetImportedInViewportOptions = {},
+): T[] => {
+  if (existing.atoms.length === 0 || incomingAtoms.length === 0) return incomingAtoms;
+  const incoming = atomBounds(incomingAtoms);
+  if (!incoming) return incomingAtoms;
+
+  const bondLengthPx = opts.bondLengthPx ?? 40;
+  const gap = importBesideGapPx(bondLengthPx);
+  const occupied = documentFragmentBoxes(existing).map(b => ({
+    minX: b.minX,
+    maxX: b.maxX,
+    minY: b.minY,
+    maxY: b.maxY,
+    cx: b.cx,
+    cy: b.cy,
+  }));
+
+  const overlaps = (box: AtomBounds): boolean =>
+    occupied.some(other => boundsOverlapWithGap(box, other, gap));
+
+  const view =
+    opts.viewport != null &&
+    opts.windowWidth != null &&
+    opts.windowHeight != null &&
+    opts.windowWidth > 0 &&
+    opts.windowHeight > 0
+      ? viewportWorldRect(opts.viewport, opts.windowWidth, opts.windowHeight)
+      : null;
+  const viewCenter = opts.viewport ? viewportWorldCenter(opts.viewport) : null;
+
+  let dx0 = 0;
+  let dy0 = 0;
+  if (view && viewCenter && boxFullyOutside(incoming, view)) {
+    dx0 = viewCenter.x - incoming.cx;
+    dy0 = viewCenter.y - incoming.cy;
+  }
+
+  const apply = (dx: number, dy: number): T[] => {
+    if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) return incomingAtoms;
+    return incomingAtoms.map(a => ({ ...a, x: a.x + dx, y: a.y + dy }));
+  };
+
+  const start = shiftBounds(incoming, dx0, dy0);
+  if (!overlaps(start)) return apply(dx0, dy0);
+
+  const width = Math.max(1, incoming.maxX - incoming.minX);
+  const height = Math.max(1, incoming.maxY - incoming.minY);
+  const stepX = width + gap;
+  const stepY = height + gap;
+  const viewW = view ? Math.max(stepX, view.maxX - view.minX) : stepX * 6;
+  const viewH = view ? Math.max(stepY, view.maxY - view.minY) : stepY * 6;
+  const colSpan = Math.max(2, Math.ceil(viewW / stepX) + 2);
+  const rowSpan = Math.max(2, Math.ceil(viewH / stepY) + 2);
+
+  let bestInView: { dx: number; dy: number } | null = null;
+  let bestNear: { dx: number; dy: number } | null = null;
+  let bestAny: { dx: number; dy: number } | null = null;
+
+  for (const row of axisOrder(rowSpan)) {
+    for (const col of axisOrder(colSpan)) {
+      if (row === 0 && col === 0) continue;
+      const dx = dx0 + col * stepX;
+      const dy = dy0 + row * stepY;
+      const box = shiftBounds(incoming, dx, dy);
+      if (overlaps(box)) continue;
+      const candidate = { dx, dy };
+      if (!bestAny) bestAny = candidate;
+      if (view) {
+        if (!bestInView && boxFullyInside(box, view, 8)) bestInView = candidate;
+        if (!bestNear && !boxFullyOutside(box, view)) bestNear = candidate;
+        if (bestInView) return apply(bestInView.dx, bestInView.dy);
+      } else {
+        return apply(dx, dy);
+      }
+    }
+  }
+
+  const picked = bestInView ?? bestNear ?? bestAny;
+  if (picked) return apply(picked.dx, picked.dy);
+
+  // Nothing clear: keep the in-view (or original) slot so the new structure
+  // still appears in the camera rather than jumping to a world-fit.
+  return apply(dx0, dy0);
+};
+
 /**
  * If `incoming` would sit on / too near existing atoms, translate it just to the
  * right with a short gap (vertically aligned to the existing centroid).
  * No-op when the canvas is empty or bounds already clear.
+ *
+ * Prefer {@link offsetImportedInViewport} for search / paste / file merge so
+ * placement stays in the current view and skips per-molecule AABBs.
  */
 export const offsetImportedBesideExisting = <T extends { x: number; y: number }>(
   existingAtoms: ReadonlyArray<{ x: number; y: number }>,
   incomingAtoms: T[],
   bondLengthPx = 40,
-  /** When true, always park to the right (importSmiles). Default: only if overlapping. */
+  /** When true, always park to the right (legacy importSmiles). Default: only if overlapping. */
   force = false,
 ): T[] => {
   if (existingAtoms.length === 0 || incomingAtoms.length === 0) return incomingAtoms;

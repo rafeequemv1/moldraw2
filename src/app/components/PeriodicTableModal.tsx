@@ -9,6 +9,7 @@ import {
   type PeriodicTableCell,
 } from '@moldraw/domain';
 import '../../styles/periodic-table-modal.css';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface PeriodicTableModalProps {
   open: boolean;
@@ -24,6 +25,7 @@ export function PeriodicTableModal({
   onSelect,
 }: PeriodicTableModalProps) {
   const [filter, setFilter] = useState('');
+  useChromeOverlay(open, onClose, 'modal');
 
   useEffect(() => {
     if (!open) setFilter('');

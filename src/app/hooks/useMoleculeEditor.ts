@@ -198,7 +198,9 @@ export function useMoleculeEditor(store: MoleculeEditor) {
               ? 'grid'
               : action === 'layoutCircle'
                 ? 'circle'
-                : null;
+                : action === 'arrange'
+                  ? 'row'
+                  : null;
       if (!axis) return;
       applyCommand(CMD.DistributeSelectedFragments, {
         atomIds: arrangeSelectionAtomIds,

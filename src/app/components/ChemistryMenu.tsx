@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronRight, Hexagon } from 'lucide-react';
 import type { MenuContribution } from '@moldraw/plugin-sdk';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface ChemistryMenuProps {
   indigoLayoutReady?: boolean;
@@ -43,6 +44,10 @@ export function ChemistryMenu({
   const pluginAnchorRef = useRef<HTMLButtonElement>(null);
   const pluginMenuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
+  useChromeOverlay(open, () => {
+    setOpen(false);
+    setOpenPluginMenuId(null);
+  });
 
   useEffect(() => {
     if (!open) {

@@ -9,7 +9,7 @@ import { getEffectiveValencyForImplicitHydrogen } from '@moldraw/domain';
 import {
   getHydrogenStubDirections,
   getSmallestCycleAtomIds,
-  IMPLICIT_H_LABEL_DIST,
+  implicitHydrogenLabelDist,
 } from '../geometry';
 import { PLACE_FRAGMENT_TOOL_ID } from '@moldraw/core';
 import {
@@ -103,12 +103,9 @@ const expandBounds = (
       const maxV = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
       const implicitH = Math.max(0, maxV - v);
       if (implicitH <= 0) continue;
+      const hDist = implicitHydrogenLabelDist(R.displayPrefs.bondLengthPx);
       for (const dir of getHydrogenStubDirections(atom, R.renderedMolecule, implicitH)) {
-        grow(
-          atom.x + dir.x * IMPLICIT_H_LABEL_DIST,
-          atom.y + dir.y * IMPLICIT_H_LABEL_DIST,
-          pad,
-        );
+        grow(atom.x + dir.x * hDist, atom.y + dir.y * hDist, pad);
       }
     }
   }
@@ -228,13 +225,11 @@ const paintSkeleton = (
       const maxV = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
       const implicitH = Math.max(0, maxV - v);
       if (implicitH <= 0) continue;
+      const hDist = implicitHydrogenLabelDist(R.displayPrefs.bondLengthPx);
       for (const dir of getHydrogenStubDirections(atom, R.renderedMolecule, implicitH)) {
         offCtx.beginPath();
         offCtx.moveTo(atom.x, atom.y);
-        offCtx.lineTo(
-          atom.x + dir.x * IMPLICIT_H_LABEL_DIST,
-          atom.y + dir.y * IMPLICIT_H_LABEL_DIST,
-        );
+        offCtx.lineTo(atom.x + dir.x * hDist, atom.y + dir.y * hDist);
         offCtx.stroke();
       }
     }

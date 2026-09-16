@@ -320,22 +320,26 @@ export const getLonePairPlacements = (
 
   const neighborAngles: number[] = [];
   let heavyNeighborCount = 0;
+  let heavySumX = 0;
   for (const b of mol.bonds) {
     if (b.fromAtomId !== atom.id && b.toAtomId !== atom.id) continue;
     const nid = b.fromAtomId === atom.id ? b.toAtomId : b.fromAtomId;
     const n = mol.atoms.find(a => a.id === nid);
     if (!n) continue;
     neighborAngles.push(Math.atan2(n.y - atom.y, n.x - atom.x));
-    if (n.element !== 'H') heavyNeighborCount++;
+    if (n.element !== 'H') {
+      heavyNeighborCount++;
+      heavySumX += n.x - atom.x;
+    }
   }
 
-  // Alias labels (HO / OH): same default tail as canvas head-anchored metrics.
+  // Alias labels (HO / OH): tail away from the parent bond, matching canvas.
   let labelTailLocal = opts.labelTailLocal;
   if (
     (labelTailLocal == null || Math.hypot(labelTailLocal.x, labelTailLocal.y) < 1e-6) &&
     atom.alias?.trim()
   ) {
-    labelTailLocal = { x: 1, y: 0 };
+    labelTailLocal = heavyNeighborCount > 0 && heavySumX > 0 ? { x: -1, y: 0 } : { x: 1, y: 0 };
   }
 
   let placements: LonePairPlacement[];

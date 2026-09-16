@@ -47,7 +47,11 @@ import { ensureFragmentIds } from '../molecule/fragmentIds';
 import * as Mut from '../molecule/mutations';
 import { buildDemoMechanismMolecule } from '../molecule/demoMechanism';
 import { prepareImportFromMolblock } from '../molecule/importPrepare';
-import { offsetImportedBesideExisting } from '../molecule/importPlacement';
+import {
+  offsetImportedInViewport,
+  placeUnbondedNeighbor,
+  type ImportViewPlacement,
+} from '../molecule/importPlacement';
 import { commitFragmentPlacement } from '../molecule/fragmentPlacement';
 import {
   apply3DPose,
@@ -75,7 +79,11 @@ import {
 } from '../molecule/objectOutline';
 import { addExplicitHydrogensToAtoms } from '../molecule/addExplicitHydrogen';
 import { upsertRingFillsForRings } from '@moldraw/domain';
-import { validateAtomAliasForMolecule, looksLikeExpandableFormulaLabel } from '@moldraw/domain';
+import {
+  autocapitalizeAtomAliasDraft,
+  looksLikeExpandableFormulaLabel,
+  validateAtomAliasForMolecule,
+} from '@moldraw/domain';
 import { getMaxLonePairsForAtom } from '@moldraw/domain';
 import { expandAliasesFor3D } from '../expand/aliasesFor3D';
 import { condensedToSmiles } from '../expand/condensedFormulaExpand';
@@ -489,7 +497,7 @@ const alignSelectedFragmentsCmd: MoleculeCommand<z.infer<typeof schemas.alignSel
 const distributeSelectedFragmentsCmd: MoleculeCommand<z.infer<typeof schemas.distributeSelectedFragments>> = {
   id: CMD.DistributeSelectedFragments,
   description:
-    'Space whole selected molecules: horizontal/vertical equal gaps, or rearrange into a grid or circle. For circle, optional radius sets the ring size.',
+    'Space whole selected molecules: horizontal/vertical equal gaps, rearrange into a grid or circle, or a neat left-to-right row. For circle, optional radius sets the ring size.',
   inputSchema: schemas.distributeSelectedFragments,
   apply: (prev, { atomIds, axis, radius }) => ({
     next: Mut.syncSruBracketsToAtoms(
@@ -1199,10 +1207,14 @@ const importMolblockCmd: MoleculeCommand<
     if (!prepared.ok) {
       throw new Error(prepared.error);
     }
-    // Search / merge imports: never stack on existing structures — park beside with a short gap.
+    // Search / merge imports: stay in the current view and skip existing molecules.
     const placed =
       input.mode === 'merge' && prev.atoms.length > 0
-        ? placeMergedFragment(prev, prepared, input.bondLengthPx, false)
+        ? placeMergedFragment(prev, prepared, input.bondLengthPx, {
+            viewport: input.viewport ?? { x: 0, y: 0, zoom: 1 },
+            windowWidth: input.windowWidth ?? 1200,
+            windowHeight: input.windowHeight ?? 800,
+          })
         : prepared;
     const next =
       input.mode === 'replace'
@@ -1329,14 +1341,19 @@ const clearAtomMapsCmd: MoleculeCommand<z.infer<typeof schemas.clearAtomMaps>> =
   apply: (prev) => ({ next: Mut.clearAtomMaps(prev) }),
 };
 
-/** Shift a freshly laid-out fragment to sit just right of existing content. */
+/** Shift a freshly laid-out fragment into the current view without overlapping existing molecules. */
 const placeMergedFragment = (
-  prev: { atoms: Atom[] },
+  prev: Molecule,
   fragment: { atoms: Atom[]; bonds: Bond[] },
   bondLengthPx = 40,
-  force = true,
+  view?: ImportViewPlacement,
 ): { atoms: Atom[]; bonds: Bond[] } => ({
-  atoms: offsetImportedBesideExisting(prev.atoms, fragment.atoms, bondLengthPx, force),
+  atoms: offsetImportedInViewport(prev, fragment.atoms, {
+    bondLengthPx,
+    viewport: view?.viewport,
+    windowWidth: view?.windowWidth,
+    windowHeight: view?.windowHeight,
+  }),
   bonds: fragment.bonds,
 });
 
@@ -1371,7 +1388,7 @@ const importSmilesCmd: MoleculeCommand<
         extra: { newAtomIds: laid.atoms.map(a => a.id), newBondIds: laid.bonds.map(b => b.id) },
       };
     }
-    const placed = placeMergedFragment(prev, laid);
+    const placed = placeMergedFragment(prev, laid, 40);
     return {
       next: Mut.mergeImportedStructure(prev, placed.atoms, placed.bonds),
       extra: {
@@ -1398,7 +1415,7 @@ const pasteFragmentCmd: MoleculeCommand<
   description:
     'Paste a fragment (atoms + bonds), regenerating ids and translating by (dx, dy). Returns the new atom ids.',
   inputSchema: schemas.pasteFragment,
-  apply: (prev, { atoms, bonds, dx, dy }) => {
+  apply: (prev, { atoms, bonds, dx, dy, viewport, windowWidth, windowHeight, bondLengthPx }) => {
     const idMap = new Map<string, string>();
     const newAtoms: Atom[] = atoms.map((a) => {
       const id = newId();
@@ -1416,11 +1433,17 @@ const pasteFragmentCmd: MoleculeCommand<
             toAtomId: idMap.get(b.toAtomId)!,
           }) as Bond,
       );
-    const newAtomIds = newAtoms.map(a => a.id);
+    const placedAtoms = offsetImportedInViewport(prev, newAtoms, {
+      bondLengthPx: bondLengthPx ?? 40,
+      viewport,
+      windowWidth,
+      windowHeight,
+    });
+    const newAtomIds = placedAtoms.map(a => a.id);
     const joined = joinAtomsIntoPerspectivePose(
       {
         ...prev,
-        atoms: [...prev.atoms, ...newAtoms],
+        atoms: [...prev.atoms, ...placedAtoms],
         bonds: [...prev.bonds, ...newBonds],
       },
       newAtomIds,
@@ -1497,10 +1520,11 @@ const commitFragmentPlacementCmd: MoleculeCommand<
 const commitAtomAliasCmd: MoleculeCommand<z.infer<typeof schemas.commitAtomAlias>> = {
   id: CMD.CommitAtomAlias,
   description:
-    'Commit a validated atom alias (may update element/charge and clamp lone pairs). Trailing +/− set formal charge.',
+    'Commit a validated atom alias (may update element/charge and clamp lone pairs). Trailing +/− set formal charge. BH4 → B−; NaBH4 → Na⁺ plus BH4− with no covalent Na–B bond. COONa stays a condensed alias (expand via show explicit).',
   inputSchema: schemas.commitAtomAlias,
   apply: (prev, { atomId, alias }) => {
-    const v = validateAtomAliasForMolecule(prev, atomId, alias);
+    const formatted = autocapitalizeAtomAliasDraft(alias);
+    const v = validateAtomAliasForMolecule(prev, atomId, formatted);
     if (!v.ok) throw new Error(v.reason);
     const draft = v.body.trim() ? v.body.trim() : '';
     const labelBody = v.body.trim();
@@ -1510,38 +1534,50 @@ const commitAtomAliasCmd: MoleculeCommand<z.infer<typeof schemas.commitAtomAlias
         throw new Error('Could not parse condensed formula label');
       }
     }
-    return {
-      next: {
-        ...prev,
-        atoms: prev.atoms.map(a => {
-          if (a.id !== atomId) return a;
-          if (!draft) {
-            const next: Atom = { ...a };
-            delete next.alias;
-            return next;
-          }
-          const bondOrderSum = prev.bonds
-            .filter(b => b.fromAtomId === a.id || b.toAtomId === a.id)
-            .reduce((sum, b) => sum + b.order, 0);
-          const nextCharge = v.charge != null ? v.charge : a.charge;
-          const maxLP = getMaxLonePairsForAtom(v.element, nextCharge, bondOrderSum);
-          const nextLP = Math.min(a.lonePairs ?? 0, maxLP);
-          // Store body without charge suffix; formal charge is drawn separately.
-          const body = v.body.trim();
-          const aliasOut =
-            !body || body.toUpperCase() === v.element.toUpperCase() ? undefined : body;
-          const next: Atom = {
-            ...a,
-            element: v.element,
-            charge: nextCharge,
-            lonePairs: nextLP,
-          };
-          if (aliasOut) next.alias = aliasOut;
-          else delete next.alias;
-          return next;
-        }),
-      },
+    let next: Molecule = {
+      ...prev,
+      atoms: prev.atoms.map(a => {
+        if (a.id !== atomId) return a;
+        if (!draft) {
+          const cleared: Atom = { ...a };
+          delete cleared.alias;
+          return cleared;
+        }
+        const bondOrderSum = prev.bonds
+          .filter(b => b.fromAtomId === a.id || b.toAtomId === a.id)
+          .reduce((sum, b) => sum + b.order, 0);
+        const nextCharge = v.charge != null ? v.charge : a.charge;
+        const maxLP = getMaxLonePairsForAtom(v.element, nextCharge, bondOrderSum);
+        const nextLP = Math.min(a.lonePairs ?? 0, maxLP);
+        // Store body without charge suffix; formal charge is drawn separately.
+        const body = v.body.trim();
+        const aliasOut =
+          !body || body.toUpperCase() === v.element.toUpperCase() ? undefined : body;
+        const updated: Atom = {
+          ...a,
+          element: v.element,
+          charge: nextCharge,
+          lonePairs: nextLP,
+        };
+        if (aliasOut) updated.alias = aliasOut;
+        else delete updated.alias;
+        return updated;
+      }),
     };
+    if (v.nearbyIon) {
+      const anchor = next.atoms.find(a => a.id === atomId);
+      if (anchor) {
+        const pos = placeUnbondedNeighbor(next.atoms, anchor);
+        next = Mut.addAtom(next, {
+          id: newId(),
+          element: v.nearbyIon.element,
+          x: pos.x,
+          y: pos.y,
+          charge: v.nearbyIon.charge,
+        });
+      }
+    }
+    return { next };
   },
 };
 

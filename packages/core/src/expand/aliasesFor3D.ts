@@ -1,6 +1,9 @@
-import type { Molecule } from '@moldraw/domain';
+import type { Atom, Molecule } from '@moldraw/domain';
+import { placeUnbondedNeighbor } from '../molecule/importPlacement';
 import { resolveAliasToSmiles } from './aliasToSmiles';
 import { graftSmilesOnAtom } from './graftSmilesOnAtom';
+
+const ionId = () => `ion_${Math.random().toString(36).slice(2, 9)}`;
 
 /**
  * Replace 2D group aliases with explicit atoms/bonds for 3D (and expand-alias).
@@ -43,8 +46,26 @@ export const expandAliasesFor3D = (mol: Molecule, targetAtomIds?: Set<string>): 
       continue;
     }
 
+    const beforeIds = new Set(next.atoms.map(x => x.id));
     const grafted = graftSmilesOnAtom(next, live.id, spec.smiles, spec.attach);
     if (grafted) next = grafted;
+    if (spec.nearbyIon && grafted) {
+      const oxide = next.atoms.find(
+        x => !beforeIds.has(x.id) && x.element === 'O' && (x.charge ?? 0) === -1,
+      );
+      const anchor = oxide ?? next.atoms.find(x => x.id === a.id);
+      if (anchor) {
+        const pos = placeUnbondedNeighbor(next.atoms, anchor);
+        const ion: Atom = {
+          id: ionId(),
+          element: spec.nearbyIon.element,
+          x: pos.x,
+          y: pos.y,
+          charge: spec.nearbyIon.charge,
+        };
+        next = { ...next, atoms: [...next.atoms, ion] };
+      }
+    }
   }
 
   return next;

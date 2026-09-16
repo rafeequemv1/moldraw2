@@ -1,6 +1,6 @@
 /**
  * Atom-level decorations rendered AFTER bonds:
- *  - Implicit-H stubs (carbons get little C–H lines + "H" labels when toggled).
+ *  - Implicit-H labels (carbons get C–H bonds + "H" at explicit-H size when toggled).
  *  - Atom labels — heteroatom symbols, alias text (e.g. "OH", "NH₂", "Boc"),
  *    and superscripted formal charges.
  *  - Lone-pair dots placed clear of bonds, the atom label, and nearby atoms.
@@ -12,6 +12,7 @@ import { clampChargeMarkOffset } from '@moldraw/core';
 import { resolveAtomLabelFonts } from '@moldraw/core/canvasPreferences';
 import {
   explicitHydrogenLabelColor,
+  formulaLabelCharFills,
   resolveAtomLabelColor,
 } from '@moldraw/domain';
 import { getEffectiveValencyForImplicitHydrogen } from '@moldraw/domain';
@@ -19,9 +20,10 @@ import { buildAliasDisplayRuns } from '@moldraw/domain';
 import { condensedGroupLabelForAtom } from '@moldraw/domain';
 import {
   carbonLabelHGoesLeft,
+  hGoesLeft,
   getHydrogenStubDirections,
-  IMPLICIT_H_BOND_END,
-  IMPLICIT_H_LABEL_DIST,
+  implicitHydrogenBondEnd,
+  implicitHydrogenLabelDist,
 } from '../geometry';
 import {
   measureHeadAnchoredLabelSize,
@@ -60,16 +62,20 @@ const getDisplayElement = (element: string, isotope?: number): string => {
 const getIsotopeString = (element: string, isotope?: number): string =>
   element === 'H' && (isotope === 2 || isotope === 3) ? '' : isotope ? String(isotope) : '';
 
-/** Short C–H bond stubs + "H" labels for each implicit hydrogen on a carbon. */
+/**
+ * Display-only C–H bonds + "H" labels. Geometry and glyph size match explicit H
+ * atoms (right-click Add explicit H) so Settings is not a tiny stub overlay.
+ */
 export const drawImplicitHydrogenStubs = (
   ctx: CanvasRenderingContext2D,
   R: RenderContext,
 ): void => {
   if (!R.showHydrogens) return;
   const P = R.displayPrefs;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = P.bondThicknessPx;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  const labelDist = implicitHydrogenLabelDist(P.bondLengthPx);
 
   R.renderedMolecule.atoms.forEach(atom => {
     if (R.visibleAtomIds && !R.visibleAtomIds.has(atom.id)) return;
@@ -92,17 +98,20 @@ export const drawImplicitHydrogenStubs = (
     });
     ctx.strokeStyle = hCol;
     const dirs = getHydrogenStubDirections(atom, R.renderedMolecule, implicitH);
-    const hFont = resolveAtomLabelFonts(P, atom.labelFontSizePt).implicitHFontCss;
+    const fonts = resolveAtomLabelFonts(P, atom.labelFontSizePt);
+    const hFont = fonts.elementFontCss;
+    ctx.font = hFont;
+    const bondEnd = implicitHydrogenBondEnd(labelDist, ctx.measureText('H').width / 2);
     R.applyLabelUpright(atom.id, () => {
       for (const dir of dirs) {
-        const x1 = atom.x + dir.x * IMPLICIT_H_BOND_END;
-        const y1 = atom.y + dir.y * IMPLICIT_H_BOND_END;
+        const x1 = atom.x + dir.x * bondEnd;
+        const y1 = atom.y + dir.y * bondEnd;
         ctx.beginPath();
         ctx.moveTo(atom.x, atom.y);
         ctx.lineTo(x1, y1);
         ctx.stroke();
-        const hx = atom.x + dir.x * IMPLICIT_H_LABEL_DIST;
-        const hy = atom.y + dir.y * IMPLICIT_H_LABEL_DIST;
+        const hx = atom.x + dir.x * labelDist;
+        const hy = atom.y + dir.y * labelDist;
         ctx.font = hFont;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -147,37 +156,30 @@ export const drawAtomLabels = (ctx: CanvasRenderingContext2D, R: RenderContext):
     const isotopeStr = getIsotopeString(atom.element, atom.isotope);
 
     /** Draw multi-glyph label with the bonding atom glyph centered on `atom` (ChemDraw-style). */
-    const drawHeadAnchoredRuns = (rawLabel: string, fill: string) => {
-      const runs = buildAliasDisplayRuns(rawLabel);
-      const anchorSym = rawLabel[0];
-      if (!anchorSym) return;
-      ctx.font = EL_FONT;
-      const wHead = ctx.measureText(anchorSym).width;
-      let curX = atom.x - wHead / 2;
+    const drawHeadAnchoredRuns = (rawLabel: string) => {
+      const metrics = measureHeadAnchoredLabelSize(ctx, { ...P, ...fonts }, rawLabel, charge, {
+        tailGoesLeft: hGoesLeft(atom, R.renderedMolecule),
+        attachmentElement: atom.element,
+      });
+      if (!metrics.text) return;
+      const runs = buildAliasDisplayRuns(metrics.text);
+      const fills = formulaLabelCharFills(metrics.text, atom, colorOpts);
+      let curX = atom.x + metrics.drawLeft;
       const baseY = atom.y;
+      let fillIdx = 0;
       const drawEl = (text: string, font: string, dy = 0) => {
         ctx.font = font;
-        ctx.fillStyle = fill;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(text, curX, baseY + dy);
-        curX += ctx.measureText(text).width;
-      };
-      let runIdx = 0;
-      for (const r of runs) {
-        if (
-          runIdx === 0 &&
-          r.kind === 'base' &&
-          r.text.length > 0 &&
-          r.text[0] === anchorSym
-        ) {
-          drawEl(anchorSym, EL_FONT, 0);
-          const rest = r.text.slice(1);
-          if (rest) drawEl(rest, EL_FONT, 0);
-        } else {
-          drawEl(r.text, r.kind === 'sub' ? SUB_FONT : EL_FONT, r.kind === 'sub' ? 5 : 0);
+        for (const ch of text) {
+          ctx.fillStyle = fills[fillIdx] ?? fills[fills.length - 1] ?? resolveAtomLabelColor(atom, colorOpts);
+          ctx.fillText(ch, curX, baseY + dy);
+          curX += ctx.measureText(ch).width;
+          fillIdx += 1;
         }
-        runIdx++;
+      };
+      for (const r of runs) {
+        drawEl(r.text, r.kind === 'sub' ? SUB_FONT : EL_FONT, r.kind === 'sub' ? 5 : 0);
       }
       // Formal charges are drawn in `drawFormalCharges` (movable around the atom).
     };
@@ -185,7 +187,7 @@ export const drawAtomLabels = (ctx: CanvasRenderingContext2D, R: RenderContext):
     if (atom.alias?.trim()) {
       if (atom.id !== R.omitAtomAliasBodyId) {
         R.applyLabelUpright(atom.id, () => {
-          drawHeadAnchoredRuns(atom.alias!.trim(), resolveAtomLabelColor(atom, colorOpts));
+          drawHeadAnchoredRuns(atom.alias!.trim());
         });
       }
       ctx.restore();
@@ -197,7 +199,7 @@ export const drawAtomLabels = (ctx: CanvasRenderingContext2D, R: RenderContext):
       if (condensed) {
         if (atom.id !== R.omitAtomAliasBodyId) {
           R.applyLabelUpright(atom.id, () => {
-            drawHeadAnchoredRuns(condensed, resolveAtomLabelColor(atom, colorOpts));
+            drawHeadAnchoredRuns(condensed);
           });
         }
         ctx.restore();
@@ -362,13 +364,16 @@ export function measureDeltaLabelExtents(
   const bondSum = R.valencyMap.get(atom.id) || 0;
 
   if (atom.alias?.trim()) {
-    const m = measureAliasLabelSize(ctx, P, atom);
+    const m = measureAliasLabelSize(ctx, P, atom, mol);
     return { left: m.left, right: m.right };
   }
   if (R.condensedGroupLabels) {
     const condensed = condensedGroupLabelForAtom(atom, mol, bondSum);
     if (condensed) {
-      const m = measureHeadAnchoredLabelSize(ctx, P, condensed, charge);
+      const m = measureHeadAnchoredLabelSize(ctx, P, condensed, charge, {
+        tailGoesLeft: hGoesLeft(atom, mol),
+        attachmentElement: atom.element,
+      });
       return { left: m.left, right: m.right };
     }
   }
@@ -556,23 +561,33 @@ function resolveLonePairLabelLayout(
     left: number;
     headRight: number;
     hasTail: boolean;
+    tailGoesLeft?: boolean;
   }): LonePairLabelLayout => {
     if (m.w < 2) return { headBox: null, labelTailLocal: null };
     return {
       headBox: labelBoxFromExtents(m.left, m.headRight, m.h),
-      labelTailLocal: m.hasTail ? { x: 1, y: 0 } : null,
+      labelTailLocal: m.hasTail
+        ? m.tailGoesLeft
+          ? { x: -1, y: 0 }
+          : { x: 1, y: 0 }
+        : null,
     };
   };
 
   if (atom.alias?.trim()) {
-    return fromHeadAnchored(measureAliasLabelSize(ctx, P, atom));
+    return fromHeadAnchored(measureAliasLabelSize(ctx, P, atom, mol));
   }
 
   const currentValency = R.valencyMap.get(atom.id) || 0;
   if (R.condensedGroupLabels) {
     const condensed = condensedGroupLabelForAtom(atom, mol, currentValency);
     if (condensed) {
-      return fromHeadAnchored(measureHeadAnchoredLabelSize(ctx, P, condensed, charge));
+      return fromHeadAnchored(
+        measureHeadAnchoredLabelSize(ctx, P, condensed, charge, {
+          tailGoesLeft: hGoesLeft(atom, mol),
+          attachmentElement: atom.element,
+        }),
+      );
     }
   }
 

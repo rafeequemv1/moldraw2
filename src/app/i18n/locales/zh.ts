@@ -97,6 +97,7 @@ export const zh: LocaleMessages = {
     signUp: '注册',
     signOut: '退出登录',
     tools: '工具',
+    addons: '插件',
     updates: '更新',
     more: '更多',
     homepage: '首页',
@@ -140,6 +141,7 @@ export const zh: LocaleMessages = {
     helpTitle: '打开客服聊天',
     helpCloseTitle: '关闭客服聊天',
     toolsTitle: '打开 MolDraw 化学工具、计算器与转换器',
+    addonsTitle: 'MolDraw 的 PowerPoint 与 Word 插件',
     signInTitle: '登录 MolDraw',
     signUpTitle: '创建 MolDraw 账户',
     signedInTitle: '已以 {{name}} 登录。点击退出。',
@@ -241,7 +243,8 @@ export const zh: LocaleMessages = {
     close: '关闭',
     newTab: '新建设计标签',
     closeTab: '关闭 {{name}}',
-    renameHint: '{{name}} — 双击重命名',
+    renameHint: '{{name}} — 点击重命名',
+    clickToRename: '点击重命名',
     untitled: '未命名设计',
   },
   settings: {
@@ -255,6 +258,9 @@ export const zh: LocaleMessages = {
     intro:
       '设置保存在本浏览器中。字体、导出格式与化学键样式会一直保持，直到您再次修改。样式预设用于对比不同期刊版式 — 缩略图以阿司匹林为例展示该预设效果。',
     showDescriptions: '显示说明',
+    showExamples: '显示示例',
+    exampleOff: '关',
+    exampleOn: '开',
     resetDefaults: '恢复默认',
     sections: '分区',
     closeAria: '关闭',
@@ -271,9 +277,9 @@ export const zh: LocaleMessages = {
       themeElegantDarkHint: '柔和炭灰界面，深色画布上的浅色键',
       themeInkDark: '墨黑',
       themeInkDarkHint: '近黑界面与画布 — 白色键与白色原子字母',
-      showImplicitH: '显示隐式 H 标签',
+      showImplicitH: '显示显式 H 标签',
       showImplicitHHint:
-        '氢未展开时，在 2D 画布上绘制 CH₃ / NH₂ 式计数。顶栏 H 按钮使用 Indigo 折叠/展开真实 H 原子。',
+        '在碳上按右键“添加显式 H”相同的字号与键长绘制氢，不添加真实 H 原子。“展开全部氢”仍会扩展结构。',
       colorAtomLabels: '按元素着色原子标签',
       colorAtomLabelsHint:
         '默认关闭（2D 原子为黑）。开启后杂原子标签使用调色板颜色（N 蓝、O 红等）。自定义颜色始终生效。3D 查看器始终使用元素色。',
@@ -492,5 +498,9 @@ export const zh: LocaleMessages = {
       electron_flow: 'e⁻ 流向',
       resonance: '共振 ↔',
     },
+  },
+  alignBar: {
+    arrange: '排列',
+    arrangeTitle: '排列 — 整齐横排、等间距、垂直居中',
   },
 };

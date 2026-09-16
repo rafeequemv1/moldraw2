@@ -19,13 +19,29 @@ export interface UseCanvasViewportResult {
   panByScreenDelta: (dx: number, dy: number) => void;
   /** Zoom by a multiplicative scale around a client-space focal point (pinch). */
   zoomAtClientPoint: (scale: number, clientX: number, clientY: number) => void;
-  onWheel: (e: { clientX: number; clientY: number; deltaY: number }) => void;
+  onWheel: (e: {
+    clientX: number;
+    clientY: number;
+    deltaX?: number;
+    deltaY: number;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    shiftKey?: boolean;
+  }) => void;
   /** Reset pan/zoom to the default 100% view. */
   resetViewport: () => void;
   /** Fit a world-space AABB into the canvas (used after AI / import). */
   fitWorldRect: (
     rect: { minX: number; maxX: number; minY: number; maxY: number },
     paddingPx?: number,
+  ) => void;
+  /**
+   * Pan (never zoom) so `rect` intersects the CSS viewport. No-op when the
+   * AABB is already at least partly inside the padded view.
+   */
+  ensureWorldRectVisible: (
+    rect: { minX: number; maxX: number; minY: number; maxY: number },
+    padPx?: number,
   ) => void;
 }
 
@@ -51,10 +67,12 @@ function clientDeltaToCanvasLocal(dx: number, dy: number): Point {
 
 /**
  * Owns the canvas viewport (pan offset + zoom) and the screen↔world coord
- * transform. Middle-button drag pans; wheel and pinch zoom around the focal
- * point; two-finger drag pans on touch (select-tool empty-canvas touch also
- * pans via `beginPan`). Holding Space in the App temporarily switches to the
- * hand tool so Space+drag pans.
+ * transform. Middle-button drag pans. Wheel is Ketcher-style: Ctrl/Cmd+wheel
+ * (and Chrome pinch, which reports ctrlKey) zooms at the cursor; Shift+wheel
+ * pans horizontally; unmodified wheel pans (vertical from a mouse wheel;
+ * both axes from a trackpad). Two-finger drag pans on touch (select-tool
+ * empty-canvas touch also pans via `beginPan`). Holding Space in the App
+ * temporarily switches to the hand tool so Space+drag pans.
  *
  * Invariants:
  *   - `viewport` is the *base* transform; callers multiply by `displayScale`.
@@ -140,13 +158,42 @@ export const useCanvasViewport = ({
   );
 
   const onWheel = useCallback(
-    (e: { clientX: number; clientY: number; deltaY: number }) => {
-      const zoomSensitivity = 0.001;
-      const zoomDelta = -e.deltaY * zoomSensitivity;
-      const scale = Math.exp(zoomDelta);
-      zoomAtClientPoint(scale, e.clientX, e.clientY);
+    (e: {
+      clientX: number;
+      clientY: number;
+      deltaX?: number;
+      deltaY: number;
+      ctrlKey?: boolean;
+      metaKey?: boolean;
+      shiftKey?: boolean;
+    }) => {
+      // Ctrl/Cmd+wheel (and Chrome pinch, which reports ctrlKey) zoom at cursor.
+      if (e.ctrlKey || e.metaKey) {
+        const zoomSensitivity = 0.001;
+        const zoomDelta = -e.deltaY * zoomSensitivity;
+        const scale = Math.exp(zoomDelta);
+        zoomAtClientPoint(scale, e.clientX, e.clientY);
+        return;
+      }
+
+      const deltaX = e.deltaX ?? 0;
+      const deltaY = e.deltaY;
+
+      if (e.shiftKey) {
+        // Horizontal pan only. Mouse wheels send deltaY; trackpads may send
+        // deltaX. Prefer the dominant axis as X (classic Shift+mousewheel).
+        const horizontal = Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY;
+        const { x: dx, y: dy } = clientDeltaToCanvasLocal(-horizontal, 0);
+        panByScreenDelta(dx, dy);
+        return;
+      }
+
+      // Unmodified: mouse wheel (deltaX=0) pans vertically; trackpad two-finger
+      // gestures can send both axes, including a horizontal swipe as deltaX.
+      const { x: dx, y: dy } = clientDeltaToCanvasLocal(-deltaX, -deltaY);
+      panByScreenDelta(dx, dy);
     },
-    [zoomAtClientPoint],
+    [panByScreenDelta, zoomAtClientPoint],
   );
 
   const resetViewport = useCallback(() => {
@@ -186,6 +233,63 @@ export const useCanvasViewport = ({
     [canvasRef, displayScale],
   );
 
+  const ensureWorldRectVisible = useCallback(
+    (
+      rect: { minX: number; maxX: number; minY: number; maxY: number },
+      padPx = 32,
+    ) => {
+      setViewport(prev => {
+        const canvas = canvasRef.current;
+        if (!canvas) return prev;
+        const { w, h } = canvasCssSize(canvas);
+        const ez = prev.zoom * displayScale;
+        if (w < 8 || h < 8 || !Number.isFinite(ez) || ez <= 0) return prev;
+
+        const minSx = w / 2 + prev.x + rect.minX * ez;
+        const maxSx = w / 2 + prev.x + rect.maxX * ez;
+        const minSy = h / 2 + prev.y + rect.minY * ez;
+        const maxSy = h / 2 + prev.y + rect.maxY * ez;
+
+        const pad = Math.max(8, padPx);
+        const viewMinX = pad;
+        const viewMaxX = w - pad;
+        const viewMinY = pad;
+        const viewMaxY = h - pad;
+
+        const fullyOutside =
+          maxSx < viewMinX || minSx > viewMaxX || maxSy < viewMinY || minSy > viewMaxY;
+        if (!fullyOutside) return prev;
+
+        const boxW = maxSx - minSx;
+        const boxH = maxSy - minSy;
+        const viewW = Math.max(1, viewMaxX - viewMinX);
+        const viewH = Math.max(1, viewMaxY - viewMinY);
+
+        let dx = 0;
+        let dy = 0;
+        if (boxW >= viewW) {
+          dx = (viewMinX + viewMaxX) / 2 - (minSx + maxSx) / 2;
+        } else if (maxSx < viewMinX) {
+          dx = viewMinX - maxSx;
+        } else if (minSx > viewMaxX) {
+          dx = viewMaxX - minSx;
+        }
+
+        if (boxH >= viewH) {
+          dy = (viewMinY + viewMaxY) / 2 - (minSy + maxSy) / 2;
+        } else if (maxSy < viewMinY) {
+          dy = viewMinY - maxSy;
+        } else if (minSy > viewMaxY) {
+          dy = viewMaxY - minSy;
+        }
+
+        if (dx === 0 && dy === 0) return prev;
+        return { ...prev, x: prev.x + dx, y: prev.y + dy };
+      });
+    },
+    [canvasRef, displayScale],
+  );
+
   // Bind wheel non-passively so we can preventDefault and avoid page scroll.
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -211,5 +315,6 @@ export const useCanvasViewport = ({
     onWheel,
     resetViewport,
     fitWorldRect,
+    ensureWorldRectVisible,
   };
 };

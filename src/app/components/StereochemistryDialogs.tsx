@@ -10,6 +10,7 @@ import {
   NewmanProjectionTool,
 } from '../../features/stereochemistry';
 import type { Molecule } from '@moldraw/domain';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface StereochemistryDialogsProps {
   molecule: Molecule;
@@ -45,6 +46,11 @@ export function StereochemistryDialogs(props: StereochemistryDialogsProps) {
     ezAnalyzerBondId,
     onCloseEZ,
   } = props;
+
+  useChromeOverlay(Boolean(newmanBondId), onCloseNewman, 'modal');
+  useChromeOverlay(Boolean(fischerChainAtomIds), onCloseFischer, 'modal');
+  useChromeOverlay(Boolean(chairBoatRingAtomIds), onCloseChairBoat, 'modal');
+  useChromeOverlay(Boolean(ezAnalyzerBondId), onCloseEZ, 'modal');
 
   return (
     <>

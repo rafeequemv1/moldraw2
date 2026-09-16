@@ -313,6 +313,9 @@ export {
   type GenerateGrapheneOptions,
 } from './molecule/grapheneSheet';
 export {
+  alignSelectedFragments,
+  distributeSelectedFragments,
+  arrangeSelectedFragmentsLinear,
   documentFragmentBoxes,
   selectedDocumentFragmentBoxes,
   suggestCircleArrangeRadius,

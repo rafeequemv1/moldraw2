@@ -1,11 +1,11 @@
 /* Left toolbar — floating island matching the AI / 3D tools-row height. */
 
 .workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar {
-  top: calc(2px + var(--canvas-tab-stack-height, 28px) + 2px);
+  top: calc(2px + var(--canvas-tab-stack-height, 28px) + 2px + 12px);
 }
 
 .workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar-fg-panel {
-  top: calc(2px + var(--canvas-tab-stack-height, 28px) + 2px);
+  top: calc(2px + var(--canvas-tab-stack-height, 28px) + 2px + 12px);
 }
 
 html:not(.app-mobile-compact) .toolbar {
@@ -14,7 +14,7 @@ html:not(.app-mobile-compact) .toolbar {
 
 html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar,
 html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar-fg-panel {
-  top: var(--canvas-tab-stack-height, 32px);
+  top: calc(var(--canvas-tab-stack-height, 32px) + 12px);
 }
 
 .toolbar {

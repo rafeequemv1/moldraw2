@@ -21,7 +21,7 @@ import type {
   Molecule,
   ReactionArrowUpdatePatch,
 } from '@moldraw/domain';
-import { offsetReactionArrowForDrag } from '@moldraw/canvas/geometry';
+import { getSelectionAabb, offsetReactionArrowForDrag } from '@moldraw/canvas/geometry';
 import { resetRingPickCycle } from '@moldraw/canvas/interaction';
 import type { InfiniteCanvasHandle } from '@moldraw/canvas/InfiniteCanvas';
 import { cipTagsById, type CipStereoTags } from '@moldraw/engine-2d';
@@ -29,6 +29,7 @@ import { CMD } from '@moldraw/core/commands/registry';
 import type { CommandResult } from '@moldraw/core/commands';
 import type { MoleculeEditor } from '@moldraw/core';
 import { updateCanvasShape } from '@moldraw/core/molecule/mutations';
+import { viewportWorldCenter } from '@moldraw/core/molecule/importPlacement';
 import type { FragmentPlacementSession } from '@moldraw/core/molecule/fragmentPlacement';
 import {
   applyQuickSelectAction,
@@ -613,19 +614,27 @@ export function useMoleculeCanvasCommands({
 
   const handlePasteSelection = useCallback((): boolean => {
     const vp = viewportInfoRef.current;
-    const targetX = (window.innerWidth / 2 - vp.x) / vp.zoom;
-    const targetY = (window.innerHeight / 2 - vp.y) / vp.zoom;
-    const newIds = clipboard.paste(targetX, targetY, applyCommand);
+    const target = viewportWorldCenter(vp);
+    const newIds = clipboard.paste(target.x, target.y, applyCommand, {
+      viewport: vp,
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
+    });
     if (newIds.length > 0) {
       setSelectedAtomIds(newIds);
       setSelectedCanvasTextId(null);
       setSelectedReactionArrowId(null);
+      const mol = moleculeEditor.getMolecule();
+      const aabb = getSelectionAabb(mol, newIds);
+      if (aabb) canvasRef.current?.ensureWorldRectVisible(aabb);
       return true;
     }
     return false;
   }, [
     applyCommand,
+    canvasRef,
     clipboard,
+    moleculeEditor,
     viewportInfoRef,
     setSelectedAtomIds,
     setSelectedCanvasTextId,

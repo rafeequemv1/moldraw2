@@ -22,6 +22,7 @@ https://www.moldraw.com/
 ## Core entry points
 - Web app (editor): https://www.moldraw.com/
 - Tools hub: https://www.moldraw.com/tools/
+- Addons (PowerPoint and Word, coming soon): https://www.moldraw.com/addons
 - Free chemistry tools directory: https://www.moldraw.com/tools/free-chem-tools/
 - Chemical reaction drawer: https://www.moldraw.com/tools/free-chem-tools/chemical-reaction-drawer.html
 - Interactive periodic table of elements: https://www.moldraw.com/tools/free-chem-tools/interactive-periodic-table.html

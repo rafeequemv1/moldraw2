@@ -7,6 +7,7 @@ import { ChevronDown, ClipboardPaste, Copy } from 'lucide-react';
 import { COPY_AS_FORMAT_ITEMS } from '../copyAsFormats';
 import type { CopyAsFormat } from '../types';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface CanvasSmilesBarProps {
   onCopyAs: (format: CopyAsFormat) => void;
@@ -29,6 +30,7 @@ export function CanvasSmilesBar({
   const [copyOpen, setCopyOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
+  useChromeOverlay(copyOpen, () => setCopyOpen(false));
 
   useEffect(() => {
     if (!copyOpen || preferSheet) return;

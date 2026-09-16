@@ -10,6 +10,7 @@ export * from './rings';
 export * from './aliases';
 export * from './atomDisplayColor';
 export * from './condensedGroupLabel';
+export * from './formulaLabelOrient';
 export * from './reactionArrowSmiles';
 export * from './reactionArrowLabels';
 export * from './reactionMultiStep';

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { DesignLibraryView, type DesignLibraryViewProps } from './DesignLibraryView';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export type ProjectLibraryModalProps = DesignLibraryViewProps & {
   open: boolean;
@@ -15,6 +16,7 @@ export function ProjectLibraryModal({
   onOpenProject,
   ...libraryProps
 }: ProjectLibraryModalProps) {
+  useChromeOverlay(open, onClose, 'modal');
   useEffect(() => {
     if (open) onRefresh?.();
   }, [open, onRefresh]);

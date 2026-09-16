@@ -49,7 +49,7 @@ const hitRadiusForAtom = (a: Atom, mol: Molecule, base: number): number => {
 
 /** True when pointer is over the head-anchored alias / condensed FG text box. */
 const pointInGroupLabel = (a: Atom, mol: Molecule, worldPos: Point): boolean => {
-  const aliasBox = estimateAliasLabelAabb(a);
+  const aliasBox = estimateAliasLabelAabb(a, mol);
   if (aliasBox) {
     const pad = 4;
     if (
@@ -63,7 +63,7 @@ const pointInGroupLabel = (a: Atom, mol: Molecule, worldPos: Point): boolean => 
   }
   const condensed = displayGroupLabelForAtom(a, mol);
   if (!condensed || a.alias?.trim()) return false;
-  const box = estimateLabelTextAabb(a, condensed);
+  const box = estimateLabelTextAabb(a, condensed, mol);
   if (!box) return false;
   const pad = 4;
   return (
@@ -121,7 +121,7 @@ export const pickAtomCenterAt = (
 /** Rough upright-local label extents for δ± hit-testing (no canvas measure). */
 const estimateDeltaLabelExtents = (a: Atom, mol: Molecule): DeltaChargeLabelExtents => {
   const label = displayGroupLabelForAtom(a, mol) ?? (a.element !== 'C' || (a.charge ?? 0) !== 0 ? a.element : null);
-  const box = estimateLabelTextAabb(a, label);
+  const box = estimateLabelTextAabb(a, label, mol);
   if (!box) return { left: -8, right: 8 };
   return { left: box.minX - a.x, right: box.maxX - a.x };
 };

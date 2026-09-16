@@ -59,6 +59,7 @@ import {
   looksLikeStructureClipboardText,
   readSystemClipboardPayload,
 } from '../importExport/helpers';
+import { writeStructurePictureToClipboard } from '../importExport/clipboardPicture';
 import {
   moleculeLosesDetailInMolfile,
   parseMoldrawFile,
@@ -142,6 +143,8 @@ export interface UseMoleculeImportExportOptions {
   projectName?: string;
   /** In-app fragment paste (Ctrl+C copy) when the OS clipboard is not a structure. */
   onFragmentPaste?: () => boolean;
+  /** After search/PubChem import: pan to show new atoms without changing zoom. */
+  revealAtomsInView?: (atomIds: string[]) => void;
 }
 
 export function useMoleculeImportExport({
@@ -181,6 +184,7 @@ export function useMoleculeImportExport({
   onLoadDesignFile,
   projectName = 'design',
   onFragmentPaste,
+  revealAtomsInView,
 }: UseMoleculeImportExportOptions) {
   const [openFileBusy, setOpenFileBusy] = useState(false);
   const [openFileError, setOpenFileError] = useState<string | null>(null);
@@ -212,9 +216,12 @@ export function useMoleculeImportExport({
         startFreshGrid?: boolean;
         /** Park that grid to the right of existing content. */
         placeBesideExisting?: boolean;
+        /** Override placement; search/PubChem use viewport_center like paste. */
+        placement?: 'origin' | 'viewport_center';
       },
     ): Promise<string[]> => {
       const useGrid = Boolean(meta?.useViewportGrid);
+      const placement = meta?.placement ?? (useGrid ? 'viewport_center' : 'origin');
       /**
        * Do NOT reset the grid from React `molecule` state when atoms.length===0:
        * during async AI batches the store already has atoms but React state lags,
@@ -261,11 +268,11 @@ export function useMoleculeImportExport({
         molblock,
         mode: 'merge',
         bondLengthPx,
-        placement: useGrid ? 'viewport_center' : 'origin',
+        placement,
         viewport: viewportInfoRef.current,
         windowWidth: window.innerWidth,
         windowHeight: window.innerHeight,
-        gridSlot: slot,
+        gridSlot: useGrid ? slot : { col: 0, row: 0 },
         ...(useGrid && molblockGridOriginRef.current
           ? { gridOrigin: molblockGridOriginRef.current }
           : {}),
@@ -311,6 +318,8 @@ export function useMoleculeImportExport({
         queueMicrotask(() => runLocalCleanup(seeds));
       }
 
+      if (newIds.length > 0) revealAtomsInView?.(newIds);
+
       return newIds;
     },
     [
@@ -320,6 +329,7 @@ export function useMoleculeImportExport({
       molblockGridOriginRef,
       molecule.atoms.length,
       runLocalCleanup,
+      revealAtomsInView,
       setPubchemImport,
       setSelectedAtomIds,
       viewportInfoRef,
@@ -443,9 +453,7 @@ export function useMoleculeImportExport({
             const mb = moleculeToMolblock(parsed.molecule);
             const newIds = await importMolblock(mb, {
               compoundName: parsed.name,
-              useViewportGrid: true,
-              startFreshGrid: true,
-              placeBesideExisting: true,
+              placement: 'viewport_center',
             });
             setSelectedAtomIds(newIds);
             setSelectedCanvasTextId(null);
@@ -480,9 +488,7 @@ export function useMoleculeImportExport({
               const mb = moleculeToMolblock(stripExplicitHydrogens(parsed));
               const newIds = await importMolblock(mb, {
                 compoundName: baseName,
-                useViewportGrid: true,
-                startFreshGrid: true,
-                placeBesideExisting: true,
+                placement: 'viewport_center',
               });
               setSelectedAtomIds(newIds);
               setSelectedCanvasTextId(null);
@@ -533,9 +539,7 @@ export function useMoleculeImportExport({
         if (place) {
           const newIds = await importMolblock(mb, {
             compoundName: baseName,
-            useViewportGrid: true,
-            startFreshGrid: true,
-            placeBesideExisting: true,
+            placement: 'viewport_center',
           });
           setSelectedAtomIds(newIds);
           setSelectedCanvasTextId(null);
@@ -636,6 +640,7 @@ export function useMoleculeImportExport({
         const seeds = new Set(newIds);
         queueMicrotask(() => runLocalCleanup(seeds));
       }
+      if (newIds.length > 0) revealAtomsInView?.(newIds);
       return newIds;
     },
     [
@@ -643,6 +648,7 @@ export function useMoleculeImportExport({
       bondLengthPx,
       enrichMolblockForImport,
       resetAutoCleanup,
+      revealAtomsInView,
       runLocalCleanup,
       setSelectedAtomIds,
       setSelectedCanvasTextId,
@@ -1409,7 +1415,9 @@ export function useMoleculeImportExport({
   );
 
   /**
-   * ChemDraw-style Copy as … (text formats + SVG).
+   * ChemDraw-style Copy as … (text formats + structure picture).
+   * Copy SVG writes PNG/HTML for Word/Sheets and image/svg+xml for chemistry tools —
+   * never SVG markup as text/plain.
    * SMILES uses the same Indigo GET_SMILES path as the context-menu copy.
    */
   const handleCopyAs = useCallback(
@@ -1422,103 +1430,63 @@ export function useMoleculeImportExport({
         return;
       }
 
-      if (format === 'png') {
-        void (async () => {
-          const molToCopy = getMoleculeForExport('visual');
-          if (!moleculeHasExportableContent(molToCopy)) {
-            setSmilesBarHint('Nothing to copy');
-            window.setTimeout(() => setSmilesBarHint(''), 2000);
-            return;
-          }
-          try {
-            const scale = Math.max(2, imageExportScale);
-            const exp = exportMoleculeBitmap({
-              molecule: molToCopy,
-              displayPrefs,
-              scale,
-              background: 'transparent',
-              showHydrogens,
-              condensedGroupLabels,
-              colorAtomLabels,
-              applyAtomColorsToBonds,
-              structureTheme,
-              structureDrawMode,
-              showCipLabels,
-              cipAtomLabels,
-              cipBondLabels,
-            });
-            if (!exp) {
-              setSmilesBarHint('PNG export failed');
-              window.setTimeout(() => setSmilesBarHint(''), 2000);
-              return;
-            }
-            const blob = await canvasToBlob(exp, 'image/png');
-            if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-              await navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob }),
-              ]);
-            } else {
-              throw new Error('Clipboard API unavailable');
-            }
-            setSmilesBarHint('Copied PNG');
-            window.setTimeout(() => setSmilesBarHint(''), 2000);
-          } catch (err) {
-            setSmilesBarHint(err instanceof Error ? err.message : 'PNG copy failed');
-            window.setTimeout(() => setSmilesBarHint(''), 2800);
-          }
-        })();
-        return;
-      }
-
-      if (format === 'svg') {
-        return (async (): Promise<boolean> => {
+      if (format === 'png' || format === 'svg') {
+        const copyPicture = async (): Promise<boolean> => {
           const molToCopy = getMoleculeForExport('visual');
           if (!moleculeHasExportableContent(molToCopy)) {
             setSmilesBarHint('Nothing to copy');
             window.setTimeout(() => setSmilesBarHint(''), 2000);
             return false;
           }
+          const visualOpts = {
+            molecule: molToCopy,
+            displayPrefs,
+            background: 'transparent' as const,
+            showHydrogens,
+            condensedGroupLabels,
+            colorAtomLabels,
+            applyAtomColorsToBonds,
+            structureTheme,
+            structureDrawMode,
+            showCipLabels,
+            cipAtomLabels,
+            cipBondLabels,
+          };
           try {
-            const svgText = exportMoleculeSvg({
-              molecule: molToCopy,
-              displayPrefs,
-              scale: 1,
-              background: 'transparent',
-              showHydrogens,
-              condensedGroupLabels,
-              colorAtomLabels,
-              applyAtomColorsToBonds,
-              structureTheme,
-              structureDrawMode,
-              showCipLabels,
-              cipAtomLabels,
-              cipBondLabels,
-            });
-            if (!svgText) {
+            const svgText =
+              format === 'svg' ? exportMoleculeSvg({ ...visualOpts, scale: 1 }) : null;
+            if (format === 'svg' && !svgText) {
               setSmilesBarHint('SVG export failed');
               window.setTimeout(() => setSmilesBarHint(''), 2000);
               return false;
             }
-            if (typeof navigator.clipboard?.writeText === 'function') {
-              await navigator.clipboard.writeText(svgText);
-            } else if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-              await navigator.clipboard.write([
-                new ClipboardItem({
-                  'text/plain': new Blob([svgText], { type: 'text/plain' }),
-                }),
-              ]);
-            } else {
-              throw new Error('Clipboard API unavailable');
+            const pngScale = Math.max(2, imageExportScale);
+            const pngCanvas = exportMoleculeBitmap({ ...visualOpts, scale: pngScale });
+            if (!pngCanvas) {
+              setSmilesBarHint(format === 'svg' ? 'SVG export failed' : 'PNG export failed');
+              window.setTimeout(() => setSmilesBarHint(''), 2000);
+              return false;
             }
-            setSmilesBarHint('Copied SVG');
+            // Promise blob keeps the click user-activation for Safari ClipboardItem.
+            const png = canvasToBlob(pngCanvas, 'image/png');
+            await writeStructurePictureToClipboard({
+              png,
+              svgText: format === 'svg' ? svgText : null,
+            });
+            setSmilesBarHint(format === 'svg' ? 'Copied SVG' : 'Copied PNG');
             window.setTimeout(() => setSmilesBarHint(''), 2000);
             return true;
           } catch (err) {
-            setSmilesBarHint(err instanceof Error ? err.message : 'SVG copy failed');
+            setSmilesBarHint(
+              err instanceof Error ? err.message : format === 'svg' ? 'SVG copy failed' : 'PNG copy failed',
+            );
             window.setTimeout(() => setSmilesBarHint(''), 2800);
             return false;
           }
-        })();
+        };
+        if (format === 'svg') return copyPicture();
+        void copyPicture();
+        return;
       }
 
       const molToCopy = resolveMoleculeForCopy(item?.label ?? 'copy');
@@ -1639,7 +1607,11 @@ export function useMoleculeImportExport({
       }
 
       if (molblock) {
-        await importMolblock(molblock, compoundName ? { compoundName } : undefined);
+        const newIds = await importMolblock(molblock, {
+          ...(compoundName ? { compoundName } : {}),
+          placement: 'viewport_center',
+        });
+        revealAtomsInView?.(newIds);
         setQuickSearch('');
       } else {
         setQuickSearchError('Not found on PubChem');
@@ -1650,7 +1622,7 @@ export function useMoleculeImportExport({
     } finally {
       setQuickSearchLoading(false);
     }
-  }, [importMolblock, quickSearch]);
+  }, [importMolblock, quickSearch, revealAtomsInView]);
 
   return {
     openFileBusy,

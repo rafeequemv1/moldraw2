@@ -32,6 +32,8 @@ export { computeAutoExtendAngle } from './autoExtendAngle';
 export {
   IMPLICIT_H_LABEL_DIST,
   IMPLICIT_H_BOND_END,
+  implicitHydrogenLabelDist,
+  implicitHydrogenBondEnd,
   hGoesLeft,
   carbonLabelHGoesLeft,
   getHydrogenStubDirections,

@@ -23,6 +23,7 @@ import { MofsLibraryPanel } from '../mofs/MofsLibraryPanel';
 import { PolymersLibraryPanel } from '../polymers/PolymersLibraryPanel';
 import { GrapheneLibraryPanel, type GrapheneLibraryInsert } from '../graphene/GrapheneLibraryPanel';
 import '../../styles/template-library-modal.css';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export type TemplateLibraryTab =
   | 'structures'
@@ -67,6 +68,7 @@ export function TemplateLibraryModal({
   insertingReactionId = null,
   requestSmilesMolblock,
 }: TemplateLibraryModalProps) {
+  useChromeOverlay(open, onClose, 'modal');
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState<TemplateCategoryId>(DEFAULT_TEMPLATE_CATEGORY_ID);
   const [libraryTab, setLibraryTab] = useState<TemplateLibraryTab>(initialTab);

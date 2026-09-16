@@ -17,6 +17,7 @@ import {
 } from '@moldraw/reactions';
 import '../../styles/template-library-modal.css';
 import '../../styles/reaction-library-modal.css';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface ReactionLibraryModalProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function ReactionLibraryModal({
   onInsert,
   insertingId = null,
 }: ReactionLibraryModalProps) {
+  useChromeOverlay(open, onClose, 'modal');
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState<ReactionCategoryId>(DEFAULT_REACTION_CATEGORY_ID);
   const [selectedId, setSelectedId] = useState<string | null>(null);

@@ -29,13 +29,19 @@ export const ELEMENT_COLORS: Record<string, string> = {
   V: '#7c3aed', Al: '#64748b', Sn: '#78716c', Pb: '#57534e',
 };
 
-/** Compact floating palette: common organics only. */
+/** Compact floating palette: common organics, then P + halogens. */
 export const QUICK_ELEMENT_PALETTE: ElementPaletteEntry[] = [
   { sym: 'H', color: ELEMENT_COLORS.H! },
   { sym: 'C', color: ELEMENT_COLORS.C! },
   { sym: 'N', color: ELEMENT_COLORS.N! },
   { sym: 'O', color: ELEMENT_COLORS.O! },
   { sym: 'S', color: ELEMENT_COLORS.S! },
+  'divider',
+  { sym: 'P', color: ELEMENT_COLORS.P! },
+  { sym: 'F', color: ELEMENT_COLORS.F! },
+  { sym: 'Cl', color: ELEMENT_COLORS.Cl! },
+  { sym: 'Br', color: ELEMENT_COLORS.Br! },
+  { sym: 'I', color: ELEMENT_COLORS.I! },
 ];
 
 /**

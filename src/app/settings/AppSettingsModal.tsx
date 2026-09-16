@@ -18,11 +18,17 @@ import type { ShortcutBindingsMap } from '../keyboard/shortcutBindings';
 import type { AppSettings, BondsSettings, GeneralSettings, ImageResolutionPreset } from './types';
 import { APP_SETTINGS_PRESETS, type AppSettingsPresetId } from './presets';
 import { StylePresetPreview } from './StylePresetPreview';
+import {
+  SettingExampleSlot,
+  SettingsSnapshotContext,
+  ShowSettingsExamplesContext,
+} from './SettingExamplePreview';
 import { ShortcutsSettingsPanel } from './ShortcutsSettingsPanel';
 import { PluginsSettingsPanel } from './PluginsSettingsPanel';
 import { CANVAS_FONT_FAMILIES, canvasFontCssFamily } from '../constants/fonts';
 import { UI_THEME_OPTIONS, type UiThemeId } from '../theme';
 import { useInstalledStructureThemes } from '../hooks/useStructureTheme';
+import { useChromeOverlay } from '../chromeDismiss';
 import { resolveUiLanguage, UI_LANGUAGES, useI18n, type UiLanguage } from '../i18n';
 
 const ShowSettingsDescContext = createContext(false);
@@ -112,6 +118,7 @@ const rowStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
+  flexWrap: 'wrap',
   gap: 10,
   padding: '5px 0',
   borderBottom: '1px solid var(--chrome-border)',
@@ -254,6 +261,7 @@ export function AppSettingsModal({
     resolveGeminiModelId(loadAiSecrets().geminiModel),
   );
   const structureThemes = useInstalledStructureThemes();
+  useChromeOverlay(open, onClose, 'modal');
 
   useEffect(() => {
     if (open) {
@@ -285,6 +293,7 @@ export function AppSettingsModal({
 
   const g = settings.general;
   const showDescriptions = g.showSettingsDescriptions === true;
+  const showExamples = g.showSettingsExamples === true;
   const uiLang = resolveUiLanguage(g.uiLanguage);
   const b = settings.bonds;
 
@@ -304,6 +313,8 @@ export function AppSettingsModal({
 
   const settingsInner = (
     <ShowSettingsDescContext.Provider value={showDescriptions}>
+    <ShowSettingsExamplesContext.Provider value={showExamples}>
+    <SettingsSnapshotContext.Provider value={settings}>
       <div
         className={`app-settings-modal__panel${isCompact ? ' app-settings-sheet-inner' : ''}`}
         onMouseDown={e => e.stopPropagation()}
@@ -341,14 +352,25 @@ export function AppSettingsModal({
           </div>
         ) : null}
 
-        <div className="app-settings-desc-toggle">
-          <span>{t('settings.showDescriptions')}</span>
-          <BoolSwitch
-            compact
-            checked={showDescriptions}
-            onToggle={() => updateGeneral({ showSettingsDescriptions: !showDescriptions })}
-            ariaLabel={t('settings.showDescriptions')}
-          />
+        <div className="app-settings-desc-toggles">
+          <div className="app-settings-desc-toggle">
+            <span>{t('settings.showDescriptions')}</span>
+            <BoolSwitch
+              compact
+              checked={showDescriptions}
+              onToggle={() => updateGeneral({ showSettingsDescriptions: !showDescriptions })}
+              ariaLabel={t('settings.showDescriptions')}
+            />
+          </div>
+          <div className="app-settings-desc-toggle">
+            <span>{t('settings.showExamples')}</span>
+            <BoolSwitch
+              compact
+              checked={showExamples}
+              onToggle={() => updateGeneral({ showSettingsExamples: !showExamples })}
+              ariaLabel={t('settings.showExamples')}
+            />
+          </div>
         </div>
 
         {showDescriptions ? (
@@ -396,15 +418,6 @@ export function AppSettingsModal({
             >
               <FolderOpen size={16} />
               {t('settings.general.nav')}
-            </button>
-            <button
-              type="button"
-              className={`app-settings-modal__nav-btn${activeCategory === 'touch' ? ' is-active' : ''}`}
-              onClick={() => setActiveCategory('touch')}
-              style={navBtnStyle(activeCategory === 'touch')}
-            >
-              <Hand size={16} />
-              {t('settings.touch.nav')}
             </button>
             <button
               type="button"
@@ -459,6 +472,15 @@ export function AppSettingsModal({
             >
               <Keyboard size={16} />
               {t('settings.shortcuts.nav')}
+            </button>
+            <button
+              type="button"
+              className={`app-settings-modal__nav-btn${activeCategory === 'touch' ? ' is-active' : ''}`}
+              onClick={() => setActiveCategory('touch')}
+              style={navBtnStyle(activeCategory === 'touch')}
+            >
+              <Hand size={16} />
+              {t('settings.touch.nav')}
             </button>
           </div>
 
@@ -608,6 +630,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
+                <SettingExampleSlot kind="implicitH" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.colorAtomLabels"
@@ -621,6 +644,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
+                <SettingExampleSlot kind="atomColor" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.colorBondsToHeteroatoms"
@@ -636,6 +660,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
+                <SettingExampleSlot kind="bondColor" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.condensedGroupLabels"
@@ -649,6 +674,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
+                <SettingExampleSlot kind="condensed" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.showCipLabels"
@@ -662,6 +688,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
+                <SettingExampleSlot kind="cip" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.autoLayoutAfterBondBurst"
@@ -702,6 +729,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
+                <SettingExampleSlot kind="snapToGrid" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.general.showGrid" hintKey="settings.general.showGridHint" />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
@@ -712,6 +740,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
+                <SettingExampleSlot kind="showGrid" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.general.reactionComponentMargin" />
                   <div style={controlStyle}>
@@ -826,6 +855,7 @@ export function AppSettingsModal({
                     </select>
                   </div>
                 </div>
+                <SettingExampleSlot kind="structureTheme" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.style.font" />
                   <div style={controlStyle}>
@@ -843,6 +873,7 @@ export function AppSettingsModal({
                     </select>
                   </div>
                 </div>
+                <SettingExampleSlot kind="fontFamily" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.style.boldAtomLabels"
@@ -856,6 +887,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
+                <SettingExampleSlot kind="boldLabels" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.style.fontSize" hintKey="settings.style.fontSizeHint" />
                   <div style={controlStyle}>
@@ -872,6 +904,7 @@ export function AppSettingsModal({
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
+                <SettingExampleSlot kind="fontSize" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.style.subFontSize" />
                   <div style={controlStyle}>
@@ -888,6 +921,7 @@ export function AppSettingsModal({
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
+                <SettingExampleSlot kind="subFontSize" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.style.bondLength" />
                   <div style={controlStyle}>
@@ -904,6 +938,7 @@ export function AppSettingsModal({
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
+                <SettingExampleSlot kind="bondLength" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.style.bondSpacing" />
                   <div style={controlStyle}>
@@ -922,6 +957,7 @@ export function AppSettingsModal({
                     </span>
                   </div>
                 </div>
+                <SettingExampleSlot kind="bondSpacing" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.style.bondThickness" />
                   <div style={controlStyle}>
@@ -938,6 +974,7 @@ export function AppSettingsModal({
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
+                <SettingExampleSlot kind="bondThickness" />
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.style.stereoWedgeWidth" />
                   <div style={controlStyle}>
@@ -954,6 +991,7 @@ export function AppSettingsModal({
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
+                <SettingExampleSlot kind="stereoWedge" />
                 <div style={{ ...rowStyle, borderBottom: 'none' }}>
                   <SettingsFieldLabel labelKey="settings.style.hashSpacing" />
                   <div style={controlStyle}>
@@ -970,6 +1008,7 @@ export function AppSettingsModal({
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('settings.style.unitPx')}</span>
                   </div>
                 </div>
+                <SettingExampleSlot kind="hashSpacing" />
               </>
             ) : null}
 
@@ -996,6 +1035,7 @@ export function AppSettingsModal({
                     </span>
                   </div>
                 </div>
+                <SettingExampleSlot kind="bondAngleSnap" />
               </>
             ) : null}
 
@@ -1209,6 +1249,8 @@ export function AppSettingsModal({
           </div>
         </div>
       </div>
+    </SettingsSnapshotContext.Provider>
+    </ShowSettingsExamplesContext.Provider>
     </ShowSettingsDescContext.Provider>
   );
 

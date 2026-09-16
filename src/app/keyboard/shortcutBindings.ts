@@ -416,8 +416,18 @@ export const FIXED_SHORTCUT_ROWS: { group: string; label: string; keys: string[]
   },
   {
     group: 'Navigation',
-    label: 'Zoom toward pointer',
+    label: 'Pan vertically',
     keys: [['Scroll', 'wheel']],
+  },
+  {
+    group: 'Navigation',
+    label: 'Pan horizontally',
+    keys: [['Shift', 'Scroll']],
+  },
+  {
+    group: 'Navigation',
+    label: 'Zoom toward pointer',
+    keys: [['Ctrl', 'Scroll'], ['⌘', 'Scroll']],
   },
   {
     group: 'Navigation',

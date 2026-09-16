@@ -176,7 +176,7 @@ const COMMON_GROUP_ABBREVIATIONS = new Set<string>([
   'ME', 'ET', 'NPR', 'IPR', 'NBU', 'TBU',
   'PH', 'BN', 'AC', 'CHO', 'CF3',
   'OH', 'OME', 'OET', 'NH2', 'NME2', 'NO2', 'CN', 'HCN',
-  'COOH', 'CO2ME', 'CO2ET', 'SO3H', 'SO2ME',
+  'COOH', 'COONA', 'CO2NA', 'CO2ME', 'CO2ET', 'SO3H', 'SO2ME',
   'CH2OH', 'HOCH2', 'CH2OME', 'CH2NH2', 'CH2CL', 'CH2BR', 'CH2F', 'CH2CN',
   'BOC', 'CBZ', 'FMOC', 'TS', 'MS',
 ]);
@@ -188,8 +188,205 @@ const ELEMENT_LONGEST_FIRST: string[] = [...PERIODIC_SYMBOLS].sort(
 export type AliasDisplayRun = { kind: 'base' | 'sub'; text: string };
 
 /**
- * Auto-capitalize typed atom labels (ChemDraw-like organic FG entry).
- * `ch3oh` → `CH3OH`, `me` → `Me`, `tbu` → `tBu`.
+ * Two-letter IUPAC symbols that collide with common organic labels
+ * (Co/CO, No/NO, Nh/NH, Cn/CN). IUPAC casing (`Co`) wins; `CO` / `co` stay organic.
+ */
+const ORGANIC_AMBIGUOUS_ELEMENTS = new Set(['Co', 'No', 'Nh', 'Cn']);
+
+/** Superheavy symbols (Z ≥ 104) that steal organic hydrides if matched greedily (Bh vs BH4). */
+const SUPERHEAVY_SYMBOLS = new Set([
+  'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og',
+]);
+
+function organicUppercaseFormula(raw: string): string {
+  return raw.replace(/[a-z]/g, (ch, idx, s) => {
+    if ((ch === 'n' || ch === 'm') && idx > 0 && s[idx - 1] === ')') return ch;
+    return ch.toUpperCase();
+  });
+}
+
+/**
+ * Two-letter symbols that must stay organic (CO not Co) unless the user typed
+ * IUPAC casing (`Co`).
+ */
+const ORGANIC_TWO_LETTER_SKIP = new Set([
+  'CO', 'NO', 'NH', 'HO', 'CN', 'CF', 'BH', 'HS', 'TS', 'MS', 'AC',
+  'RF', 'DB', 'SG', 'MT', 'DS', 'RG', 'FL', 'MC', 'LV', 'OG',
+]);
+
+/** Mixed-case tails inside formulas: CO2Me, NMe2, COOEt. Longest first. */
+const FORMULA_MIXED_PREFIXES: ReadonlyArray<{ key: string; display: string }> = [
+  { key: 'NME2', display: 'NMe2' },
+  { key: 'COOME', display: 'COOMe' },
+  { key: 'COOET', display: 'COOEt' },
+  { key: 'CO2ME', display: 'CO2Me' },
+  { key: 'CO2ET', display: 'CO2Et' },
+  { key: 'OME', display: 'OMe' },
+  { key: 'OET', display: 'OEt' },
+  { key: 'TBU', display: 'tBu' },
+  { key: 'NPR', display: 'nPr' },
+  { key: 'IPR', display: 'iPr' },
+  { key: 'NBU', display: 'nBu' },
+  { key: 'ME', display: 'Me' },
+  { key: 'ET', display: 'Et' },
+  { key: 'PH', display: 'Ph' },
+  { key: 'BN', display: 'Bn' },
+  { key: 'AC', display: 'Ac' },
+  { key: 'PR', display: 'Pr' },
+  { key: 'BU', display: 'Bu' },
+  { key: 'TS', display: 'Ts' },
+  { key: 'MS', display: 'Ms' },
+  { key: 'AR', display: 'Ar' },
+];
+
+/**
+ * Rebuild an organic formula with IUPAC two-letter elements (`Na`, `Cl`) so
+ * `coona` / `COONA` become `COONa` instead of all-caps `COONA`.
+ */
+function formatOrganicFormulaCasing(raw: string): string {
+  let out = '';
+  let i = 0;
+  while (i < raw.length) {
+    const c = raw[i]!;
+    if (/\d/.test(c) || /[()+\-#=.]/.test(c)) {
+      out += c;
+      i += 1;
+      continue;
+    }
+    if (
+      (c === 'n' || c === 'm' || c === 'N' || c === 'M') &&
+      out.endsWith(')') &&
+      (i + 1 >= raw.length || !/[A-Za-z]/.test(raw[i + 1]!))
+    ) {
+      out += c.toLowerCase();
+      i += 1;
+      continue;
+    }
+    const restUpper = raw.slice(i).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    // Prefer mixed abbrevs only at a letter start, matching the raw prefix length.
+    let mixedHit: { display: string; consume: number } | null = null;
+    for (const p of FORMULA_MIXED_PREFIXES) {
+      if (!restUpper.startsWith(p.key)) continue;
+      const consume = p.key.length;
+      const slice = raw.slice(i, i + consume);
+      if (slice.replace(/[^A-Za-z0-9]/g, '').toUpperCase() !== p.key) continue;
+      if (!/^[A-Za-z]/.test(slice)) continue;
+      mixedHit = { display: p.display, consume };
+      break;
+    }
+    if (mixedHit) {
+      out += mixedHit.display;
+      i += mixedHit.consume;
+      continue;
+    }
+    const two = raw.slice(i, i + 2);
+    if (two.length === 2 && /[A-Za-z]{2}/.test(two) && isKnownElementSymbol(two)) {
+      const canon = canonicalElementSymbol(two);
+      if (canon.length === 2) {
+        const iupac = isIupacTwoLetterCasing(two);
+        if (iupac || !ORGANIC_TWO_LETTER_SKIP.has(two.toUpperCase())) {
+          out += canon;
+          i += 2;
+          continue;
+        }
+      }
+    }
+    if (/[A-Za-z]/.test(c)) {
+      out += c.toUpperCase();
+      i += 1;
+      continue;
+    }
+    out += c;
+    i += 1;
+  }
+  return out;
+}
+
+function isIupacTwoLetterCasing(typed: string): boolean {
+  if (typed.length < 2) return false;
+  return /[A-Z]/.test(typed[0]!) && /[a-z]/.test(typed[1]!);
+}
+
+export type NearbyIonSpec = { element: string; charge: number };
+
+/**
+ * Typed ion / salt formulas that expand to real chemistry (not a display alias).
+ * `BH4` / `BH4-` → B with charge −1 (tetrahedral borohydride).
+ * `NaBH4` → BH4− plus a nearby Na⁺ (no covalent Na–B bond).
+ * `COONa` stays a condensed alias (like COOH); expand only via show-explicit.
+ */
+export type TypedIonFormula =
+  | {
+      kind: 'single';
+      element: string;
+      charge: number;
+      labelHCount: number;
+    }
+  | {
+      kind: 'salt-pair';
+      element: string;
+      charge: number;
+      labelHCount: number;
+      nearbyIon: NearbyIonSpec;
+    };
+
+/** ChemDraw-like: `bh4`, `BH4-`, `nabh4` → borohydride / sodium borohydride. */
+export function parseTypedIonFormula(raw: string): TypedIonFormula | null {
+  const trimmed = normalizeAliasLabelCharacters(raw);
+  if (!trimmed) return null;
+  const { body, charge } = splitAliasCharge(trimmed);
+  const key = body.replace(/\s+/g, '').toUpperCase();
+  if (key === 'BH4') {
+    // Explicit BH4+ is not borohydride; BH4 / BH4- default to B−.
+    if (charge != null && charge !== -1) return null;
+    return { kind: 'single', element: 'B', charge: -1, labelHCount: 4 };
+  }
+  if (key === 'NABH4') {
+    return {
+      kind: 'salt-pair',
+      element: 'B',
+      charge: -1,
+      labelHCount: 4,
+      nearbyIon: { element: 'Na', charge: 1 },
+    };
+  }
+  return null;
+}
+
+function formatTypedIonFormulaDraft(body: string): string | null {
+  const key = body.replace(/\s+/g, '').toUpperCase();
+  if (key === 'BH4') return 'BH4';
+  if (key === 'NABH4') return 'NaBH4';
+  if (key === 'COONA') return 'COONa';
+  if (key === 'CO2NA') return 'CO2Na';
+  return null;
+}
+
+function formatTypedElementBody(body: string): string | null {
+  const t = body.trim();
+  if (!t) return null;
+  if (isKnownElementSymbol(t)) {
+    const canon = canonicalElementSymbol(t);
+    const ambiguous = ORGANIC_AMBIGUOUS_ELEMENTS.has(canon);
+    if (!ambiguous || isIupacTwoLetterCasing(t)) return canon;
+    return null;
+  }
+  const hydride = t.match(/^([A-Za-z]{1,2})(H\d*)$/i);
+  if (hydride?.[1] && isKnownElementSymbol(hydride[1])) {
+    const elCanon = canonicalElementSymbol(hydride[1]);
+    if (ORGANIC_AMBIGUOUS_ELEMENTS.has(elCanon) && !isIupacTwoLetterCasing(hydride[1])) {
+      return null;
+    }
+    return `${elCanon}${hydride[2]!.replace(/^[hH]/, 'H')}`;
+  }
+  return null;
+}
+
+/**
+ * Auto-capitalize typed atom labels (ChemDraw-like).
+ * Two-letter elements keep IUPAC casing (`na` → `Na`, `He` stays `He`) so the
+ * second letter is not forced uppercase. Organic formulas keep element casing:
+ * `ch3oh` → `CH3OH`, `coona` → `COONa` (not `COONA`). Mixed abbrevs: `me` → `Me`.
  */
 export function autocapitalizeAtomAliasDraft(raw: string): string {
   if (!raw) return raw;
@@ -220,12 +417,26 @@ export function autocapitalizeAtomAliasDraft(raw: string): string {
     ms: 'Ms',
   };
   if (mixed[lower]) return mixed[lower]!;
-  // Organic formula style: uppercase letters, keep digits/symbols.
-  // Preserve repeat variables after ')': (CH2)n stays lowercase for subscript display.
-  return raw.replace(/[a-z]/g, (ch, idx, s) => {
-    if ((ch === 'n' || ch === 'm') && idx > 0 && s[idx - 1] === ')') return ch;
-    return ch.toUpperCase();
-  });
+
+  const { body, charge } = splitAliasCharge(raw);
+  const formatted = formatTypedIonFormulaDraft(body) ?? formatTypedElementBody(body);
+  if (formatted) {
+    if (charge != null) return formatAliasWithCharge(formatted, charge);
+    const signs = raw.match(/[+-]+$/);
+    if (signs && body === raw.slice(0, raw.length - signs[0].length)) {
+      return formatted + signs[0];
+    }
+    return formatted;
+  }
+
+  const organic = formatOrganicFormulaCasing(body || raw);
+  if (charge != null) return formatAliasWithCharge(organic, charge);
+  const signs = raw.match(/[+-]+$/);
+  if (signs && body === raw.slice(0, raw.length - signs[0].length)) {
+    return organic + signs[0];
+  }
+  if (body && body !== raw) return organicUppercaseFormula(raw);
+  return organic;
 }
 
 const subscriptAfter = (prev: string): boolean =>
@@ -326,11 +537,11 @@ function isOrganicHydrogenPrefixedCarbon(s: string): boolean {
   return /^H\d*C/i.test(s.trim());
 }
 
-/** "CO…" / "CON…" is almost always carbon, not cobalt (Co). */
+/** "CO…" / "CON…" is almost always carbon, not cobalt (Co). Bare `Co` is cobalt. */
 function isOrganicCarbonLead(s: string): boolean {
   const t = s.trim();
   if (/^CONH|^CONMe|^CONR|^COO/i.test(t)) return true;
-  if (/^CO$/i.test(t)) return true;
+  if (t === 'CO' || t === 'co') return true;
   if (t.length >= 3 && /^CO/i.test(t)) {
     const third = t[2];
     if (third && third === third.toUpperCase() && third !== third.toLowerCase()) return true;
@@ -340,10 +551,16 @@ function isOrganicCarbonLead(s: string): boolean {
   return false;
 }
 
-/** All-caps NO₂ / NO₃ / NO– style labels are nitrogen, not nobelium (No). */
+/** All-caps NO₂ / NO₃ / NO– style labels are nitrogen, not nobelium (`No`). */
 function isNitrogenOxoLead(s: string): boolean {
   const t = s.trim();
-  return /^NO[23]\b/i.test(t) || /^NOO/i.test(t) || /^NO\b$/i.test(t) || /^NO[+-]/i.test(t);
+  return (
+    /^NO[23]\b/i.test(t) ||
+    /^NOO/i.test(t) ||
+    t === 'NO' ||
+    t === 'no' ||
+    /^NO[+-]/i.test(t)
+  );
 }
 
 /** NH / NH2 / NMe2 / … are organic nitrogen, not nihonium (Nh). */
@@ -395,6 +612,10 @@ export function matchLeadingElement(s: string): { element: string; length: numbe
   }
   if (sym === 'Nh' && len === 2 && isOrganicNitrogenLead(t)) {
     return { element: 'N', length: 1 };
+  }
+  // Superheavies must not steal organic hydrides: BH4, HS, NH2 typed in all caps.
+  if (SUPERHEAVY_SYMBOLS.has(sym) && len === 2 && !isIupacTwoLetterCasing(t.slice(0, 2))) {
+    return { element: canonicalSymbol(t[0]!), length: 1 };
   }
   if (sym === 'H' && isOrganicHydrogenPrefixedCarbon(t)) {
     return { element: 'C', length: 1 };
@@ -450,8 +671,26 @@ function bondOrderSum(mol: Molecule, atomId: string): number {
 }
 
 export type ValidateAliasResult =
-  | { ok: true; element: string; labelHCount: number | null; charge: number | null; body: string }
+  | {
+      ok: true;
+      element: string;
+      labelHCount: number | null;
+      charge: number | null;
+      body: string;
+      /** Unbonded counterion to place near the labeled atom (`NaBH4` → Na⁺). */
+      nearbyIon?: NearbyIonSpec;
+    }
   | { ok: false; reason: string };
+
+function atomHasHeavyNeighbor(mol: Molecule, atomId: string): boolean {
+  for (const b of mol.bonds) {
+    if (b.fromAtomId !== atomId && b.toAtomId !== atomId) continue;
+    const oid = b.fromAtomId === atomId ? b.toAtomId : b.fromAtomId;
+    const o = mol.atoms.find(a => a.id === oid);
+    if (o && o.element !== 'H') return true;
+  }
+  return false;
+}
 
 /**
  * Strict: `E`, `EH`, `EHn` — implicit H from geometry must match (element from label sets valency).
@@ -471,16 +710,44 @@ export function validateAtomAliasForMolecule(
   }
 
   const { body, charge: parsedCharge } = splitAliasCharge(trimmed);
-  if (parsedCharge != null && Math.abs(parsedCharge) > getMaxFormalChargeMagnitude(atom.element)) {
-    return { ok: false, reason: 'Formal charge exceeds allowed magnitude for this element' };
-  }
-
   const bondSum = bondOrderSum(mol, atomId);
   const q = parsedCharge ?? atom.charge ?? 0;
   const upper = body.trim().toUpperCase();
 
+  const chargeOk = (el: string): ValidateAliasResult | null => {
+    if (parsedCharge != null && Math.abs(parsedCharge) > getMaxFormalChargeMagnitude(el)) {
+      return { ok: false, reason: 'Formal charge exceeds allowed magnitude for this element' };
+    }
+    return null;
+  };
+
+  // BH4 / NaBH4 → real B− chemistry (implicit BH4), not a carbon alias string.
+  const ion = parseTypedIonFormula(trimmed);
+  if (ion) {
+    const bad = chargeOk(ion.element);
+    if (bad) return bad;
+    const maxDraw = getMaxValencyForElement(ion.element, ion.charge);
+    if (bondSum > maxDraw) {
+      return { ok: false, reason: 'Bond order exceeds valency for this element' };
+    }
+    if (atomHasHeavyNeighbor(mol, atomId)) {
+      return { ok: false, reason: 'BH4 requires an isolated atom (no heavy-atom bonds)' };
+    }
+    return {
+      ok: true,
+      element: ion.element,
+      labelHCount: ion.labelHCount,
+      charge: ion.charge,
+      // Store the element so commit does not keep "BH4" as an alias label.
+      body: ion.element,
+      nearbyIon: ion.kind === 'salt-pair' ? ion.nearbyIon : undefined,
+    };
+  }
+
   // Generic substituent / group abbreviations (R, Me, Ph, …) — display-only on current atom.
   if (COMMON_GROUP_ABBREVIATIONS.has(upper)) {
+    const bad = chargeOk(atom.element);
+    if (bad) return bad;
     const maxV = getMaxValencyForElement(atom.element, q);
     if (bondSum > maxV) {
       return { ok: false, reason: 'Bond order exceeds valency for this element' };
@@ -498,6 +765,8 @@ export function validateAtomAliasForMolecule(
   if (looksLikeExpandableFormulaLabel(body.trim())) {
     const syntaxErr = validateCondensedFormulaLabelSyntax(body.trim());
     if (syntaxErr) return { ok: false, reason: syntaxErr };
+    const bad = chargeOk(atom.element);
+    if (bad) return bad;
     const maxV = getMaxValencyForElement(atom.element, q);
     if (bondSum > maxV) {
       return { ok: false, reason: 'Bond order exceeds valency for this element' };
@@ -512,13 +781,36 @@ export function validateAtomAliasForMolecule(
   }
 
   const c = classifyAlias(body || trimmed);
-  if (c.kind === 'error') return { ok: false, reason: c.reason };
+  if (c.kind === 'error') {
+    // Unknown token: keep as a display alias on the current atom (R-groups, typos)
+    // rather than blocking the label editor.
+    if (c.reason.startsWith('Unknown element') && /^[A-Za-z]/.test(body.trim())) {
+      const bad = chargeOk(atom.element);
+      if (bad) return bad;
+      const maxV = getMaxValencyForElement(atom.element, q);
+      if (bondSum > maxV) {
+        return { ok: false, reason: 'Bond order exceeds valency for this element' };
+      }
+      return {
+        ok: true,
+        element: atom.element,
+        labelHCount: null,
+        charge: parsedCharge,
+        body: body.trim(),
+      };
+    }
+    return { ok: false, reason: c.reason };
+  }
 
   if (c.kind === 'strict') {
-    const maxImplicit = getEffectiveValencyForImplicitHydrogen(c.element, q);
-    if (bondSum > maxImplicit) {
+    const bad = chargeOk(c.element);
+    if (bad) return bad;
+    // Drawing max uses the NEW element (Na may keep a ligand bond; He may not).
+    const maxDraw = getMaxValencyForElement(c.element, q);
+    if (bondSum > maxDraw) {
       return { ok: false, reason: 'Bond order exceeds valency for this element' };
     }
+    const maxImplicit = getEffectiveValencyForImplicitHydrogen(c.element, q);
     const implicitH = Math.max(0, maxImplicit - bondSum);
     if (c.labelHCount !== null && c.labelHCount !== implicitH) {
       return {
@@ -542,6 +834,8 @@ export function validateAtomAliasForMolecule(
       reason: `Label starts with ${c.leadingElement} but atom is ${atom.element}`,
     };
   }
+  const bad = chargeOk(atom.element);
+  if (bad) return bad;
   const maxV = getMaxValencyForElement(atom.element, q);
   if (bondSum > maxV) {
     return { ok: false, reason: 'Bond order exceeds valency for this element' };
@@ -612,7 +906,7 @@ export const ABBREVIATION_PALETTE: readonly string[] = [
   'Me', 'Et', 'nPr', 'iPr', 'nBu', 'tBu',
   'Ph', 'Bn', 'Ac', 'CHO', 'CF3',
   'OH', 'OMe', 'OEt', 'NH2', 'NMe2', 'NO2', 'CN', 'HCN',
-  'COOH', 'CO2Me', 'CO2Et', 'CH2OH', 'SO3H', 'SO2Me',
+  'COOH', 'COONa', 'CO2Na', 'CO2Me', 'CO2Et', 'CH2OH', 'SO3H', 'SO2Me',
   'Boc', 'Cbz', 'Fmoc', 'Ts', 'Ms',
 ];
 
@@ -638,6 +932,8 @@ export const ABBREV_TEMPLATE_MAP: Record<string, AbbrevTemplate> = {
   CN: { key: 'CN', display: 'CN', preferredOrientation: 'outward', attachmentNode: 0, fragmentGraph: { atoms: ['C', 'N'], bonds: [[0, 1, 3]] }, collapseSignature: { anchor: 'C', neighbors: [{ element: 'N', order: 3, minCount: 1 }] }, preview: { atoms: [{ x: 16, y: 22, el: 'R', attach: true }, { x: 44, y: 22, el: 'C' }, { x: 74, y: 22, el: 'N' }], bonds: [[0, 1, 1], [1, 2, 3]] } },
   HCN: { key: 'HCN', display: 'HCN', preferredOrientation: 'outward', attachmentNode: 0, fragmentGraph: { atoms: ['C', 'N'], bonds: [[0, 1, 3]] }, collapseSignature: { anchor: 'C', neighbors: [{ element: 'N', order: 3, minCount: 1 }] }, preview: { atoms: [{ x: 16, y: 22, el: 'H' }, { x: 44, y: 22, el: 'C', attach: true }, { x: 74, y: 22, el: 'N' }], bonds: [[0, 1, 1], [1, 2, 3]] } },
   COOH: { key: 'COOH', display: 'COOH', preferredOrientation: 'planar', attachmentNode: 0, fragmentGraph: { atoms: ['C', 'O', 'O'], bonds: [[0, 1, 2], [0, 2, 1]] }, collapseSignature: { anchor: 'C', neighbors: [{ element: 'O', order: 2, minCount: 1 }, { element: 'O', order: 1, minCount: 1 }] }, preview: { atoms: [{ x: 12, y: 22, el: 'R', attach: true }, { x: 36, y: 22, el: 'C' }, { x: 62, y: 12, el: 'O' }, { x: 62, y: 32, el: 'O' }], bonds: [[0, 1, 1], [1, 2, 2], [1, 3, 1]] } },
+  COONA: { key: 'COONA', display: 'COONa', preferredOrientation: 'planar', attachmentNode: 0, fragmentGraph: { atoms: ['C', 'O', 'O'], bonds: [[0, 1, 2], [0, 2, 1]] }, collapseSignature: { anchor: 'C', neighbors: [{ element: 'O', order: 2, minCount: 1 }, { element: 'O', order: 1, minCount: 1 }] }, preview: { atoms: [{ x: 8, y: 22, el: 'R', attach: true }, { x: 30, y: 22, el: 'C' }, { x: 52, y: 12, el: 'O' }, { x: 52, y: 32, el: 'O' }, { x: 78, y: 32, el: 'Na' }], bonds: [[0, 1, 1], [1, 2, 2], [1, 3, 1]] } },
+  CO2NA: { key: 'CO2NA', display: 'CO2Na', preferredOrientation: 'planar', attachmentNode: 0, fragmentGraph: { atoms: ['C', 'O', 'O'], bonds: [[0, 1, 2], [0, 2, 1]] }, collapseSignature: { anchor: 'C', neighbors: [{ element: 'O', order: 2, minCount: 1 }, { element: 'O', order: 1, minCount: 1 }] }, preview: { atoms: [{ x: 8, y: 22, el: 'R', attach: true }, { x: 30, y: 22, el: 'C' }, { x: 52, y: 12, el: 'O' }, { x: 52, y: 32, el: 'O' }, { x: 78, y: 32, el: 'Na' }], bonds: [[0, 1, 1], [1, 2, 2], [1, 3, 1]] } },
   CO2ME: { key: 'CO2ME', display: 'CO2Me', preferredOrientation: 'planar', attachmentNode: 0, fragmentGraph: { atoms: ['C', 'O', 'O', 'C'], bonds: [[0, 1, 2], [0, 2, 1], [2, 3, 1]] }, collapseSignature: { anchor: 'C', neighbors: [{ element: 'O', order: 2, minCount: 1 }, { element: 'O', order: 1, minCount: 1 }] }, preview: { atoms: [{ x: 10, y: 22, el: 'R', attach: true }, { x: 32, y: 22, el: 'C' }, { x: 54, y: 12, el: 'O' }, { x: 54, y: 32, el: 'O' }, { x: 76, y: 32, el: 'C' }], bonds: [[0, 1, 1], [1, 2, 2], [1, 3, 1], [3, 4, 1]] } },
   CO2ET: { key: 'CO2ET', display: 'CO2Et', preferredOrientation: 'planar', attachmentNode: 0, fragmentGraph: { atoms: ['C', 'O', 'O', 'C', 'C'], bonds: [[0, 1, 2], [0, 2, 1], [2, 3, 1], [3, 4, 1]] }, collapseSignature: { anchor: 'C', neighbors: [{ element: 'O', order: 2, minCount: 1 }, { element: 'O', order: 1, minCount: 1 }] }, preview: { atoms: [{ x: 8, y: 22, el: 'R', attach: true }, { x: 28, y: 22, el: 'C' }, { x: 50, y: 12, el: 'O' }, { x: 50, y: 32, el: 'O' }, { x: 68, y: 32, el: 'C' }, { x: 86, y: 32, el: 'C' }], bonds: [[0, 1, 1], [1, 2, 2], [1, 3, 1], [3, 4, 1], [4, 5, 1]] } },
   SO3H: { key: 'SO3H', display: 'SO3H', preferredOrientation: 'planar', attachmentNode: 0, fragmentGraph: { atoms: ['S', 'O', 'O', 'O'], bonds: [[0, 1, 2], [0, 2, 2], [0, 3, 1]] }, collapseSignature: { anchor: 'S', neighbors: [{ element: 'O', order: 2, minCount: 2 }, { element: 'O', order: 1, minCount: 1 }] }, preview: { atoms: [{ x: 12, y: 22, el: 'R', attach: true }, { x: 36, y: 22, el: 'S' }, { x: 60, y: 10, el: 'O' }, { x: 60, y: 22, el: 'O' }, { x: 60, y: 34, el: 'O' }], bonds: [[0, 1, 1], [1, 2, 2], [1, 3, 2], [1, 4, 1]] } },

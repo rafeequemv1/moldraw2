@@ -656,8 +656,8 @@ export const distributeFragmentsInputSchema = z.object({
     .describe('true (default) uses the current UI selection when neither moleculeIndexes nor atomIds is given.')
     .optional(),
   axis: z
-    .enum(['horizontal', 'vertical', 'grid', 'circle'])
-    .describe("'horizontal'/'vertical' equalize gaps along x/y; 'grid' rearranges into rows; 'circle' places on a ring."),
+    .enum(['horizontal', 'vertical', 'grid', 'circle', 'row'])
+    .describe("'horizontal'/'vertical' equalize gaps along x/y; 'grid' rearranges into rows; 'circle' places on a ring; 'row' is a neat left-to-right row."),
   /** Circle layout: center-to-center radius in world units (auto if omitted). */
   radius: z
     .number()

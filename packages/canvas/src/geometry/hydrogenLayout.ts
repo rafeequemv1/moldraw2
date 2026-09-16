@@ -7,10 +7,34 @@ import type { Atom, Molecule } from '@moldraw/domain';
 import { angle0To2Pi } from './angles';
 import type { Point } from './polygons';
 
-/** Implicit H on carbon: label center distance from C (world px). */
-export const IMPLICIT_H_LABEL_DIST = 30;
-/** C–H bond line ends here (meets the H label wipe box; stroke starts at C). */
-export const IMPLICIT_H_BOND_END = IMPLICIT_H_LABEL_DIST - 5;
+const DEFAULT_BOND_LENGTH_PX = 45;
+/** Pad past half the H glyph so the stub stroke does not graze the letter. */
+const IMPLICIT_H_GLYPH_PAD_PX = 5;
+/** Fallback half-width of “H” at the default 20px element font. */
+const DEFAULT_H_GLYPH_HALF_PX = 7;
+
+/** Distance from carbon to implicit-H label center — same as explicit H placement. */
+export function implicitHydrogenLabelDist(bondLengthPx: number): number {
+  const bl =
+    Number.isFinite(bondLengthPx) && bondLengthPx > 0 ? bondLengthPx : DEFAULT_BOND_LENGTH_PX;
+  return Math.max(12, Math.min(120, bl));
+}
+
+/** C–H stub ends before the H glyph, matching heteroatom trim on explicit H. */
+export function implicitHydrogenBondEnd(
+  labelDist: number,
+  hGlyphHalfWidthPx: number = DEFAULT_H_GLYPH_HALF_PX,
+): number {
+  const half = Number.isFinite(hGlyphHalfWidthPx)
+    ? Math.max(0, hGlyphHalfWidthPx)
+    : DEFAULT_H_GLYPH_HALF_PX;
+  return Math.max(0, labelDist - half - IMPLICIT_H_GLYPH_PAD_PX);
+}
+
+/** Default-bond-length fallback; prefer `implicitHydrogenLabelDist(bondLengthPx)`. */
+export const IMPLICIT_H_LABEL_DIST = implicitHydrogenLabelDist(DEFAULT_BOND_LENGTH_PX);
+/** Default-bond-length fallback; prefer `implicitHydrogenBondEnd(...)`. */
+export const IMPLICIT_H_BOND_END = implicitHydrogenBondEnd(IMPLICIT_H_LABEL_DIST);
 
 /**
  * Decide whether an "Hₙ" suffix belongs to the left of a heteroatom symbol.
@@ -48,9 +72,16 @@ const neighborsOf = (atom: Atom, mol: Molecule): Atom[] => {
 
 export const hGoesLeft = (atom: Atom, mol: Molecule): boolean => {
   const nbrs = neighborsOf(atom, mol);
-  if (nbrs.length === 0) return false;
   let sumX = 0;
-  for (const n of nbrs) sumX += n.x - atom.x;
+  let heavy = 0;
+  for (const n of nbrs) {
+    // Explicit H must not flip CH₃ / OH when folding hydrogens (deterministic
+    // from heavy-atom positions: neighbor to the right → tail on the left).
+    if (n.element === 'H') continue;
+    sumX += n.x - atom.x;
+    heavy += 1;
+  }
+  if (heavy === 0) return false;
   return sumX > 0;
 };
 

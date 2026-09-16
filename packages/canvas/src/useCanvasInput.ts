@@ -191,6 +191,11 @@ export interface UseCanvasInputOptions {
   selectedReactionArrowId?: string | null;
 
   onContextMenu?: (e: React.MouseEvent | React.PointerEvent, worldPos: Point) => void;
+  /**
+   * Host chrome (menus, docks, modals). Called on drawing-surface pointerdown.
+   * Return true if overlays were open so this press should not also start a draw.
+   */
+  onDismissChromeOverlays?: () => boolean;
 
   /** Ring-select + ring-fill: apply swatch to clicked ring without using the color menu each time. */
   ringPaintActive?: boolean;
@@ -374,6 +379,8 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
   const touchTransformRef = useRef<TransformSelectionDrag | null>(null);
   const onCanvasTextTransformingRef = useRef(opts.onCanvasTextTransforming);
   onCanvasTextTransformingRef.current = opts.onCanvasTextTransforming;
+  const onDismissChromeOverlaysRef = useRef(opts.onDismissChromeOverlays);
+  onDismissChromeOverlaysRef.current = opts.onDismissChromeOverlays;
 
   const flashAtomError = useCallback((atomId: string) => {
     setErrorAtomId(atomId);
@@ -755,6 +762,17 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       if (!isDrawingPointer(e)) {
         e.preventDefault();
         return;
+      }
+
+      // Canvas preventDefault() suppresses document `mousedown`, so header
+      // click-outside listeners never see this press. Dismiss chrome here.
+      // Primary button: first click closes overlays and does not also place
+      // an atom / start a bond. Right-click may still open the context menu.
+      if (onDismissChromeOverlaysRef.current?.()) {
+        if (!isSecondaryButton(e) && !isMiddleButton(e)) {
+          e.preventDefault();
+          return;
+        }
       }
 
       // Always seed `mouseDownPos` so the click-vs-drag distance check in

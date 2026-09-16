@@ -32,6 +32,10 @@ export function getMaxValencyForElement(element: string, charge: number): number
   // anionic B may have 4; B+ is typically divalent (3 − q).
   if (element === 'B') return q > 0 ? Math.max(0, 3 - q) : 4;
   if (element === 'Si') return 4;
+  if (element === 'He' || element === 'Ne') return 0;
+  if (element === 'Ar' || element === 'Kr' || element === 'Xe' || element === 'Rn' || element === 'Og') {
+    return 6;
+  }
   if (isCoordinationMetal(element)) return 12;
   return 4;
 }
@@ -43,6 +47,7 @@ export function getMaxValencyForElement(element: string, charge: number): number
  */
 export function getEffectiveValencyForImplicitHydrogen(element: string, charge: number): number {
   if (isCoordinationMetal(element)) return 0;
+  if (['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og'].includes(element)) return 0;
   const q = charge || 0;
   // Drawing allows 4 bonds on B, but implicit H stays borane-like: BH3,
   // BH4−, B+ typically 2. Otherwise an isolated B would read as BH4.

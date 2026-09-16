@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface FeatureRequestModalProps {
   open: boolean;
@@ -12,6 +13,7 @@ function displayNameFromEmail(email: string): string {
 }
 
 export function FeatureRequestModal({ open, defaultEmail, onClose }: FeatureRequestModalProps) {
+  useChromeOverlay(open, onClose, 'modal');
   const [email, setEmail] = useState(defaultEmail);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

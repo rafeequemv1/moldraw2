@@ -5,6 +5,7 @@ import React, { useCallback, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react';
 import '../../styles/info-panel.css';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface InfoPanelData {
   empirical: { order: string[]; counts: Record<string, number> };
@@ -124,6 +125,8 @@ export function MoleculeInfoPanel({
   asSheet = false,
 }: MoleculeInfoPanelProps) {
   const [moreOpen, setMoreOpen] = useState(false);
+  useChromeOverlay(!asSheet, onClose, 'dock');
+  useChromeOverlay(moreOpen, () => setMoreOpen(false));
 
   const displayName =
     selectionMatchesPubchemImport && pubchemImport

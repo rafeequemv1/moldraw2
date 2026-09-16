@@ -517,8 +517,8 @@ export const schemas = {
   distributeSelectedFragments: z.object({
     atomIds: z.array(atomIdRef).min(2).describe('Atom ids spanning >= 2 separate molecules; whole molecules are moved.'),
     axis: z
-      .enum(['horizontal', 'vertical', 'grid', 'circle'])
-      .describe('horizontal/vertical = equal gaps along that axis; grid = rows x cols; circle = around a ring.'),
+      .enum(['horizontal', 'vertical', 'grid', 'circle', 'row'])
+      .describe('horizontal/vertical = equal gaps along that axis; grid = rows x cols; circle = around a ring; row = neat left-to-right row (aligned centres, fixed gap).'),
     /** Circle layout: center-to-center radius in world units (auto if omitted). */
     radius: z.number().positive().describe('Circle layout only: ring radius in canvas px (auto when omitted).').optional(),
   }),
@@ -940,6 +940,17 @@ export const schemas = {
     /** Translation applied to the fragment before insertion. */
     dx: dxPx.describe('Horizontal translation applied to the fragment before insertion, canvas px.'),
     dy: dyPx.describe('Vertical translation applied to the fragment before insertion, canvas px (positive = down).'),
+    viewport: z
+      .object({
+        x: z.number().describe('Viewport pan x: screen px of world origin.'),
+        y: z.number().describe('Viewport pan y: screen px of world origin.'),
+        zoom: z.number().positive().describe('Viewport zoom factor (1 = 100%).'),
+      })
+      .describe('Current viewport used to keep the paste in view and avoid overlap.')
+      .optional(),
+    windowWidth: z.number().positive().describe('Visible canvas width in screen px.').optional(),
+    windowHeight: z.number().positive().describe('Visible canvas height in screen px.').optional(),
+    bondLengthPx: z.number().positive().describe('Target bond length in canvas px for overlap gap (default 40).').optional(),
   }),
   mergeSketch: z.object({
     atoms: z
@@ -1199,7 +1210,7 @@ export const schemas = {
 
   commitAtomAlias: z.object({
     atomId: atomIdRef,
-    alias: z.string().describe('Alias text typed by the user (e.g. "OMe", "NH3+"); a trailing +/- sets formal charge.'),
+    alias: z.string().describe('Alias text typed by the user (e.g. "OMe", "NH3+", "BH4", "NaBH4", "COONa"); a trailing +/- sets formal charge.'),
   }),
 
   expandAlias: z.object({

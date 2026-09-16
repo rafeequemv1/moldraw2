@@ -1,9 +1,19 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MouseEvent } from 'react';
 import { Copy, Download, FolderOpen, Pencil, Trash2 } from 'lucide-react';
 import type { SavedProjectMeta } from '../projects/types';
 
+export type DesignCardModifiers = {
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+};
+
+export type DesignLibraryLayout = 'grid' | 'list';
+
 export type DesignLibraryGridProps = {
   projects: SavedProjectMeta[];
+  folderNameById?: Map<string, string>;
+  layout?: DesignLibraryLayout;
   selectedIds: Set<string>;
   selectMode: boolean;
   renamingId: string | null;
@@ -14,6 +24,7 @@ export type DesignLibraryGridProps = {
   onCommitRename: () => void;
   onCancelRename: () => void;
   onOpen: (id: string) => void;
+  onActivate: (id: string, keys: DesignCardModifiers) => void;
   onToggleSelect: (id: string) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
@@ -33,6 +44,8 @@ function formatWhen(ts: number): string {
 
 export function DesignLibraryGrid({
   projects,
+  folderNameById,
+  layout = 'grid',
   selectedIds,
   selectMode,
   renamingId,
@@ -43,6 +56,7 @@ export function DesignLibraryGrid({
   onCommitRename,
   onCancelRename,
   onOpen,
+  onActivate,
   onToggleSelect,
   onDuplicate,
   onDelete,
@@ -60,15 +74,159 @@ export function DesignLibraryGrid({
     );
   }
 
+  const activate = (id: string, e: MouseEvent) => {
+    if (selectMode || e.shiftKey || e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      onActivate(id, { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey });
+      return;
+    }
+    onOpen(id);
+  };
+
+  const folderLabel = (folderId: string | null) =>
+    folderId ? folderNameById?.get(folderId) ?? 'Folder' : 'All designs';
+
+  if (layout === 'list') {
+    return (
+      <div>
+        <div className="design-library__list-head" aria-hidden>
+          <span />
+          <span>Name</span>
+          <span>Date</span>
+          <span>Folder</span>
+          <span />
+        </div>
+        <ul className="design-library__list">
+          {projects.map(project => {
+            const selected = selectedIds.has(project.id);
+            const renaming = renamingId === project.id;
+            const dragging = draggingIds.includes(project.id);
+            const canDrag = !renaming && (selected || !selectMode);
+            return (
+              <li
+                key={project.id}
+                data-design-card=""
+                data-project-id={project.id}
+                className={[
+                  'design-library__list-row',
+                  selected ? 'design-library__card--selected' : '',
+                  dragging ? 'design-library__card--dragging' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                draggable={canDrag}
+                onDragStart={e => {
+                  onDragStart(project.id);
+                  e.dataTransfer.effectAllowed = 'move';
+                  e.dataTransfer.setData('text/plain', project.id);
+                }}
+                onDragEnd={onDragEnd}
+              >
+                <label className="design-library__check">
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => onToggleSelect(project.id)}
+                    aria-label={`Select ${project.name}`}
+                  />
+                </label>
+                <div className="design-library__list-name">
+                  {renaming ? (
+                    <RenameInline
+                      value={renameDraft}
+                      onChange={onRenameDraftChange}
+                      onCommit={onCommitRename}
+                      onCancel={onCancelRename}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className="design-library__name"
+                      onClick={e => activate(project.id, e)}
+                      onDoubleClick={e => {
+                        e.preventDefault();
+                        onStartRename(project.id, project.name);
+                      }}
+                      title={project.name}
+                    >
+                      {project.name}
+                    </button>
+                  )}
+                </div>
+                <span className="design-library__list-meta">{formatWhen(project.updatedAt)}</span>
+                <span className="design-library__list-meta">{folderLabel(project.folderId)}</span>
+                <div className="design-library__actions">
+                  {onDownload ? (
+                    <button
+                      type="button"
+                      className="design-library__action"
+                      title="Download Moldraw file (.moldraw) — entire canvas"
+                      aria-label={`Download ${project.name} as .moldraw`}
+                      onClick={e => {
+                        e.stopPropagation();
+                        onDownload(project.id);
+                      }}
+                    >
+                      <Download size={13} aria-hidden />
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="design-library__action"
+                    title="Rename"
+                    aria-label={`Rename ${project.name}`}
+                    onClick={e => {
+                      e.stopPropagation();
+                      onStartRename(project.id, project.name);
+                    }}
+                  >
+                    <Pencil size={13} aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="design-library__action"
+                    title="Duplicate"
+                    aria-label={`Duplicate ${project.name}`}
+                    onClick={e => {
+                      e.stopPropagation();
+                      onDuplicate(project.id);
+                    }}
+                  >
+                    <Copy size={13} aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="design-library__action design-library__action--danger"
+                    title="Delete"
+                    aria-label={`Delete ${project.name}`}
+                    onClick={e => {
+                      e.stopPropagation();
+                      onDelete(project.id);
+                    }}
+                  >
+                    <Trash2 size={13} aria-hidden />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <ul className="design-library__grid">
       {projects.map(project => {
         const selected = selectedIds.has(project.id);
         const renaming = renamingId === project.id;
         const dragging = draggingIds.includes(project.id);
+        const canDrag = !renaming && (selected || !selectMode);
         return (
           <li
             key={project.id}
+            data-design-card=""
+            data-project-id={project.id}
             className={[
               'design-library__card',
               selected ? 'design-library__card--selected' : '',
@@ -76,7 +234,7 @@ export function DesignLibraryGrid({
             ]
               .filter(Boolean)
               .join(' ')}
-            draggable={!renaming}
+            draggable={canDrag}
             onDragStart={e => {
               onDragStart(project.id);
               e.dataTransfer.effectAllowed = 'move';
@@ -97,8 +255,8 @@ export function DesignLibraryGrid({
             <button
               type="button"
               className="design-library__preview"
-              onClick={() => onOpen(project.id)}
-              aria-label={`Open ${project.name}`}
+              onClick={e => activate(project.id, e)}
+              aria-label={selectMode ? `Select ${project.name}` : `Open ${project.name}`}
             >
               {project.thumbnailDataUrl ? (
                 <img src={project.thumbnailDataUrl} alt="" className="design-library__thumb" draggable={false} />
@@ -120,7 +278,7 @@ export function DesignLibraryGrid({
                 <button
                   type="button"
                   className="design-library__name"
-                  onClick={() => onOpen(project.id)}
+                  onClick={e => activate(project.id, e)}
                   onDoubleClick={e => {
                     e.preventDefault();
                     onStartRename(project.id, project.name);

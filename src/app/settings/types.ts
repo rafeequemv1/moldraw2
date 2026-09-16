@@ -43,6 +43,10 @@ export interface GeneralSettings {
   theme: UiThemeId;
   /** Interface language (English or German). */
   uiLanguage?: UiLanguage;
+  /**
+   * Display-only carbon hydrogens at explicit-H size and bond length
+   * (same visual as right-click Add explicit H, without adding graph atoms).
+   */
   showImplicitHydrogens: boolean;
   /**
    * When true, 2D atom labels use element palette colors (N blue, O red, …).
@@ -79,6 +83,11 @@ export interface GeneralSettings {
    * Default false — titles and controls only.
    */
   showSettingsDescriptions?: boolean;
+  /**
+   * Settings panel: when true, show a compact real-structure preview for
+   * options that can be illustrated. Independent of descriptions. Default false.
+   */
+  showSettingsExamples?: boolean;
   /**
    * Touch screens: one finger on empty canvas with the Select tool pans the
    * view instead of drawing a selection box. Default false (two-finger pan).

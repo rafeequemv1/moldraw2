@@ -30,6 +30,8 @@ const ATOM_TABLE: readonly CondensedToken[] = [
   { key: 'COOET', smiles: 'C(=O)OCC', element: 'C' },
   { key: 'CONH2', smiles: 'C(=O)N', element: 'C' },
   { key: 'COOH', smiles: 'C(=O)O', element: 'C' },
+  { key: 'COONA', smiles: 'C(=O)[O-]', element: 'C' },
+  { key: 'CO2NA', smiles: 'C(=O)[O-]', element: 'C' },
   { key: 'COCH3', smiles: 'C(=O)C', element: 'C' },
   { key: 'SO2NH2', smiles: 'S(=O)(=O)N', element: 'S' },
   { key: 'SO2PH', smiles: 'S(=O)(=O)c1ccccc1', element: 'S' },

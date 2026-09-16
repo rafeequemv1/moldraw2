@@ -24,7 +24,9 @@ export const getMolecularData = (mol: Molecule): MolecularData => {
     counts[atom.element] = (counts[atom.element] || 0) + 1;
     const bondV = bondValence.get(atom.id) ?? 0;
     const maxV = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge ?? 0);
-    const implH = Math.max(0, maxV - bondV - Math.abs(atom.charge ?? 0));
+    // Charge is already folded into `maxV` (e.g. B− → 4 for BH4−, C− → 3).
+    // Subtracting |charge| again undercounted hydrides in the formula bar.
+    const implH = Math.max(0, maxV - bondV);
     if (implH > 0) counts['H'] = (counts['H'] || 0) + implH;
   });
   const elems = Object.keys(counts);

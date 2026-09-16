@@ -20,6 +20,7 @@ import {
   resolveShortcutBindings,
   type ShortcutBindingsMap,
 } from '../keyboard/shortcutBindings';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export type SelectToolId = 'select' | 'lasso_select';
 
@@ -299,6 +300,7 @@ export function TopBarSelectMenu({
     setOpenSub(null);
     setSubPos(null);
   };
+  useChromeOverlay(open, closeMenu);
 
   useLayoutEffect(() => {
     if (!open || !rootRef.current) {

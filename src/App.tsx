@@ -23,6 +23,7 @@ import {
   sruBracketBoxForAtoms,
 } from '@moldraw/core';
 import { resolveCanvasPreferences } from '@moldraw/core/canvasPreferences';
+import { viewportWorldCenter } from '@moldraw/core/molecule/importPlacement';
 import { CMD } from '@moldraw/core/commands/registry';
 import {
   bondIdsTargetedBySelection,
@@ -126,6 +127,7 @@ import { PluginHostProvider } from './app/plugins';
 import { useMolDrawAuth } from './app/auth/useMolDrawAuth';
 import { hasUnreadMolDrawUpdates, markMolDrawUpdatesSeen } from './app/components/UpdatesModal';
 import { CanvasWithResolvedTheme } from './app/components/StructureThemeControls';
+import { dismissChromeOverlays } from './app/chromeDismiss';
 import { nativeSmilesTo2DMolblock } from '@moldraw/core/io/smilesToMolblock';
 import { STARTUP_PUBCHEM_CID } from './app/data/selectionSmi';
 import { pubchemMolblockFromCid } from './app/advanced/batchExport';
@@ -177,6 +179,9 @@ const DocumentationPage = lazy(() =>
 );
 const MyProjectsPage = lazy(() =>
   import('./app/components/MyProjectsPage').then(m => ({ default: m.MyProjectsPage })),
+);
+const AddonsPage = lazy(() =>
+  import('./features/addons/AddonsPage').then(m => ({ default: m.AddonsPage })),
 );
 const PluginModals = lazy(() =>
   import('./app/plugins/PluginModals').then(m => ({ default: m.PluginModals })),
@@ -242,6 +247,10 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (docRoute.kind === 'addons') {
+      document.title = 'MolDraw Addons | PowerPoint and Word (Coming Soon)';
+      return;
+    }
     if (docRoute.kind !== 'editor') return;
     document.title = EDITOR_BROWSER_TAB_TITLE;
   }, [docRoute.kind]);
@@ -930,6 +939,7 @@ function App() {
     cancelAtomAliasEdit,
     commitAtomAlias,
     dismissAliasEditorOnDelete,
+    aliasEditorOpenRef,
   } = useAtomAliasEditor({
     molecule,
     applyCommand,
@@ -1033,6 +1043,20 @@ function App() {
       setSelectedBondIds([]);
     },
     [editorStore, setSelectedAtomIds, setSelectedBondIds],
+  );
+
+  /** Search / PubChem: pan into view without changing zoom (never fit/reset). */
+  const revealAtomsInView = useCallback(
+    (atomIds: string[]) => {
+      if (!atomIds.length) return;
+      const mol = editorStore.getMolecule();
+      const aabb = getSelectionAabb(mol, atomIds);
+      if (!aabb) return;
+      requestAnimationFrame(() => {
+        canvasRef.current?.ensureWorldRectVisible(aabb);
+      });
+    },
+    [editorStore],
   );
 
   const localSessionBridge = useLocalSessionBridge({
@@ -1347,10 +1371,8 @@ function App() {
     const menu = contextMenuRef.current;
     if (menu) return { x: menu.worldX, y: menu.worldY };
     const vp = viewportInfoRef.current;
-    return {
-      x: (window.innerWidth / 2 - vp.x) / vp.zoom,
-      y: (window.innerHeight / 2 - vp.y) / vp.zoom,
-    };
+    const c = viewportWorldCenter(vp);
+    return { x: c.x, y: c.y };
   }, [contextMenuRef]);
 
   const {
@@ -1597,6 +1619,8 @@ function App() {
     onQuickSelect: handleQuickSelect,
     onSetPlacementElement: handleSelectPlacementElement,
     onTypeAtomLabel: handleTypeAtomLabel,
+    aliasEditorOpen: Boolean(editingAtomAliasId),
+    aliasEditorOpenRef,
     onOpenShortcuts: () => setShowShortcuts(true),
     on3DCleanUp: handle3DCleanUp,
     onTogglePerspective: () => {
@@ -1679,6 +1703,7 @@ function App() {
       resetAutoCleanup();
     },
     onFragmentPaste: handlePasteSelection,
+    revealAtomsInView,
   });
   // Bridge: context menu paste / Ctrl+S were wired before import/export exists.
   /* eslint-disable react-hooks/refs -- intentional circular-dep bridge */
@@ -1881,6 +1906,7 @@ function App() {
     workerRef,
     worker3dRef,
     preferIndigo2dRef,
+    revealAtomsInView,
   });
 
   if (docRoute.kind === 'docs') {
@@ -1889,6 +1915,19 @@ function App() {
         <DocumentationPage
           slug={docRoute.slug}
           onSlugChange={slug => setDocRoute({ kind: 'docs', slug })}
+          onClose={() => {
+            navigateToEditor(true);
+            setDocRoute({ kind: 'editor' });
+          }}
+        />
+      </Suspense>
+    );
+  }
+
+  if (docRoute.kind === 'addons') {
+    return (
+      <Suspense fallback={<RouteFallback />}>
+        <AddonsPage
           onClose={() => {
             navigateToEditor(true);
             setDocRoute({ kind: 'editor' });
@@ -2405,6 +2444,7 @@ function App() {
               onRequestAtomAliasEdit={handleRequestAtomAliasEdit}
               onRequestArrowReagentEdit={handleRequestArrowReagentEdit}
               onContextMenu={handleCanvasContextMenu}
+              onDismissChromeOverlays={dismissChromeOverlays}
               touchPanOnEmptyCanvas={appSettings.general.touchPanOnEmptyCanvas === true}
               touchLoupe={appSettings.general.touchLoupe !== false}
               pointerDebugHud={appSettings.general.pointerDebugHud === true}

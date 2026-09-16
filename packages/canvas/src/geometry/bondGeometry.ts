@@ -1,6 +1,8 @@
 /**
  * Bond endpoint trimming so heteroatom labels (O, N, OH, …) get a small visual
- * gap. Carbon-carbon bonds stay flush except at condensed teaching labels (CH₃…).
+ * gap. Carbon-carbon bonds stay flush unless a condensed/alias label is shown —
+ * then the stroke stops before the label box (Ketcher-style). Stored atom
+ * coordinates are never moved.
  */
 import {
   resolveAtomLabelFonts,
@@ -8,18 +10,18 @@ import {
 } from '@moldraw/core/canvasPreferences';
 import {
   DEFAULT_ATOM_INK,
+  condensedGroupLabelForAtom,
   getEffectiveValencyForImplicitHydrogen,
   resolveBondColorFromAtoms,
 } from '@moldraw/domain';
 import type { Atom, Molecule } from '@moldraw/domain';
 import { atomUsesHeteroStyleTrim } from '@moldraw/domain';
-import { condensedGroupLabelForAtom } from '@moldraw/domain';
 import {
   aliasLabelBondGapTowardPartnerPx,
   labelBoxBondGapTowardPartnerPx,
   measureHeadAnchoredLabelSize,
 } from './aliasLabelMetrics';
-import { carbonLabelHGoesLeft } from './hydrogenLayout';
+import { carbonLabelHGoesLeft, hGoesLeft } from './hydrogenLayout';
 
 /** Gap at carbon ends when the partner is a heteroatom (skeletal chain). */
 export const BOND_TRIM_GAP_C = 6;
@@ -79,7 +81,10 @@ export type BondTrimContext = {
   displayPrefs: ResolvedCanvasPreferences;
   /** Per-atom upright correction (matches InfiniteCanvas `applyLabelUpright`). */
   labelRadForAtom: (atomId: string) => number;
-  /** When set with `molecule` + `valencyMap`, terminal condensed labels get bond inset. */
+  /**
+   * Teaching labels (CH₃ / NH₂ / OH). Render-only: insets the bond tip at the
+   * label box. Does not change stored atom coordinates.
+   */
   condensedGroupLabels?: boolean;
   molecule?: Molecule;
   valencyMap?: Map<string, number>;
@@ -107,15 +112,44 @@ const gapAtAtomEnd = (
     atom,
     partner,
     rad,
+    trimCtx.molecule,
   );
   if (aliasGap <= 0) return base;
   return Math.min(len * 0.28, Math.max(base, aliasGap));
 };
 
 /**
- * Inset (px) at `atom` along the bond toward `partner` so the tip clears the
- * bonding-atom glyph (condensed CH₃/NH₂/OH, or a plain heteroatom symbol).
- * Alias labels use {@link aliasLabelBondGapTowardPartnerPx} instead.
+ * Inset so the bond tip stops at the condensed FG label box (CH₃ / OH / NH₂),
+ * before the attachment glyph — not through C of CH₃.
+ */
+function condensedGroupLabelBondGapTowardPartnerPx(
+  atom: Atom,
+  partner: Atom,
+  trimCtx: BondTrimContext | undefined,
+): number {
+  if (!trimCtx?.condensedGroupLabels || !trimCtx.molecule || !trimCtx.valencyMap) return 0;
+  if (atom.alias?.trim()) return 0;
+  const v = trimCtx.valencyMap.get(atom.id) || 0;
+  const label = condensedGroupLabelForAtom(atom, trimCtx.molecule, v);
+  if (!label) return 0;
+  const prefs = {
+    ...trimCtx.displayPrefs,
+    ...resolveAtomLabelFonts(trimCtx.displayPrefs, atom.labelFontSizePt),
+  };
+  const rad = trimCtx.labelRadForAtom(atom.id);
+  const m = measureHeadAnchoredLabelSize(trimCtx.ctx, prefs, label, atom.charge ?? 0, {
+    tailGoesLeft: hGoesLeft(atom, trimCtx.molecule),
+    attachmentElement: atom.element,
+  });
+  if (m.w < 2) return 0;
+  return labelBoxBondGapTowardPartnerPx(m.left, m.right, m.h, atom, partner, rad);
+}
+
+/**
+ * Inset (px) at `atom` along the bond toward `partner` so the tip clears a
+ * heteroatom glyph. Condensed CH₃/OH labels use
+ * {@link condensedGroupLabelBondGapTowardPartnerPx}. Alias labels use
+ * {@link aliasLabelBondGapTowardPartnerPx}.
  */
 export function condensedTerminalBondInsetPx(
   atom: Atom,
@@ -123,22 +157,14 @@ export function condensedTerminalBondInsetPx(
   trimCtx: BondTrimContext | undefined,
 ): number {
   if (!trimCtx || atom.alias?.trim()) return 0;
+  if (!atomUsesHeteroStyleTrim(atom)) return 0;
 
-  let head: string | null = null;
-  if (trimCtx.condensedGroupLabels && trimCtx.molecule && trimCtx.valencyMap) {
-    const v = trimCtx.valencyMap.get(atom.id) || 0;
-    const label = condensedGroupLabelForAtom(atom, trimCtx.molecule, v);
-    if (label) head = label[0] ?? null;
-  }
-  if (!head && atomUsesHeteroStyleTrim(atom)) {
-    head =
-      atom.element === 'H' && atom.isotope === 2
-        ? 'D'
-        : atom.element === 'H' && atom.isotope === 3
-          ? 'T'
-          : atom.element;
-  }
-  if (!head) return 0;
+  const head =
+    atom.element === 'H' && atom.isotope === 2
+      ? 'D'
+      : atom.element === 'H' && atom.isotope === 3
+        ? 'T'
+        : atom.element;
 
   trimCtx.ctx.save();
   try {
@@ -174,24 +200,6 @@ function formulaLabelBondGapTowardPartnerPx(
   };
   const rad = trimCtx.labelRadForAtom(atom.id);
   const v = trimCtx.valencyMap.get(atom.id) || 0;
-
-  if (trimCtx.condensedGroupLabels) {
-    const label = condensedGroupLabelForAtom(atom, trimCtx.molecule, v);
-    if (label) {
-      const m = measureHeadAnchoredLabelSize(trimCtx.ctx, prefs, label, atom.charge ?? 0);
-      const glyphH = elementGlyphHeightPx(trimCtx.ctx, prefs.elementFontCss);
-      return formulaGapFromExtents(
-        m.left,
-        m.right,
-        m.left,
-        m.headRight,
-        glyphH,
-        atom,
-        partner,
-        rad,
-      );
-    }
-  }
 
   const isCarbon = atom.element === 'C';
   const forceElementLabel = Boolean(atom.showElementLabel);
@@ -260,19 +268,21 @@ const trimBondEndpoints = (
   let gTo = 0;
   const fFrom = formulaLabelBondGapTowardPartnerPx(from, to, trimCtx);
   const fTo = formulaLabelBondGapTowardPartnerPx(to, from, trimCtx);
+  const dFrom = condensedGroupLabelBondGapTowardPartnerPx(from, to, trimCtx);
+  const dTo = condensedGroupLabelBondGapTowardPartnerPx(to, from, trimCtx);
   // Formula Hₙ inset already clears C + H; do not also apply the isotropic
   // hetero / condensed gaps or zigzag bonds shrink to a stub.
   if (fFrom > 0) {
     gFrom = fFrom;
   } else {
     if (atomUsesHeteroStyleTrim(from)) gFrom = gapAtAtomEnd(from, to, len, trimCtx);
-    gFrom = Math.max(gFrom, condensedTerminalBondInsetPx(from, to, trimCtx));
+    gFrom = Math.max(gFrom, condensedTerminalBondInsetPx(from, to, trimCtx), dFrom);
   }
   if (fTo > 0) {
     gTo = fTo;
   } else {
     if (atomUsesHeteroStyleTrim(to)) gTo = gapAtAtomEnd(to, from, len, trimCtx);
-    gTo = Math.max(gTo, condensedTerminalBondInsetPx(to, from, trimCtx));
+    gTo = Math.max(gTo, condensedTerminalBondInsetPx(to, from, trimCtx), dTo);
   }
   if (gFrom + gTo > len * 0.92) {
     const scale = (len * 0.92) / (gFrom + gTo);
@@ -300,7 +310,9 @@ export const bondEndPoints = (
   const cTo = condensedTerminalBondInsetPx(to, from, trimCtx);
   const fFrom = formulaLabelBondGapTowardPartnerPx(from, to, trimCtx);
   const fTo = formulaLabelBondGapTowardPartnerPx(to, from, trimCtx);
-  const condensedAny = cFrom > 0 || cTo > 0 || fFrom > 0 || fTo > 0;
+  const dFrom = condensedGroupLabelBondGapTowardPartnerPx(from, to, trimCtx);
+  const dTo = condensedGroupLabelBondGapTowardPartnerPx(to, from, trimCtx);
+  const condensedAny = cFrom > 0 || cTo > 0 || fFrom > 0 || fTo > 0 || dFrom > 0 || dTo > 0;
   if (!hetero && !condensedAny) return { ax: from.x, ay: from.y, bx: to.x, by: to.y };
   return trimBondEndpoints(from, to, trimCtx);
 };

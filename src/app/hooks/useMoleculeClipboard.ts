@@ -39,6 +39,12 @@ export interface UseMoleculeClipboard {
     targetX: number,
     targetY: number,
     applyCommand: (commandId: string, input: unknown) => CommandResult,
+    view?: {
+      viewport: { x: number; y: number; zoom: number };
+      windowWidth: number;
+      windowHeight: number;
+      bondLengthPx?: number;
+    },
   ) => string[];
 }
 
@@ -67,6 +73,12 @@ export function useMoleculeClipboard(): UseMoleculeClipboard {
       targetX: number,
       targetY: number,
       applyCommand: (commandId: string, input: unknown) => CommandResult,
+      view?: {
+        viewport: { x: number; y: number; zoom: number };
+        windowWidth: number;
+        windowHeight: number;
+        bondLengthPx?: number;
+      },
     ): string[] => {
       const snap = ref.current;
       if (!snap) return [];
@@ -77,6 +89,14 @@ export function useMoleculeClipboard(): UseMoleculeClipboard {
         bonds: snap.bonds,
         dx,
         dy,
+        ...(view
+          ? {
+              viewport: view.viewport,
+              windowWidth: view.windowWidth,
+              windowHeight: view.windowHeight,
+              bondLengthPx: view.bondLengthPx,
+            }
+          : {}),
       });
       if (!result.ok) return [];
       const extra = result.extra as { newAtomIds?: string[] } | undefined;

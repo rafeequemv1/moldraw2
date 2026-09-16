@@ -31,6 +31,7 @@ import { isSimpleCycleAtomSet } from '@moldraw/domain';
 import { QUICK_ELEMENT_PALETTE, PERIODIC_TABLE_CELLS } from '@moldraw/domain';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { MobileSheetAccordion } from './MobileSheetAccordion';
+import { useChromeOverlay } from '../chromeDismiss';
 
 const FLYOUT_GAP = 4;
 const FLYOUT_PAD = 8;
@@ -216,6 +217,7 @@ export function CanvasContextMenu({
   asSheet = false,
   onDismiss,
 }: CanvasContextMenuProps) {
+  useChromeOverlay(true, onDismiss);
   const [exportOpen, setExportOpen] = useState(false);
   const [copyAsOpen, setCopyAsOpen] = useState(false);
   const [elementOpen, setElementOpen] = useState(false);
@@ -407,7 +409,7 @@ export function CanvasContextMenu({
         ...PERIODIC_TABLE_CELLS.filter(
           (c): c is NonNullable<typeof c> =>
             !!c &&
-            ['P', 'F', 'Cl', 'Br', 'I', 'Fe', 'Pt', 'Pd', 'Cu', 'Zn', 'Au'].includes(c.sym),
+            ['Fe', 'Pt', 'Pd', 'Cu', 'Zn', 'Au'].includes(c.sym),
         ),
       ].map(entry => (
         <button

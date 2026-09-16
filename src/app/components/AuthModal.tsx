@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react';
 import { DESIGNATION_OPTIONS, type AuthForm, type AuthMode } from '../auth/useMolDrawAuth';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface AuthModalProps {
   open: boolean;
@@ -26,6 +27,7 @@ export function AuthModal({
   onChange,
   onSubmit,
 }: AuthModalProps) {
+  useChromeOverlay(open, onClose, 'modal');
   if (!open) return null;
 
   const title =

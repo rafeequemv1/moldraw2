@@ -17,6 +17,8 @@ export type AliasAttachMode = 'merge-first' | 'bond-to-labeled' | 'clear';
 export type AliasSmilesSpec = {
   smiles: string;
   attach: AliasAttachMode;
+  /** Unbonded counterion after expand (`COONa` → Na⁺ beside carboxylate). */
+  nearbyIon?: { element: string; charge: number };
 };
 
 /**
@@ -47,6 +49,8 @@ const ABBREV_TO_SMILES: Record<string, AliasSmilesSpec> = {
   COCH3: { smiles: 'C(=O)C', attach: 'merge-first' },
   COOH: { smiles: 'C(=O)O', attach: 'merge-first' },
   CO2H: { smiles: 'C(=O)O', attach: 'merge-first' },
+  COONA: { smiles: 'C(=O)[O-]', attach: 'merge-first', nearbyIon: { element: 'Na', charge: 1 } },
+  CO2NA: { smiles: 'C(=O)[O-]', attach: 'merge-first', nearbyIon: { element: 'Na', charge: 1 } },
   COOME: { smiles: 'C(=O)OC', attach: 'merge-first' },
   CO2ME: { smiles: 'C(=O)OC', attach: 'merge-first' },
   COOCH3: { smiles: 'C(=O)OC', attach: 'merge-first' },

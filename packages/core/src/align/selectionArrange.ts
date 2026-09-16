@@ -1,7 +1,7 @@
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
 
 export type SelectionAlignMode = 'top' | 'center' | 'bottom' | 'left' | 'right' | 'centerX';
-export type SelectionDistributeAxis = 'horizontal' | 'vertical' | 'grid' | 'circle';
+export type SelectionDistributeAxis = 'horizontal' | 'vertical' | 'grid' | 'circle' | 'row';
 
 export type FragmentBox = {
   atomIds: string[];
@@ -222,6 +222,9 @@ export const distributeSelectedFragments = (
   if (axis === 'circle') {
     return arrangeFragmentsInCircle(mol, boxes, options?.radius);
   }
+  if (axis === 'row') {
+    return arrangeSelectedFragmentsLinear(mol, boxes);
+  }
 
   const sorted = [...boxes].sort((a, b) =>
     axis === 'horizontal' ? a.minX - b.minX || a.cx - b.cx : a.minY - b.minY || a.cy - b.cy,
@@ -261,6 +264,39 @@ export const distributeSelectedFragments = (
     const dy = cursor - box.minY;
     cursor += heights[index]! + gap;
     return { dx: 0, dy };
+  });
+};
+
+/**
+ * Neat linear row: left-to-right by current centroid X, shared centre Y,
+ * equal AABB gaps. Translate only — internal geometry is unchanged.
+ */
+export const arrangeSelectedFragmentsLinear = (
+  mol: Molecule,
+  boxes: FragmentBox[],
+): Molecule => {
+  if (boxes.length < 2) return mol;
+  const sorted = [...boxes].sort((a, b) => a.cx - b.cx || a.cy - b.cy || a.minX - b.minX);
+  const targetCy = sorted.reduce((sum, b) => sum + b.cy, 0) / sorted.length;
+  const widths = sorted.map(b => Math.max(1, b.maxX - b.minX));
+  let bondSum = 0;
+  let bondCount = 0;
+  const atomById = new Map(mol.atoms.map(a => [a.id, a]));
+  for (const b of mol.bonds) {
+    const a1 = atomById.get(b.fromAtomId);
+    const a2 = atomById.get(b.toAtomId);
+    if (!a1 || !a2) continue;
+    bondSum += Math.hypot(a1.x - a2.x, a1.y - a2.y);
+    bondCount += 1;
+  }
+  const bond = bondCount > 0 ? bondSum / bondCount : 40;
+  const gap = Math.max(MIN_DISTRIBUTE_GAP, bond * 1.5);
+  let cursor = sorted[0]!.minX;
+  return translateByBox(mol, sorted, (box, index) => {
+    const dx = cursor - box.minX;
+    const dy = targetCy - box.cy;
+    cursor += widths[index]! + gap;
+    return { dx, dy };
   });
 };
 

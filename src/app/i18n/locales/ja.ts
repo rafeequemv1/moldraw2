@@ -99,6 +99,7 @@ export const ja: LocaleMessages = {
     signUp: 'サインアップ',
     signOut: 'サインアウト',
     tools: 'ツール',
+    addons: 'アドオン',
     updates: '更新',
     more: 'その他',
     homepage: 'ホームページ',
@@ -142,6 +143,7 @@ export const ja: LocaleMessages = {
     helpTitle: 'サポートチャットを開く',
     helpCloseTitle: 'サポートチャットを閉じる',
     toolsTitle: 'MolDraw化学ツール、計算機、コンバーターを開く',
+    addonsTitle: 'PowerPointとWord向けMolDrawアドオン',
     signInTitle: 'MolDrawにサインイン',
     signUpTitle: 'MolDrawアカウントを作成',
     signedInTitle: '{{name}}としてサインイン中。クリックでサインアウト。',
@@ -243,7 +245,8 @@ export const ja: LocaleMessages = {
     close: '閉じる',
     newTab: '新しいデザインタブ',
     closeTab: '{{name}}を閉じる',
-    renameHint: '{{name}} — ダブルクリックで名前変更',
+    renameHint: '{{name}} — クリックで名前変更',
+    clickToRename: 'クリックで名前変更',
     untitled: '無題のデザイン',
   },
   settings: {
@@ -257,6 +260,9 @@ export const ja: LocaleMessages = {
     intro:
       'このブラウザに保存されます。書体、エクスポート、結合の外観は変更するまで保持されます。スタイルプリセットはジャーナルレイアウトを比較 — 各サムネイルはそのプリセットでアスピリンを表示します。',
     showDescriptions: '説明を表示',
+    showExamples: '例を表示',
+    exampleOff: 'オフ',
+    exampleOn: 'オン',
     resetDefaults: '既定にリセット',
     sections: 'セクション',
     closeAria: '閉じる',
@@ -273,9 +279,9 @@ export const ja: LocaleMessages = {
       themeElegantDarkHint: 'ChatGPT風のソフトなチャコールUI、暗いキャンバス上の明るい結合',
       themeInkDark: 'インクダーク',
       themeInkDarkHint: 'ほぼ黒のUIとキャンバス — 白い結合と白い原子文字',
-      showImplicitH: '暗黙的Hラベルを表示',
+      showImplicitH: '明示的Hラベルを表示',
       showImplicitHHint:
-        '水素が展開されていないとき、2DキャンバスにCH₃/NH₂形式の数を描画。トップバーのHボタンはIndigoで実H原子の折りたたみ/展開に使用。',
+        '右クリックの「明示的Hを追加」と同じサイズ・結合長で炭素上の水素を描画します（実H原子は追加しません）。「すべての水素を展開」は構造を展開します。',
       colorAtomLabels: '元素で原子ラベルを色分け',
       colorAtomLabelsHint:
         '既定オフ（2D原子は黒）。オン時、ヘテロ原子ラベルはパレット色（N青、O赤など）。カスタム色は常に適用。3Dビューアは常に元素色。',
@@ -500,5 +506,9 @@ export const ja: LocaleMessages = {
       electron_flow: 'e⁻ 流',
       resonance: '共鳴 ↔',
     },
+  },
+  alignBar: {
+    arrange: '整列',
+    arrangeTitle: '整列 — 横一列、等間隔、中心を揃える',
   },
 };

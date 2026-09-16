@@ -24,6 +24,7 @@ import {
 import type { ColorTargetPrefs } from '../settings/types';
 import { FormatPanelAccordion } from './FormatPanelAccordion';
 import { useI18n } from '../i18n';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface TopBarColorMenuProps {
   activeColor: string;
@@ -166,6 +167,7 @@ export function TopBarColorMenu({
   const panelRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const ringOpacity = colorTargets.ringFillOpacity;
+  useChromeOverlay(open, () => setOpen(false), 'dock');
 
   const caps = getSelectionColorCapabilities(
     molecule,
@@ -203,10 +205,10 @@ export function TopBarColorMenu({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
-    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('pointerdown', onDoc);
     document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('pointerdown', onDoc);
       document.removeEventListener('keydown', onKey);
     };
   }, [open, isCompact]);

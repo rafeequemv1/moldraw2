@@ -27,6 +27,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     snapToGrid: false,
     showGrid: false,
     showSettingsDescriptions: false,
+    showSettingsExamples: false,
     touchPanOnEmptyCanvas: false,
     touchLoupe: true,
     pointerDebugHud: false,

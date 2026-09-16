@@ -43,6 +43,10 @@ export interface KeyboardShortcutsOptions {
   ) => void;
   onSetPlacementElement: (element: string) => void;
   onTypeAtomLabel: (atomId: string, initialChar: string) => void;
+  /** Inline atom-label editor is open — never steal letters for tools/elements. */
+  aliasEditorOpen?: boolean;
+  /** Synchronous open flag (atom id) so keys before React re-render are not stolen. */
+  aliasEditorOpenRef?: { current: string | null };
   onOpenShortcuts?: () => void;
   on3DCleanUp?: () => void;
   onTogglePerspective?: () => void;
@@ -80,6 +84,8 @@ export function useKeyboardShortcuts({
   onQuickSelect,
   onSetPlacementElement,
   onTypeAtomLabel,
+  aliasEditorOpen,
+  aliasEditorOpenRef,
   onOpenShortcuts,
   on3DCleanUp,
   onTogglePerspective,
@@ -107,6 +113,8 @@ export function useKeyboardShortcuts({
     onQuickSelect,
     onSetPlacementElement,
     onTypeAtomLabel,
+    aliasEditorOpen,
+    aliasEditorOpenRef,
     onOpenShortcuts,
     on3DCleanUp,
     onTogglePerspective,
@@ -135,6 +143,8 @@ export function useKeyboardShortcuts({
       onQuickSelect,
       onSetPlacementElement,
       onTypeAtomLabel,
+      aliasEditorOpen,
+      aliasEditorOpenRef,
       onOpenShortcuts,
       on3DCleanUp,
       onTogglePerspective,
@@ -293,6 +303,22 @@ export function useKeyboardShortcuts({
 
       if (inText) return;
 
+      const isLabelChar = e.key.length === 1 && /^[A-Za-z0-9+\-()]$/.test(e.key);
+      const mod = e.ctrlKey || e.metaKey;
+      const editingId = cb.aliasEditorOpenRef?.current ?? null;
+      const editorOpen = Boolean(editingId || cb.aliasEditorOpen);
+      const labelAtomId = editingId ?? cb.selectedAtomId ?? cb.hoverAtomIdRef?.current ?? null;
+
+      // Overlay may not have focus yet (rAF). Don't steal keys for tools/elements.
+      // Use the ref so the first letters of COONa are not eaten as O/N shortcuts.
+      if (editorOpen) {
+        if (isLabelChar && !mod && !e.altKey && labelAtomId) {
+          e.preventDefault();
+          cb.onTypeAtomLabel(labelAtomId, e.key);
+        }
+        return;
+      }
+
       if (match('delete')) {
         cb.onDelete();
         return;
@@ -343,10 +369,8 @@ export function useKeyboardShortcuts({
       }
 
       // Type-to-rename takes precedence over element/tool letter shortcuts.
-      const isSingleLetter = e.key.length === 1 && /^[A-Za-z]$/.test(e.key);
-      const mod = e.ctrlKey || e.metaKey;
-      const labelAtomId = cb.selectedAtomId ?? cb.hoverAtomIdRef?.current ?? null;
-      if (isSingleLetter && !mod && labelAtomId) {
+      // Keep the typed case (`a` not `A`) so two-letter symbols like Na work.
+      if (isLabelChar && /^[A-Za-z]$/.test(e.key) && !mod && labelAtomId) {
         e.preventDefault();
         cb.onTypeAtomLabel(labelAtomId, e.key);
         return;

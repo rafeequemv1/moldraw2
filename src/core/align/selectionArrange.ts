@@ -2,6 +2,7 @@
 export {
   alignSelectedFragments,
   distributeSelectedFragments,
+  arrangeSelectedFragmentsLinear,
   documentFragmentBoxes,
   selectedDocumentFragmentBoxes,
   suggestCircleArrangeRadius,

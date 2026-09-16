@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreHorizontal } from 'lucide-react';
 import { TOUCH_OPEN_CLICK_GUARD_MS } from '../touchConstants';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface TouchQuickMenuItem {
   id: string;
@@ -42,6 +43,7 @@ const angleFor = (index: number, count: number): number =>
   -Math.PI / 2 + (index * 2 * Math.PI) / Math.max(count, 1);
 
 export function TouchQuickMenu({ x, y, title, items, onMore, onDismiss }: TouchQuickMenuProps) {
+  useChromeOverlay(true, onDismiss);
   // Clamp the ring inside the viewport so no button hides under the chrome.
   // Pure function of the press point + viewport size (the menu is short-lived
   // and re-keyed per long-press, so no resize subscription is needed).

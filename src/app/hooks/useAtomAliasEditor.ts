@@ -15,7 +15,6 @@ import type { Molecule } from '@moldraw/domain';
 import {
   ABBREVIATION_PALETTE,
   ABBREV_TEMPLATE_MAP,
-  autocapitalizeAtomAliasDraft,
   condensedGroupLabelForAtom,
   detectExpandedAliasAtAtom,
   formatAliasWithCharge,
@@ -65,6 +64,10 @@ export function useAtomAliasEditor({
   const atomAliasInputRef = useRef<HTMLInputElement>(null);
   const lastAtomAliasFocusId = useRef<string | null>(null);
   const cancelAtomAliasCommitRef = useRef(false);
+  /** Click-to-edit selects the current symbol so typing `Na` replaces `C`. */
+  const selectAllAliasOnFocusRef = useRef(false);
+  const replaceAliasDraftRef = useRef(false);
+  const editingAtomAliasIdRef = useRef<string | null>(null);
 
   const aliasSuggestions = useMemo<AliasSuggestionItem[]>(() => {
     const q = editingAliasDraft.trim().toLowerCase();
@@ -146,6 +149,9 @@ export function useAtomAliasEditor({
   }, [aliasSuggestions.length]);
 
   const finishAtomAliasUi = useCallback(() => {
+    editingAtomAliasIdRef.current = null;
+    replaceAliasDraftRef.current = false;
+    selectAllAliasOnFocusRef.current = false;
     setEditingAtomAliasId(null);
     setEditingAliasDraft('');
     setAliasSuggestIndex(0);
@@ -246,8 +252,13 @@ export function useAtomAliasEditor({
       if (initialDraft === undefined && a && (a.charge ?? 0) !== 0) {
         draft = formatAliasWithCharge(draft || a.element, a.charge);
       }
+      editingAtomAliasIdRef.current = atomId;
+      replaceAliasDraftRef.current = initialDraft === undefined;
+      selectAllAliasOnFocusRef.current = initialDraft === undefined;
       setEditingAtomAliasId(atomId);
       setEditingAliasDraft(draft);
+      selectAllAliasOnFocusRef.current = initialDraft === undefined;
+      replaceAliasDraftRef.current = initialDraft === undefined;
       setAliasSuggestIndex(0);
       setActiveAliasPreviewKey(null);
       setActiveAliasPreviewPinned(false);
@@ -265,10 +276,21 @@ export function useAtomAliasEditor({
 
   const handleTypeAtomLabel = useCallback(
     (atomId: string, initialChar: string) => {
-      if (editingAtomAliasId) return;
+      // Use the ref so keys typed before React re-renders append instead of
+      // replacing the draft with only the last letter (`o` of `coona`).
+      if (editingAtomAliasIdRef.current === atomId) {
+        if (replaceAliasDraftRef.current) {
+          replaceAliasDraftRef.current = false;
+          selectAllAliasOnFocusRef.current = false;
+          setEditingAliasDraft(normalizeAliasLabelCharacters(initialChar));
+          return;
+        }
+        setEditingAliasDraft(prev => normalizeAliasLabelCharacters(prev + initialChar));
+        return;
+      }
       handleRequestAtomAliasEdit(atomId, initialChar);
     },
-    [editingAtomAliasId, handleRequestAtomAliasEdit],
+    [handleRequestAtomAliasEdit],
   );
 
   const dismissAliasEditorOnDelete = useCallback(() => {
@@ -332,23 +354,30 @@ export function useAtomAliasEditor({
     setInlineAtomAliasPos({ left: rect.left + cx, top: rect.top + cy, zoom: vp.zoom });
     if (lastAtomAliasFocusId.current !== editingAtomAliasId) {
       lastAtomAliasFocusId.current = editingAtomAliasId;
-      requestAnimationFrame(() => {
+      const applyFocus = () => {
         const input = atomAliasInputRef.current;
-        if (!input) return;
+        if (!input) return false;
         input.focus({ preventScroll: true });
-        const len = input.value.length;
         try {
-          input.setSelectionRange(len, len);
+          if (selectAllAliasOnFocusRef.current) input.select();
+          else {
+            const len = input.value.length;
+            input.setSelectionRange(len, len);
+          }
         } catch {
           /* ignore */
         }
-      });
+        return true;
+      };
+      if (!applyFocus()) requestAnimationFrame(() => applyFocus());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- layout reads molecule; key drives updates
   }, [editingAtomAliasId, atomAliasLayoutKey, viewportInfo]);
 
   const setEditingAliasDraftNormalized = useCallback((next: string) => {
-    setEditingAliasDraft(autocapitalizeAtomAliasDraft(normalizeAliasLabelCharacters(next)));
+    replaceAliasDraftRef.current = false;
+    selectAllAliasOnFocusRef.current = false;
+    setEditingAliasDraft(normalizeAliasLabelCharacters(next));
   }, []);
 
   return {
@@ -375,6 +404,7 @@ export function useAtomAliasEditor({
     finishAtomAliasUi,
     dismissAliasEditorOnDelete,
     isAliasEditorOpen: Boolean(editingAtomAliasId),
+    aliasEditorOpenRef: editingAtomAliasIdRef,
   };
 }
 

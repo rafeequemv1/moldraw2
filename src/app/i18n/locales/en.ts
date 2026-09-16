@@ -96,6 +96,7 @@ export const en = {
     signUp: 'Sign up',
     signOut: 'Sign out',
     tools: 'Tools',
+    addons: 'Addons',
     updates: 'Updates',
     more: 'More',
     homepage: 'Homepage',
@@ -139,6 +140,7 @@ export const en = {
     helpTitle: 'Open support chat',
     helpCloseTitle: 'Close support chat',
     toolsTitle: 'Open MolDraw chemistry tools, calculators, and converters',
+    addonsTitle: 'MolDraw addons for PowerPoint and Word',
     signInTitle: 'Sign in to MolDraw',
     signUpTitle: 'Create a MolDraw account',
     signedInTitle: 'Signed in as {{name}}. Click to sign out.',
@@ -240,7 +242,8 @@ export const en = {
     close: 'Close',
     newTab: 'New design tab',
     closeTab: 'Close {{name}}',
-    renameHint: '{{name}} — double-click to rename',
+    renameHint: '{{name}} — click to rename',
+    clickToRename: 'Click to rename',
     untitled: 'Untitled design',
   },
   settings: {
@@ -254,6 +257,9 @@ export const en = {
     intro:
       'Saved in this browser. Typography, export, and bond appearance stay until you change them. Style presets compare journal layouts — each thumbnail shows aspirin with that preset.',
     showDescriptions: 'Show descriptions',
+    showExamples: 'Show examples',
+    exampleOff: 'Off',
+    exampleOn: 'On',
     resetDefaults: 'Reset defaults',
     sections: 'Sections',
     closeAria: 'Close',
@@ -270,9 +276,9 @@ export const en = {
       themeElegantDarkHint: 'Soft ChatGPT-style charcoal UI with light bonds on a dark canvas',
       themeInkDark: 'Ink dark',
       themeInkDarkHint: 'Near-black UI and canvas — white bonds and white atom letters',
-      showImplicitH: 'Show implicit H labels',
+      showImplicitH: 'Show explicit H labels',
       showImplicitHHint:
-        'Draw CH₃ / NH₂-style counts on the 2D canvas when hydrogens are not expanded. The top-bar H button uses Indigo to fold/unfold real H atoms instead.',
+        'Draw hydrogens on carbons at the same size and bond length as right-click Add explicit H, without adding real H atoms. Unfold all hydrogens still expands the structure.',
       colorAtomLabels: 'Color atom labels by element',
       colorAtomLabelsHint:
         'Off by default (2D atoms black). When on, heteroatom labels use palette colors (N blue, O red, etc.). Custom painted colors always apply. The 3D viewer always uses element colors.',
@@ -506,6 +512,10 @@ export const en = {
       electron_flow_single: 'Fishhook (1e⁻)',
       resonance: 'Resonance ↔',
     },
+  },
+  alignBar: {
+    arrange: 'Arrange',
+    arrangeTitle: 'Arrange — neat horizontal row, even gaps, aligned centres',
   },
 } as const;
 

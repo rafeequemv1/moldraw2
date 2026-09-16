@@ -23,6 +23,7 @@ import {
 } from '@moldraw/core';
 import type { HiddenCanvasIds } from '@moldraw/canvas';
 import '../../styles/objects-panel.css';
+import { useChromeOverlay } from '../chromeDismiss';
 
 const ROW_HEIGHT = 28;
 const OVERSCAN = 8;
@@ -295,6 +296,7 @@ export function ObjectsPanel({
   onClose,
   variant = 'dock',
 }: ObjectsPanelProps) {
+  useChromeOverlay(variant !== 'sheet', onClose, 'dock');
   const rows = useMemo(() => resolveOutlineRows(molecule), [molecule]);
   const [search, setSearch] = useState('');
   const [renamingKey, setRenamingKey] = useState<string | null>(null);

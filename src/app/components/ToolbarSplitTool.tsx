@@ -26,6 +26,7 @@ import {
   placeLeftRailFlyout,
   shouldOpenMenuAbove,
 } from '../menuPlacement';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface ToolbarSplitToolOption<T extends string> {
   value: T;
@@ -160,6 +161,7 @@ export function ToolbarSplitTool<T extends string>({
     setOpen(false);
     setQuery('');
   };
+  useChromeOverlay(open, closeMenu);
 
   const toggleMenu = () => {
     onSelectTool();

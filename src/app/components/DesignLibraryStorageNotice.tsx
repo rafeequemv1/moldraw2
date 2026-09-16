@@ -1,19 +1,13 @@
-/** Explains how My designs auto-save works and what the limits are. */
+/**
+ * Always-visible local-save warning.
+ * Color matches Updates / feature-request helper text: `var(--text-muted)`.
+ */
 export function DesignLibraryStorageNotice() {
   return (
-    <div className="design-library__notice" role="note" aria-label="How designs are saved">
-      <p className="design-library__notice-lead">
-        <strong>Auto-saved on this device.</strong> Every tab saves to your browser library while you edit
-        (about every few seconds). Nothing is uploaded to the cloud.
-      </p>
-      <ul className="design-library__notice-list">
-        <li>Designs stay on this browser and profile only — not synced across devices.</li>
-        <li>Clearing site data, private browsing, or uninstalling the browser can delete them.</li>
-        <li>
-          Each card downloads a native <strong>.moldraw</strong> file (entire canvas). Use{' '}
-          <strong>Download all</strong> for a ZIP (default) or uncheck ZIP to save files one by one.
-        </li>
-      </ul>
-    </div>
+    <p className="design-library__notice" role="note">
+      Be careful: designs are saved locally in this browser. Clearing site data, another
+      browser, or a private window can remove them. Always save a copy on your computer so you
+      don’t lose work in progress.
+    </p>
   );
 }

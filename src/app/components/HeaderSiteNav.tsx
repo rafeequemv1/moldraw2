@@ -7,6 +7,7 @@ import { ChevronRight, ClipboardPaste, Copy, FolderOpen, Image, Search } from 'l
 import { COPY_AS_FORMAT_ITEMS } from '../copyAsFormats';
 import type { CopyAsFormat } from '../types';
 import { useI18n } from '../i18n';
+import { useChromeOverlay } from '../chromeDismiss';
 import {
   anchoredMenuStyle,
   placeAnchoredMenu,
@@ -60,8 +61,11 @@ export interface HeaderSiteNavProps {
 
   downloadMenu: ReactNode;
 
-  /** File dropdown — rendered immediately left of Community. */
+  /** File dropdown — rendered immediately left of Select, then Community. */
   fileMenu?: ReactNode;
+
+  /** Select menu — rendered immediately right of File on desktop/web. */
+  selectMenu?: ReactNode;
 
   /**
    * Desktop: the signed-in account (name + Sign out) lives in the right-hand
@@ -171,6 +175,8 @@ function buildMoreItems(
     ...(extraActions ?? []),
 
     { kind: 'link', href: '/pages/about.html', label: t('nav.homepage'), title: t('nav.homepageTitle') },
+
+    { kind: 'link', href: '/addons', label: t('nav.addons'), title: t('nav.addonsTitle') },
 
     {
 
@@ -467,6 +473,7 @@ export function HeaderPromoLinks({
 
   const { t } = useI18n();
   const [moreOpen, setMoreOpen] = useState(false);
+  useChromeOverlay(moreOpen, () => setMoreOpen(false));
 
   const [moreMenuPos, setMoreMenuPos] = useState<AnchoredMenuPos | null>(null);
 
@@ -733,6 +740,7 @@ export function HeaderSiteNav({
   authDisplayName,
   downloadMenu,
   fileMenu,
+  selectMenu,
   accountInMoreMenu = false,
   compactLayout = false,
   onOpenAdvancedSearch,
@@ -740,6 +748,7 @@ export function HeaderSiteNav({
 }: HeaderSiteNavProps) {
   const { t } = useI18n();
   const [moreOpen, setMoreOpen] = useState(false);
+  useChromeOverlay(moreOpen, () => setMoreOpen(false));
 
   const compactMoreItems = compactLayout
     ? buildMoreItems(
@@ -753,6 +762,12 @@ export function HeaderSiteNav({
             href: '/tools/',
             label: t('nav.tools'),
             title: t('nav.toolsTitle'),
+          },
+          {
+            kind: 'link',
+            href: '/addons',
+            label: t('nav.addons'),
+            title: t('nav.addonsTitle'),
           },
           {
             kind: 'link',
@@ -816,6 +831,7 @@ export function HeaderSiteNav({
     >
       <div className="header-links__lead">
         {compactLayout ? null : fileMenu}
+        {compactLayout ? null : selectMenu}
         {compactLayout ? null : (
           <a
             className="tb-btn tb-btn-community"

@@ -15,6 +15,7 @@ import type { DownloadFormat } from '../types';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { MobileSheetAccordion } from './MobileSheetAccordion';
 import { useI18n } from '../i18n';
+import { useChromeOverlay } from '../chromeDismiss';
 import {
   anchoredMenuStyle,
   placeAnchoredMenu,
@@ -158,10 +159,10 @@ export function FileMenu({
       setMenuOpen(false);
       setSaveAsOpen(false);
     };
-    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('pointerdown', onDoc);
     document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('pointerdown', onDoc);
       document.removeEventListener('keydown', onKey);
     };
   }, [menuOpen, preferSheet, saveAsOpen]);
@@ -173,6 +174,8 @@ export function FileMenu({
     setMenuOpen(false);
     setSaveAsOpen(false);
   };
+
+  useChromeOverlay(menuOpen, close);
 
   const triggerOpen = () => {
     close();

@@ -2,6 +2,7 @@
  * Confirm dialog before ungrouping Pattern / Objects collections.
  */
 import { createPortal } from 'react-dom';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface UngroupConfirmModalProps {
   open: boolean;
@@ -10,6 +11,7 @@ export interface UngroupConfirmModalProps {
 }
 
 export function UngroupConfirmModal({ open, onCancel, onConfirm }: UngroupConfirmModalProps) {
+  useChromeOverlay(open, onCancel, 'confirm');
   if (!open) return null;
   return createPortal(
     <div

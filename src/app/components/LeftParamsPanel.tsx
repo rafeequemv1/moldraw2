@@ -9,6 +9,7 @@ import { X } from 'lucide-react';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { useCompactViewport } from '../hooks/useCompactViewport';
 import { useLeftDockExclusive } from '../leftDockExclusive';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface LeftParamsPanelProps {
   title: string;
@@ -44,6 +45,7 @@ export function LeftParamsPanel({
 }: LeftParamsPanelProps) {
   const isCompact = useCompactViewport();
   useLeftDockExclusive('params', !isCompact, onClose);
+  useChromeOverlay(true, onClose, 'dock');
 
   useEffect(() => {
     if (isCompact) return undefined;

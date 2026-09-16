@@ -11,6 +11,7 @@ import {
 import { ShapeKindPreview } from './toolOptionPreviews';
 import '../../styles/template-library-modal.css';
 import '../../styles/glassware-library-modal.css';
+import { useChromeOverlay } from '../chromeDismiss';
 
 const ALL_CATEGORY_ID = 'all' as const;
 type SidebarCategoryId = typeof ALL_CATEGORY_ID | GlasswareCategoryId;
@@ -31,6 +32,7 @@ export function GlasswareLibraryModal({
   const groups = useMemo(() => listGlasswareLibraryByCategory(), []);
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState<SidebarCategoryId>(ALL_CATEGORY_ID);
+  useChromeOverlay(open, onClose, 'modal');
 
   const searchQuery = search.trim().toLowerCase();
   const totalCount = useMemo(() => groups.reduce((n, g) => n + g.items.length, 0), [groups]);

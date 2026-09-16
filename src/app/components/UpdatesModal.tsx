@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useChromeOverlay } from '../chromeDismiss';
 
 const UPDATES_SEEN_STORAGE_KEY = 'moldraw_updates_seen_version';
 export const CURRENT_UPDATES_VERSION = '2026-09-changelog-v3';
@@ -137,6 +138,7 @@ export function markMolDrawUpdatesSeen(): void {
 }
 
 export function UpdatesModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useChromeOverlay(open, onClose, 'modal');
   const [visibleCount, setVisibleCount] = useState(LAZY_BATCH);
   const listRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);

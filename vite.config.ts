@@ -1,14 +1,39 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 const pkg = (name: string) => path.resolve(root, `packages/${name}/src`)
 
+/** Serve the static addons page at /addons and /addons/ in Vite (dev + preview). */
+function addonsHtmlPlugin(): Plugin {
+  const rewrite = (req: { url?: string }) => {
+    const url = req.url?.split('?')[0]
+    if (url === '/addons' || url === '/addons/') {
+      req.url = '/addons/index.html'
+    }
+  }
+  return {
+    name: 'moldraw-addons-html',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req)
+        next()
+      })
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req)
+        next()
+      })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), addonsHtmlPlugin()],
   resolve: {
     alias: [
       {

@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
+  useChromeOverlay(open, onCancel, 'confirm');
   if (!open) return null;
 
   const titleId = 'confirm-dialog-title';

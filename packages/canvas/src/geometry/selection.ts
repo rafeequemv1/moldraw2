@@ -3,10 +3,12 @@
  * the "select" tool. Also contains lasso → atom-id collection.
  */
 import type { Atom, Molecule } from '@moldraw/domain';
+import { orientFormulaLabel } from '@moldraw/domain';
 import { pointInPolygon, type Point } from './polygons';
 import { sampleReactionArrowPolyline } from './reactionArrow';
 import { getCanvasShapeBox } from './canvasShapeTransform';
 import { canvasTextBbox, estimateCanvasTextAabb } from './canvasText';
+import { hGoesLeft } from './hydrogenLayout';
 
 export type MarqueeSelectionBoundsInput = {
   atomIds: string[];
@@ -316,19 +318,36 @@ export const pickSelectionBoxHandle = (
 export const TRANSFORM_MIN_SPAN = 28;
 
 /**
- * World AABB of a head-anchored label (first glyph centered on the atom).
+ * World AABB of a head-anchored label (bonding glyph centered on the atom;
+ * tail extends away from the parent bond — H3C left, CH3 right).
  * Pure estimate — no canvas measure needed for selection chrome / hit-test.
  */
 export const estimateLabelTextAabb = (
   atom: Atom,
   text: string | null | undefined,
+  mol?: Molecule,
 ): { minX: number; maxX: number; minY: number; maxY: number } | null => {
   const label = text?.trim();
   if (!label) return null;
-  // Matches drawAtomLabels head-anchored layout: first char on atom, rest to the right.
-  const w = Math.max(16, 8 + label.length * 9.5);
+  const tailGoesLeft = mol ? hGoesLeft(atom, mol) : false;
+  const oriented = orientFormulaLabel(label, atom.element, tailGoesLeft);
+  const charW = 9.5;
   const h = 22;
-  const left = -8;
+  const headW = 16;
+  let left: number;
+  let w: number;
+  if (oriented.mode === 'block' && oriented.tailGoesLeft) {
+    w = Math.max(16, 8 + oriented.text.length * charW);
+    left = headW / 2 - w;
+  } else if (oriented.mode === 'formula') {
+    const prefixLen = oriented.headIndex;
+    const suffixLen = Math.max(0, oriented.text.length - oriented.headIndex - oriented.head.length);
+    left = -headW / 2 - prefixLen * charW;
+    w = prefixLen * charW + headW + suffixLen * charW;
+  } else {
+    w = Math.max(16, 8 + oriented.text.length * charW);
+    left = -8;
+  }
   return {
     minX: atom.x + left,
     maxX: atom.x + left + w,
@@ -340,8 +359,9 @@ export const estimateLabelTextAabb = (
 /** AABB for an explicit atom alias (COOH, Ph, …). */
 export const estimateAliasLabelAabb = (
   atom: Atom,
+  mol?: Molecule,
 ): { minX: number; maxX: number; minY: number; maxY: number } | null =>
-  estimateLabelTextAabb(atom, atom.alias);
+  estimateLabelTextAabb(atom, atom.alias, mol);
 
 /** Tight axis-aligned bbox covering all selected atoms (or null when empty). */
 export const getSelectionAabb = (mol: Molecule, ids: string[]): SelectionAabb | null => {
@@ -356,7 +376,7 @@ export const getSelectionAabb = (mol: Molecule, ids: string[]): SelectionAabb | 
     maxX = Math.max(maxX, a.x);
     minY = Math.min(minY, a.y);
     maxY = Math.max(maxY, a.y);
-    const labelBox = estimateAliasLabelAabb(a);
+    const labelBox = estimateAliasLabelAabb(a, mol);
     if (labelBox) {
       minX = Math.min(minX, labelBox.minX);
       maxX = Math.max(maxX, labelBox.maxX);

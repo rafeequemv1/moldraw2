@@ -12,7 +12,7 @@ export const distributeFragmentsTool: RegisteredAiTool = {
   inputSchema: distributeFragmentsInputSchema,
   handler: (input, ctx) => {
     const { axis, moleculeIndexes, atomIds, useSelection, radius } = input as {
-      axis: 'horizontal' | 'vertical' | 'grid' | 'circle';
+      axis: 'horizontal' | 'vertical' | 'grid' | 'circle' | 'row';
       moleculeIndexes?: number[];
       atomIds?: string[];
       useSelection?: boolean;

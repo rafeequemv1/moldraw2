@@ -94,7 +94,7 @@
   flex: 1;
   min-width: 0;
   min-height: 30px;
-  padding: 0 8px 0 12px;
+  padding: 0 4px 0 12px;
   border: none;
   background: transparent;
   color: inherit;
@@ -104,11 +104,59 @@
   letter-spacing: -0.01em;
   line-height: 1;
   text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
   cursor: pointer;
   pointer-events: auto;
+}
+
+.document-tab-bar__tab-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.12s ease;
+}
+
+.document-tab-bar__tab:hover .document-tab-bar__tab-name,
+.document-tab-bar__tab-label:focus-visible .document-tab-bar__tab-name {
+  text-decoration-color: color-mix(in srgb, currentColor 42%, transparent);
+}
+
+.document-tab-bar__tab-rename {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  opacity: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+.document-tab-bar__tab:hover .document-tab-bar__tab-rename,
+.document-tab-bar__tab:focus-within .document-tab-bar__tab-rename,
+.document-tab-bar__tab-rename:focus-visible {
+  opacity: 0.55;
+}
+
+.document-tab-bar__tab-rename:hover,
+.document-tab-bar__tab-rename:focus-visible {
+  opacity: 0.9;
+  background: color-mix(in srgb, var(--chrome-hover) 90%, transparent);
 }
 
 .document-tab-bar__tab--editing {
@@ -312,9 +360,14 @@ html.app-mobile-compact .document-tab-bar__tab--active {
 
 html.app-mobile-compact .document-tab-bar__tab-label {
   min-height: 26px;
-  padding: 0 6px 0 8px;
+  padding: 0 4px 0 8px;
   font-size: 11px;
   font-weight: 600;
+}
+
+html.app-mobile-compact .document-tab-bar__tab-rename {
+  width: 16px;
+  height: 16px;
 }
 
 html.app-mobile-compact .document-tab-bar__tab--editing {

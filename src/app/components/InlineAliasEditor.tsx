@@ -146,6 +146,7 @@ export const InlineAliasEditor = forwardRef<HTMLInputElement, InlineAliasEditorP
                   window.setTimeout(commitFromBlur, 0);
                 }}
                 onKeyDown={e => {
+                  if (!(e.ctrlKey || e.metaKey)) e.stopPropagation();
                   if (e.key === 'Escape') {
                     e.preventDefault();
                     setSuggestionsOpen(false);
@@ -183,7 +184,11 @@ export const InlineAliasEditor = forwardRef<HTMLInputElement, InlineAliasEditorP
                     (e.currentTarget as HTMLInputElement).blur();
                   }
                 }}
+                autoFocus
                 spellCheck={false}
+                autoCapitalize="off"
+                autoCorrect="off"
+                autoComplete="off"
                 aria-label="Functional group label"
                 aria-autocomplete="list"
                 aria-expanded={showPanel}

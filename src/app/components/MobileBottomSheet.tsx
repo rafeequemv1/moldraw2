@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface MobileBottomSheetProps {
   open: boolean;
@@ -40,6 +41,7 @@ export function MobileBottomSheet({
   const dragStartY = useRef<number | null>(null);
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
+  useChromeOverlay(open, onClose, 'modal');
 
   useEffect(() => {
     if (!open) {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Pencil } from 'lucide-react';
 import type { DocumentTab } from '../projects/types';
 import { useI18n } from '../i18n';
 
@@ -114,21 +114,37 @@ export function DocumentTabBar({
                     }}
                   />
                 ) : (
-                  <button
-                    type="button"
-                    className="document-tab-bar__tab-label"
-                    title={t('tabs.renameHint', { name: tab.name })}
-                    onClick={() => {
-                      if (!editing) onSelectTab(tab.id);
-                    }}
-                    onDoubleClick={e => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      beginRename(tab);
-                    }}
-                  >
-                    {tab.name}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="document-tab-bar__tab-label"
+                      title={t('tabs.renameHint', { name: tab.name })}
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (active) beginRename(tab);
+                        else onSelectTab(tab.id);
+                      }}
+                      onDoubleClick={e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        beginRename(tab);
+                      }}
+                    >
+                      <span className="document-tab-bar__tab-name">{tab.name}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="document-tab-bar__tab-rename"
+                      title={t('tabs.clickToRename')}
+                      aria-label={t('tabs.clickToRename')}
+                      onClick={e => {
+                        e.stopPropagation();
+                        beginRename(tab);
+                      }}
+                    >
+                      <Pencil size={11} strokeWidth={2.1} aria-hidden />
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"

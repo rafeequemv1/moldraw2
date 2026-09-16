@@ -404,6 +404,7 @@
     '    <a class="site-topbar-link site-topbar-cta" href="/">Open App</a>',
     '    <a class="site-topbar-link" href="/dashboard/">Dashboard</a>',
     '    <a class="site-topbar-link" href="/tools/">Tools</a>',
+    '    <a class="site-topbar-link" href="/addons">Addons</a>',
     '    <a class="site-topbar-link" href="/community/">Community</a>',
     '    <a class="site-topbar-link" href="/tools/free-chem-tools/">Free Tools</a>',
     '    <a class="site-topbar-link" href="/course/index.html">Course</a>',

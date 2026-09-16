@@ -7,6 +7,7 @@ import { Hexagon } from 'lucide-react';
 import { COF_LAYERS_DEFAULT, COF_PACK_DEFAULT, cofLatticeForAtomIds, listCofPresets } from '@moldraw/core';
 import type { Molecule } from '@moldraw/domain';
 import type { CofGenerateParams, CofGenerateResult } from './types';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export type CofsMenuProps = {
   molecule: Molecule;
@@ -27,6 +28,7 @@ export function CofsMenu({
   const [menuOpen, setMenuOpen] = useState(false);
   const [presetId, setPresetId] = useState<string | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  useChromeOverlay(menuOpen, () => setMenuOpen(false));
   const sessionRef = useRef<{
     presetId: string;
     atomIds: string[];

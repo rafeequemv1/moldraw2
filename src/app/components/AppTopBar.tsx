@@ -37,6 +37,7 @@ import { ThemeToggleButton } from './ThemeToggleButton';
 import { MolDrawLogoMark } from './MolDrawLogoMark';
 import type { UiThemeId } from '../theme';
 import { useI18n } from '../i18n';
+import { useChromeOverlay } from '../chromeDismiss';
 import { TopBarColorMenu } from './TopBarColorMenu';
 import { TopBarSelectMenu, type SelectToolId } from './TopBarSelectMenu';
 import type { CanvasShape, CanvasText, Molecule, ReactionArrow } from '@moldraw/domain';
@@ -375,6 +376,7 @@ export function AppTopBar(props: AppTopBarProps) {
   const headerRef = useRef<HTMLElement | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [searchSheetOpen, setSearchSheetOpen] = useState(false);
+  useChromeOverlay(searchSheetOpen, () => setSearchSheetOpen(false), 'modal');
   const searchWasLoading = useRef(false);
   const hasStyleSelection =
     selectedAtomCount > 0 ||
@@ -655,6 +657,7 @@ export function AppTopBar(props: AppTopBarProps) {
         <div className="app-top-bar__site-row">
           <HeaderSiteNav
             fileMenu={fileMenu}
+            selectMenu={selectMenu}
             onOpenMyDesigns={() => onOpenLibrary?.()}
             onCopySmiles={() => onCopySmiles?.()}
             onCopySvg={() => onCopySvg?.()}
@@ -968,7 +971,6 @@ export function AppTopBar(props: AppTopBarProps) {
         {!isCompact && ribbonMode === 'home' ? (
         <ToolCluster label={t('topBar.clusterArrange')}>
           {contextRow}
-          {selectMenu}
           <a
             className="app-top-bar__select-trigger app-top-bar__tools-link"
             href="/tools/"

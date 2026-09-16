@@ -98,6 +98,7 @@ export const de: LocaleMessages = {
     signUp: 'Registrieren',
     signOut: 'Abmelden',
     tools: 'Werkzeuge',
+    addons: 'Add-ons',
     updates: 'Updates',
     more: 'Mehr',
     homepage: 'Startseite',
@@ -141,6 +142,7 @@ export const de: LocaleMessages = {
     helpTitle: 'Support-Chat öffnen',
     helpCloseTitle: 'Support-Chat schließen',
     toolsTitle: 'MolDraw-Chemiewerkzeuge, Rechner und Konverter öffnen',
+    addonsTitle: 'MolDraw-Add-ons für PowerPoint und Word',
     signInTitle: 'Bei MolDraw anmelden',
     signUpTitle: 'MolDraw-Konto erstellen',
     signedInTitle: 'Angemeldet als {{name}}. Klicken zum Abmelden.',
@@ -242,7 +244,8 @@ export const de: LocaleMessages = {
     close: 'Schließen',
     newTab: 'Neuer Entwurfs-Tab',
     closeTab: '{{name}} schließen',
-    renameHint: '{{name}} — Doppelklick zum Umbenennen',
+    renameHint: '{{name}} — zum Umbenennen klicken',
+    clickToRename: 'Zum Umbenennen klicken',
     untitled: 'Unbenannter Entwurf',
   },
   settings: {
@@ -256,6 +259,9 @@ export const de: LocaleMessages = {
     intro:
       'In diesem Browser gespeichert. Typografie, Export und Bindungsdarstellung bleiben, bis Sie sie ändern. Stil-Vorlagen vergleichen Zeitschriftenlayouts — jede Miniatur zeigt Aspirin mit dieser Vorlage.',
     showDescriptions: 'Beschreibungen anzeigen',
+    showExamples: 'Beispiele anzeigen',
+    exampleOff: 'Aus',
+    exampleOn: 'Ein',
     resetDefaults: 'Standard wiederherstellen',
     sections: 'Bereiche',
     closeAria: 'Schließen',
@@ -272,9 +278,9 @@ export const de: LocaleMessages = {
       themeElegantDarkHint: 'Weiches Anthrazit-UI im ChatGPT-Stil mit hellen Bindungen auf dunkler Leinwand',
       themeInkDark: 'Tinten-Dunkel',
       themeInkDarkHint: 'Fast schwarzes UI und Leinwand — weiße Bindungen und weiße Atombuchstaben',
-      showImplicitH: 'Implizite H-Beschriftungen anzeigen',
+      showImplicitH: 'Explizite H-Beschriftungen anzeigen',
       showImplicitHHint:
-        'CH₃-/NH₂-ähnliche Zählungen auf der 2D-Leinwand zeichnen, wenn Wasserstoffe nicht expandiert sind. Die H-Schaltfläche in der Leiste nutzt Indigo zum Ein-/Ausklappen echter H-Atome.',
+        'Wasserstoffe an Kohlenstoff in derselben Größe und Bindungslänge wie Rechtsklick „Explizites H hinzufügen“ zeichnen, ohne echte H-Atome hinzuzufügen. „Alle Wasserstoffe ausklappen“ erweitert weiterhin die Struktur.',
       colorAtomLabels: 'Atombeschriftungen nach Element einfärben',
       colorAtomLabelsHint:
         'Standard aus (2D-Atome schwarz). Wenn an, verwenden Heteroatom-Beschriftungen Palettenfarben (N blau, O rot usw.). Eigene Farben gelten immer. Der 3D-Viewer nutzt immer Elementfarben.',
@@ -500,5 +506,9 @@ export const de: LocaleMessages = {
       electron_flow: 'e⁻-Fluss',
       resonance: 'Resonanz ↔',
     },
+  },
+  alignBar: {
+    arrange: 'Anordnen',
+    arrangeTitle: 'Anordnen — saubere waagerechte Reihe, gleiche Abstände, zentriert',
   },
 };

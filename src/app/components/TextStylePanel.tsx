@@ -6,6 +6,7 @@ import { ChevronDown, Italic, Subscript, Superscript, Type, Underline } from 'lu
 import type { CanvasText } from '@moldraw/domain';
 import { CANVAS_FONT_FAMILIES, canvasFontCssFamily } from '../constants/fonts';
 import { CHEM_TEXT_SYMBOLS } from '../constants/chemTextSymbols';
+import { useChromeOverlay } from '../chromeDismiss';
 
 export interface TextStylePanelProps {
   selectedCanvasText: CanvasText | null;
@@ -30,6 +31,7 @@ function SymbolDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  useChromeOverlay(open, () => setOpen(false));
 
   useEffect(() => {
     if (!open) return;
@@ -94,6 +96,7 @@ export function TextStylePanel({
 }: TextStylePanelProps) {
   const isWorkspace = variant === 'workspace';
   const isTopbar = variant === 'topbar';
+  useChromeOverlay(variant !== 'topbar', onClose, 'dock');
 
   const insert = (symbol: string) => {
     if (!selectedCanvasText) return;

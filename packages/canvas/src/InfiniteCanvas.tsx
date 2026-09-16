@@ -129,6 +129,11 @@ export interface InfiniteCanvasProps {
     worldPos: Point,
   ) => void;
   /**
+   * Host chrome (menus, docks, modals). Called on drawing-surface pointerdown.
+   * Return true if overlays were open so this press should not also start a draw.
+   */
+  onDismissChromeOverlays?: () => boolean;
+  /**
    * Touch: one finger on empty canvas with the select tool pans instead of
    * marquee-selecting. Default `false` (two fingers / hand tool pan).
    */
@@ -256,6 +261,11 @@ export interface InfiniteCanvasHandle {
     rect: { minX: number; maxX: number; minY: number; maxY: number },
     paddingPx?: number,
   ) => void;
+  /** Pan only so a world AABB is in view; no-op if already partly visible. */
+  ensureWorldRectVisible: (
+    rect: { minX: number; maxX: number; minY: number; maxY: number },
+    padPx?: number,
+  ) => void;
   /** End the Smart Draw session and emit the stroke group (Enter). */
   commitSmartDrawSession: () => void;
   /** Drop buffered Smart Draw strokes without recognizing (Escape). */
@@ -330,6 +340,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       onRotate3DPoseCommit,
       onPerspectivePosePreview,
       onContextMenu,
+      onDismissChromeOverlays,
       touchPanOnEmptyCanvas,
       touchLoupe,
       pointerDebugHud,
@@ -525,6 +536,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       onRequestAtomAliasEdit,
       onRequestArrowReagentEdit,
       onContextMenu,
+      onDismissChromeOverlays,
       reactionArrowKind,
       reactionArrowHeadStyle,
       reactionArrowTailStyle,
@@ -656,6 +668,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
         zoomAtClientPoint: viewportApi.zoomAtClientPoint,
         resetViewport: viewportApi.resetViewport,
         fitWorldRect: viewportApi.fitWorldRect,
+        ensureWorldRectVisible: viewportApi.ensureWorldRectVisible,
         commitSmartDrawSession: () => smartDrawSessionRef.current?.commit(),
         discardSmartDrawSession: () => smartDrawSessionRef.current?.discard(),
       }),
@@ -664,6 +677,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
         viewportApi.zoomAtClientPoint,
         viewportApi.resetViewport,
         viewportApi.fitWorldRect,
+        viewportApi.ensureWorldRectVisible,
         input.dragAction,
       ],
     );
