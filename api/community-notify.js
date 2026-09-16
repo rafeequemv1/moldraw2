@@ -1,12 +1,14 @@
 const crypto = require('node:crypto');
 
 const SITE = 'https://www.moldraw.com';
+const DEFAULT_FROM = 'MolDraw <rafeeque@moldraw.com>';
+
 function fromAddress() {
   const configured = String(process.env.RESEND_FROM || '').trim();
-  if (/@rafeeque\.com>/i.test(configured) || /@rafeeque\.com$/i.test(configured)) {
+  if (/@moldraw\.com>/i.test(configured) || /@moldraw\.com$/i.test(configured)) {
     return configured.includes('<') ? configured : `MolDraw <${configured}>`;
   }
-  return 'MolDraw <notify@rafeeque.com>';
+  return DEFAULT_FROM;
 }
 
 const FROM = fromAddress();
