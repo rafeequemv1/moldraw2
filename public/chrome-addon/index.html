@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MolDraw Chrome Addon | Snip Any Molecule Image to an Editable Structure (Coming Soon)</title>
+  <meta name="description" content="The MolDraw Chrome and Edge addon lets you click-and-drag over any molecule image in a paper, PDF or web page, converts it to an editable structure with Mathpix OCR, and opens it in MolDraw. Coming soon to the Chrome Web Store.">
+  <meta name="keywords" content="MolDraw Chrome extension, molecule image to SMILES, chemical structure OCR, screenshot molecule to structure, Mathpix chemistry, ChemDraw alternative browser extension, Edge addon chemistry">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:title" content="MolDraw Chrome Addon | Snip any molecule, edit it instantly" />
+  <meta property="og:description" content="Click and drag over a structure in any paper or web page. The MolDraw addon converts the image to an editable molecule and opens it in MolDraw." />
+  <meta property="og:image" content="https://www.moldraw.com/og-image.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.moldraw.com/chrome-addon" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://www.moldraw.com/chrome-addon" />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/css/site-topbar.css" />
+  <link rel="stylesheet" href="/css/site-footer.css" />
+  <link rel="stylesheet" href="/css/addons-page.css" />
+  <link rel="stylesheet" href="/css/chrome-addon-page.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "MolDraw Chrome Addon",
+        "applicationCategory": "BrowserApplication",
+        "applicationSubCategory": "Chemistry",
+        "operatingSystem": "Chrome, Microsoft Edge",
+        "browserRequirements": "Requires Google Chrome 102+ or Microsoft Edge 102+",
+        "description": "Browser extension that snips any molecule image on a web page or PDF, converts it to an editable chemical structure with Mathpix OCR, and opens it in MolDraw.",
+        "url": "https://www.moldraw.com/chrome-addon",
+        "releaseNotes": "Coming soon to the Chrome Web Store.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "publisher": { "@type": "Organization", "name": "Scidart Academy", "url": "https://www.moldraw.com/" },
+        "isRelatedTo": { "@type": "WebApplication", "name": "MolDraw", "url": "https://www.moldraw.com/" }
+      },
+      {
+        "@type": "HowTo",
+        "name": "Convert a molecule image on a web page into an editable structure",
+        "step": [
+          { "@type": "HowToStep", "name": "Click the MolDraw icon", "text": "Click the MolDraw icon in the browser toolbar (or press Alt+Shift+M). The page dims and the cursor becomes a crosshair." },
+          { "@type": "HowToStep", "name": "Snip the structure", "text": "Click and drag a box around the molecule, exactly like the Windows Snip tool. Only that region is captured." },
+          { "@type": "HowToStep", "name": "Open in MolDraw", "text": "Mathpix OCR reads the image and returns SMILES; MolDraw opens with the fully editable structure." }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "Does it work on PDFs?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. On PDFs opened in the browser the addon captures the visible page and lets you drag the snip box over the structure." } },
+          { "@type": "Question", "name": "Does it work in Microsoft Edge?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Edge uses the same extension platform as Chrome, so the addon works identically." } },
+          { "@type": "Question", "name": "Is my data stored?", "acceptedAnswer": { "@type": "Answer", "text": "MolDraw never receives the screenshot. The cropped image is sent from your browser directly to Mathpix for recognition; your Mathpix keys stay in your Chrome profile." } }
+        ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "MolDraw", "item": "https://www.moldraw.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Addons", "item": "https://www.moldraw.com/addons" },
+          { "@type": "ListItem", "position": 3, "name": "Chrome addon", "item": "https://www.moldraw.com/chrome-addon" }
+        ]
+      }
+    ]
+  }
+  </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0GXXMTT1RP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-0GXXMTT1RP');
+  </script>
+</head>
+<body class="addons-page chrome-addon-page">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <!-- Aspirin, hand-placed for the demo -->
+      <symbol id="mol-aspirin" viewBox="0 0 200 140">
+        <g fill="none" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M70 45 L96 60 L96 90 L70 105 L44 90 L44 60 Z"/>
+          <path d="M74 52 L91 62"/>
+          <path d="M91 88 L74 98"/>
+          <path d="M49 63 L49 87"/>
+          <path d="M96 60 L122 45"/>
+          <path d="M122 45 L136 30"/>
+          <path d="M126 48 L140 33"/>
+          <path d="M122 45 L138 55"/>
+          <path d="M96 90 L116 101"/>
+          <path d="M130 106 L148 92"/>
+          <path d="M148 92 L148 70"/>
+          <path d="M152 92 L152 70"/>
+          <path d="M148 92 L170 104"/>
+        </g>
+        <g font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#0f172a">
+          <text x="139" y="28" fill="#dc2626">O</text>
+          <text x="140" y="60" fill="#dc2626">OH</text>
+          <text x="118" y="110" fill="#dc2626">O</text>
+          <text x="145" y="66" fill="#dc2626">O</text>
+          <text x="170" y="110">CH₃</text>
+        </g>
+      </symbol>
+      <symbol id="moldraw-mark" viewBox="0 0 32 32">
+        <rect width="32" height="32" rx="7" fill="#2C7A7B"/>
+        <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 4.6 L25.5 10.1 L25.5 21.9 L16 27.4 L6.5 21.9 L6.5 10.1 Z" stroke-width="2.2"/>
+          <path d="M23.95 11.2 L23.95 20.8" stroke-width="1.55"/>
+          <path d="M16.55 6.15 L8.2 10.95" stroke-width="1.55"/>
+          <path d="M8.2 21.05 L16.55 25.85" stroke-width="1.55"/>
+        </g>
+      </symbol>
+    </defs>
+  </svg>
+
+  <main class="addons-page__wrap">
+    <section class="addons-page__hero">
+      <div class="addons-page__hero-copy">
+        <span class="addons-page__eyebrow">Coming soon · Chrome Web Store</span>
+        <h1>Snip any molecule. Edit it in MolDraw.</h1>
+        <p class="addons-page__lede">The MolDraw addon for Chrome and Edge turns any structure image on a web page or PDF into an editable molecule. Click the icon, drag a box around the structure like a snipping tool, and MolDraw opens with the result ready to edit.</p>
+        <div class="addons-page__actions">
+          <a class="addons-page__btn addons-page__btn--primary" href="/">Open MolDraw</a>
+          <a class="addons-page__btn" href="/pages/contact.html">Get notified</a>
+        </div>
+        <div class="chrome-addon-page__browsers" aria-label="Supported browsers">
+          <span class="chrome-addon-page__pill"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#e2e8f0"/><circle cx="12" cy="12" r="4" fill="#2c7a7b"/></svg>Google Chrome</span>
+          <span class="chrome-addon-page__pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 1 18 0c0 3-2 5-5 5H9c-1.8 0-3-1.2-3-3s1.2-3 3-3h6" fill="none" stroke="#2c7a7b" stroke-width="2.4" stroke-linecap="round"/></svg>Microsoft Edge</span>
+          <span class="chrome-addon-page__pill">Web pages · PDFs · Slides</span>
+        </div>
+      </div>
+
+      <!-- Interactive demo -->
+      <div class="snipdemo" id="snipdemo" data-state="idle" data-auto="1" aria-label="Interactive demo of the MolDraw Chrome addon">
+        <div class="snipdemo__window">
+          <div class="snipdemo__chrome">
+            <span class="snipdemo__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="snipdemo__url" id="snipdemo-url">journal.example.org/articles/aspirin-synthesis</span>
+            <span class="snipdemo__ext" id="snipdemo-ext" title="MolDraw addon"><svg aria-hidden="true"><use href="#moldraw-mark"/></svg></span>
+          </div>
+
+          <div class="snipdemo__page" id="snipdemo-page">
+            <div class="snipdemo__line snipdemo__line--title"></div>
+            <div class="snipdemo__line"></div>
+            <div class="snipdemo__line snipdemo__line--short"></div>
+            <div class="snipdemo__figure" id="snipdemo-figure">
+              <svg aria-label="Aspirin structure image in the article"><use href="#mol-aspirin"/></svg>
+            </div>
+            <div class="snipdemo__caption">
+              <div class="snipdemo__line"></div>
+              <div class="snipdemo__line snipdemo__line--shorter"></div>
+            </div>
+            <div class="snipdemo__sidebar">
+              <div class="snipdemo__line"></div>
+              <div class="snipdemo__line snipdemo__line--short"></div>
+              <div class="snipdemo__line"></div>
+              <div class="snipdemo__line snipdemo__line--shorter"></div>
+              <div class="snipdemo__line snipdemo__line--short"></div>
+            </div>
+
+            <div class="snipdemo__overlay" aria-hidden="true">
+              <div class="snipdemo__hint">Click and drag around the molecule · <b>Esc</b> cancel</div>
+              <div class="snipdemo__box" id="snipdemo-box"><span class="snipdemo__size" id="snipdemo-size"></span></div>
+            </div>
+
+            <div class="snipdemo__cursor" id="snipdemo-cursor" aria-hidden="true">
+              <svg viewBox="0 0 18 18"><g stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M9 1v16M1 9h16"/></g><g stroke="#0f172a" stroke-width="1.2" stroke-linecap="round"><path d="M9 1v16M1 9h16"/></g></svg>
+            </div>
+
+            <div class="snipdemo__card" role="group" aria-label="Conversion result">
+              <div class="snipdemo__cardhead"><svg aria-hidden="true"><use href="#moldraw-mark"/></svg><span>MolDraw</span></div>
+              <div class="snipdemo__stage">
+                <svg aria-hidden="true"><use href="#mol-aspirin"/></svg>
+                <div class="snipdemo__scan"></div>
+              </div>
+              <p class="snipdemo__copy" id="snipdemo-copy">Scanning structure…</p>
+              <div class="snipdemo__smiles">CC(=O)Oc1ccccc1C(=O)O</div>
+              <div class="snipdemo__actions">
+                <a class="snipdemo__open" id="snipdemo-open" href="/?smiles=CC(%3DO)Oc1ccccc1C(%3DO)O" target="_blank" rel="noopener">Open in MolDraw</a>
+                <button class="snipdemo__again" id="snipdemo-again" type="button">Capture again</button>
+              </div>
+            </div>
+
+            <div class="snipdemo__editor" aria-hidden="true">
+              <div class="snipdemo__tools"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="snipdemo__canvas">
+                <svg><use href="#mol-aspirin"/></svg>
+                <span class="snipdemo__tag">Editable in MolDraw · <b>C₉H₈O₄</b></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="snipdemo__steps" aria-hidden="true">
+          <div class="snipdemo__step" data-step="click"><b>1 · Click</b>Toolbar icon or Alt+Shift+M</div>
+          <div class="snipdemo__step" data-step="snip"><b>2 · Snip</b>Drag a box around the structure</div>
+          <div class="snipdemo__step" data-step="convert"><b>3 · Convert</b>Mathpix OCR → SMILES</div>
+          <div class="snipdemo__step" data-step="edit"><b>4 · Edit</b>Opens in MolDraw</div>
+        </div>
+        <div class="snipdemo__foot">
+          <span id="snipdemo-note">Try it: drag a box over the structure in the mock page.</span>
+          <button class="snipdemo__replay" id="snipdemo-replay" type="button">Replay demo</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="addons-page__section">
+      <h2>How it works</h2>
+      <p>Three steps, nothing to draw by hand. The addon behaves like the Windows Snip tool, but the result is chemistry you can edit.</p>
+      <div class="chrome-addon-page__steps">
+        <article class="chrome-addon-page__step">
+          <h3>Click the MolDraw icon</h3>
+          <p>From any tab: a paper on a publisher site, a PDF in the browser, lecture slides, Wikipedia, a supplier catalogue. The page dims and the cursor turns into a crosshair. The page is frozen so nothing scrolls under you.</p>
+        </article>
+        <article class="chrome-addon-page__step">
+          <h3>Drag a box around the structure</h3>
+          <p>Only the region you select is captured, at your screen's full resolution, exactly as you see it on screen — including anything inside modals or image lightboxes.</p>
+        </article>
+        <article class="chrome-addon-page__step">
+          <h3>Open it in MolDraw</h3>
+          <p>Mathpix chemistry OCR reads the crop and returns SMILES. MolDraw opens in a new tab with the structure fully editable: change substituents, add reagents, export to SVG, PNG, MOL or copy to Word.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="addons-page__section">
+      <h2>What you get</h2>
+      <p>Built for people who read papers all day and redraw far too many structures.</p>
+      <div class="addons-page__grid chrome-addon-page__grid3">
+        <article class="addons-page__card">
+          <span class="addons-page__badge">Capture</span>
+          <h3>Snip, not screenshot</h3>
+          <p>Click-and-drag selection with a live size read-out. Works on HiDPI displays and with browser zoom without offset. Esc cancels at any time.</p>
+        </article>
+        <article class="addons-page__card">
+          <span class="addons-page__badge">Recognise</span>
+          <h3>Mathpix chemistry OCR</h3>
+          <p>Uses Mathpix's structure recognition to turn drawn molecules into SMILES, including multi-structure figures and reaction schemes.</p>
+        </article>
+        <article class="addons-page__card">
+          <span class="addons-page__badge">Edit</span>
+          <h3>Straight into MolDraw</h3>
+          <p>The result opens in the editor you already use, with the SMILES available to copy. Reactions open in MolDraw's reaction mode.</p>
+        </article>
+        <article class="addons-page__card">
+          <span class="addons-page__badge">Privacy</span>
+          <h3>Nothing stored by MolDraw</h3>
+          <p>The crop goes from your browser to Mathpix and back. MolDraw only receives the resulting SMILES in the URL. Your keys live in your browser profile.</p>
+        </article>
+        <article class="addons-page__card">
+          <span class="addons-page__badge">Browsers</span>
+          <h3>Chrome and Edge</h3>
+          <p>Manifest V3 extension. Identical behaviour in Google Chrome and Microsoft Edge on Windows, macOS and Linux.</p>
+        </article>
+        <article class="addons-page__card">
+          <span class="addons-page__badge">Shortcut</span>
+          <h3>Alt + Shift + M</h3>
+          <p>Start a capture without reaching for the toolbar. The keys can be changed in your browser's extension shortcuts.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="addons-page__section">
+      <h2>Details</h2>
+      <p>What the addon needs and what it does with it.</p>
+      <table class="chrome-addon-page__spec">
+        <tbody>
+          <tr><th>Availability</th><td>Coming soon on the Chrome Web Store and Edge Add-ons. Currently in private testing.</td></tr>
+          <tr><th>Price</th><td>The addon is free. Structure recognition uses your own <a href="https://mathpix.com/ocr" rel="noopener" target="_blank">Mathpix OCR API</a> account (pay-as-you-go, billed by Mathpix).</td></tr>
+          <tr><th>Setup</th><td>Paste your Mathpix <code>app_id</code> and <code>app_key</code> directly in the extension popup. That's the whole setup.</td></tr>
+          <tr><th>Input</th><td>Any region of a web page or in-browser PDF, selected by dragging. Captured at device pixel resolution.</td></tr>
+          <tr><th>Output</th><td>SMILES (single molecules, multiple structures, reactions with <code>&gt;&gt;</code>), opened at <code>moldraw.com/?smiles=…</code></td></tr>
+          <tr><th>Permissions</th><td><code>activeTab</code>, <code>scripting</code> and <code>storage</code> only. Runs when you click; no background tracking.</td></tr>
+          <tr><th>Browsers</th><td>Google Chrome 102+, Microsoft Edge 102+ (Manifest V3).</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="addons-page__section">
+      <h2>Roadmap</h2>
+      <p>Where the addon is today.</p>
+      <div class="chrome-addon-page__timeline">
+        <article class="chrome-addon-page__milestone chrome-addon-page__milestone--done">
+          <span class="addons-page__badge addons-page__badge--done">Done</span>
+          <h3>In-page snipping</h3>
+          <p>Crosshair overlay, page freeze, HiDPI-accurate crop, Mathpix conversion, open in MolDraw. Chrome and Edge.</p>
+        </article>
+        <article class="chrome-addon-page__milestone">
+          <span class="addons-page__badge addons-page__badge--soon">Next</span>
+          <h3>Chrome Web Store listing</h3>
+          <p>Store review and public release so installation is one click, with automatic updates.</p>
+        </article>
+        <article class="chrome-addon-page__milestone">
+          <span class="addons-page__badge">Later</span>
+          <h3>Right-click on images</h3>
+          <p>Convert an image directly from the context menu, plus batch capture of figures with several structures.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="addons-page__section">
+      <h2>Frequently asked</h2>
+      <div class="chrome-addon-page__faq">
+        <details>
+          <summary>Does it work on PDFs?</summary>
+          <p>Yes. For PDFs opened in the browser the addon captures the visible page and lets you drag the snip box over the structure.</p>
+        </details>
+        <details>
+          <summary>Does it work in Microsoft Edge?</summary>
+          <p>Yes. Edge is built on the same extension platform as Chrome, so the addon is identical there.</p>
+        </details>
+        <details>
+          <summary>Why do I need a Mathpix account?</summary>
+          <p>Mathpix provides the chemistry recognition (image → SMILES). Using your own key keeps the addon free and means MolDraw never sees your screenshots.</p>
+        </details>
+        <details>
+          <summary>What if the structure is recognised incorrectly?</summary>
+          <p>The structure opens in MolDraw where you can fix it in seconds. A tighter crop with only one structure and no caption gives the best results.</p>
+        </details>
+        <details>
+          <summary>Will there be Word and PowerPoint addons?</summary>
+          <p>Yes, they are in development. See the <a href="/addons">addons page</a>.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="addons-page__note">
+      <p>Want early access, or a feature the addon should have? Tell us — we implement relevant requests fast.</p>
+      <a class="addons-page__btn addons-page__btn--primary" href="/community/features">Request a feature</a>
+    </section>
+  </main>
+
+  <footer class="site-footer-root" role="contentinfo">
+    <div class="site-footer-inner">
+      <div class="site-footer-line">
+        <span class="site-footer-lede">MolDraw — free molecule drawing app and 3D viewer · <span class="site-footer-entity">Scidart Academy</span></span>
+        <span class="site-footer-sep" aria-hidden="true">·</span>
+        <nav class="site-footer-nav" aria-label="Site policies and information">
+          <a href="/pages/about.html">About</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/tools/">Tools</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/addons">Addons</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/chrome-addon">Chrome addon</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/pages/contact.html">Contact</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/pages/privacy-policy.html">Privacy</a>
+          <span class="site-footer-sep" aria-hidden="true">·</span>
+          <a href="/pages/terms-of-service.html">Terms</a>
+        </nav>
+        <span class="site-footer-sep" aria-hidden="true">·</span>
+        <span class="site-footer-copy">© <span data-footer-year>2026</span> Scidart Academy</span>
+      </div>
+    </div>
+    <script src="/js/site-footer.js" defer></script>
+  </footer>
+  <script src="/js/site-topbar.js" defer></script>
+
+  <script>
+  (function () {
+    var demo = document.getElementById('snipdemo');
+    if (!demo) return;
+    var page = document.getElementById('snipdemo-page');
+    var figure = document.getElementById('snipdemo-figure');
+    var box = document.getElementById('snipdemo-box');
+    var size = document.getElementById('snipdemo-size');
+    var cursor = document.getElementById('snipdemo-cursor');
+    var copy = document.getElementById('snipdemo-copy');
+    var url = document.getElementById('snipdemo-url');
+    var note = document.getElementById('snipdemo-note');
+    var replay = document.getElementById('snipdemo-replay');
+    var again = document.getElementById('snipdemo-again');
+    var open = document.getElementById('snipdemo-open');
+    var steps = demo.querySelectorAll('.snipdemo__step');
+    var ARTICLE_URL = 'journal.example.org/articles/aspirin-synthesis';
+    var EDITOR_URL = 'moldraw.com/?smiles=CC(=O)Oc1ccccc1C(=O)O';
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var timers = [];
+    var auto = true;
+    var dragging = false;
+    var start = null;
+
+    function clearTimers() {
+      while (timers.length) clearTimeout(timers.pop());
+    }
+    function later(fn, ms) {
+      timers.push(setTimeout(fn, reduced ? Math.min(ms, 400) : ms));
+    }
+    function setState(state) {
+      demo.setAttribute('data-state', state);
+      var active = { click: 'click', overlay: 'click', drag: 'snip', userdrag: 'snip', scan: 'convert', result: 'convert', editor: 'edit' }[state];
+      for (var i = 0; i < steps.length; i++) {
+        steps[i].classList.toggle('is-active', steps[i].getAttribute('data-step') === active);
+      }
+      url.textContent = state === 'editor' ? EDITOR_URL : ARTICLE_URL;
+      if (state === 'scan') copy.textContent = 'Scanning structure…';
+      if (state === 'result') copy.textContent = 'Converted to an editable structure.';
+    }
+    function pageRect() { return page.getBoundingClientRect(); }
+    function figRect() {
+      var p = pageRect();
+      var f = figure.getBoundingClientRect();
+      return { x: f.left - p.left, y: f.top - p.top, w: f.width, h: f.height };
+    }
+    function paintBox(r) {
+      box.style.left = r.x + 'px';
+      box.style.top = r.y + 'px';
+      box.style.width = r.w + 'px';
+      box.style.height = r.h + 'px';
+      size.textContent = Math.round(r.w) + ' × ' + Math.round(r.h);
+    }
+    function moveCursor(x, y) {
+      cursor.style.left = x + 'px';
+      cursor.style.top = y + 'px';
+    }
+
+    /* Automatic walkthrough */
+    function runAuto() {
+      clearTimers();
+      demo.setAttribute('data-auto', '1');
+      setState('idle');
+      var p = pageRect();
+      moveCursor(p.width * 0.8, p.height * 0.08);
+      later(function () {
+        // 1. move to the extension icon and click it
+        moveCursor(p.width - 22, -18);
+        setState('click');
+      }, 500);
+      later(function () {
+        // 2. overlay is up; move to the top-left of the figure
+        var f = figRect();
+        moveCursor(f.x - 8, f.y - 8);
+        setState('overlay');
+      }, 1400);
+      later(function () {
+        // 3. drag to the bottom-right
+        var f = figRect();
+        var r = { x: f.x - 8, y: f.y - 8, w: 0, h: 0 };
+        paintBox(r);
+        setState('drag');
+        var t0 = null;
+        var dur = reduced ? 300 : 900;
+        function frame(ts) {
+          if (demo.getAttribute('data-state') !== 'drag') return;
+          if (t0 == null) t0 = ts;
+          var k = Math.min(1, (ts - t0) / dur);
+          var e = 1 - Math.pow(1 - k, 3);
+          r.w = (f.w + 16) * e;
+          r.h = (f.h + 16) * e;
+          paintBox(r);
+          moveCursor(r.x + r.w, r.y + r.h);
+          if (k < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }, 2300);
+      later(function () { setState('scan'); }, 3500);
+      later(function () { setState('result'); }, 4900);
+      later(function () { setState('editor'); }, 6600);
+      later(function () { runAuto(); }, 10200);
+    }
+
+    /* Manual snipping on the mock page */
+    function localPoint(ev) {
+      var p = pageRect();
+      return {
+        x: Math.max(0, Math.min(p.width, ev.clientX - p.left)),
+        y: Math.max(0, Math.min(p.height, ev.clientY - p.top))
+      };
+    }
+    function onDown(ev) {
+      if (ev.button !== 0) return;
+      if (ev.target.closest && ev.target.closest('.snipdemo__card')) return;
+      var state = demo.getAttribute('data-state');
+      if (state === 'scan') return;
+      ev.preventDefault();
+      clearTimers();
+      auto = false;
+      demo.setAttribute('data-auto', '0');
+      dragging = true;
+      start = localPoint(ev);
+      paintBox({ x: start.x, y: start.y, w: 0, h: 0 });
+      setState('userdrag');
+      note.textContent = 'Release to convert the selection.';
+      try { page.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
+    }
+    function onMove(ev) {
+      if (!dragging) return;
+      var pt = localPoint(ev);
+      paintBox({
+        x: Math.min(start.x, pt.x),
+        y: Math.min(start.y, pt.y),
+        w: Math.abs(pt.x - start.x),
+        h: Math.abs(pt.y - start.y)
+      });
+    }
+    function onUp(ev) {
+      if (!dragging) return;
+      dragging = false;
+      var pt = localPoint(ev);
+      var w = Math.abs(pt.x - start.x), h = Math.abs(pt.y - start.y);
+      if (w < 12 || h < 12) {
+        setState('idle');
+        note.textContent = 'Drag a larger box around the structure.';
+        return;
+      }
+      setState('scan');
+      note.textContent = 'Recognising the structure…';
+      later(function () {
+        setState('result');
+        note.textContent = 'Click "Open in MolDraw" to edit the real result.';
+      }, 1300);
+    }
+
+    page.addEventListener('pointerdown', onDown);
+    page.addEventListener('pointermove', onMove);
+    page.addEventListener('pointerup', onUp);
+    page.addEventListener('pointercancel', onUp);
+    window.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && (dragging || demo.getAttribute('data-state') === 'userdrag')) {
+        dragging = false;
+        setState('idle');
+      }
+    });
+
+    again.addEventListener('click', function () {
+      clearTimers();
+      auto = false;
+      demo.setAttribute('data-auto', '0');
+      setState('idle');
+      note.textContent = 'Drag a box over the structure in the mock page.';
+    });
+    open.addEventListener('click', function () {
+      clearTimers();
+      later(function () { setState('editor'); }, 200);
+    });
+    replay.addEventListener('click', function () {
+      auto = true;
+      note.textContent = 'Try it: drag a box over the structure in the mock page.';
+      runAuto();
+    });
+
+    // Pause the loop while the demo is off-screen.
+    if ('IntersectionObserver' in window) {
+      var seen = false;
+      var io = new IntersectionObserver(function (entries) {
+        var visible = entries.some(function (e) { return e.isIntersecting; });
+        if (visible && !seen) { seen = true; runAuto(); }
+        else if (visible && auto && demo.getAttribute('data-state') === 'idle') { runAuto(); }
+        else if (!visible && auto) { clearTimers(); setState('idle'); }
+      }, { threshold: 0.35 });
+      io.observe(demo);
+    } else {
+      runAuto();
+    }
+  })();
+  </script>
+</body>
+</html>

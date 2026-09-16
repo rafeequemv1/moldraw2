@@ -23,12 +23,15 @@ import {
   isLeftRailTrigger,
   leftRailColumnRect,
   pinMenuAboveAnchor,
+  pinMenuAsLeftDock,
   pinMenuRightOfRail,
   placeAnchoredMenu,
   placeLeftRailFlyout,
   shouldOpenMenuAbove,
 } from '../menuPlacement';
 import { useChromeOverlay } from '../chromeDismiss';
+import { useCompactViewport } from '../hooks/useCompactViewport';
+import { useLeftDockExclusive } from '../leftDockExclusive';
 
 export interface ToolbarSplitToolOption<T extends string> {
   value: T;
@@ -158,12 +161,16 @@ export function ToolbarSplitTool<T extends string>({
   const searchRef = useRef<HTMLInputElement>(null);
   const menuId = useId();
   const searchId = useId();
+  const isCompact = useCompactViewport();
+  /** Glassware / apparatus catalog docks in the Color & style left-panel box. */
+  const dockAsLeftPanel = Boolean(searchable) && !isCompact;
 
   const closeMenu = () => {
     setOpen(false);
     setQuery('');
   };
-  useChromeOverlay(open, closeMenu);
+  useChromeOverlay(open, closeMenu, dockAsLeftPanel ? 'dock' : 'menu');
+  useLeftDockExclusive('apparatus', open && dockAsLeftPanel, closeMenu);
 
   useEffect(() => {
     if (!isActive) {
@@ -191,6 +198,26 @@ export function ToolbarSplitTool<T extends string>({
     const update = () => {
       const el = wrapRef.current;
       if (!el) return;
+      const menu = menuRef.current;
+      const compact = document.documentElement.classList.contains('app-mobile-compact');
+      if (searchable && !compact) {
+        setMenuCompact(false);
+        setMenuDropUp(false);
+        setMenuStyle({
+          position: 'fixed',
+          top: 'var(--app-left-dock-top)',
+          left: 'var(--app-left-dock-left)',
+          right: 'auto',
+          bottom: 'auto',
+          width: 'var(--app-left-dock-width)',
+          maxHeight: 'var(--app-left-dock-max-height)',
+          height: 'auto',
+          overflow: 'hidden',
+          zIndex: 11,
+        });
+        if (menu) pinMenuAsLeftDock(menu);
+        return;
+      }
       const placement = detectPlacement(el);
       const rect = el.getBoundingClientRect();
       const dropUp = !isLeftRailTrigger(el) && (placement === 'above' || placement === 'slider');
@@ -199,7 +226,6 @@ export function ToolbarSplitTool<T extends string>({
       setMenuStyle(
         dropUp ? dropUpMenuStyle(rect, menuWidth) : menuFixedStyle(rect, placement, menuWidth, el),
       );
-      const menu = menuRef.current;
       if (menu && isLeftRailTrigger(el)) {
         pinMenuRightOfRail(menu, el, menuWidth);
       }
@@ -217,7 +243,7 @@ export function ToolbarSplitTool<T extends string>({
       window.visualViewport?.removeEventListener('resize', update);
       window.visualViewport?.removeEventListener('scroll', update);
     };
-  }, [open, menuSize]);
+  }, [open, menuSize, searchable]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -225,13 +251,17 @@ export function ToolbarSplitTool<T extends string>({
     const el = wrapRef.current;
     if (!menu || !el) return;
     const menuWidth = menuSize === 'wide' ? 196 : 168;
+    if (searchable && !document.documentElement.classList.contains('app-mobile-compact')) {
+      pinMenuAsLeftDock(menu);
+      return;
+    }
     if (isLeftRailTrigger(el)) {
       pinMenuRightOfRail(menu, el, menuWidth);
       return;
     }
     if (!menuDropUp) return;
     pinMenuAboveAnchor(menu, el.getBoundingClientRect(), menuWidth);
-  }, [open, menuDropUp, menuStyle, menuSize]);
+  }, [open, menuDropUp, menuStyle, menuSize, searchable]);
 
   useEffect(() => {
     if (!open) return;
@@ -322,7 +352,7 @@ export function ToolbarSplitTool<T extends string>({
           <div
             ref={menuRef}
             id={menuId}
-            className={`toolbar-split-tool__menu toolbar-split-tool__menu--portal${menuSize === 'wide' ? ' toolbar-split-tool__menu--wide' : ''}${menuCompact ? ' toolbar-split-tool__menu--compact' : ''}${menuDropUp ? ' toolbar-split-tool__menu--drop-up' : ''}${searchable || onOpenLibrary ? ' toolbar-split-tool__menu--searchable' : ''}`}
+            className={`toolbar-split-tool__menu toolbar-split-tool__menu--portal${menuSize === 'wide' ? ' toolbar-split-tool__menu--wide' : ''}${menuCompact ? ' toolbar-split-tool__menu--compact' : ''}${menuDropUp ? ' toolbar-split-tool__menu--drop-up' : ''}${searchable || onOpenLibrary ? ' toolbar-split-tool__menu--searchable' : ''}${dockAsLeftPanel ? ' toolbar-split-tool__menu--left-dock' : ''}`}
             data-placement={menuDropUp ? 'above' : 'right'}
             role="menu"
             style={menuStyle ?? undefined}

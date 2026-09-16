@@ -21,9 +21,6 @@
     },
     "api/community-notify.js": {
       "maxDuration": 10
-    },
-    "api/community-unsubscribe.js": {
-      "maxDuration": 10
     }
   },
   "headers": [
@@ -203,16 +200,42 @@
       "source": "/addons/index.html",
       "destination": "/addons/",
       "permanent": true
+    },
+    {
+      "source": "/chrome-addon/index.html",
+      "destination": "/chrome-addon",
+      "permanent": true
+    },
+    {
+      "source": "/chrome-addon/",
+      "destination": "/chrome-addon",
+      "permanent": true
+    },
+    {
+      "source": "/chromeaddon",
+      "destination": "/chrome-addon",
+      "permanent": true
+    },
+    {
+      "source": "/chromeaddon/",
+      "destination": "/chrome-addon",
+      "permanent": true
+    },
+    {
+      "source": "/chrome-extension",
+      "destination": "/chrome-addon",
+      "permanent": true
+    },
+    {
+      "source": "/chrome-plugin",
+      "destination": "/chrome-addon",
+      "permanent": true
     }
   ],
   "rewrites": [
     {
       "source": "/community/sitemap.xml",
       "destination": "/api/community-sitemap"
-    },
-    {
-      "source": "/community/unsubscribe",
-      "destination": "/api/community-unsubscribe"
     },
     {
       "source": "/community",

@@ -1,0 +1,786 @@
+/* MolDraw Chrome addon page — extends addons-page.css with the interactive snip demo. */
+
+.chrome-addon-page .addons-page__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 36px);
+  align-items: center;
+}
+
+.chrome-addon-page .addons-page__hero-copy {
+  min-width: 0;
+}
+
+.chrome-addon-page__browsers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.chrome-addon-page__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #dbe4ee;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: #fff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.chrome-addon-page__pill svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------------------------------------------------------------- demo --- */
+
+.snipdemo {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.snipdemo__window {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.16);
+  aspect-ratio: 16 / 11;
+  touch-action: none;
+}
+
+.snipdemo__chrome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f1f5f9;
+}
+
+.snipdemo__dots {
+  display: flex;
+  gap: 5px;
+}
+
+.snipdemo__dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+
+.snipdemo__url {
+  flex: 1;
+  height: 20px;
+  border-radius: 6px;
+  padding: 0 8px;
+  background: #fff;
+  color: #64748b;
+  font-size: 10.5px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.snipdemo__ext {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.snipdemo__ext svg {
+  width: 14px;
+  height: 14px;
+}
+
+.snipdemo[data-state="click"] .snipdemo__ext {
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.55);
+  transform: scale(0.94);
+}
+
+.snipdemo__page {
+  position: absolute;
+  inset: 34px 0 0;
+  padding: 14px 16px;
+  overflow: hidden;
+  background: #fff;
+  cursor: default;
+}
+
+.snipdemo__page[data-mode="editor"] {
+  padding: 0;
+}
+
+.snipdemo__line {
+  height: 8px;
+  margin: 0 0 8px;
+  border-radius: 4px;
+  background: #e2e8f0;
+}
+
+.snipdemo__line--title {
+  width: 62%;
+  height: 12px;
+  margin-bottom: 12px;
+  background: #cbd5e1;
+}
+
+.snipdemo__line--short {
+  width: 78%;
+}
+
+.snipdemo__line--shorter {
+  width: 55%;
+}
+
+.snipdemo__figure {
+  position: absolute;
+  left: 8%;
+  top: 30%;
+  width: 46%;
+  aspect-ratio: 5 / 3.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.snipdemo__figure svg {
+  width: 88%;
+  height: 88%;
+}
+
+.snipdemo__caption {
+  position: absolute;
+  left: 8%;
+  top: 76%;
+  width: 46%;
+}
+
+.snipdemo__caption .snipdemo__line {
+  height: 6px;
+  margin-bottom: 6px;
+}
+
+.snipdemo__sidebar {
+  position: absolute;
+  right: 6%;
+  top: 30%;
+  width: 34%;
+}
+
+/* overlay */
+.snipdemo__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+
+.snipdemo[data-state="overlay"] .snipdemo__overlay,
+.snipdemo[data-state="drag"] .snipdemo__overlay,
+.snipdemo[data-state="userdrag"] .snipdemo__overlay {
+  opacity: 1;
+}
+
+.snipdemo[data-state="overlay"] .snipdemo__page,
+.snipdemo[data-state="drag"] .snipdemo__page,
+.snipdemo[data-state="userdrag"] .snipdemo__page {
+  cursor: crosshair;
+}
+
+.snipdemo__hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.snipdemo__hint b {
+  color: #5eead4;
+}
+
+.snipdemo__box {
+  position: absolute;
+  display: none;
+  border: 1.5px solid #2dd4bf;
+  background: rgba(13, 148, 136, 0.08);
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.32);
+}
+
+.snipdemo[data-state="drag"] .snipdemo__box,
+.snipdemo[data-state="userdrag"] .snipdemo__box {
+  display: block;
+}
+
+.snipdemo__size {
+  position: absolute;
+  right: 0;
+  bottom: -18px;
+  border-radius: 3px;
+  padding: 2px 5px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.snipdemo__cursor {
+  position: absolute;
+  left: 80%;
+  top: 8%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  pointer-events: none;
+  opacity: 0;
+  transition: left 0.75s cubic-bezier(0.4, 0, 0.2, 1), top 0.75s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+}
+
+.snipdemo[data-auto="1"][data-state="click"] .snipdemo__cursor,
+.snipdemo[data-auto="1"][data-state="overlay"] .snipdemo__cursor,
+.snipdemo[data-auto="1"][data-state="drag"] .snipdemo__cursor {
+  opacity: 1;
+}
+
+.snipdemo__cursor svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+
+/* result card */
+.snipdemo__card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(72%, 300px);
+  transform: translate(-50%, -50%) scale(0.96);
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #0f172a;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.32);
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.snipdemo[data-state="scan"] .snipdemo__card,
+.snipdemo[data-state="result"] .snipdemo__card {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.snipdemo[data-state="scan"] .snipdemo__overlay,
+.snipdemo[data-state="result"] .snipdemo__overlay {
+  opacity: 1;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.snipdemo__cardhead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 11px 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.snipdemo__cardhead svg {
+  width: 14px;
+  height: 14px;
+}
+
+.snipdemo__cardhead span {
+  color: #2c7a7b;
+}
+
+.snipdemo__stage {
+  position: relative;
+  margin: 8px 11px 0;
+  height: 84px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.snipdemo__stage svg {
+  height: 92%;
+  width: auto;
+}
+
+.snipdemo__scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  display: none;
+}
+
+.snipdemo[data-state="scan"] .snipdemo__scan {
+  display: block;
+}
+
+.snipdemo__scan::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 44%;
+  background: linear-gradient(
+    to bottom,
+    rgba(45, 212, 191, 0) 0%,
+    rgba(13, 148, 136, 0.22) 45%,
+    rgba(94, 234, 212, 0.7) 50%,
+    rgba(13, 148, 136, 0.18) 58%,
+    rgba(45, 212, 191, 0) 100%
+  );
+  animation: snipdemo-scan 1.1s ease-in-out infinite;
+}
+
+@keyframes snipdemo-scan {
+  0% { transform: translateY(-110%); }
+  100% { transform: translateY(240%); }
+}
+
+.snipdemo__copy {
+  margin: 7px 11px 0;
+  min-height: 1.3em;
+  color: #64748b;
+  font-size: 10.5px;
+}
+
+.snipdemo[data-state="result"] .snipdemo__copy {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.snipdemo__smiles {
+  display: none;
+  margin: 5px 11px 0;
+  padding: 5px 7px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  font: 9.5px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+  word-break: break-all;
+}
+
+.snipdemo[data-state="result"] .snipdemo__smiles {
+  display: block;
+}
+
+.snipdemo__actions {
+  display: flex;
+  gap: 6px;
+  padding: 9px 11px 11px;
+}
+
+.snipdemo__actions a,
+.snipdemo__actions button {
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  font: 700 10.5px/26px inherit;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.snipdemo__open {
+  flex: 1;
+  text-align: center;
+  background: #0d9488;
+  color: #fff;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.snipdemo[data-state="result"] .snipdemo__open {
+  opacity: 1;
+  pointer-events: auto;
+  animation: snipdemo-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes snipdemo-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(13, 148, 136, 0); }
+}
+
+.snipdemo__again {
+  padding: 0 10px;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+/* editor mock */
+.snipdemo__editor {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s;
+  background: #f8fafc;
+}
+
+.snipdemo[data-state="editor"] .snipdemo__editor {
+  opacity: 1;
+}
+
+.snipdemo[data-state="editor"] .snipdemo__url {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.snipdemo__tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 6px;
+  border-right: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.snipdemo__tools i {
+  display: block;
+  height: 20px;
+  border-radius: 5px;
+  background: #e2e8f0;
+}
+
+.snipdemo__tools i:nth-child(2) {
+  background: #2c7a7b;
+}
+
+.snipdemo__canvas {
+  position: relative;
+  background-color: #fff;
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 16px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.snipdemo__canvas svg {
+  width: 62%;
+  height: auto;
+  transform: scale(0.9);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.snipdemo[data-state="editor"] .snipdemo__canvas svg {
+  transform: scale(1);
+}
+
+.snipdemo__tag {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.snipdemo__tag b {
+  color: #5eead4;
+}
+
+/* step strip + replay */
+.snipdemo__steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.snipdemo__step {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 9px;
+  background: #fff;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.35;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.snipdemo__step b {
+  display: block;
+  color: #0f172a;
+  font-size: 11.5px;
+  margin-bottom: 2px;
+}
+
+.snipdemo__step.is-active {
+  border-color: #2dd4bf;
+  background: #f0fdfa;
+  color: #115e59;
+}
+
+.snipdemo__step.is-active b {
+  color: #0f766e;
+}
+
+.snipdemo__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.snipdemo__replay {
+  flex: none;
+  white-space: nowrap;
+  border: 1px solid #dbe4ee;
+  border-radius: 999px;
+  padding: 5px 11px;
+  background: #fff;
+  color: #334155;
+  font: 800 11.5px inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.snipdemo__replay:hover {
+  border-color: #94a3b8;
+}
+
+/* ------------------------------------------------------------ sections --- */
+
+.chrome-addon-page__steps {
+  counter-reset: step;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.chrome-addon-page__step {
+  position: relative;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 18px 18px 18px 56px;
+  background: #f8fafc;
+}
+
+.chrome-addon-page__step::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #2c7a7b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.chrome-addon-page__step h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.chrome-addon-page__step p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.chrome-addon-page__grid3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.chrome-addon-page__spec {
+  width: 100%;
+  margin-top: 16px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.chrome-addon-page__spec th,
+.chrome-addon-page__spec td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: top;
+}
+
+.chrome-addon-page__spec th {
+  width: 32%;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.chrome-addon-page__spec td {
+  color: #475569;
+}
+
+.chrome-addon-page__spec code {
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: #f1f5f9;
+  font: 12px ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.chrome-addon-page__faq {
+  margin-top: 12px;
+}
+
+.chrome-addon-page__faq details {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 0;
+}
+
+.chrome-addon-page__faq summary {
+  cursor: pointer;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  list-style: none;
+}
+
+.chrome-addon-page__faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.chrome-addon-page__faq summary::before {
+  content: "+";
+  display: inline-block;
+  width: 18px;
+  color: #2c7a7b;
+  font-weight: 800;
+}
+
+.chrome-addon-page__faq details[open] summary::before {
+  content: "–";
+}
+
+.chrome-addon-page__faq p {
+  margin: 8px 0 0 18px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.chrome-addon-page__timeline {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.chrome-addon-page__milestone {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px 18px;
+  background: #f8fafc;
+}
+
+.chrome-addon-page__milestone--done {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.chrome-addon-page__milestone h3 {
+  margin: 6px 0 4px;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.chrome-addon-page__milestone p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.addons-page__badge--done {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.addons-page__badge--soon {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+@media (max-width: 860px) {
+  .chrome-addon-page .addons-page__hero {
+    grid-template-columns: 1fr;
+  }
+
+  .chrome-addon-page__steps,
+  .chrome-addon-page__grid3,
+  .chrome-addon-page__timeline {
+    grid-template-columns: 1fr;
+  }
+
+  .snipdemo__steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snipdemo__cursor,
+  .snipdemo__card,
+  .snipdemo__editor,
+  .snipdemo__overlay {
+    transition: none;
+  }
+
+  .snipdemo__scan::before,
+  .snipdemo__open {
+    animation: none;
+  }
+}

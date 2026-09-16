@@ -45,6 +45,12 @@ function nodeOpensPanel(node: Node): LeftDockId | null {
   if (node.matches?.('.left-params-panel') || node.querySelector?.('.left-params-panel')) {
     return 'params';
   }
+  if (
+    node.matches?.('.toolbar-split-tool__menu--left-dock') ||
+    node.querySelector?.('.toolbar-split-tool__menu--left-dock')
+  ) {
+    return 'apparatus';
+  }
   return null;
 }
 
@@ -73,7 +79,8 @@ function installLeftDockCoordinator(): void {
       active &&
       !root.classList.contains('format-left-panel-open') &&
       !document.querySelector('.left-params-dock:not(:empty) .left-params-panel') &&
-      !document.querySelector('.objects-panel:not(.objects-panel--sheet)')
+      !document.querySelector('.objects-panel:not(.objects-panel--sheet)') &&
+      !document.querySelector('.toolbar-split-tool__menu--left-dock')
     ) {
       active = null;
     }

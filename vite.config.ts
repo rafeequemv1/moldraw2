@@ -97,12 +97,18 @@ function communitySeoPlugin(): Plugin {
   }
 }
 
-/** Serve the static addons page at /addons and /addons/ in Vite (dev + preview). */
+/** Serve the static addons pages at /addons and /chrome-addon in Vite (dev + preview). */
 function addonsHtmlPlugin(): Plugin {
   const rewrite = (req: { url?: string }) => {
     const url = req.url?.split('?')[0]
     if (url === '/addons' || url === '/addons/') {
       req.url = '/addons/index.html'
+    } else if (
+      url === '/chrome-addon' || url === '/chrome-addon/' ||
+      url === '/chromeaddon' || url === '/chromeaddon/' ||
+      url === '/chrome-extension' || url === '/chrome-extension/'
+    ) {
+      req.url = '/chrome-addon/index.html'
     }
   }
   return {

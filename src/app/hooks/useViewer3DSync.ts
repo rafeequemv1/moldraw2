@@ -7,6 +7,8 @@
  *
  * Rebuild rules:
  * - Structure / stereo / 3D-depth of the *pinned* fragment only
+ * - Aromatize / dearomatize is 2D depiction (circle vs Kekulé) — must not
+ *   regenerate, reload the pose, or retarget the camera
  * - Canvas click / deselect / drawing a new disconnected molecule must not
  *   steal or reload the current 3D view
  * - Selecting a different fragment → show that fragment (cached pose if any)

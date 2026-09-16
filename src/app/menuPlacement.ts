@@ -160,6 +160,32 @@ export function shouldOpenMenuAbove(el: HTMLElement, anchor: DOMRect): boolean {
   return anchor.bottom > vh - 180 || triggerIsInLowerViewport(anchor, 0.45);
 }
 
+/**
+ * Pin a tall catalog (apparatus / glassware) to the shared left-dock box —
+ * same top, left, width, and max-height as Color & style (`format-left-panel`).
+ */
+export function pinMenuAsLeftDock(menu: HTMLElement) {
+  menu.style.setProperty('position', 'fixed', 'important');
+  menu.style.setProperty('top', 'var(--app-left-dock-top)', 'important');
+  menu.style.setProperty('bottom', 'auto', 'important');
+  menu.style.setProperty('left', 'var(--app-left-dock-left)', 'important');
+  menu.style.setProperty('right', 'auto', 'important');
+  menu.style.setProperty('width', 'var(--app-left-dock-width)', 'important');
+  menu.style.setProperty('min-width', 'var(--app-left-dock-width)', 'important');
+  menu.style.setProperty('max-width', 'var(--app-left-dock-width)', 'important');
+  menu.style.setProperty('max-height', 'var(--app-left-dock-max-height)', 'important');
+  menu.style.setProperty('height', 'auto', 'important');
+  menu.style.setProperty('overflow', 'hidden', 'important');
+  menu.style.setProperty('overflow-x', 'hidden', 'important');
+  menu.style.setProperty('overflow-y', 'hidden', 'important');
+  menu.style.setProperty('z-index', '11', 'important');
+  menu.style.setProperty('transform', 'none', 'important');
+  menu.style.setProperty('--split-menu-top', 'var(--app-left-dock-top)');
+  menu.style.setProperty('--split-menu-left', 'var(--app-left-dock-left)');
+  menu.style.setProperty('--split-menu-bottom', 'auto');
+  menu.dataset.placement = 'right';
+}
+
 /** Inline `!important` so drop-up CSS cannot pin a left-rail menu over the tools. */
 export function pinMenuRightOfRail(menu: HTMLElement, trigger: HTMLElement, menuWidth?: number) {
   const col = leftRailColumnRect(trigger);

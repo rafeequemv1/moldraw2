@@ -159,7 +159,7 @@
   border-radius: 6px;
   background: transparent;
   color: #555;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -505,7 +505,7 @@ button.viewer-toolbar-extra:hover {
   text-align: left;
   text-decoration: none;
   color: #334155;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   border: none;
   background: transparent;
@@ -678,7 +678,7 @@ button.viewer-toolbar-extra:hover {
 
 .auth-modal-title,
 .feature-request-title {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--text-main, #0f172a);
 }
@@ -700,7 +700,7 @@ button.viewer-toolbar-extra:hover {
   background: var(--chrome-bg-elevated, #fff);
   color: var(--text-muted, #64748b);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .auth-mode-switch,

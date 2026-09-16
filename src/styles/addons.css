@@ -7,6 +7,7 @@
   color: #0f172a;
   background: #f8fafc;
   font-family: 'Libre Franklin', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
   line-height: 1.65;
 }
 
@@ -59,7 +60,7 @@
   max-width: 720px;
   margin: 0;
   color: #0f172a;
-  font-size: clamp(36px, 6vw, 58px);
+  font-size: clamp(32px, 5.5vw, 52px);
   line-height: 0.98;
   letter-spacing: -0.06em;
 }
@@ -68,7 +69,7 @@
   max-width: 640px;
   margin: 16px 0 0;
   color: #475569;
-  font-size: clamp(16px, 2vw, 18px);
+  font-size: clamp(15px, 2vw, 16.5px);
 }
 
 .addons-page__actions {
@@ -89,7 +90,7 @@
   background: #fff;
   color: #334155;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -121,7 +122,7 @@
 .addons-page__section h2 {
   margin: 0;
   color: #0f172a;
-  font-size: clamp(22px, 3.4vw, 30px);
+  font-size: clamp(20px, 3.2vw, 27px);
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
@@ -130,7 +131,7 @@
   max-width: 720px;
   margin: 8px 0 0;
   color: #64748b;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .addons-page__grid {
@@ -151,14 +152,24 @@
 .addons-page__card h3 {
   margin: 0 0 8px;
   color: #0f172a;
-  font-size: 18px;
+  font-size: 16px;
   letter-spacing: -0.02em;
 }
 
 .addons-page__card p {
   margin: 0;
   color: #64748b;
-  font-size: 14px;
+  font-size: 13px;
+}
+
+.addons-page__card p a {
+  color: #0f766e;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.addons-page__card h3 a:hover {
+  color: #0f766e;
 }
 
 .addons-page__badge {
@@ -190,7 +201,7 @@
 .addons-page__note p {
   margin: 0;
   color: #115e59;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 @media (max-width: 720px) {

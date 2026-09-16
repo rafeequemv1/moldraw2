@@ -1,11 +1,14 @@
 /**
  * Text appearance controls for the selected canvas label.
  */
-import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Italic, Subscript, Superscript, Type, Underline } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Italic, Search, Subscript, Superscript, Type, Underline } from 'lucide-react';
 import type { CanvasText } from '@moldraw/domain';
 import { CANVAS_FONT_FAMILIES, canvasFontCssFamily } from '../constants/fonts';
-import { CHEM_TEXT_SYMBOLS } from '../constants/chemTextSymbols';
+import {
+  CHEM_TEXT_SYMBOL_GROUPS,
+  filterChemTextSymbolGroups,
+} from '../constants/chemTextSymbols';
 import { useChromeOverlay } from '../chromeDismiss';
 
 export interface TextStylePanelProps {
@@ -30,15 +33,26 @@ function SymbolDropdown({
   compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   useChromeOverlay(open, () => setOpen(false));
 
+  const filteredGroups = useMemo(
+    () => filterChemTextSymbolGroups(CHEM_TEXT_SYMBOL_GROUPS, query),
+    [query],
+  );
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setQuery('');
+      return;
+    }
     const onDoc = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', onDoc);
+    searchRef.current?.focus();
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
 
@@ -51,7 +65,7 @@ function SymbolDropdown({
         type="button"
         className={`text-style-symbols-dd__btn${open ? ' is-open' : ''}`}
         disabled={disabled}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Symbols"
         title="Insert chemistry symbol"
@@ -63,24 +77,62 @@ function SymbolDropdown({
         <ChevronDown size={11} strokeWidth={2.4} aria-hidden />
       </button>
       {open ? (
-        <div className="text-style-symbols-dd__menu" role="menu" aria-label="Chemistry symbols">
-          {CHEM_TEXT_SYMBOLS.map(s => (
-            <button
-              key={s.char}
-              type="button"
-              role="menuitem"
-              className="text-style-symbol-btn"
-              title={s.title}
-              aria-label={s.title}
-              onMouseDown={e => e.preventDefault()}
-              onClick={() => {
-                onInsert(s.char);
-                setOpen(false);
+        <div className="text-style-symbols-dd__menu" role="dialog" aria-label="Chemistry symbols">
+          <div className="text-style-symbols-dd__search">
+            <Search size={12} strokeWidth={2} aria-hidden className="text-style-symbols-dd__search-icon" />
+            <input
+              ref={searchRef}
+              type="search"
+              className="text-style-symbols-dd__search-input"
+              value={query}
+              placeholder="Search symbols…"
+              aria-label="Search symbols"
+              autoComplete="off"
+              onKeyDown={e => {
+                e.stopPropagation();
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  if (query) setQuery('');
+                  else setOpen(false);
+                }
               }}
-            >
-              {s.label}
-            </button>
-          ))}
+              onChange={e => setQuery(e.target.value)}
+            />
+          </div>
+          <div className="text-style-symbols-dd__body">
+            {filteredGroups.length === 0 ? (
+              <div className="text-style-symbols-dd__empty">No matches</div>
+            ) : (
+              filteredGroups.map(group => (
+                <div
+                  key={group.id}
+                  className="text-style-symbols-dd__group"
+                  role="group"
+                  aria-label={group.label}
+                >
+                  <div className="text-style-symbols-dd__group-label">{group.label}</div>
+                  <div className="text-style-symbols-dd__grid">
+                    {group.symbols.map(sym => (
+                      <button
+                        key={`${group.id}:${sym.char}`}
+                        type="button"
+                        className="text-style-symbol-btn"
+                        title={sym.title}
+                        aria-label={sym.title}
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => {
+                          onInsert(sym.char);
+                          setOpen(false);
+                        }}
+                      >
+                        {sym.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       ) : null}
     </div>

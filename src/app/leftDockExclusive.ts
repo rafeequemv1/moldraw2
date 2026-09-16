@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 /** Left-side docks that share the style-panel slot (only one open at a time). */
-export type LeftDockId = 'style' | 'objects' | 'params';
+export type LeftDockId = 'style' | 'objects' | 'params' | 'apparatus';
 
 export const LEFT_DOCK_EVENT = 'moldraw:left-dock';
 

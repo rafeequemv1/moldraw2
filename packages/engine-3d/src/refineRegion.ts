@@ -18,6 +18,7 @@ import { minimizeUff } from './forcefield/minimize';
 import { perceiveHybridization } from './hybridization';
 import { placeHydrogensVsepr } from './placeHydrogens';
 import { unthreadSeed } from './unthread';
+import { aromaticBondIdsFor3DKey } from './structureKey3D';
 
 export interface Refine3DRegionOptions {
   /** Atom ids that changed (or are adjacent to a changed bond). */
@@ -419,21 +420,25 @@ export const dirtyAtomIdsFromEdit = (
     }
   }
 
-  const bondKey = (b: Bond): string => {
+  // Circle vs Kekulé is 2D depiction — do not treat aromatize/dearomatize as topology.
+  const prevArom = aromaticBondIdsFor3DKey(prev);
+  const nextArom = aromaticBondIdsFor3DKey(next);
+  const bondKey = (b: Bond, arom: ReadonlySet<string>): string => {
     const [x, y] = b.fromAtomId < b.toAtomId ? [b.fromAtomId, b.toAtomId] : [b.toAtomId, b.fromAtomId];
-    return `${x}|${y}|${b.order}|${b.aromatic ? 1 : 0}|${b.stereo ?? ''}`;
+    const orderTok = arom.has(b.id) ? 'a' : String(b.order ?? 1);
+    return `${x}|${y}|${orderTok}|${b.stereo ?? ''}`;
   };
-  const prevBonds = new Set(prev.bonds.map(bondKey));
-  const nextBonds = new Set(next.bonds.map(bondKey));
+  const prevBonds = new Set(prev.bonds.map(b => bondKey(b, prevArom)));
+  const nextBonds = new Set(next.bonds.map(b => bondKey(b, nextArom)));
   for (const b of next.bonds) {
-    if (!prevBonds.has(bondKey(b))) {
+    if (!prevBonds.has(bondKey(b, nextArom))) {
       dirty.add(b.fromAtomId);
       dirty.add(b.toAtomId);
       topologyChanged = true;
     }
   }
   for (const b of prev.bonds) {
-    if (!nextBonds.has(bondKey(b))) {
+    if (!nextBonds.has(bondKey(b, prevArom))) {
       if (nextById.has(b.fromAtomId)) dirty.add(b.fromAtomId);
       if (nextById.has(b.toAtomId)) dirty.add(b.toAtomId);
       topologyChanged = true;

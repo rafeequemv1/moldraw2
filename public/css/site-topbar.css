@@ -40,7 +40,7 @@
 }
 
 .site-topbar-wordmark {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.03em;
@@ -48,7 +48,7 @@
 
 .site-topbar-by {
   color: #64748b;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0;
 }
@@ -69,7 +69,7 @@
   border-radius: 999px;
   color: #334155;
   text-decoration: none;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 

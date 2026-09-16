@@ -23,6 +23,7 @@ https://www.moldraw.com/
 - Web app (editor): https://www.moldraw.com/
 - Tools hub: https://www.moldraw.com/tools/
 - Addons (PowerPoint and Word, coming soon): https://www.moldraw.com/addons
+- Chrome/Edge addon (snip any molecule image to an editable structure via Mathpix OCR, coming soon): https://www.moldraw.com/chrome-addon
 - Free chemistry tools directory: https://www.moldraw.com/tools/free-chem-tools/
 - Chemical reaction drawer: https://www.moldraw.com/tools/free-chem-tools/chemical-reaction-drawer.html
 - Interactive periodic table of elements: https://www.moldraw.com/tools/free-chem-tools/interactive-periodic-table.html

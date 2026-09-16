@@ -962,6 +962,9 @@ body,
   .toolbar-split-tool__group-label,
   .toolbar-split-tool__empty,
   .toolbar-fg-tool__empty,
+  .text-style-symbols-dd__search-input,
+  .text-style-symbols-dd__group-label,
+  .text-style-symbols-dd__empty,
   .menu-item,
   .app-top-bar__clip-menu-item,
   .style-toolbar__menu-item,
@@ -978,7 +981,8 @@ body,
 
   .toolbar-split-tool__library-btn,
   .toolbar-split-tool__search,
-  .toolbar-fg-tool__search {
+  .toolbar-fg-tool__search,
+  .text-style-symbols-dd__search {
     background: var(--chrome-input-bg) !important;
     border-color: var(--chrome-border) !important;
     border-radius: var(--radius-control) !important;

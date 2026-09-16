@@ -68,7 +68,7 @@
   --app-element-rail-width: 52px;
   --app-tool-bottom-height: 38px;
 
-  /* Shared left dock (style / objects / generator params). */
+  /* Shared left dock (style / objects / generator params / apparatus). */
   --app-left-dock-top: calc(
     var(--app-top-bar-height, 96px) + var(--app-tool-island-inset, 6px)
   );

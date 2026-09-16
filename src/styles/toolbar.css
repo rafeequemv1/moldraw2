@@ -383,7 +383,7 @@ html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-ta
 }
 
 .hydrogen-toggle-glyph {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   font-family: var(--font-ui);
   line-height: 1;
@@ -392,7 +392,7 @@ html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-ta
 }
 
 .text-tool-glyph {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
   font-family: var(--font-ui);
   line-height: 1;
@@ -513,11 +513,11 @@ html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-ta
   z-index: 24000;
 }
 
-.toolbar-split-tool__menu--portal[data-placement='right'],
+.toolbar-split-tool__menu--portal[data-placement='right']:not(.toolbar-split-tool__menu--left-dock),
 .toolbar-fg-tool__panel--portal[data-placement='right'],
-html.app-mobile-compact .toolbar-split-tool__menu--portal[data-placement='right'],
+html.app-mobile-compact .toolbar-split-tool__menu--portal[data-placement='right']:not(.toolbar-split-tool__menu--left-dock),
 html.app-mobile-compact .toolbar-fg-tool__panel--portal[data-placement='right'],
-html.touch-ui .toolbar-split-tool__menu--portal[data-placement='right'],
+html.touch-ui .toolbar-split-tool__menu--portal[data-placement='right']:not(.toolbar-split-tool__menu--left-dock),
 html.touch-ui .toolbar-fg-tool__panel--portal[data-placement='right'] {
   position: fixed !important;
   top: var(--split-menu-top, 8px) !important;
@@ -587,7 +587,7 @@ html.app-mobile-compact .toolbar-split-tool__menu--drop-up {
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
-.toolbar-split-tool__menu--compact.toolbar-split-tool__menu--wide {
+.toolbar-split-tool__menu--compact.toolbar-split-tool__menu--wide:not(.toolbar-split-tool__menu--left-dock) {
   min-width: 168px;
   max-width: 200px;
   max-height: min(360px, calc(100vh - 64px));
@@ -916,7 +916,7 @@ html.app-mobile-compact .toolbar-split-tool__menu--drop-up {
 }
 
 .toolbar-fg-tool__glyph {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 400;
   font-family: Arial, Helvetica, sans-serif;
   letter-spacing: 0;

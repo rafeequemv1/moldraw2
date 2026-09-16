@@ -51,6 +51,16 @@ export function AddonsPage({ onClose }: AddonsPageProps) {
           <p>Short list, no waitlist yet. Draw in the browser today; these addons will follow.</p>
           <div className="addons-page__grid">
             <article className="addons-page__card">
+              <span className="addons-page__badge">Coming soon · in testing</span>
+              <h3>
+                <a href="/chrome-addon">Chrome &amp; Edge addon →</a>
+              </h3>
+              <p>
+                Snip any molecule image on a web page or PDF and open it as an editable structure in
+                MolDraw. <a href="/chrome-addon">See the interactive demo</a>.
+              </p>
+            </article>
+            <article className="addons-page__card">
               <span className="addons-page__badge">Coming soon</span>
               <h3>PowerPoint addon</h3>
               <p>

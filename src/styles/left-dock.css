@@ -1,8 +1,9 @@
 /*
  * Shared geometry for every desktop left dock (style, objects,
- * graphene/COF params). Same top as the Color & style panel; height follows
- * content up to the leftover viewport. Compact sheets are unchanged.
- * Settings is a centered modal (see account-modals.css), not a left dock.
+ * graphene/COF params, apparatus/glassware list). Same top as the Color &
+ * style panel; height follows content up to the leftover viewport. Compact
+ * sheets are unchanged. Settings is a centered modal (see account-modals.css),
+ * not a left dock.
  */
 html:has(.canvas-document-tabs) {
   --canvas-tab-stack-height: 32px;
@@ -42,6 +43,49 @@ html:not(.app-mobile-compact) .objects-panel:not(.objects-panel--sheet) {
   z-index: 12;
 }
 
+/* Apparatus / glassware catalog: copy Color & style dock box
+   (top / left / width / max-height / overflow-y on the inner scroller). */
+html:not(.app-mobile-compact) .toolbar-split-tool__menu--left-dock {
+  --split-menu-top: var(--app-left-dock-top);
+  --split-menu-left: var(--app-left-dock-left);
+}
+
+html:not(.app-mobile-compact) .toolbar-split-tool__menu--left-dock,
+html:not(.app-mobile-compact) .toolbar-split-tool__menu--portal.toolbar-split-tool__menu--left-dock,
+html:not(.app-mobile-compact) .toolbar-split-tool__menu--portal.toolbar-split-tool__menu--left-dock[data-placement='right'],
+html.touch-ui:not(.app-mobile-compact) .toolbar-split-tool__menu--portal.toolbar-split-tool__menu--left-dock[data-placement='right'] {
+  position: fixed !important;
+  top: var(--app-left-dock-top) !important;
+  left: var(--app-left-dock-left) !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: var(--app-left-dock-width) !important;
+  min-width: var(--app-left-dock-width) !important;
+  max-width: var(--app-left-dock-width) !important;
+  max-height: var(--app-left-dock-max-height) !important;
+  height: auto;
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  display: flex;
+  flex-direction: column;
+  z-index: 11 !important;
+  border-radius: 0 var(--radius-panel, 4px) var(--radius-panel, 4px) 0;
+  border: 1px solid var(--chrome-border);
+  border-left: none;
+  box-shadow: 2px 2px 12px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
+  transform: none !important;
+}
+
+html:not(.app-mobile-compact) .toolbar-split-tool__menu--left-dock .toolbar-split-tool__menu-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .app-settings-sheet-head {
   flex-shrink: 0;
   padding: 8px 10px 6px;
@@ -57,7 +101,7 @@ html:not(.app-mobile-compact) .objects-panel:not(.objects-panel--sheet) {
 }
 
 .app-settings-sheet-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.02em;
