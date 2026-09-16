@@ -7,3 +7,4 @@ _cra_src_backup/
 _merge_editor.ps1
 *.local
 .vite/
+chrome-plugin/
