@@ -18,10 +18,11 @@ import {
 import { Viewer3DExportBar } from './export';
 import type { Viewer3DExportViewer } from './export';
 import {
+  atomsFromViewerModels,
   create3DmolViewer,
   disposeViewerHost,
   frameViewerSelection,
-  noteViewerPanHome,
+  retargetViewerToAtomCentroid,
   type Viewer3DHandle,
 } from './create3DmolViewer';
 
@@ -581,6 +582,7 @@ function Molecule3DPanelInner({
             stereoIssuesRef.current,
           );
           lastStyleKeyRef.current = styleKey;
+          retargetViewerToAtomCentroid(viewer, existingAtoms);
           viewer.render();
           return;
         }
@@ -614,20 +616,11 @@ function Molecule3DPanelInner({
         });
         applyOutlineViewStyle(viewer, displaySettings.mode === 'toonish');
         applyStereoOverlays(viewer, models, stereoHintsRef.current, stereoIssuesRef.current);
-        if (savedView) {
-          restoreViewerView(viewer, savedView);
-          noteViewerPanHome(viewer);
-        } else if (!hadModelRef.current) {
+        if (savedView) restoreViewerView(viewer, savedView);
+        if (!hadModelRef.current) {
           frameViewerSelection(viewer, {}, true);
-        } else {
-          frameViewerSelection(
-            viewer,
-            selectedAtomIndicesRef.current.length > 0
-              ? { serial: selectedAtomIndicesRef.current }
-              : {},
-            false,
-          );
         }
+        retargetViewerToAtomCentroid(viewer, atomsFromViewerModels(models));
         hadModelRef.current = true;
         if (surfaceSettings.kind) {
           applyViewerSurface({
@@ -690,19 +683,6 @@ function Molecule3DPanelInner({
     displaySettings.mode,
     displaySettings.showHydrogens,
   ]);
-
-  useEffect(() => {
-    const viewer = viewerRef.current;
-    if (!viewer || !viewerReady || viewerInitError) return;
-    if (!hadModelRef.current || modelsRef.current.length === 0) return;
-    const indices = selectedAtomIndicesRef.current;
-    frameViewerSelection(
-      viewer,
-      indices.length > 0 ? { serial: indices } : {},
-      false,
-    );
-    viewer.render();
-  }, [viewerReady, viewerInitError, selectedKey]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -775,12 +755,8 @@ function Molecule3DPanelInner({
         viewer.render();
         return;
       }
-      const indices = selectedAtomIndicesRef.current;
-      frameViewerSelection(
-        viewer,
-        indices.length > 0 ? { serial: indices } : {},
-        true,
-      );
+      frameViewerSelection(viewer, {}, true);
+      retargetViewerToAtomCentroid(viewer, atomsFromViewerModels(modelsRef.current));
       viewer.render();
     };
 

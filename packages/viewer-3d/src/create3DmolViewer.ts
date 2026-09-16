@@ -24,6 +24,7 @@ export type Viewer3DHandle = {
   getView?: () => number[];
   setView?: (view: number[]) => void;
   setViewChangeCallback?: (cb: ((view: number[]) => void) | null) => void;
+  selectedAtoms?: (sel?: object) => Array<{ x?: number; y?: number; z?: number; elem?: string }>;
   removeAllModels?: () => void;
   removeAllShapes?: () => void;
   removeAllLabels?: () => void;
@@ -153,6 +154,121 @@ export const frameViewerSelection = (
       try {
         if (zoom) viewer.zoomTo();
         else viewer.center?.();
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+};
+
+export type ViewerAtomXyz = { x?: number; y?: number; z?: number };
+
+/**
+ * Bounding-box center of the current 3D atoms (visual middle of the structure).
+ * Used as the orbit pivot so rotation stays on the molecule, not world origin.
+ */
+export const orbitCenterOfAtoms = (
+  atoms: ReadonlyArray<ViewerAtomXyz>,
+): { x: number; y: number; z: number } | null => {
+  let minX = Infinity;
+  let minY = Infinity;
+  let minZ = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let maxZ = -Infinity;
+  let n = 0;
+  for (const atom of atoms) {
+    const x = atom?.x;
+    const y = atom?.y;
+    const z = atom?.z;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+    n += 1;
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (z < minZ) minZ = z;
+    if (x > maxX) maxX = x;
+    if (y > maxY) maxY = y;
+    if (z > maxZ) maxZ = z;
+  }
+  if (n === 0) return null;
+  return {
+    x: (minX + maxX) / 2,
+    y: (minY + maxY) / 2,
+    z: (minZ + maxZ) / 2,
+  };
+};
+
+export const atomsFromViewerModels = (
+  models: ReadonlyArray<{
+    selectedAtoms?: (sel: object) => ViewerAtomXyz[];
+  }>,
+): ViewerAtomXyz[] => {
+  const out: ViewerAtomXyz[] = [];
+  for (const model of models) {
+    const atoms = model.selectedAtoms?.({}) ?? [];
+    for (const atom of atoms) out.push(atom);
+  }
+  return out;
+};
+
+const atomsFromViewer = (viewer: Viewer3DHandle): ViewerAtomXyz[] => {
+  try {
+    return viewer.selectedAtoms?.({}) ?? [];
+  } catch {
+    return [];
+  }
+};
+
+const resetCameraLookAtOrigin = (viewer: Viewer3DHandle): void => {
+  const gl = viewer as Viewer3DHandle & {
+    lookingAt?: { set: (x: number, y: number, z: number) => void };
+    camera?: { lookAt: (target: unknown) => void };
+  };
+  try {
+    gl.lookingAt?.set(0, 0, 0);
+    if (gl.lookingAt) gl.camera?.lookAt(gl.lookingAt);
+  } catch {
+    /* older / stubbed 3Dmol builds */
+  }
+};
+
+/**
+ * Point the camera at the current structure's bounding-box center and make that
+ * the rotate/orbit pivot. Keeps zoom and orientation (no framing jump).
+ */
+export const retargetViewerToAtomCentroid = (
+  viewer: Viewer3DHandle,
+  atoms?: ReadonlyArray<ViewerAtomXyz>,
+): void => {
+  const pts = atoms && atoms.length > 0 ? atoms : atomsFromViewer(viewer);
+  const center = orbitCenterOfAtoms(pts);
+
+  withPanPinSuspended(viewer, () => {
+    resetCameraLookAtOrigin(viewer);
+    if (center && typeof viewer.setView === 'function') {
+      try {
+        const view = viewer.getView?.();
+        if (Array.isArray(view) && view.length >= 8) {
+          const next = view.slice();
+          next[0] = -center.x;
+          next[1] = -center.y;
+          next[2] = -center.z;
+          if (next.length > 8) {
+            next[8] = 0;
+            next[9] = 0;
+          }
+          viewer.setView(next);
+          return;
+        }
+      } catch {
+        /* fall through to 3Dmol.center */
+      }
+    }
+    try {
+      viewer.center?.({});
+    } catch {
+      try {
+        viewer.center?.();
       } catch {
         /* ignore */
       }
