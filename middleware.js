@@ -40,78 +40,85 @@ function resolveJunkPathRedirect(pathname) {
   return '/';
 }
 
-function resolveCommunityRewrite(pathname) {
-  if (pathname === '/community/sitemap.xml') return '/api/community-sitemap';
-  if (pathname === '/community/index.html') return null;
-  if (
-    pathname === '/community'
-    || pathname === '/community/'
-    || /^\/community\/(page\/\d+|features(?:\/page\/\d+)?|p\/[^/]+(?:\/[^/]+)?|c\/[^/]+(?:\/[^/]+)?|f\/[^/]+(?:\/[^/]+)?|fc\/[^/]+(?:\/[^/]+)?)\/?$/.test(pathname)
-  ) {
-    return `/api/community?path=${encodeURIComponent(pathname)}`;
+function isCommunityPath(pathname) {
+  return pathname === '/community' || pathname.startsWith('/community/');
+}
+
+/**
+ * Vite/Vercel routing middleware is not Next.js. `Response.rewrite` is a
+ * NextResponse helper and throws here, which becomes MIDDLEWARE_INVOCATION_FAILED
+ * for every rewritten path (including /community). Fail open instead.
+ */
+function rewriteOrContinue(destination) {
+  try {
+    if (typeof Response.rewrite === 'function') {
+      return Response.rewrite(destination);
+    }
+  } catch (error) {
+    console.error('middleware rewrite failed open', error);
   }
-  return null;
+  return undefined;
 }
 
 export default function middleware(request) {
-  const url = new URL(request.url);
+  try {
+    const url = new URL(request.url);
 
-  if (url.hostname === 'moldraw.com') {
-    url.hostname = 'www.moldraw.com';
-    return Response.redirect(url.toString(), 301);
+    if (url.hostname === 'moldraw.com') {
+      url.hostname = 'www.moldraw.com';
+      return Response.redirect(url.toString(), 301);
+    }
+
+    const junkTarget = resolveJunkPathRedirect(url.pathname);
+    if (junkTarget) {
+      return Response.redirect(new URL(junkTarget, url.origin).toString(), 301);
+    }
+
+    // Community SEO is vercel.json → /api/community. Never rewrite here:
+    // a middleware throw 500s the whole page instead of serving static HTML.
+    if (isCommunityPath(url.pathname)) return;
+
+    const staticTarget = resolveExtensionlessRedirect(url.pathname);
+    if (staticTarget) {
+      url.pathname = staticTarget;
+      return Response.redirect(url.toString(), 301);
+    }
+
+    // Never content-negotiate machine-readable discovery / static assets through /api/markdown
+    const path = url.pathname;
+    if (
+      path === '/sitemap.xml'
+      || path === '/robots.txt'
+      || path === '/llms.txt'
+      || path === '/llm.text'
+      || path === '/favicon.ico'
+      || path.startsWith('/api/')
+      || path.startsWith('/md/')
+      || path.startsWith('/.well-known/')
+      || path.startsWith('/static/')
+      || path.startsWith('/css/')
+      || path.startsWith('/js/')
+      || path.startsWith('/fonts/')
+      || path.startsWith('/images/')
+      || /\.(?:xml|txt|json|css|js|mjs|map|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot|pdf)$/i.test(path)
+    ) {
+      return;
+    }
+
+    const accept = request.headers.get('accept');
+    if (!wantsMarkdown(accept)) return;
+
+    const apiUrl = new URL('/api/markdown', url.origin);
+    apiUrl.searchParams.set('path', url.pathname);
+    return rewriteOrContinue(apiUrl);
+  } catch (error) {
+    console.error('middleware failed open', error);
+    return undefined;
   }
-
-  const junkTarget = resolveJunkPathRedirect(url.pathname);
-  if (junkTarget) {
-    return Response.redirect(new URL(junkTarget, url.origin).toString(), 301);
-  }
-
-  const staticTarget = resolveExtensionlessRedirect(url.pathname);
-  if (staticTarget) {
-    url.pathname = staticTarget;
-    return Response.redirect(url.toString(), 301);
-  }
-
-  const communityTarget = resolveCommunityRewrite(url.pathname);
-  if (communityTarget) {
-    const apiUrl = new URL(communityTarget, url.origin);
-    url.searchParams.forEach((value, key) => {
-      if (!apiUrl.searchParams.has(key)) apiUrl.searchParams.set(key, value);
-    });
-    return Response.rewrite(apiUrl);
-  }
-
-  // Never content-negotiate machine-readable discovery / static assets through /api/markdown
-  const path = url.pathname;
-  if (
-    path === '/sitemap.xml'
-    || path === '/robots.txt'
-    || path === '/llms.txt'
-    || path === '/llm.text'
-    || path === '/favicon.ico'
-    || path.startsWith('/api/')
-    || path.startsWith('/md/')
-    || path.startsWith('/.well-known/')
-    || path.startsWith('/static/')
-    || path.startsWith('/css/')
-    || path.startsWith('/js/')
-    || path.startsWith('/fonts/')
-    || path.startsWith('/images/')
-    || /\.(?:xml|txt|json|css|js|mjs|map|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot|pdf)$/i.test(path)
-  ) {
-    return;
-  }
-
-  const accept = request.headers.get('accept');
-  if (!wantsMarkdown(accept)) return;
-
-  const apiUrl = new URL('/api/markdown', url.origin);
-  apiUrl.searchParams.set('path', url.pathname);
-  return Response.rewrite(apiUrl);
 }
 
 export const config = {
   matcher: [
-    '/:path*',
+    '/((?!community(?:/|$)|api/).*)',
   ],
 };

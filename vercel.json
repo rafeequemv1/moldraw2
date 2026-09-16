@@ -18,6 +18,9 @@
     },
     "api/community-sitemap.js": {
       "maxDuration": 10
+    },
+    "api/community-notify.js": {
+      "maxDuration": 10
     }
   },
   "headers": [
@@ -197,6 +200,64 @@
       "source": "/addons/index.html",
       "destination": "/addons/",
       "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/community/sitemap.xml",
+      "destination": "/api/community-sitemap"
+    },
+    {
+      "source": "/community",
+      "destination": "/api/community?path=/community"
+    },
+    {
+      "source": "/community/",
+      "destination": "/api/community?path=/community/"
+    },
+    {
+      "source": "/community/page/:page",
+      "destination": "/api/community?path=/community/page/:page"
+    },
+    {
+      "source": "/community/features",
+      "destination": "/api/community?path=/community/features"
+    },
+    {
+      "source": "/community/features/page/:page",
+      "destination": "/api/community?path=/community/features/page/:page"
+    },
+    {
+      "source": "/community/p/:id",
+      "destination": "/api/community?path=/community/p/:id"
+    },
+    {
+      "source": "/community/p/:id/:slug",
+      "destination": "/api/community?path=/community/p/:id/:slug"
+    },
+    {
+      "source": "/community/c/:id",
+      "destination": "/api/community?path=/community/c/:id"
+    },
+    {
+      "source": "/community/c/:id/:slug",
+      "destination": "/api/community?path=/community/c/:id/:slug"
+    },
+    {
+      "source": "/community/f/:id",
+      "destination": "/api/community?path=/community/f/:id"
+    },
+    {
+      "source": "/community/f/:id/:slug",
+      "destination": "/api/community?path=/community/f/:id/:slug"
+    },
+    {
+      "source": "/community/fc/:id",
+      "destination": "/api/community?path=/community/fc/:id"
+    },
+    {
+      "source": "/community/fc/:id/:slug",
+      "destination": "/api/community?path=/community/fc/:id/:slug"
     }
   ]
 }

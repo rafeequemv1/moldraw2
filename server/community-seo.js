@@ -218,6 +218,36 @@ function loadTemplate() {
   throw new Error('Community HTML template not found');
 }
 
+function loadStaticCommunityHtml() {
+  try {
+    return loadTemplate();
+  } catch {
+    return null;
+  }
+}
+
+function staticCommunityResponse() {
+  const body = loadStaticCommunityHtml();
+  if (!body) return null;
+  return {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=30',
+    },
+    body,
+  };
+}
+
+async function renderCommunityPageSafe(pathname, options = {}) {
+  try {
+    return await renderCommunityPage(pathname, options);
+  } catch (error) {
+    console.error('community SSR failed open', error);
+    return staticCommunityResponse() || Promise.reject(error);
+  }
+}
+
 async function supabaseQuery(table, search, { range } = {}) {
   const url = `${SUPABASE_URL}/rest/v1/${table}?${search}`;
   const headers = {
@@ -1267,6 +1297,11 @@ module.exports = {
   PAGE_SIZE,
   parseCommunityPath,
   isCommunitySeoPath,
+  discussionPath,
+  featurePath,
+  loadStaticCommunityHtml,
+  staticCommunityResponse,
   renderCommunityPage,
+  renderCommunityPageSafe,
   renderCommunitySitemap,
 };
