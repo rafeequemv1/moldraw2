@@ -17,11 +17,7 @@ import {
   snapSelectionMovePointer,
   getSelectionCentroid,
   isNearTransformRotateHandle,
-  isNearTransformScaleHandle,
-  pickTransformScaleHandle,
-  anchorForBoxHandle,
   scaleFactorsForBoxHandle,
-  getMarqueeSelectionTransformLayout,
   isInsideSelectionTransformBox,
   hasMarqueeSelectionContent,
   type MarqueeSelectionBoundsInput,
@@ -369,58 +365,6 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
     }
   }
 
-  if (
-    transformAtomIds.length > 0 &&
-    ctx.onScaleSelectionCommit &&
-    isNearTransformScaleHandle(
-      worldPos.x,
-      worldPos.y,
-      molecule,
-      transformAtomIds,
-      marqueeBounds,
-      canvasCtx,
-    )
-  ) {
-    if (transformAtomIds.length !== selectedAtomIds.length) {
-      ctx.setSelectedAtomIds?.(transformAtomIds);
-      ctx.setSelectedBondIds?.(bondsFullyInAtomSet(molecule, transformAtomIds));
-    }
-    const layout = getMarqueeSelectionTransformLayout(
-      molecule,
-      marqueeBounds,
-      canvasCtx ?? null,
-    );
-    const handle = pickTransformScaleHandle(
-      worldPos.x,
-      worldPos.y,
-      molecule,
-      transformAtomIds,
-      marqueeBounds,
-      canvasCtx,
-    );
-    if (layout && handle) {
-      hideTextOverlayIfSelected(ctx);
-      const anchor = anchorForBoxHandle(handle, layout);
-      const snap: Record<string, Point> = {};
-      for (const id of transformAtomIds) {
-        const a = molecule.atoms.find(x => x.id === id);
-        if (a) snap[id] = { x: a.x, y: a.y };
-      }
-      ctx.setDragAction({
-        type: 'scale_selection',
-        handle,
-        anchorX: anchor.x,
-        anchorY: anchor.y,
-        snap,
-        startPointerX: worldPos.x,
-        startPointerY: worldPos.y,
-        currentFactorX: 1,
-        currentFactorY: 1,
-      });
-      return true;
-    }
-  }
-
   const insideBox = isInsideSelectionTransformBox(
     worldPos.x,
     worldPos.y,
@@ -724,18 +668,6 @@ export function selectToolHasTargetAt(ctx: InteractionContext): boolean {
   if (hasMarqueeSelectionContent(marqueeBounds)) {
     if (
       isNearTransformRotateHandle(
-        worldPos.x,
-        worldPos.y,
-        molecule,
-        transformAtomIds,
-        marqueeBounds,
-        canvasCtx,
-      )
-    ) {
-      return true;
-    }
-    if (
-      isNearTransformScaleHandle(
         worldPos.x,
         worldPos.y,
         molecule,

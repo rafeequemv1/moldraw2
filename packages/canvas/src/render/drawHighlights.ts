@@ -20,16 +20,21 @@ import { isFragmentPlacementSnapValid } from './drawFragmentPlacementGhost';
 import { atomLabelHighlightBox, fillRoundRect } from './atomLabelHighlightBox';
 import { safeDrawImage } from './safeDrawImage';
 import type { RenderContext } from './types';
+import { canvasBackingDpr } from '../geometry';
 
 const HOVER_OUTLINE = 'rgba(14, 165, 233, 1)';
-/** Screen-px ring thickness (world space at zoom 1). */
-const HOVER_OUTLINE_WIDTH = 2.2;
+/** Hover ring thickness in CSS pixels (world = css / zoom). */
+const HOVER_OUTLINE_CSS_PX = 1.35;
+const HIGHLIGHT_MAX_EDGE = 4096;
 
 /** Halo diameter around atoms / bonds — large enough to read as a circle at vertices. */
 const skeletonWidth = (R: RenderContext): number => {
   const t = R.displayPrefs.bondThicknessPx;
-  return Math.max(18, t * 3.6 + 11);
+  return Math.max(14, t * 2.8 + 8);
 };
+
+const highlightZoom = (R: RenderContext): number =>
+  Math.max(1e-6, R.viewport.zoom * (R.displayScale || 1));
 
 const labelCounterRadFor = (atomId: string, R: RenderContext): number =>
   R.selectedAtomIds.includes(atomId) && Math.abs(R.labelCounterRad) > 1e-5
@@ -297,23 +302,29 @@ const blitHighlight = (
   }
 
   const inner = skeletonWidth(R);
-  const ring = HOVER_OUTLINE_WIDTH;
+  const z = highlightZoom(R);
+  const ring = mode === 'outline' ? HOVER_OUTLINE_CSS_PX / z : 0;
   const outer = mode === 'outline' ? inner + ring * 2 : inner;
   const bounds = expandBounds(idSet, R, ctx, outer);
   if (!bounds) return;
 
   const padding = outer + 6;
-  const w = Math.ceil(bounds.maxX - bounds.minX + padding * 2);
-  const h = Math.ceil(bounds.maxY - bounds.minY + padding * 2);
-  // Canvas width/height truncate to integers; sub-pixel sizes become 0 and
-  // the later drawImage throws InvalidStateError (white-screens the SPA).
-  if (!(w >= 1 && h >= 1)) return;
+  const worldW = bounds.maxX - bounds.minX + padding * 2;
+  const worldH = bounds.maxY - bounds.minY + padding * 2;
+  if (!(worldW >= 1 && worldH >= 1)) return;
 
-  offCanvas.width = w;
-  offCanvas.height = h;
+  let scale = Math.max(1, canvasBackingDpr(ctx.canvas) * z);
+  const cap = Math.max(worldW, worldH, 1);
+  if (cap * scale > HIGHLIGHT_MAX_EDGE) scale = Math.max(1, HIGHLIGHT_MAX_EDGE / cap);
+
+  const pxW = Math.max(1, Math.ceil(worldW * scale));
+  const pxH = Math.max(1, Math.ceil(worldH * scale));
+  offCanvas.width = pxW;
+  offCanvas.height = pxH;
   if (offCanvas.width < 1 || offCanvas.height < 1) return;
   offCtx.setTransform(1, 0, 0, 1, 0, 0);
-  offCtx.clearRect(0, 0, w, h);
+  offCtx.clearRect(0, 0, pxW, pxH);
+  offCtx.setTransform(scale, 0, 0, scale, 0, 0);
   offCtx.translate(-bounds.minX + padding, -bounds.minY + padding);
   offCtx.strokeStyle = '#000';
   offCtx.fillStyle = '#000';
@@ -337,8 +348,11 @@ const blitHighlight = (
     paintSkeleton(offCtx, ctx, idSet, R, outer, extraBondIds, 0, true, true);
   }
 
-  tintMask(offCtx, w, h, color);
-  safeDrawImage(ctx, offCanvas, bounds.minX - padding, bounds.minY - padding);
+  tintMask(offCtx, pxW, pxH, color);
+  const prevSmooth = ctx.imageSmoothingEnabled;
+  ctx.imageSmoothingEnabled = false;
+  safeDrawImage(ctx, offCanvas, bounds.minX - padding, bounds.minY - padding, worldW, worldH);
+  ctx.imageSmoothingEnabled = prevSmooth;
 };
 
 /** Opaque wash under bonds/labels — call before `paintStructureLayers`. */
@@ -404,7 +418,7 @@ export const drawHoverOutlineAndToolHints = (
           ? 'rgba(37, 99, 235, 0.85)'
           : 'rgba(202, 138, 4, 0.85)'
         : HOVER_OUTLINE;
-      ctx.lineWidth = placingFragment ? 1.8 : 2.2;
+      ctx.lineWidth = placingFragment ? 1.5 / highlightZoom(R) : HOVER_OUTLINE_CSS_PX / highlightZoom(R);
       ctx.beginPath();
       ctx.arc(a.x, a.y, placingFragment ? 14 : 11, 0, Math.PI * 2);
       ctx.stroke();

@@ -25,7 +25,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     autoLayoutAfterBondBurst: true,
     preferIndigo2d: true,
     snapToGrid: false,
-    showGrid: true,
+    showGrid: false,
     touchPanOnEmptyCanvas: false,
     touchLoupe: true,
     pointerDebugHud: false,

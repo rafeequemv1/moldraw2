@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import type { Point, Viewport } from './geometry';
+import { canvasCssSize, type Point, type Viewport } from './geometry';
 
 export interface UseCanvasViewportOptions {
   canvasRef: RefObject<HTMLCanvasElement | null>;
@@ -59,7 +59,8 @@ function clientDeltaToCanvasLocal(dx: number, dy: number): Point {
  * Invariants:
  *   - `viewport` is the *base* transform; callers multiply by `displayScale`.
  *   - `getWorldPos` is consistent with the matrix used in `render()`:
- *       ctx.translate(W/2 + viewport.x, H/2 + viewport.y);
+ *       W/H are CSS layout pixels (clientWidth), not backing-store size.
+ *       ctx.setTransform(dpr); ctx.translate(W/2 + viewport.x, H/2 + viewport.y);
  *       ctx.scale(zoom * displayScale, zoom * displayScale);
  *   - Wheel events are bound non-passively here so `e.preventDefault()` works.
  */
@@ -77,12 +78,11 @@ export const useCanvasViewport = ({
       const canvas = canvasRef.current;
       if (!canvas) return { x: 0, y: 0 };
       const local = clientToCanvasLocal(canvas, e.clientX, e.clientY);
-      const screenX = local.x;
-      const screenY = local.y;
+      const { w, h } = canvasCssSize(canvas);
       const effectiveZoom = viewport.zoom * displayScale;
       return {
-        x: (screenX - canvas.width / 2 - viewport.x) / effectiveZoom,
-        y: (screenY - canvas.height / 2 - viewport.y) / effectiveZoom,
+        x: (local.x - w / 2 - viewport.x) / effectiveZoom,
+        y: (local.y - h / 2 - viewport.y) / effectiveZoom,
       };
     },
     [viewport, displayScale, canvasRef],
@@ -125,8 +125,9 @@ export const useCanvasViewport = ({
         const canvas = canvasRef.current;
         if (!canvas) return { ...prev, zoom: newZoom };
         const local = clientToCanvasLocal(canvas, clientX, clientY);
-        const focalX = local.x - canvas.width / 2;
-        const focalY = local.y - canvas.height / 2;
+        const { w, h } = canvasCssSize(canvas);
+        const focalX = local.x - w / 2;
+        const focalY = local.y - h / 2;
         const scaleRatio = newZoom / prev.zoom;
         return {
           x: focalX - (focalX - prev.x) * scaleRatio,
@@ -159,7 +160,11 @@ export const useCanvasViewport = ({
     ) => {
       setViewport(() => {
         const canvas = canvasRef.current;
-        if (!canvas || canvas.width < 8 || canvas.height < 8) {
+        if (!canvas) {
+          return { x: 0, y: 0, zoom: 1 };
+        }
+        const { w, h } = canvasCssSize(canvas);
+        if (w < 8 || h < 8) {
           return { x: 0, y: 0, zoom: 1 };
         }
         const bw = Math.max(rect.maxX - rect.minX, 24);
@@ -167,8 +172,8 @@ export const useCanvasViewport = ({
         const cx = (rect.minX + rect.maxX) / 2;
         const cy = (rect.minY + rect.maxY) / 2;
         const pad = Math.max(16, paddingPx);
-        const zoomX = (canvas.width - 2 * pad) / (bw * displayScale);
-        const zoomY = (canvas.height - 2 * pad) / (bh * displayScale);
+        const zoomX = (w - 2 * pad) / (bw * displayScale);
+        const zoomY = (h - 2 * pad) / (bh * displayScale);
         const zoom = Math.max(0.2, Math.min(3.5, Math.min(zoomX, zoomY)));
         const ez = zoom * displayScale;
         return {

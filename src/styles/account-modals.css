@@ -36,10 +36,19 @@
 
 .header-links--compact .header-links__lead,
 .header-links--compact .header-links__trailing {
-  overflow-x: hidden;
+  overflow-x: visible;
   overflow-y: visible;
   flex-wrap: nowrap;
   min-width: 0;
+}
+
+.header-links--compact .header-links__trailing {
+  flex-shrink: 0;
+}
+
+.tb-btn-auth,
+.tb-btn-auth-cta {
+  flex-shrink: 0;
 }
 
 /* Copy / Request stay in the More sheet — never a second compact top-bar row. */
@@ -143,15 +152,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  height: 22px;
-  padding: 0 6px;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: #555;
-  font-size: 9px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   text-decoration: none;
@@ -232,12 +241,17 @@
 }
 
 .tb-btn-theme-toggle {
-  width: 22px;
-  min-width: 22px;
-  height: 22px;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
   padding: 0;
   margin-left: 2px;
   color: var(--text-main, #334155);
+}
+
+.tb-btn-grid-toggle.is-on {
+  color: var(--text-main, #0f172a);
+  background: var(--chrome-active, #e2e8f0);
 }
 
 .tb-btn-theme-toggle:hover {

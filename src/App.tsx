@@ -135,7 +135,7 @@ import type { MoleculeWorkerResponse } from '@moldraw/core/moleculeWorker/messag
 
 const IMAGE_FILE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg';
 const VIEWER3D_OPEN_KEY = 'moldraw.viewer3d.open';
-const EXPORT_SIGNUP_NOTICE = 'Sign up to download and export files.';
+const EXPORT_SIGNUP_NOTICE = 'Sign up to copy, download, and export files.';
 const NEW_TAB_SIGNUP_NOTICE = 'Sign up to open more design tabs.';
 
 function readViewer3DOpenPref(): boolean {
@@ -1456,7 +1456,10 @@ function App() {
   const touchQuickMenu = useMemo(() => {
     if (!contextMenu || contextMenu.pointerType !== 'touch') return null;
     const actions = {
-      copySmiles: handleContextCopySmiles,
+      copySmiles: () => {
+        if (!requireExportSignup()) return;
+        handleContextCopySmiles();
+      },
       paste: () => void handleContextPasteSmiles(),
       duplicate: handleContextDuplicate,
       deleteSelection: () => {
@@ -1675,6 +1678,7 @@ function App() {
       void renameProject(name);
       resetAutoCleanup();
     },
+    onFragmentPaste: handlePasteSelection,
   });
   // Bridge: context menu paste / Ctrl+S were wired before import/export exists.
   /* eslint-disable react-hooks/refs -- intentional circular-dep bridge */
@@ -1719,13 +1723,21 @@ function App() {
     [requireExportSignup],
   );
 
-  const handleHeaderCopySmiles = useCallback(() => {
+  const gatedCopyAs = useCallback(
+    (format: Parameters<typeof handleCopyAs>[0]) => {
+      if (!requireExportSignup()) return;
+      return handleCopyAs(format);
+    },
+    [handleCopyAs, requireExportSignup],
+  );
+  const gatedHeaderCopySmiles = useCallback(() => {
+    if (!requireExportSignup()) return;
     handleCopyAs('smiles');
     setSmilesCopied(true);
     window.setTimeout(() => setSmilesCopied(false), 1800);
-  }, [handleCopyAs]);
-
-  const handleHeaderCopySvg = useCallback(() => {
+  }, [handleCopyAs, requireExportSignup]);
+  const gatedHeaderCopySvg = useCallback(() => {
+    if (!requireExportSignup()) return;
     setSvgCopyError(false);
     void Promise.resolve(handleCopyAs('svg')).then(ok => {
       if (ok === false) {
@@ -1736,7 +1748,11 @@ function App() {
       setSvgCopied(true);
       window.setTimeout(() => setSvgCopied(false), 1800);
     });
-  }, [handleCopyAs]);
+  }, [handleCopyAs, requireExportSignup]);
+  const gatedContextCopySmiles = useCallback(() => {
+    if (!requireExportSignup()) return;
+    handleContextCopySmiles();
+  }, [handleContextCopySmiles, requireExportSignup]);
 
   const handleHeaderPasteSmiles = useCallback(async () => {
     const paste = async (raw: string) => {
@@ -2237,9 +2253,10 @@ function App() {
               void refreshMetas();
               setShowProjectLibrary(true);
             }}
-            onCopySmiles={handleHeaderCopySmiles}
-            onCopySvg={handleHeaderCopySvg}
-            onCopyAs={handleCopyAs}
+            onCopySmiles={gatedHeaderCopySmiles}
+            onCopySvg={gatedHeaderCopySvg}
+            onPaste={() => void handleHeaderPasteSmiles()}
+            onCopyAs={gatedCopyAs}
             smilesCopied={smilesCopied}
             svgCopied={svgCopied}
             svgCopyError={svgCopyError}
@@ -2257,6 +2274,10 @@ function App() {
             hasUnreadUpdates={hasUnreadUpdates}
             uiTheme={appSettings.general.theme}
             onChangeUiTheme={theme => updateAppSettingsGeneral({ theme })}
+            showGrid={appSettings.general.showGrid === true}
+            onToggleGrid={() =>
+              updateAppSettingsGeneral({ showGrid: appSettings.general.showGrid !== true })
+            }
             onOpenTemplateLibrary={() => {
               setTemplateLibraryTab('structures');
               setShowTemplateLibrary(true);
@@ -2827,8 +2848,8 @@ function App() {
           detectedAliasAtCursor={contextAtomDetectedAlias}
           asSheet={isCompactViewport}
           onDismiss={closeContextMenu}
-          onCopySmiles={handleContextCopySmiles}
-          onCopyAs={handleCopyAs}
+          onCopySmiles={gatedContextCopySmiles}
+          onCopyAs={gatedCopyAs}
           onPasteSmiles={handleContextPasteSmiles}
           onHighlightColor={color => {
             const atomIds =

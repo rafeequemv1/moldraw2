@@ -77,6 +77,8 @@ export const en = {
     switchToLight: 'Switch to light theme',
     switchToElegantDark: 'Switch to elegant dark',
     switchToInkDark: 'Switch to ink dark',
+    gridOnTitle: 'Hide canvas grid',
+    gridOffTitle: 'Show canvas grid',
   },
   nav: {
     community: 'Community',
@@ -86,6 +88,8 @@ export const en = {
     copySvg: 'Copy SVG',
     copiedSvg: 'Copied SVG',
     copyFailed: 'Copy failed',
+    paste: 'Paste',
+    pasteTitle: 'Paste SMILES or structure from the clipboard',
     ai: 'AI',
     requestFeature: 'Request feature',
     signIn: 'Sign in',
@@ -111,6 +115,7 @@ export const en = {
     hideAiAssistant: 'Hide MolDraw AI assistant',
     copySmilesTitle: 'Copy SMILES to clipboard',
     copySvgTitle: 'Copy structure SVG',
+    pasteTitle: 'Paste SMILES or structure from the clipboard',
     openCommunity: 'Open MolDraw community',
     openSavedDesigns: 'Open your saved designs',
     requestFeatureTitle: 'Request a MolDraw feature',
@@ -289,7 +294,7 @@ export const en = {
       snapToGridHint:
         'When dragging molecules or reaction arrows, snap centers to the background grid. Hold Shift to move freely. Alignment guides still snap to other molecule bounds.',
       showGrid: 'Show grid',
-      showGridHint: 'Draw the light background grid on the 2D canvas (on by default).',
+      showGridHint: 'Draw the light background grid on the 2D canvas (off by default).',
       touchPanOnEmptyCanvas: 'Touch: one-finger pan on empty canvas',
       touchPanOnEmptyCanvasHint:
         'With the Select tool, dragging one finger on empty canvas pans the view instead of drawing a selection box. Off by default: pan with two fingers or the Hand tool, pinch to zoom, two-finger tap to undo, three-finger tap to redo.',

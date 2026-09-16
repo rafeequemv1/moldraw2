@@ -29,6 +29,8 @@ import {
   shortestAngleDiff,
   worldViewportRect,
   type AlignmentGuides,
+  canvasCssSize,
+  canvasBackingDpr,
 } from './geometry';
 import {
   type RenderContext,
@@ -327,10 +329,12 @@ const applyWorldTransform = (
   displayScale: number,
 ): number => {
   const effectiveZoom = viewport.zoom * displayScale;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const { w, h } = canvasCssSize(canvas);
+  const dpr = canvasBackingDpr(canvas);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
   ctx.save();
-  ctx.translate(canvas.width / 2 + viewport.x, canvas.height / 2 + viewport.y);
+  ctx.translate(w / 2 + viewport.x, h / 2 + viewport.y);
   ctx.scale(effectiveZoom, effectiveZoom);
   return effectiveZoom;
 };
@@ -353,15 +357,17 @@ const paintBackgroundGrid = (
   if (showGrid === false) return;
   if (canvas.width < 1 || canvas.height < 1) return;
   const effectiveZoom = viewport.zoom * displayScale;
+  const { w, h } = canvasCssSize(canvas);
+  const dpr = canvasBackingDpr(canvas);
   ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.globalCompositeOperation = 'destination-over';
-  ctx.translate(canvas.width / 2 + viewport.x, canvas.height / 2 + viewport.y);
+  ctx.translate(w / 2 + viewport.x, h / 2 + viewport.y);
   ctx.scale(effectiveZoom, effectiveZoom);
   drawGrid(
     ctx,
-    canvas.width,
-    canvas.height,
+    w,
+    h,
     { ...viewport, zoom: effectiveZoom },
     theme,
     gridSizePx,
@@ -518,16 +524,17 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
     }
 
     const structureCanvas = o.structureCanvasRef.current;
+    const structureCss = structureCanvas ? canvasCssSize(structureCanvas) : null;
     // Viewport culling during drag would rebuild fragment AABBs every frame.
     const cull =
-      structureCanvas && renderedMolecule.atoms.length > 40 && !dragging
+      structureCanvas && structureCss && renderedMolecule.atoms.length > 40 && !dragging
         ? cullFragmentsToViewport(
             renderedMolecule,
             topologyCache.fragmentBoxes,
             topologyCache.atomToFragmentIndex,
             worldViewportRect(
-              structureCanvas.width,
-              structureCanvas.height,
+              structureCss.w,
+              structureCss.h,
               viewport,
               displayScale,
             ),
@@ -714,7 +721,8 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
         threshold,
       );
     }
-      drawAlignmentGuides(ctx, canvas.width, canvas.height, R.viewport, effectiveZoom, alignmentGuides);
+      const { w, h } = canvasCssSize(canvas);
+      drawAlignmentGuides(ctx, w, h, R.viewport, effectiveZoom, alignmentGuides);
     drawMarquee(ctx, R);
     },
     [],
@@ -795,7 +803,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       (prev.viewportX !== viewport.x || prev.viewportY !== viewport.y);
 
     const theme = opts.structureTheme ?? DEFAULT_STRUCTURE_THEME;
-    const showGrid = opts.displayPrefs.showGrid !== false;
+    const showGrid = opts.displayPrefs.showGrid === true;
     const gridSizePx = opts.displayPrefs.gridSizePx || 50;
 
     if (panOnly && prev) {
@@ -804,9 +812,12 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       // new source, so zoom-out/pan showed patches of canvas with no grid.
       sctx.setTransform(1, 0, 0, 1, 0, 0);
       sctx.clearRect(0, 0, structureCanvas.width, structureCanvas.height);
-      const dx = viewport.x - prev.viewportX;
-      const dy = viewport.y - prev.viewportY;
+      const dpr = canvasBackingDpr(structureCanvas);
+      const dx = (viewport.x - prev.viewportX) * dpr;
+      const dy = (viewport.y - prev.viewportY) * dpr;
+      sctx.imageSmoothingEnabled = false;
       safeDrawImage(sctx, prev.canvas, dx, dy);
+      sctx.imageSmoothingEnabled = true;
       paintBackgroundGrid(
         sctx,
         structureCanvas,
@@ -858,7 +869,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
     if (opts.touchLoupe !== false) {
       drawTouchLoupe(octx, overlayCanvas, structureCanvas, viewport, displayScale, R);
     }
-    drawPointerDebugHud(octx, displayScale, opts.pointerDebugHud);
+    drawPointerDebugHud(octx, displayScale * canvasBackingDpr(overlayCanvas), opts.pointerDebugHud);
     } catch (err) {
       if (typeof console !== 'undefined') {
         console.warn('[canvas] skipped frame', err);

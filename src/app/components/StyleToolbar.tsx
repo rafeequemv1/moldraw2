@@ -325,11 +325,11 @@ export function StyleToolbar({
       <PanelRow label={t('stylePanel.grid')}>
         <button
           type="button"
-          className={`app-top-bar__color-style-toggle${general.showGrid !== false ? ' is-on' : ''}`}
-          aria-pressed={general.showGrid !== false}
-          onClick={() => updateGeneral({ showGrid: general.showGrid === false })}
+          className={`app-top-bar__color-style-toggle${general.showGrid === true ? ' is-on' : ''}`}
+          aria-pressed={general.showGrid === true}
+          onClick={() => updateGeneral({ showGrid: general.showGrid !== true })}
         >
-          {general.showGrid !== false ? t('stylePanel.gridOn') : t('stylePanel.gridOff')}
+          {general.showGrid === true ? t('stylePanel.gridOn') : t('stylePanel.gridOff')}
         </button>
       </PanelRow>
     </FormatPanelAccordion>

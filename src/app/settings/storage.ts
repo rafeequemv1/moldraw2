@@ -14,7 +14,7 @@ function settingsForFirstVisit(): AppSettings {
 
 const STORAGE_KEY = 'moldraw-app-settings-v1';
 /** Bumped when a one-shot default migration must run for existing localStorage. */
-const SETTINGS_SCHEMA_VERSION = 12;
+const SETTINGS_SCHEMA_VERSION = 13;
 const SCHEMA_VERSION_KEY = 'moldraw-app-settings-schema';
 
 function deepMerge<T extends Record<string, unknown>>(base: T, patch: Partial<T>): T {
@@ -96,6 +96,10 @@ export function loadAppSettings(): AppSettings {
       if (schema < 12) {
         nextGeneral.showGrid = true;
         delete (nextGeneral as { gridPattern?: unknown }).gridPattern;
+      }
+      // Grid off by default (schema 12 had forced it on).
+      if (schema < 13) {
+        nextGeneral.showGrid = false;
       }
       merged.general = nextGeneral;
       window.localStorage.setItem(SCHEMA_VERSION_KEY, String(SETTINGS_SCHEMA_VERSION));

@@ -90,6 +90,41 @@ export const canvasImageFromBlob = async (
   };
 };
 
+/**
+ * Excel / Sheets wrap a single SMILES cell in quotes, a trailing newline, or
+ * TSV. Molfiles and CDXML must stay intact.
+ */
+export const normalizeClipboardStructureText = (text: string): string => {
+  const trimmed = text.replace(/^\uFEFF/, '').trim();
+  if (!trimmed) return '';
+  if (
+    /^InChI=/i.test(trimmed) ||
+    /<CDXML|<cdxml/i.test(trimmed) ||
+    /\$RXN/i.test(trimmed) ||
+    /V2000|V3000|M\s+END|\$\$\$\$/i.test(trimmed) ||
+    /<cml[\s>]|<molecule[\s>]/i.test(trimmed)
+  ) {
+    return trimmed;
+  }
+  const firstLine = trimmed.split(/\r?\n/).map(line => line.trim()).find(Boolean) ?? '';
+  let cell = firstLine.split(/\t/)[0]?.trim() ?? '';
+  if (cell.length >= 2) {
+    const quote = cell[0];
+    if ((quote === '"' || quote === "'") && cell.endsWith(quote)) {
+      cell = cell.slice(1, -1).replace(/""/g, '"').trim();
+    }
+  }
+  return cell || trimmed;
+};
+
+/** Plain text, XML, or Excel HTML table from a native `paste` event. */
+export const clipboardEventStructureText = (clipboard: DataTransfer): string => {
+  const plain = clipboard.getData('text/plain') || clipboard.getData('text/xml');
+  const html = clipboard.getData('text/html');
+  const fromHtml = html ? textFromHtmlTable(html) : null;
+  return normalizeClipboardStructureText(plain || fromHtml || '');
+};
+
 /** Extract tab-separated rows from an HTML table (Excel / Sheets clipboard). */
 export const textFromHtmlTable = (html: string): string | null => {
   if (!/<table[\s>]/i.test(html)) return null;
@@ -156,11 +191,16 @@ export const readSystemClipboardPayload = async (): Promise<SystemClipboardPaylo
       text = '';
     }
   }
+  text = normalizeClipboardStructureText(text);
+  // Excel copies a cell bitmap plus the SMILES. Prefer the chemical text.
+  if (looksLikeStructureClipboardText(text)) {
+    imageBlob = null;
+  }
   return { text, imageBlob };
 };
 
 export const looksLikeStructureClipboardText = (text: string): boolean => {
-  const trimmed = text.trim();
+  const trimmed = normalizeClipboardStructureText(text);
   if (!trimmed) return false;
   if (/^InChI=/i.test(trimmed)) return true;
   if (/<CDXML|<cdxml/i.test(trimmed)) return true;

@@ -23,6 +23,7 @@ import {
   RotateCw,
   Pencil,
   Trash2,
+  Grid3x3,
   X,
   Search,
 } from 'lucide-react';
@@ -178,6 +179,7 @@ export interface AppTopBarProps {
   onOpenLibrary?: () => void;
   onCopySmiles?: () => void;
   onCopySvg?: () => void;
+  onPaste?: () => void;
   onCopyAs?: (format: CopyAsFormat) => void;
   smilesCopied?: boolean;
   svgCopied?: boolean;
@@ -192,6 +194,8 @@ export interface AppTopBarProps {
   hasUnreadUpdates?: boolean;
   uiTheme?: UiThemeId;
   onChangeUiTheme?: (theme: UiThemeId) => void;
+  showGrid?: boolean;
+  onToggleGrid?: () => void;
   /** Structure / COF / reaction template library. */
   onOpenTemplateLibrary?: () => void;
   /** Pencil / shape / image flyout beside the left tool rail. */
@@ -321,6 +325,7 @@ export function AppTopBar(props: AppTopBarProps) {
     onOpenLibrary,
     onCopySmiles,
     onCopySvg,
+    onPaste,
     onCopyAs,
     smilesCopied = false,
     svgCopied = false,
@@ -335,6 +340,8 @@ export function AppTopBar(props: AppTopBarProps) {
     hasUnreadUpdates = false,
     uiTheme = 'light',
     onChangeUiTheme,
+    showGrid = false,
+    onToggleGrid,
     onOpenTemplateLibrary,
     drawToolsOpen = false,
     onToggleDrawTools,
@@ -461,7 +468,7 @@ export function AppTopBar(props: AppTopBarProps) {
               onClick={() => onOpenMyProjects?.()}
               title={t('topBar.myDesignsTitle')}
             >
-              <MolDrawLogoMark size={isCompact ? 22 : 24} />
+              <MolDrawLogoMark size={24} />
               <span className="app-top-bar__brand-name">MolDraw</span>
             </button>
             {isCompact ? fileMenu : null}
@@ -475,7 +482,7 @@ export function AppTopBar(props: AppTopBarProps) {
                 aria-expanded={searchSheetOpen}
                 aria-haspopup="dialog"
               >
-                <Search size={15} strokeWidth={2} aria-hidden />
+                <Search size={18} strokeWidth={2} aria-hidden />
               </button>
             ) : null}
           </div>
@@ -500,7 +507,7 @@ export function AppTopBar(props: AppTopBarProps) {
               aria-label={t('topBar.home')}
               aria-pressed={ribbonMode === 'home'}
             >
-              <Home size={13} strokeWidth={2} aria-hidden />
+              <Home size={15} strokeWidth={2} aria-hidden />
               {t('topBar.home')}
             </button>
           ) : null}
@@ -513,7 +520,7 @@ export function AppTopBar(props: AppTopBarProps) {
               aria-label={drawToolsOpen ? t('topBar.hideDraw') : t('topBar.draw')}
               aria-pressed={drawToolsOpen}
             >
-              <Pencil size={13} strokeWidth={2} aria-hidden />
+              <Pencil size={15} strokeWidth={2} aria-hidden />
               {t('topBar.draw')}
               {drawToolsOpen ? <X size={11} strokeWidth={2.4} aria-hidden /> : null}
             </button>
@@ -538,7 +545,7 @@ export function AppTopBar(props: AppTopBarProps) {
               title={t('topBar.libraryTitle')}
               aria-label={t('topBar.library')}
             >
-              <LayoutTemplate size={15} strokeWidth={2} aria-hidden />
+              <LayoutTemplate size={18} strokeWidth={2} aria-hidden />
             </button>
           ) : null}
           {isCompact ? (
@@ -549,12 +556,24 @@ export function AppTopBar(props: AppTopBarProps) {
               title={t('topBar.fullClearTitle')}
               aria-label={t('topBar.clearCanvas')}
             >
-              <Trash2 size={15} strokeWidth={2} aria-hidden />
+              <Trash2 size={18} strokeWidth={2} aria-hidden />
             </button>
           ) : null}
         </div>
         <div className="app-top-bar__fill" aria-hidden />
         <div className="app-top-bar__right">
+          {onToggleGrid && !isCompact ? (
+            <button
+              type="button"
+              className={`tb-btn tb-btn-theme-toggle tb-btn-grid-toggle${showGrid ? ' is-on' : ''}`}
+              title={showGrid ? t('topBar.gridOnTitle') : t('topBar.gridOffTitle')}
+              aria-label={showGrid ? t('topBar.gridOnTitle') : t('topBar.gridOffTitle')}
+              aria-pressed={showGrid}
+              onClick={onToggleGrid}
+            >
+              <Grid3x3 size={14} strokeWidth={2} aria-hidden />
+            </button>
+          ) : null}
           {onChangeUiTheme && !isCompact ? (
             <ThemeToggleButton theme={uiTheme} onChangeTheme={onChangeUiTheme} />
           ) : null}
@@ -589,6 +608,7 @@ export function AppTopBar(props: AppTopBarProps) {
               onOpenMyDesigns={() => onOpenLibrary?.()}
               onCopySmiles={() => onCopySmiles?.()}
               onCopySvg={() => onCopySvg?.()}
+              onPaste={() => onPaste?.()}
               onCopyAs={onCopyAs}
               smilesCopied={Boolean(smilesCopied)}
               svgCopied={Boolean(svgCopied)}
@@ -638,6 +658,7 @@ export function AppTopBar(props: AppTopBarProps) {
             onOpenMyDesigns={() => onOpenLibrary?.()}
             onCopySmiles={() => onCopySmiles?.()}
             onCopySvg={() => onCopySvg?.()}
+            onPaste={() => onPaste?.()}
             smilesCopied={Boolean(smilesCopied)}
             svgCopied={Boolean(svgCopied)}
             svgCopyError={Boolean(svgCopyError)}
@@ -647,7 +668,6 @@ export function AppTopBar(props: AppTopBarProps) {
             onSignOut={() => onSignOut?.()}
             signedIn={Boolean(signedIn)}
             authDisplayName={authDisplayName ?? ''}
-            accountInMoreMenu
             downloadMenu={
               <ExportMenu
                 open={exportOpen}

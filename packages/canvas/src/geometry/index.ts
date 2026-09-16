@@ -144,6 +144,15 @@ export {
   type CulledSets,
 } from './viewportCull';
 export {
+  canvasCssSize,
+  canvasBackingDpr,
+  readDevicePixelRatio,
+  clampBackingDpr,
+  syncCanvasBackingStore,
+  MAX_CANVAS_DEVICE_PIXEL_RATIO,
+  type CssSize,
+} from './canvasResolution';
+export {
   drawReactionArrowCanvas,
   drawReactionArrowShape,
   pickReactionArrowAt,

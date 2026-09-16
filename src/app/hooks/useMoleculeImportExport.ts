@@ -55,6 +55,7 @@ import {
   canvasImageFromBlob,
   blobAsIllustration,
   isIllustrationFile,
+  clipboardEventStructureText,
   looksLikeStructureClipboardText,
   readSystemClipboardPayload,
 } from '../importExport/helpers';
@@ -139,6 +140,8 @@ export interface UseMoleculeImportExportOptions {
   onLoadDesignFile?: (molecule: Molecule, name: string) => void;
   /** Current tab name — used for Save as ChemDraw filename. */
   projectName?: string;
+  /** In-app fragment paste (Ctrl+C copy) when the OS clipboard is not a structure. */
+  onFragmentPaste?: () => boolean;
 }
 
 export function useMoleculeImportExport({
@@ -177,6 +180,7 @@ export function useMoleculeImportExport({
   preferIndigo2dRef,
   onLoadDesignFile,
   projectName = 'design',
+  onFragmentPaste,
 }: UseMoleculeImportExportOptions) {
   const [openFileBusy, setOpenFileBusy] = useState(false);
   const [openFileError, setOpenFileError] = useState<string | null>(null);
@@ -193,6 +197,9 @@ export function useMoleculeImportExport({
   }>({ filename: 'molecule.inchi', mime: 'chemical/x-inchi' });
   /** When set, CONVERT_SUCCESS copies text to clipboard instead of downloading. */
   const pendingConvertCopyLabelRef = useRef<string | null>(null);
+  const lastStructurePasteRef = useRef({ at: 0, text: '' });
+  const onFragmentPasteRef = useRef(onFragmentPaste);
+  onFragmentPasteRef.current = onFragmentPaste;
 
   const importMolblock = useCallback(
     async (
@@ -687,6 +694,14 @@ export function useMoleculeImportExport({
     async (text: string, showErrors = false): Promise<boolean> => {
       const trimmed = text.trim();
       if (!trimmed || !looksLikeStructureClipboardText(trimmed)) return false;
+      const now = Date.now();
+      if (
+        lastStructurePasteRef.current.text === trimmed &&
+        now - lastStructurePasteRef.current.at < 700
+      ) {
+        return true;
+      }
+      lastStructurePasteRef.current = { at: now, text: trimmed };
       try {
         const { molblock, format } = await resolveMoleculeFileToMolblock(trimmed, 'clipboard.txt', {
           smilesToMolblock: s => workerMolblockFromText('smiles', s),
@@ -723,22 +738,27 @@ export function useMoleculeImportExport({
 
   const handlePasteFromSystemClipboard = useCallback(async () => {
     try {
-      const { text, imageBlob } = await readSystemClipboardPayload();
-      if (await tryPasteCoordsTable(text, true)) return;
-      if (imageBlob) {
+        const { text, imageBlob } = await readSystemClipboardPayload();
+        if (await tryPasteCoordsTable(text, true)) return;
+        if (looksLikeStructureClipboardText(text)) {
+          setContextMenu(null);
+          const ok = await handlePasteTextToCanvas(text, true);
+          if (!ok) {
+            setOpenFileError('Clipboard does not contain a SMILES string or structure.');
+          }
+          return;
+        }
+        if (imageBlob) {
+          setContextMenu(null);
+          await handlePasteImageBlob(imageBlob);
+          return;
+        }
         setContextMenu(null);
-        await handlePasteImageBlob(imageBlob);
-        return;
-      }
-      setContextMenu(null);
-      const ok = await handlePasteTextToCanvas(text, true);
-      if (!ok) {
         setOpenFileError(
           looksLikeCoordsTableText(text)
             ? 'Select the structure (or right-click it) before pasting coordinates.'
             : 'Clipboard does not contain an image, molfile, CDXML, InChI, SMILES, or coordinate table.',
         );
-      }
     } catch (err) {
       setOpenFileError(err instanceof Error ? err.message : String(err));
     }
@@ -749,11 +769,6 @@ export function useMoleculeImportExport({
     async (onFragmentPaste: () => boolean) => {
       try {
         const { text, imageBlob } = await readSystemClipboardPayload();
-        if (imageBlob) {
-          setContextMenu(null);
-          await handlePasteImageBlob(imageBlob);
-          return;
-        }
         const trimmed = text.trim();
         if (trimmed) {
           if (await tryPasteCoordsTable(trimmed, true)) return;
@@ -762,6 +777,11 @@ export function useMoleculeImportExport({
             const ok = await handlePasteTextToCanvas(trimmed, true);
             if (ok) return;
           }
+        }
+        if (imageBlob) {
+          setContextMenu(null);
+          await handlePasteImageBlob(imageBlob);
+          return;
         }
         if (onFragmentPaste()) return;
         if (!trimmed) {
@@ -792,6 +812,18 @@ export function useMoleculeImportExport({
       const clipboard = event.clipboardData;
       if (!clipboard) return;
 
+      const text = clipboardEventStructureText(clipboard);
+      if (looksLikeCoordsTableText(text)) {
+        event.preventDefault();
+        void tryPasteCoordsTable(text, true);
+        return;
+      }
+      if (looksLikeStructureClipboardText(text)) {
+        event.preventDefault();
+        void handlePasteTextToCanvas(text, true);
+        return;
+      }
+
       const imageItem = Array.from(clipboard.items).find(
         item => item.kind === 'file' && item.type.startsWith('image/'),
       );
@@ -804,15 +836,8 @@ export function useMoleculeImportExport({
         }
       }
 
-      const text = clipboard.getData('text/plain') || clipboard.getData('text/xml');
-      if (looksLikeCoordsTableText(text)) {
+      if (onFragmentPasteRef.current?.()) {
         event.preventDefault();
-        void tryPasteCoordsTable(text, true);
-        return;
-      }
-      if (looksLikeStructureClipboardText(text)) {
-        event.preventDefault();
-        void handlePasteTextToCanvas(text, true);
       }
     };
 
@@ -1617,10 +1642,11 @@ export function useMoleculeImportExport({
         await importMolblock(molblock, compoundName ? { compoundName } : undefined);
         setQuickSearch('');
       } else {
-        setQuickSearchError('Not found');
+        setQuickSearchError('Not found on PubChem');
       }
-    } catch {
-      setQuickSearchError('Network error');
+    } catch (err) {
+      const aborted = err instanceof DOMException && err.name === 'AbortError';
+      setQuickSearchError(aborted ? 'Search timed out' : 'Could not reach PubChem');
     } finally {
       setQuickSearchLoading(false);
     }

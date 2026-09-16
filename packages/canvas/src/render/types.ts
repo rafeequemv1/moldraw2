@@ -67,13 +67,13 @@ export const DEFAULT_STRUCTURE_THEME: StructureThemeColors = {
   selectionBond: 'rgba(56, 189, 248, 0.4)',
   transformHandleFill: '#ffffff',
   transformHandleStroke: '#0f172a',
-  transformBoxStroke: 'rgba(13, 148, 136, 0.92)',
+  transformBoxStroke: 'rgba(148, 163, 184, 0.72)',
   transformAccent: '#2dd4bf',
   transformBadgeFill: 'rgba(240, 253, 250, 0.97)',
   transformBadgeText: '#0f172a',
   transformGuideStroke: 'rgba(45, 212, 191, 0.55)',
-  marqueeStroke: 'rgba(13, 148, 136, 0.85)',
-  marqueeFill: 'rgba(45, 212, 191, 0.08)',
+  marqueeStroke: 'rgba(148, 163, 184, 0.75)',
+  marqueeFill: 'rgba(148, 163, 184, 0.06)',
 };
 
 export type DragActionState =

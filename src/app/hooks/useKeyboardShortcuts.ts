@@ -207,7 +207,8 @@ export function useKeyboardShortcuts({
       }
       if (match('paste')) {
         if (inText) return;
-        cb.onPaste();
+        // Native `paste` is the only Ctrl+V path. Handling it here as well
+        // imported Excel SMILES twice (keydown + paste, and often a cell bitmap).
         return;
       }
       // Save intercepts Ctrl/⌘+S globally so the browser does not "Save page".

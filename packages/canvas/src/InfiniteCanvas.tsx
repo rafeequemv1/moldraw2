@@ -37,7 +37,13 @@ import { materializeInstanceArraysForDisplay, PLACE_FRAGMENT_TOOL_ID } from '@mo
 import type { StructureThemeColors } from './render/types';
 
 export type { Point, Viewport } from './geometry';
-import { shortestAngleDiff, type Point, type Viewport } from './geometry';
+import {
+  shortestAngleDiff,
+  readDevicePixelRatio,
+  syncCanvasBackingStore,
+  type Point,
+  type Viewport,
+} from './geometry';
 
 export interface InfiniteCanvasProps {
   onViewportChange?: (viewport: Viewport) => void;
@@ -662,8 +668,9 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       ],
     );
 
-    // Auto-size both canvas layers to the parent. Synchronously redraws so the
-    // new buffers don't flash empty between resize and the next effect.
+    // Auto-size both canvas layers to the parent at devicePixelRatio so bonds
+    // and labels stay retina-sharp (Ketcher SVG used to look crisper because it
+    // was vector; this bitmap canvas must oversample the backing store).
     useEffect(() => {
       const structure = structureCanvasRef.current;
       const overlay = overlayCanvasRef.current;
@@ -672,10 +679,9 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
         const parent = overlay.parentElement;
         const w = Math.max(1, parent?.clientWidth || window.innerWidth || 1);
         const h = Math.max(1, parent?.clientHeight || window.innerHeight || 1);
-        structure.width = w;
-        structure.height = h;
-        overlay.width = w;
-        overlay.height = h;
+        const dpr = readDevicePixelRatio();
+        syncCanvasBackingStore(structure, w, h, dpr);
+        syncCanvasBackingStore(overlay, w, h, dpr);
         render();
       };
       window.addEventListener('resize', resizeCanvas);
@@ -684,6 +690,18 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
         ro = new ResizeObserver(() => resizeCanvas());
         if (overlay.parentElement) ro.observe(overlay.parentElement);
       }
+      let dprMq: MediaQueryList | null = null;
+      const onDprChange = () => {
+        bindDprListener();
+        resizeCanvas();
+      };
+      const bindDprListener = () => {
+        dprMq?.removeEventListener('change', onDprChange);
+        if (typeof window.matchMedia !== 'function') return;
+        dprMq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+        dprMq.addEventListener('change', onDprChange);
+      };
+      bindDprListener();
       resizeCanvas();
       if (!offscreenCanvasRef.current) {
         offscreenCanvasRef.current = document.createElement('canvas');
@@ -691,6 +709,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       return () => {
         window.removeEventListener('resize', resizeCanvas);
         ro?.disconnect();
+        dprMq?.removeEventListener('change', onDprChange);
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

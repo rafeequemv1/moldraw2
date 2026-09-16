@@ -152,7 +152,7 @@ export function resolveCanvasPreferences(s: ResolveCanvasPreferencesInput): Reso
     hashSpacingPx: Math.max(0.5, Math.min(14, b.hashSpacingPx)),
     bondAngleSnapRad,
     snapToGrid: g.snapToGrid === true,
-    showGrid: g.showGrid !== false,
+    showGrid: g.showGrid === true,
     gridSizePx: 50,
     labelFontFamily: family,
     elementFontCss: `${weight}${fontPx}px ${family}`,

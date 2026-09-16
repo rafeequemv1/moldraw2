@@ -2,6 +2,7 @@ import { withPubChemThrottle } from './pubchemRateLimit';
 import { firstRecordFromSdf } from './sdfExtract';
 
 const PUBCHEM = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
+const PUBCHEM_AUTOCOMPLETE = 'https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound';
 const CAS_PATTERN = /^\d{2,7}-\d{2}-\d$/;
 
 const firstMolblockFromSdf = (sdfText: string): string | null => {
@@ -10,8 +11,19 @@ const firstMolblockFromSdf = (sdfText: string): string | null => {
   return null;
 };
 
+/** Bypass HTTP caches so a failed lookup after a deploy is not sticky on one PC. */
+export async function pubchemFetch(url: string, timeoutMs = 18000): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { signal: ctrl.signal, cache: 'no-store', mode: 'cors' });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchSdf(url: string): Promise<string | null> {
-  const res = await fetch(url);
+  const res = await pubchemFetch(url);
   if (!res.ok) return null;
   return firstMolblockFromSdf(await res.text());
 }
@@ -69,18 +81,27 @@ export async function pubchemMolblockFromName(name: string): Promise<string | nu
         if (byCas) return byCas;
       }
 
-      // Direct name → SDF (works for most simple names).
-      const direct = await fetchSdf(`${PUBCHEM}/compound/name/${encodeURIComponent(term)}/SDF`);
+      const encoded = encodeURIComponent(term);
+      const direct = await fetchSdf(`${PUBCHEM}/compound/name/${encoded}/SDF?record_type=2d`);
       if (direct) return direct;
 
-      // Names with odd characters: resolve CID via ?name=, then SDF by CID.
-      const cidRes = await fetch(
-        `${PUBCHEM}/compound/name/cids/JSON?name=${encodeURIComponent(term)}&MaxRecords=1`,
-      );
-      if (!cidRes.ok) return null;
-      const cid = firstCid(await cidRes.json());
-      if (cid == null) return null;
-      return await fetchSdf(`${PUBCHEM}/compound/cid/${cid}/SDF?record_type=2d`);
+      const cidRes = await pubchemFetch(`${PUBCHEM}/compound/name/${encoded}/cids/JSON`);
+      if (cidRes.ok) {
+        const cid = firstCid(await cidRes.json());
+        if (cid != null) {
+          const byCid = await fetchSdf(`${PUBCHEM}/compound/cid/${cid}/SDF?record_type=2d`);
+          if (byCid) return byCid;
+        }
+      }
+
+      for (const suggestion of await pubchemNameSuggestions(term)) {
+        if (suggestion.toLowerCase() === term.toLowerCase()) continue;
+        const sdf = await fetchSdf(
+          `${PUBCHEM}/compound/name/${encodeURIComponent(suggestion)}/SDF?record_type=2d`,
+        );
+        if (sdf) return sdf;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -92,9 +113,26 @@ export function looksLikeCompoundName(query: string): boolean {
   const t = query.trim();
   if (!t) return false;
   if (/^\d{2,7}-\d{2}-\d$/.test(t)) return true;
-  if (/[=#\[\]\(\)@\\\/+]/.test(t)) return false;
-  if (/\d/.test(t)) return false;
-  return /^[A-Za-z][A-Za-z\s\-'.]{1,80}$/.test(t);
+  if (/[=#\[\]@\\\/+]/.test(t)) return false;
+  return /^[A-Za-z][A-Za-z0-9\s\-'.()]{1,80}$/.test(t);
+}
+
+/** PubChem autocomplete — recovers from typos and partial names. */
+export async function pubchemNameSuggestions(term: string, limit = 8): Promise<string[]> {
+  const q = term.trim();
+  if (!q) return [];
+  try {
+    const res = await pubchemFetch(
+      `${PUBCHEM_AUTOCOMPLETE}/${encodeURIComponent(q)}/json?limit=${limit}`,
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as { dictionary_terms?: { compound?: string[] } };
+    return (data.dictionary_terms?.compound ?? []).filter(
+      n => typeof n === 'string' && n.trim().length > 0,
+    );
+  } catch {
+    return [];
+  }
 }
 
 /**

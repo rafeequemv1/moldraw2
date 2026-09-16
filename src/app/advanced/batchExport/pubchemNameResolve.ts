@@ -1,4 +1,4 @@
-import { looksLikeCompoundName } from '@moldraw/core/io/pubchemSmiles';
+import { looksLikeCompoundName, pubchemFetch } from '@moldraw/core/io/pubchemSmiles';
 import { withPubChemThrottle } from './pubchemRateLimit';
 
 const PUBCHEM_BASE = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
@@ -47,7 +47,7 @@ function normalizeCidList(data: unknown): number[] {
 }
 
 const fetchCidsFromUrl = async (url: string, maxRecords: number): Promise<number[]> => {
-  const res = await fetch(url);
+  const res = await pubchemFetch(url);
   if (!res.ok) return [];
   return normalizeCidList(await res.json()).slice(0, maxRecords);
 };
@@ -78,10 +78,9 @@ export async function fetchCidsForPubChemTerm(rawTerm: string, maxRecords = 28):
       if (bySmiles.length > 0) return bySmiles;
     }
 
-    // Query-param name lookup — path URLs break on `/` and other special chars.
     for (const variant of buildNameVariants(term)) {
       const cids = await fetchCidsFromUrl(
-        `${PUBCHEM_BASE}/compound/name/cids/JSON?name=${encodeURIComponent(variant)}&MaxRecords=${maxRecords}`,
+        `${PUBCHEM_BASE}/compound/name/${encodeURIComponent(variant)}/cids/JSON?MaxRecords=${maxRecords}`,
         maxRecords,
       );
       if (cids.length > 0) return cids;
@@ -112,7 +111,7 @@ export function smilesFromPubChemProperty(p: PubChemSmilesProperty | undefined):
 /** PubChem REST: SMILES for a CID. */
 export async function fetchSmilesForCid(cid: number): Promise<string | undefined> {
   return withPubChemThrottle(async () => {
-    const res = await fetch(
+    const res = await pubchemFetch(
       `${PUBCHEM_BASE}/compound/cid/${cid}/property/IsomericSMILES,CanonicalSMILES,SMILES,ConnectivitySMILES/JSON`,
     );
     if (!res.ok) return undefined;

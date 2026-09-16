@@ -37,10 +37,10 @@ html.app-mobile-compact {
     flex-wrap: nowrap;
     align-items: center;
     row-gap: 0;
-    column-gap: 2px;
-    min-height: 32px;
-    height: 32px;
-    padding: 1px 4px;
+    column-gap: 4px;
+    min-height: 36px;
+    height: 36px;
+    padding: 2px 6px;
     overflow-x: hidden;
     overflow-y: visible;
     max-width: 100%;
@@ -90,21 +90,21 @@ html.app-mobile-compact {
   }
 
   .app-top-bar--compact .app-top-bar__clip-btn--labeled {
-    width: 26px;
-    min-width: 26px;
+    width: 32px;
+    min-width: 32px;
     padding: 0;
   }
 
   .app-top-bar--compact .app-top-bar__tools-row {
     flex-wrap: nowrap;
     align-items: center;
-    min-height: 28px;
-    height: 28px;
-    padding: 0 4px 1px;
+    min-height: 32px;
+    height: 32px;
+    padding: 0 6px;
     overflow-x: auto;
     overflow-y: visible;
     row-gap: 0;
-    column-gap: 0;
+    column-gap: 2px;
   }
 
   .app-top-bar--compact .app-top-bar__context-row,
@@ -117,53 +117,109 @@ html.app-mobile-compact {
   }
 
   .app-top-bar--compact .app-top-bar__rotate-btn {
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
   }
 
   .app-top-bar--compact .md-btn--danger-soft {
     padding: 0 8px;
-    min-height: 28px;
-    font-size: 11px;
+    min-height: 32px;
+    font-size: 12px;
   }
 
   .app-top-bar--compact .app-top-bar__select-trigger {
-    height: 26px;
-    min-height: 26px;
-    padding: 0 6px;
-    font-size: 11px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 12px;
+    border-radius: 8px;
   }
 
   .app-top-bar--compact .app-top-bar__select-trigger--icon {
-    width: 26px;
-    min-width: 26px;
+    width: 32px;
+    min-width: 32px;
     padding: 0;
     justify-content: center;
   }
 
   .app-top-bar--compact .action-btn.icon-only,
   .app-top-bar--compact .app-top-bar__color-trigger {
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
-    min-height: 26px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 8px;
   }
 
   .app-top-bar--compact .app-top-bar__search-launch,
-  .app-top-bar--compact .app-top-bar__delete-btn {
-    width: 26px;
-    height: 26px;
+  .app-top-bar--compact .app-top-bar__delete-btn,
+  .app-top-bar--compact .app-top-bar__designs-btn--icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 8px;
+  }
+
+  .app-top-bar--compact .app-top-bar__search-launch svg,
+  .app-top-bar--compact .app-top-bar__delete-btn svg,
+  .app-top-bar--compact .app-top-bar__designs-btn--icon svg,
+  .app-top-bar--compact .app-top-bar__rotate-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   .app-top-bar--compact .app-top-bar__file-btn {
-    height: 26px;
-    padding: 0 6px;
+    height: 32px;
+    padding: 0 8px;
+    font-size: 13px;
     flex-shrink: 0;
     white-space: nowrap;
+    border-radius: 8px;
   }
 
   .app-top-bar--compact .app-top-bar__brand-cluster {
     max-width: 100%;
+  }
+
+  /* Beat desktop 24×24 / 16px glyphs so the two-row chrome still feels tappable. */
+  .app-top-bar--compact .app-top-bar__tools-row .action-btn.icon-only,
+  .app-top-bar--compact .app-top-bar__tools-row .app-top-bar__history-btn,
+  .app-top-bar--compact .app-top-bar__tools-row .app-top-bar__clear-icon,
+  .app-top-bar--compact .app-top-bar__tools-row .toolbar-top-strip .tool-btn,
+  .app-top-bar--compact .app-top-bar__tools-row .toolbar-top-strip .toolbar-fg-tool,
+  .app-top-bar--compact .app-top-bar__tools-row .toolbar-shape-strip .tool-btn,
+  .app-top-bar--compact .app-top-bar__tools-row .toolbar-top-strip .toolbar-split-tool,
+  .app-top-bar--compact .app-top-bar__tools-row .toolbar-top-strip .toolbar-split-tool__icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+
+  .app-top-bar--compact .app-top-bar__tools-row .action-btn.icon-only svg,
+  .app-top-bar--compact .app-top-bar__tools-row .toolbar-top-strip .tool-btn svg,
+  .app-top-bar--compact .app-top-bar__tools-row .toolbar-top-strip .toolbar-split-tool__icon svg,
+  .app-top-bar--compact .app-top-bar__tools-row .toolbar-shape-strip .tool-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .app-top-bar--compact .app-top-bar__tools-row .app-top-bar__ai-toggle,
+  .app-top-bar--compact .app-top-bar__tools-row .app-top-bar__3d-toggle {
+    width: auto;
+    min-width: 40px;
+    height: 32px;
+    padding: 0 8px !important;
+  }
+
+  .app-top-bar--compact .app-top-bar__ai-label,
+  .app-top-bar--compact .app-top-bar__3d-label {
+    font-size: 15px;
   }
 
   .toolbar-mobile-categories {
@@ -243,37 +299,45 @@ html.app-mobile-compact {
   }
 
   .app-top-bar__site-row--compact .tb-btn,
-  .app-top-bar--compact .header-links--compact .tb-btn {
-    height: 22px;
-    min-height: 22px;
-    font-size: 9px;
-    padding: 0 6px;
+  .app-top-bar--compact .header-links--compact .tb-btn,
+  .app-top-bar--compact .header-links--compact .viewer-toolbar-extra {
+    height: 32px;
+    min-height: 32px;
+    font-size: 12px;
+    padding: 0 8px;
+    border-radius: 8px;
   }
 
   .app-top-bar--compact .header-links--compact .tb-btn-download,
   .app-top-bar--compact .header-links--compact .tb-btn-download.tb-btn-download--icon {
-    width: 26px;
-    min-width: 26px;
-    height: 26px;
-    min-height: 26px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
     padding: 0;
     justify-content: center;
   }
 
+  .app-top-bar--compact .header-links--compact .tb-btn-download svg {
+    width: 16px;
+    height: 16px;
+  }
+
   .app-top-bar__site-row--compact .tb-btn-clip--compact {
-    height: 26px;
-    min-height: 26px;
+    height: 32px;
+    min-height: 32px;
     padding: 0 8px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
   }
 
   .app-top-bar__site-row--compact .tb-btn-auth-cta,
   .app-top-bar--compact .header-links--compact .tb-btn-auth-cta {
-    height: 24px;
-    min-height: 24px;
-    padding: 0 8px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0 10px;
     font-weight: 800;
+    font-size: 12px;
   }
 
   .app-top-bar__main {

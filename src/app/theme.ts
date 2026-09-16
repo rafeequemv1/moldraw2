@@ -55,25 +55,25 @@ export type StructureThemeInk = {
 const TRANSFORM_LIGHT = {
   transformHandleFill: '#ffffff',
   transformHandleStroke: '#0f172a',
-  transformBoxStroke: 'rgba(13, 148, 136, 0.92)',
+  transformBoxStroke: 'rgba(148, 163, 184, 0.75)',
   transformAccent: '#2dd4bf',
   transformBadgeFill: 'rgba(240, 253, 250, 0.97)',
   transformBadgeText: '#0f172a',
   transformGuideStroke: 'rgba(45, 212, 191, 0.55)',
-  marqueeStroke: 'rgba(13, 148, 136, 0.85)',
-  marqueeFill: 'rgba(45, 212, 191, 0.08)',
+  marqueeStroke: 'rgba(148, 163, 184, 0.75)',
+  marqueeFill: 'rgba(148, 163, 184, 0.06)',
 } as const;
 
 const TRANSFORM_DARK = {
   transformHandleFill: '#f8fafc',
   transformHandleStroke: '#0f172a',
-  transformBoxStroke: 'rgba(94, 234, 212, 0.92)',
+  transformBoxStroke: 'rgba(203, 213, 225, 0.55)',
   transformAccent: '#5eead4',
   transformBadgeFill: 'rgba(15, 23, 42, 0.94)',
   transformBadgeText: '#f8fafc',
   transformGuideStroke: 'rgba(153, 246, 228, 0.55)',
-  marqueeStroke: 'rgba(94, 234, 212, 0.9)',
-  marqueeFill: 'rgba(45, 212, 191, 0.14)',
+  marqueeStroke: 'rgba(203, 213, 225, 0.55)',
+  marqueeFill: 'rgba(203, 213, 225, 0.08)',
 } as const;
 
 /** Default structure colors per theme (match --structure-* / --grid-* in theme.css). */

@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 
 import { createPortal } from 'react-dom';
 
-import { ChevronRight, Copy, FolderOpen, Image, Search } from 'lucide-react';
+import { ChevronRight, ClipboardPaste, Copy, FolderOpen, Image, Search } from 'lucide-react';
 
 import { COPY_AS_FORMAT_ITEMS } from '../copyAsFormats';
 import type { CopyAsFormat } from '../types';
@@ -30,6 +30,8 @@ export interface HeaderSiteNavProps {
   onCopySmiles: () => void;
 
   onCopySvg: () => void;
+
+  onPaste?: () => void;
 
   /** Compact More sheet: Copy as accordion uses the full format catalog. */
   onCopyAs?: (format: CopyAsFormat) => void;
@@ -476,15 +478,6 @@ export function HeaderPromoLinks({
     t,
     onOpenAdvancedSearch,
     onOpenShortcuts,
-    onSignOut || onSignIn
-      ? {
-          signedIn,
-          displayName: authDisplayName,
-          onSignOut: onSignOut ?? (() => undefined),
-          onSignIn,
-          onSignUp,
-        }
-      : undefined,
   );
 
 
@@ -721,12 +714,13 @@ export function HeaderInlineSearch({
 
 
 
-/** Row 2: Community, designs, auth, Download. */
+/** Row 2: Community, designs, copy, Request feature, Download, then auth. */
 
 export function HeaderSiteNav({
   onOpenMyDesigns,
   onCopySmiles,
   onCopySvg,
+  onPaste,
   onCopyAs,
   smilesCopied,
   svgCopied,
@@ -752,13 +746,7 @@ export function HeaderSiteNav({
         t,
         () => onOpenAdvancedSearch?.(),
         () => onOpenShortcuts?.(),
-        {
-          signedIn,
-          displayName: authDisplayName,
-          onSignOut,
-          onSignIn,
-          onSignUp,
-        },
+        undefined,
         [
           {
             kind: 'link',
@@ -807,6 +795,12 @@ export function HeaderSiteNav({
           },
           {
             kind: 'action',
+            label: t('nav.paste'),
+            title: t('nav.pasteTitle'),
+            onClick: () => onPaste?.(),
+          },
+          {
+            kind: 'action',
             label: t('nav.requestFeature'),
             title: t('nav.requestFeatureTitle'),
             onClick: onRequestFeature,
@@ -850,7 +844,7 @@ export function HeaderSiteNav({
               onClick={onCopySmiles}
               title={t('nav.copySmilesTitle')}
             >
-              <Copy size={11} strokeWidth={2} aria-hidden />
+              <Copy size={13} strokeWidth={2} aria-hidden />
               {smilesCopied ? t('nav.copied') : t('nav.copySmiles')}
             </button>
             <button
@@ -859,8 +853,17 @@ export function HeaderSiteNav({
               onClick={onCopySvg}
               title={t('nav.copySvgTitle')}
             >
-              <Image size={11} strokeWidth={2} aria-hidden />
+              <Image size={13} strokeWidth={2} aria-hidden />
               {svgCopied ? t('nav.copiedSvg') : svgCopyError ? t('nav.copyFailed') : t('nav.copySvg')}
+            </button>
+            <button
+              type="button"
+              className="tb-btn tb-btn-clip"
+              onClick={() => onPaste?.()}
+              title={t('nav.pasteTitle')}
+            >
+              <ClipboardPaste size={13} strokeWidth={2} aria-hidden />
+              {t('nav.paste')}
             </button>
             <button
               type="button"
@@ -870,6 +873,7 @@ export function HeaderSiteNav({
             >
               {t('nav.requestFeature')}
             </button>
+            {downloadMenu}
           </>
         )}
       </div>
@@ -900,7 +904,7 @@ export function HeaderSiteNav({
             </button>
           </>
         )}
-        {downloadMenu}
+        {compactLayout ? downloadMenu : null}
         {compactLayout ? (
           <div className="tb-menu-dropdown viewer-toolbar-more">
             <button

@@ -1,4 +1,4 @@
-import type { Viewport } from '../geometry';
+import { canvasBackingDpr, canvasCssSize, type Viewport } from '../geometry';
 import {
   TOUCH_LOUPE_MAGNIFICATION,
   TOUCH_LOUPE_OFFSET_PX,
@@ -21,7 +21,7 @@ export const shouldShowTouchLoupe = (R: RenderContext): boolean => {
  * Touch loupe: a magnified copy of the region under the fingertip, drawn above
  * the finger so the user can see the atom / bond the finger is covering.
  *
- * Works in device pixels on the overlay canvas *after* the world-space overlay
+ * Works in backing-store pixels on the overlay canvas *after* the world-space overlay
  * pass: it samples the structure bitmap and the overlay bitmap (ghost bond,
  * hover glow) around the finger and blits them at `TOUCH_LOUPE_MAGNIFICATION`
  * inside a circular clip. Must be called with the identity transform.
@@ -37,17 +37,20 @@ export const drawTouchLoupe = (
   const p = R.touchPointerWorldPos;
   if (!p || !shouldShowTouchLoupe(R)) return;
 
+  const { w: cssW, h: cssH } = canvasCssSize(overlayCanvas);
+  const dpr = canvasBackingDpr(overlayCanvas);
   const W = overlayCanvas.width;
   const H = overlayCanvas.height;
   const z = viewport.zoom * displayScale;
-  // Mirror applyWorldTransform: world → device px.
-  const sx = W / 2 + viewport.x + p.x * z;
-  const sy = H / 2 + viewport.y + p.y * z;
+  // Mirror applyWorldTransform: world → backing px (CSS camera × dpr).
+  const sx = (cssW / 2 + viewport.x + p.x * z) * dpr;
+  const sy = (cssH / 2 + viewport.y + p.y * z) * dpr;
 
-  const r = TOUCH_LOUPE_RADIUS_PX * displayScale;
+  const s = displayScale * dpr;
+  const r = TOUCH_LOUPE_RADIUS_PX * s;
   const mag = TOUCH_LOUPE_MAGNIFICATION;
-  const offset = TOUCH_LOUPE_OFFSET_PX * displayScale;
-  const margin = 6 * displayScale;
+  const offset = TOUCH_LOUPE_OFFSET_PX * s;
+  const margin = 6 * s;
 
   // Prefer above the finger; fall back below when clipped by the top edge.
   let cx = Math.min(Math.max(sx, r + margin), W - r - margin);
@@ -69,7 +72,7 @@ export const drawTouchLoupe = (
 
   // Drop shadow ring.
   octx.beginPath();
-  octx.arc(cx, cy, r + 1.5 * displayScale, 0, Math.PI * 2);
+  octx.arc(cx, cy, r + 1.5 * s, 0, Math.PI * 2);
   octx.fillStyle = 'rgba(15, 23, 42, 0.18)';
   octx.fill();
 
@@ -96,9 +99,9 @@ export const drawTouchLoupe = (
   }
 
   // Crosshair at the sampled fingertip.
-  const cross = 7 * displayScale;
+  const cross = 7 * s;
   octx.strokeStyle = 'rgba(37, 99, 235, 0.9)';
-  octx.lineWidth = 1 * displayScale;
+  octx.lineWidth = 1 * s;
   octx.beginPath();
   octx.moveTo(cx - cross, cy);
   octx.lineTo(cx + cross, cy);
@@ -111,7 +114,7 @@ export const drawTouchLoupe = (
   octx.save();
   octx.setTransform(1, 0, 0, 1, 0, 0);
   octx.strokeStyle = 'rgba(15, 23, 42, 0.55)';
-  octx.lineWidth = 1.5 * displayScale;
+  octx.lineWidth = 1.5 * s;
   octx.beginPath();
   octx.arc(cx, cy, r, 0, Math.PI * 2);
   octx.stroke();
@@ -119,7 +122,7 @@ export const drawTouchLoupe = (
   cx = cx || 0;
   cy = cy || 0;
   const stemFrom = cy < sy ? cy + r : cy - r;
-  const stemTo = cy < sy ? sy - 26 * displayScale : sy + 26 * displayScale;
+  const stemTo = cy < sy ? sy - 26 * s : sy + 26 * s;
   if ((cy < sy && stemTo > stemFrom) || (cy > sy && stemTo < stemFrom)) {
     octx.strokeStyle = 'rgba(15, 23, 42, 0.35)';
     octx.beginPath();

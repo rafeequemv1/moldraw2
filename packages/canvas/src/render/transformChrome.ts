@@ -17,13 +17,13 @@ export const transformChrome = (R: RenderContext): TransformChrome => {
   return {
     handleFill: t.transformHandleFill ?? '#ffffff',
     handleStroke: t.transformHandleStroke ?? '#0f172a',
-    boxStroke: t.transformBoxStroke ?? 'rgba(13, 148, 166, 0.92)',
+    boxStroke: t.transformBoxStroke ?? 'rgba(148, 163, 184, 0.72)',
     accent: t.transformAccent ?? '#2dd4bf',
     badgeFill: t.transformBadgeFill ?? 'rgba(240, 253, 250, 0.97)',
     badgeText: t.transformBadgeText ?? '#0f172a',
     guide: t.transformGuideStroke ?? 'rgba(45, 212, 191, 0.55)',
-    marqueeStroke: t.marqueeStroke ?? 'rgba(13, 148, 136, 0.85)',
-    marqueeFill: t.marqueeFill ?? 'rgba(45, 212, 191, 0.08)',
+    marqueeStroke: t.marqueeStroke ?? 'rgba(148, 163, 184, 0.75)',
+    marqueeFill: t.marqueeFill ?? 'rgba(148, 163, 184, 0.06)',
   };
 };
 

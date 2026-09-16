@@ -115,9 +115,9 @@
 }
 
 .app-top-bar__site-row .app-top-bar__file-btn {
-  height: 22px;
-  padding: 0 7px;
-  font-size: 9px;
+  height: 26px;
+  padding: 0 8px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -1191,8 +1191,8 @@ html.app-top-rows-3 {
 }
 
 .app-top-bar--compact .app-top-bar__logo-mark {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
 }
 
 .app-top-bar__brand-btn {
@@ -2279,10 +2279,10 @@ html.app-top-rows-3 {
 .app-top-bar__designs-btn {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 3px 6px;
-  font-size: 9px;
-  font-weight: 500;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-main, #334155);
   background: transparent;
   border: 1px solid transparent;

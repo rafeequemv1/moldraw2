@@ -9,7 +9,7 @@
 }
 
 html:not(.app-mobile-compact) .toolbar {
-  left: 0;
+  left: 8px;
 }
 
 html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-tabs) .toolbar,

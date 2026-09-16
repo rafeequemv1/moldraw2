@@ -704,8 +704,8 @@ export function AppSettingsModal({
                   <SettingsFieldLabel labelKey="settings.general.showGrid" hintKey="settings.general.showGridHint" />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
-                      checked={g.showGrid !== false}
-                      onToggle={() => updateGeneral({ showGrid: g.showGrid === false })}
+                      checked={g.showGrid === true}
+                      onToggle={() => updateGeneral({ showGrid: g.showGrid !== true })}
                       ariaLabel={t('settings.general.showGrid')}
                     />
                   </div>
