@@ -37,12 +37,37 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function slugify(title) {
-  return String(title || 'post')
+const SLUG_STOPWORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'but', 'of', 'to', 'for', 'in', 'on', 'at', 'by',
+  'with', 'from', 'as', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'this',
+  'that', 'these', 'those', 'it', 'its', 'into', 'about', 'over', 'under', 'than',
+  'then', 'so', 'if', 'not', 'no', 'yes', 'you', 'your', 'we', 'our', 'they',
+  'their', 'can', 'could', 'should', 'would', 'may', 'might', 'will', 'just',
+  'also', 'more', 'most', 'some', 'any', 'how', 'what', 'when', 'where', 'which',
+  'who', 'why', 'do', 'does', 'did', 'have', 'has', 'had', 'my', 'me', 'please',
+  'help', 'hi', 'hey', 'via',
+]);
+
+function seoSlug(text, { max = 72, fallback = 'post' } = {}) {
+  const raw = String(text || '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'post';
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+  const words = raw.split(/\s+/).filter(Boolean);
+  const kept = [];
+  for (const word of words) {
+    if (SLUG_STOPWORDS.has(word)) continue;
+    if (word.length === 1 && !/[0-9]/.test(word)) continue;
+    kept.push(word);
+    if (kept.join('-').length >= max) break;
+  }
+  let slug = kept.join('-').slice(0, max).replace(/-+$/g, '');
+  if (!slug) {
+    slug = raw.replace(/\s+/g, '-').slice(0, max).replace(/^-+|-+$/g, '') || fallback;
+  }
+  return slug || fallback;
 }
 
 function isSafeId(id) {
@@ -93,23 +118,29 @@ function karmaBadge(value) {
 function discussionPath(post) {
   const id = typeof post === 'string' ? post : post?.id;
   const title = typeof post === 'object' ? post?.title : '';
-  const slug = slugify(title);
-  return slug ? `/community/p/${id}/${slug}` : `/community/p/${id}`;
+  const slug = seoSlug(title, { fallback: 'discussion' });
+  return `/community/p/${id}/${slug}`;
 }
 
 function featurePath(request) {
   const id = typeof request === 'string' ? request : request?.id;
   const title = typeof request === 'object' ? request?.title : '';
-  const slug = slugify(title);
-  return slug ? `/community/f/${id}/${slug}` : `/community/f/${id}`;
+  const slug = seoSlug(title, { fallback: 'feature-request' });
+  return `/community/f/${id}/${slug}`;
 }
 
-function commentPath(id) {
-  return `/community/c/${id}`;
+function commentPath(comment) {
+  const id = typeof comment === 'string' ? comment : comment?.id;
+  const body = typeof comment === 'object' ? comment?.body : '';
+  const slug = seoSlug(body, { max: 56, fallback: 'comment' });
+  return `/community/c/${id}/${slug}`;
 }
 
-function featureCommentPath(id) {
-  return `/community/fc/${id}`;
+function featureCommentPath(comment) {
+  const id = typeof comment === 'string' ? comment : comment?.id;
+  const body = typeof comment === 'object' ? comment?.body : '';
+  const slug = seoSlug(body, { max: 56, fallback: 'comment' });
+  return `/community/fc/${id}/${slug}`;
 }
 
 function absUrl(pathname) {
@@ -136,14 +167,14 @@ function parseCommunityPath(pathname) {
   match = path.match(/^\/community\/p\/([^/]+)(?:\/([^/]+))?$/);
   if (match) return { view: 'post', id: match[1], slug: match[2] || '' };
 
-  match = path.match(/^\/community\/c\/([^/]+)$/);
-  if (match) return { view: 'comment', id: match[1] };
+  match = path.match(/^\/community\/c\/([^/]+)(?:\/([^/]+))?$/);
+  if (match) return { view: 'comment', id: match[1], slug: match[2] || '' };
 
   match = path.match(/^\/community\/f\/([^/]+)(?:\/([^/]+))?$/);
   if (match) return { view: 'feature', id: match[1], slug: match[2] || '' };
 
-  match = path.match(/^\/community\/fc\/([^/]+)$/);
-  if (match) return { view: 'feature-comment', id: match[1] };
+  match = path.match(/^\/community\/fc\/([^/]+)(?:\/([^/]+))?$/);
+  if (match) return { view: 'feature-comment', id: match[1], slug: match[2] || '' };
 
   return null;
 }
@@ -340,13 +371,14 @@ function renderImages(imageUrls, altText) {
   return `<div class="card-images">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="${escapeHtml(altText)}"></a>`).join('')}</div>`;
 }
 
-function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllReplies = true }) {
+function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllReplies = true, highlightId = '' }) {
   const replies = showAllReplies ? (comment.replies || []) : (comment.replies || []).slice(0, 2);
   const hiddenReplies = Math.max((comment.replies || []).length - replies.length, 0);
-  const replyHtml = replies.map((reply) => renderSingleComment(reply, { permalinkHref, heading, showAllReplies })).join('');
+  const replyHtml = replies.map((reply) => renderSingleComment(reply, { permalinkHref, heading, showAllReplies, highlightId })).join('');
   const images = renderImages(comment.image_urls, 'Reply attachment');
+  const highlighted = highlightId && comment.id === highlightId;
   return `
-        <article class="comment${comment.parent_comment_id ? ' comment-reply' : ''}" id="comment-${escapeHtml(comment.id)}" data-comment-id="${escapeHtml(comment.id)}">
+        <article class="comment${comment.parent_comment_id ? ' comment-reply' : ''}${highlighted ? ' is-highlight' : ''}" id="comment-${escapeHtml(comment.id)}" data-comment-id="${escapeHtml(comment.id)}">
           <${heading} class="comment-heading">${escapeHtml(comment.author_name || 'Community member')}</${heading}>
           <div class="author" style="margin-bottom:3px;">
             <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}" style="width:24px;height:24px;font-size:10px;">${escapeHtml(initials(comment.author_name))}</span>
@@ -357,17 +389,31 @@ function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllRe
           </div>
           <p class="comment-body">${escapeHtml(comment.body)}</p>
           ${images}
-          <p class="comment-tools"><a class="comment-permalink" href="${escapeHtml(permalinkHref(comment.id))}">Permalink</a></p>
-          ${replyHtml || hiddenReplies ? `<div class="comment-replies">${replyHtml}${hiddenReplies > 0 ? `<a class="more-thread" href="${escapeHtml(permalinkHref(comment.id))}">View ${hiddenReplies} more ${hiddenReplies === 1 ? 'reply' : 'replies'}</a>` : ''}</div>` : ''}
+          <p class="comment-tools"><a class="comment-permalink" href="${escapeHtml(permalinkHref(comment))}">Permalink</a></p>
+          ${replyHtml || hiddenReplies ? `<div class="comment-replies">${replyHtml}${hiddenReplies > 0 ? `<a class="more-thread" href="${escapeHtml(permalinkHref(comment))}">View ${hiddenReplies} more ${hiddenReplies === 1 ? 'reply' : 'replies'}</a>` : ''}</div>` : ''}
         </article>`;
 }
 
-function renderCommentThread(comments, { permalinkHref, pageUrl, showAll = false }) {
+function renderReplyComposer() {
+  return `
+        <section class="thread-reply-composer" aria-label="Reply to this post">
+          <h2 class="comments-heading">Post your reply</h2>
+          <div class="comment-form" data-comment-form="main">
+            <textarea placeholder="Post your reply" aria-label="Post your reply"></textarea>
+            <label class="comment-image-chip">Image<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple></label>
+            <button class="btn btn-primary" type="button">Reply</button>
+          </div>
+          <p class="author-meta">Sign in to reply. Public comments below are crawlable on their own permalinks.</p>
+        </section>`;
+}
+
+function renderCommentThread(comments, { permalinkHref, pageUrl, showAll = false, highlightId = '' }) {
   const roots = buildCommentTree(comments);
   const visible = showAll ? roots : roots.slice(0, LIST_COMMENT_PREVIEW);
   const hidden = Math.max(roots.length - visible.length, 0);
-  const rendered = visible.map((comment) => renderSingleComment(comment, { permalinkHref, showAllReplies: showAll })).join('');
+  const rendered = visible.map((comment) => renderSingleComment(comment, { permalinkHref, showAllReplies: showAll, highlightId })).join('');
   return `
+        ${showAll ? renderReplyComposer() : ''}
         <section class="comments visible" aria-label="Comments">
           <h2 class="comments-heading">Comments</h2>
           ${rendered || '<p class="author-meta">No replies yet. Be the first to reply.</p>'}
@@ -375,7 +421,7 @@ function renderCommentThread(comments, { permalinkHref, pageUrl, showAll = false
         </section>`;
 }
 
-function renderPostCard(post, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false } = {}) {
+function renderPostCard(post, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '' } = {}) {
   const url = discussionPath(post);
   const titleTag = heading;
   return `
@@ -396,11 +442,11 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
               <span class="pill">▲ ${escapeHtml(post.upvote_count || 0)}</span>
               <a class="pill" data-open-thread href="${escapeHtml(url)}">${escapeHtml(post.comment_count || comments.length || 0)} replies</a>
             </div>
-            ${includeComments ? renderCommentThread(comments, { permalinkHref: commentPath, pageUrl: url, showAll: showAllComments }) : ''}
+            ${includeComments ? renderCommentThread(comments, { permalinkHref: commentPath, pageUrl: url, showAll: showAllComments, highlightId }) : ''}
           </article>`;
 }
 
-function renderFeatureCard(request, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false } = {}) {
+function renderFeatureCard(request, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '' } = {}) {
   const url = featurePath(request);
   const titleTag = heading;
   const status = request.status || 'new';
@@ -423,7 +469,7 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
               <span class="pill">▲ ${escapeHtml(request.upvote_count || 0)}</span>
               <a class="pill" data-open-thread href="${escapeHtml(url)}">${escapeHtml(comments.length || 0)} replies</a>
             </div>
-            ${includeComments ? renderCommentThread(comments, { permalinkHref: featureCommentPath, pageUrl: url, showAll: showAllComments }) : ''}
+            ${includeComments ? renderCommentThread(comments, { permalinkHref: featureCommentPath, pageUrl: url, showAll: showAllComments, highlightId }) : ''}
           </article>`;
 }
 
@@ -463,10 +509,11 @@ function organizationLd() {
 }
 
 function commentLd(comment, { permalink, parentId }) {
+  const href = permalink(comment);
   const node = {
     '@type': 'Comment',
-    '@id': absUrl(permalink(comment.id)),
-    url: absUrl(permalink(comment.id)),
+    '@id': absUrl(href),
+    url: absUrl(href),
     text: comment.body || '',
     datePublished: isoDate(comment.created_at),
     author: {
@@ -621,12 +668,11 @@ function applyDocument(template, {
   );
 
   if (threadHtml) {
-    html = html.replace('class="community-shell"', 'class="community-shell thread-open"');
-    html = html.replace('id="thread-panel" class="thread-panel" hidden', 'id="thread-panel" class="thread-panel"');
-    html = html.replace('id="community-rail-default"', 'id="community-rail-default" hidden');
+    html = html.replace('<body>', '<body class="thread-modal-open">');
+    html = html.replace('id="thread-modal" class="thread-modal" hidden', 'id="thread-modal" class="thread-modal is-open"');
     html = html.replace(
-      /<div id="thread-panel-body"><\/div>/,
-      `<div id="thread-panel-body">${threadHtml}</div>`,
+      /<div id="thread-panel-body" class="thread-modal-body"><\/div>/,
+      `<div id="thread-panel-body" class="thread-modal-body">${threadHtml}</div>`,
     );
   }
 
@@ -729,7 +775,7 @@ function markdownFromPost(post, comments, url) {
     lines.push('');
     lines.push(comment.body || '');
     lines.push('');
-    lines.push(`Permalink: ${absUrl(commentPath(comment.id))}`);
+    lines.push(`Permalink: ${absUrl(commentPath(comment))}`);
     lines.push('');
     (comment.replies || []).forEach((reply) => walk(reply, depth + 1));
   };
@@ -858,8 +904,11 @@ async function renderListPage(route, { accept } = {}) {
 
 async function renderPostPage(post, comments, { canonicalPath, accept, robots, extraLd, highlightId } = {}) {
   const canonical = absUrl(canonicalPath);
-  const title = `${post.title || 'Community post'} | MolDraw Community`;
-  const description = excerpt(post.body || post.title || 'A public MolDraw community discussion.');
+  const focus = highlightId ? comments.find((comment) => comment.id === highlightId) : null;
+  const title = focus
+    ? `${excerpt(focus.body, 70)} — ${post.title || 'Discussion'} | MolDraw Community`
+    : `${post.title || 'Community post'} | MolDraw Community`;
+  const description = excerpt((focus && focus.body) || post.body || post.title || 'A public MolDraw community discussion.');
   const jsonLd = postJsonLd({
     canonical: absUrl(discussionPath(post)),
     post,
@@ -887,7 +936,7 @@ async function renderPostPage(post, comments, { canonicalPath, accept, robots, e
   let listRows = list.data || [];
   if (!listRows.some((row) => row.id === post.id)) listRows = [post, ...listRows];
   const feedHtml = listRows.map((row) => renderPostCard(row, [], { selected: row.id === post.id })).join('');
-  const threadHtml = `${renderPostCard(post, comments, { heading: 'h1', showAllComments: true, includeComments: true })}${highlightId ? `<p class="author-meta">Showing thread for comment <a href="#comment-${escapeHtml(highlightId)}">${escapeHtml(highlightId)}</a>.</p>` : ''}`;
+  const threadHtml = `${renderPostCard(post, comments, { heading: 'h1', showAllComments: true, includeComments: true, highlightId })}${highlightId ? `<p class="author-meta">Showing the indexed comment <a href="#comment-${escapeHtml(highlightId)}">#${escapeHtml(highlightId)}</a>.</p>` : ''}`;
 
   return {
     status: 200,
@@ -915,8 +964,11 @@ async function renderPostPage(post, comments, { canonicalPath, accept, robots, e
 
 async function renderFeaturePage(request, comments, { canonicalPath, accept, extraLd, highlightId } = {}) {
   const canonical = absUrl(canonicalPath);
-  const title = `${request.title || 'Feature request'} | MolDraw Community`;
-  const description = excerpt(request.description || request.title || 'A public MolDraw feature request.');
+  const focus = highlightId ? comments.find((comment) => comment.id === highlightId) : null;
+  const title = focus
+    ? `${excerpt(focus.body, 70)} — ${request.title || 'Feature request'} | MolDraw Community`
+    : `${request.title || 'Feature request'} | MolDraw Community`;
+  const description = excerpt((focus && focus.body) || request.description || request.title || 'A public MolDraw feature request.');
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -947,7 +999,7 @@ async function renderFeaturePage(request, comments, { canonicalPath, accept, ext
   let listRows = list.data || [];
   if (!listRows.some((row) => row.id === request.id)) listRows = [request, ...listRows];
   const feedHtml = `<section class="feature-cta-card"><div><h2>Have an idea for MolDraw?</h2><p>Request a feature here so the community can vote and track progress. Sign in to submit.</p></div></section>${listRows.map((row) => renderFeatureCard(row, [], { selected: row.id === request.id })).join('')}`;
-  const threadHtml = `${renderFeatureCard(request, comments, { heading: 'h1', showAllComments: true, includeComments: true })}${highlightId ? `<p class="author-meta">Showing thread for comment <a href="#comment-${escapeHtml(highlightId)}">${escapeHtml(highlightId)}</a>.</p>` : ''}`;
+  const threadHtml = `${renderFeatureCard(request, comments, { heading: 'h1', showAllComments: true, includeComments: true, highlightId })}${highlightId ? `<p class="author-meta">Showing the indexed comment <a href="#comment-${escapeHtml(highlightId)}">#${escapeHtml(highlightId)}</a>.</p>` : ''}`;
 
   return {
     status: 200,
@@ -1022,7 +1074,7 @@ async function renderCommunityPage(pathname, options = {}) {
     if (!post) return notFoundPage('This community post is not available.', options);
     const comments = await fetchCommentsForPosts([post.id]);
     return renderPostPage(post, comments, {
-      canonicalPath: commentPath(comment.id),
+      canonicalPath: commentPath(comment),
       accept: options.accept,
       highlightId: comment.id,
       extraLd: commentLd(comment, {
@@ -1051,7 +1103,7 @@ async function renderCommunityPage(pathname, options = {}) {
     if (!request) return notFoundPage('This feature request is not available.', options);
     const comments = await fetchFeatureComments([request.id]);
     return renderFeaturePage(request, comments, {
-      canonicalPath: featureCommentPath(comment.id),
+      canonicalPath: featureCommentPath(comment),
       accept: options.accept,
       highlightId: comment.id,
       extraLd: commentLd(comment, {
@@ -1087,8 +1139,8 @@ async function renderCommunitySitemap() {
   const [posts, features, comments, featureComments] = await Promise.all([
     fetchAllRows('community_posts', 'id,title,created_at', 'created_at.desc'),
     fetchAllRows('community_feature_requests', 'id,title,created_at', 'created_at.desc').catch(() => []),
-    fetchAllRows('community_comments', 'id,created_at', 'created_at.desc').catch(() => []),
-    fetchAllRows('feature_request_comments', 'id,created_at', 'created_at.desc').catch(() => []),
+    fetchAllRows('community_comments', 'id,body,created_at', 'created_at.desc').catch(() => []),
+    fetchAllRows('feature_request_comments', 'id,body,created_at', 'created_at.desc').catch(() => []),
   ]);
 
   const discussionPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
@@ -1112,10 +1164,10 @@ async function renderCommunitySitemap() {
     urls.push(sitemapUrl(absUrl(featurePath(request)), isoDate(request.created_at)?.slice(0, 10), 'weekly', '0.5'));
   });
   comments.forEach((comment) => {
-    urls.push(sitemapUrl(absUrl(commentPath(comment.id)), isoDate(comment.created_at)?.slice(0, 10), 'weekly', '0.35'));
+    urls.push(sitemapUrl(absUrl(commentPath(comment)), isoDate(comment.created_at)?.slice(0, 10), 'weekly', '0.35'));
   });
   featureComments.forEach((comment) => {
-    urls.push(sitemapUrl(absUrl(featureCommentPath(comment.id)), isoDate(comment.created_at)?.slice(0, 10), 'weekly', '0.3'));
+    urls.push(sitemapUrl(absUrl(featureCommentPath(comment)), isoDate(comment.created_at)?.slice(0, 10), 'weekly', '0.3'));
   });
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

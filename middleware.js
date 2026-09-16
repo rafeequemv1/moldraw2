@@ -46,7 +46,7 @@ function resolveCommunityRewrite(pathname) {
   if (
     pathname === '/community'
     || pathname === '/community/'
-    || /^\/community\/(page\/\d+|features(?:\/page\/\d+)?|p\/[^/]+(?:\/[^/]+)?|c\/[^/]+|f\/[^/]+(?:\/[^/]+)?|fc\/[^/]+)\/?$/.test(pathname)
+    || /^\/community\/(page\/\d+|features(?:\/page\/\d+)?|p\/[^/]+(?:\/[^/]+)?|c\/[^/]+(?:\/[^/]+)?|f\/[^/]+(?:\/[^/]+)?|fc\/[^/]+(?:\/[^/]+)?)\/?$/.test(pathname)
   ) {
     return `/api/community?path=${encodeURIComponent(pathname)}`;
   }

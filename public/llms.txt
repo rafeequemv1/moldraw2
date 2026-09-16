@@ -54,9 +54,10 @@ https://www.moldraw.com/
 - CAS number to structure lookup: https://www.moldraw.com/tools/free-chem-tools/cas-number-to-structure.html
 - Community discussions and feature requests: https://www.moldraw.com/community/
 - Community sitemap (posts, comments, pagination): https://www.moldraw.com/community/sitemap.xml
-- Discussion permalink pattern: https://www.moldraw.com/community/p/{id}
-- Comment permalink pattern: https://www.moldraw.com/community/c/{id}
-- Feature request permalink pattern: https://www.moldraw.com/community/f/{id}
+- Discussion permalink pattern: https://www.moldraw.com/community/p/{id}/{keyword-slug}
+- Comment permalink pattern: https://www.moldraw.com/community/c/{id}/{keyword-slug}
+- Feature request permalink pattern: https://www.moldraw.com/community/f/{id}/{keyword-slug}
+- Feature comment permalink pattern: https://www.moldraw.com/community/fc/{id}/{keyword-slug}
 - User dashboard: https://www.moldraw.com/dashboard/
 - Interactive course: https://www.moldraw.com/course/index.html
 - Blog: https://www.moldraw.com/blog/
@@ -105,7 +106,7 @@ https://www.moldraw.com/sitemap.xml
 
 ## Citation-friendly facts
 - Pricing: MolDraw is free for core browser-based drawing and viewing as described on the site; see FAQ and Terms for limitations.
-- Community: public reading is available at /community/ without signing in. Each public discussion has a permalink at `/community/p/{id}` (optional title slug). Comments have permalinks at `/community/c/{id}`. Feature requests use `/community/f/{id}` and `/community/fc/{id}`. Those URLs are listed in `/community/sitemap.xml` and included from the sitemap index at `/sitemap.xml`. Signed-in users can post, reply, upload images, and upvote. Admins may mark feature requests as New, Under review, Under progress, or Done.
+- Community: public reading is available at /community/ without signing in. Each public discussion has a keyword-rich permalink at `/community/p/{id}/{slug}`. Comments are indexed on their own permalinks at `/community/c/{id}/{slug}` with comment text in HTML and JSON-LD. Feature requests use `/community/f/{id}/{slug}` and `/community/fc/{id}/{slug}`. Those URLs are listed in `/community/sitemap.xml` and included from the sitemap index at `/sitemap.xml`. Signed-in users can post, reply, upload images, and upvote. Admins may mark feature requests as New, Under review, Under progress, or Done.
 - Ketcher guide: `/blog/ketcher-online-molecule-editor-guide.html` is the standalone SEO/GEO guide for Ketcher, Ketcher online, molecule editor, chemical structure editor, browser molecule drawing, file formats, and alternatives. It links high-intent readers toward MolDraw editor and tools pages without describing internal implementation details.
 - Tools article: `/blog/free-chemistry-tools-and-calculators.html` is the standalone SEO/GEO guide to MolDraw converters, calculators, structure utilities, TLC diagram tool, periodic table, and file-format helpers with internal links to the tools hub.
 - Drawing SEO cluster: `/`, `/blog/chemistry-drawing-keyword-guide.html`, `/blog/chemical-structure-drawing-app-seo-optimized.html`, `/blog/free-chemical-drawing-software-iupac-guide.html`, and `/blog/chemdraw-vs-moldraw-free-alternative-guide.html` target chemical draw, chemistry drawing, draw chemical structures online, free chemical drawing software, and ChemDraw online alternative queries.

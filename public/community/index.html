@@ -136,10 +136,6 @@
       gap: 18px;
       justify-content: center;
     }
-    .community-shell.thread-open {
-      width: min(1280px, 96vw);
-      grid-template-columns: 200px minmax(0, 540px) minmax(320px, 400px);
-    }
     .community-sidebar,
     .community-right-rail,
     .community-card,
@@ -271,22 +267,54 @@
     .community-card {
       cursor: pointer;
     }
-    .thread-panel {
+    .thread-modal {
       display: none;
     }
-    .community-shell.thread-open .thread-panel {
+    .thread-modal.is-open,
+    body.thread-modal-open .thread-modal {
       display: block;
     }
-    .community-shell.thread-open #community-rail-default {
-      display: none;
+    body.thread-modal-open {
+      overflow: hidden;
     }
-    .thread-panel-head {
+    .thread-modal.is-open {
+      position: fixed;
+      inset: 0;
+      z-index: 5000;
+    }
+    .thread-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.58);
+      cursor: pointer;
+    }
+    .thread-modal-dialog {
+      position: relative;
+      z-index: 1;
+      width: min(680px, 100vw);
+      height: 100%;
+      max-height: 100dvh;
+      margin: 0 auto;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 24px 80px rgba(15, 23, 42, 0.35);
+    }
+    .thread-modal-head {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 12px;
+      flex-shrink: 0;
+      padding: 10px 14px;
+      border-bottom: 1px solid #e8eef3;
+      background: #fff;
     }
-    .thread-panel-head a,
+    .thread-modal-head a,
     .thread-copy,
     .thread-close {
       font-size: 12px;
@@ -306,14 +334,46 @@
       font-size: 18px;
       line-height: 1;
     }
-    .thread-panel-body .community-card {
+    .thread-modal-body {
+      overflow: auto;
+      flex: 1;
+      padding: 16px 18px 32px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .thread-modal-body .community-card {
       border: 0;
       box-shadow: none;
       padding: 0;
       cursor: default;
     }
-    .thread-panel-body .card-title {
-      font-size: 20px;
+    .thread-modal-body .card-title {
+      font-size: 22px;
+    }
+    .thread-reply-composer {
+      margin: 14px 0 18px;
+      padding: 12px;
+      border: 1px solid #dfe6ee;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+    .thread-reply-composer .comment-form {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .thread-reply-composer textarea {
+      min-height: 72px;
+      border-radius: 12px;
+      width: 100%;
+    }
+    .thread-reply-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .comment.is-highlight {
+      outline: 2px solid #2C7A7B;
+      background: #f0fafa;
+      border-radius: 10px;
+      padding: 8px;
     }
     .auth-panel {
       margin-top: 12px;
@@ -1192,20 +1252,8 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
       }
-      .community-shell.thread-open {
-        grid-template-columns: 1fr;
-      }
-      .community-shell.thread-open .community-right-rail {
-        position: fixed;
-        inset: 0;
-        z-index: 40;
-        display: block;
-        overflow: auto;
-        width: auto;
-        margin: 0;
-        padding: 16px;
-        border-radius: 0;
-        background: #f3f6f8;
+      .thread-modal-dialog {
+        width: 100vw;
       }
       .community-right-rail .auth-panel,
       .community-right-rail .cta-card {
@@ -1429,14 +1477,6 @@
     </section>
 
     <aside class="community-right-rail" id="community-right-rail" aria-label="Community sidebar">
-      <div id="thread-panel" class="thread-panel" hidden>
-        <div class="thread-panel-head">
-          <button type="button" id="thread-panel-close" class="thread-close" aria-label="Close thread">×</button>
-          <a id="thread-panel-back" href="/community/">Back to feed</a>
-          <button type="button" id="thread-copy-link" class="thread-copy">Copy link</button>
-        </div>
-        <div id="thread-panel-body"></div>
-      </div>
       <div id="community-rail-default">
         <div class="auth-panel">
           <strong id="auth-title">Join the community</strong>
@@ -1458,6 +1498,18 @@
       </div>
     </aside>
   </main>
+
+  <div id="thread-modal" class="thread-modal" hidden>
+    <button type="button" class="thread-modal-backdrop" id="thread-modal-backdrop" aria-label="Close post"></button>
+    <div class="thread-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="thread-modal-title">
+      <div class="thread-modal-head">
+        <button type="button" id="thread-panel-close" class="thread-close" aria-label="Close post">×</button>
+        <a id="thread-panel-back" href="/community/">Back</a>
+        <button type="button" id="thread-copy-link" class="thread-copy">Copy link</button>
+      </div>
+      <div id="thread-panel-body" class="thread-modal-body"></div>
+    </div>
+  </div>
 
   <div id="auth-modal" class="modal-backdrop" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
@@ -1612,24 +1664,49 @@
     };
     const COMMUNITY_PAGE_SIZE = 20;
 
-    function slugifyTitle(title) {
-      return String(title || 'post').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'post';
+    const SLUG_STOPWORDS = new Set([
+      'a', 'an', 'the', 'and', 'or', 'but', 'of', 'to', 'for', 'in', 'on', 'at', 'by',
+      'with', 'from', 'as', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'this',
+      'that', 'these', 'those', 'it', 'its', 'into', 'about', 'over', 'under', 'than',
+      'then', 'so', 'if', 'not', 'no', 'yes', 'you', 'your', 'we', 'our', 'they',
+      'their', 'can', 'could', 'should', 'would', 'may', 'might', 'will', 'just',
+      'also', 'more', 'most', 'some', 'any', 'how', 'what', 'when', 'where', 'which',
+      'who', 'why', 'do', 'does', 'did', 'have', 'has', 'had', 'my', 'me', 'please',
+      'help', 'hi', 'hey', 'via'
+    ]);
+    function seoSlug(text, max = 72, fallback = 'post') {
+      const raw = String(text || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+      const words = raw.split(/\s+/).filter(Boolean);
+      const kept = [];
+      for (const word of words) {
+        if (SLUG_STOPWORDS.has(word)) continue;
+        if (word.length === 1 && !/[0-9]/.test(word)) continue;
+        kept.push(word);
+        if (kept.join('-').length >= max) break;
+      }
+      let slug = kept.join('-').slice(0, max).replace(/-+$/g, '');
+      if (!slug) slug = raw.replace(/\s+/g, '-').slice(0, max).replace(/^-+|-+$/g, '') || fallback;
+      return slug || fallback;
     }
     function discussionUrl(post) {
       const id = post?.id || post;
-      const slug = post?.title ? slugifyTitle(post.title) : '';
-      return slug ? `/community/p/${encodeURIComponent(id)}/${slug}` : `/community/p/${encodeURIComponent(id)}`;
+      const slug = post?.title ? seoSlug(post.title, 72, 'discussion') : 'discussion';
+      return `/community/p/${encodeURIComponent(id)}/${slug}`;
     }
     function featureUrl(request) {
       const id = request?.id || request;
-      const slug = request?.title ? slugifyTitle(request.title) : '';
-      return slug ? `/community/f/${encodeURIComponent(id)}/${slug}` : `/community/f/${encodeURIComponent(id)}`;
+      const slug = request?.title ? seoSlug(request.title, 72, 'feature-request') : 'feature-request';
+      return `/community/f/${encodeURIComponent(id)}/${slug}`;
     }
-    function commentPermalink(id) {
-      return `/community/c/${encodeURIComponent(id)}`;
+    function commentPermalink(comment) {
+      const id = comment?.id || comment;
+      const slug = comment?.body ? seoSlug(comment.body, 56, 'comment') : 'comment';
+      return `/community/c/${encodeURIComponent(id)}/${slug}`;
     }
-    function featureCommentPermalink(id) {
-      return `/community/fc/${encodeURIComponent(id)}`;
+    function featureCommentPermalink(comment) {
+      const id = comment?.id || comment;
+      const slug = comment?.body ? seoSlug(comment.body, 56, 'comment') : 'comment';
+      return `/community/fc/${encodeURIComponent(id)}/${slug}`;
     }
     function parseCommunityRoute(loc = window.location) {
       let path = loc.pathname || '/';
@@ -1645,12 +1722,12 @@
       if (match) return { view: 'features', page: Math.max(1, Number(match[1])) };
       match = path.match(/^\/community\/p\/([^/]+)(?:\/([^/]+))?$/);
       if (match) return { view: 'post', id: match[1], slug: match[2] || '' };
-      match = path.match(/^\/community\/c\/([^/]+)$/);
-      if (match) return { view: 'comment', id: match[1] };
+      match = path.match(/^\/community\/c\/([^/]+)(?:\/([^/]+))?$/);
+      if (match) return { view: 'comment', id: match[1], slug: match[2] || '' };
       match = path.match(/^\/community\/f\/([^/]+)(?:\/([^/]+))?$/);
       if (match) return { view: 'feature', id: match[1], slug: match[2] || '' };
-      match = path.match(/^\/community\/fc\/([^/]+)$/);
-      if (match) return { view: 'feature-comment', id: match[1] };
+      match = path.match(/^\/community\/fc\/([^/]+)(?:\/([^/]+))?$/);
+      if (match) return { view: 'feature-comment', id: match[1], slug: match[2] || '' };
       return { view: 'list', page: 1 };
     }
     function renderPaginationNav(kind, page, total) {
@@ -1678,11 +1755,10 @@
       nav.innerHTML = items.join('');
     }
 
-    const threadPanel = document.getElementById('thread-panel');
+    const threadModal = document.getElementById('thread-modal');
     const threadPanelBody = document.getElementById('thread-panel-body');
     const threadPanelBack = document.getElementById('thread-panel-back');
     const communityShell = document.querySelector('.community-shell');
-    const railDefault = document.getElementById('community-rail-default');
     let lastDiscussionItems = [];
     let lastFeatureItems = [];
     let activeThread = null;
@@ -1697,9 +1773,11 @@
       return kind === 'feature' ? '/community/features' : '/community/';
     }
     function setThreadOpen(open) {
-      communityShell?.classList.toggle('thread-open', open);
-      if (threadPanel) threadPanel.hidden = !open;
-      if (railDefault) railDefault.hidden = open;
+      document.body.classList.toggle('thread-modal-open', open);
+      if (threadModal) {
+        threadModal.hidden = !open;
+        threadModal.classList.toggle('is-open', open);
+      }
     }
     function hideThreadPanel() {
       activeThread = null;
@@ -1720,12 +1798,22 @@
       activeThread = { kind, id: item.id };
       const isFeature = kind === 'feature';
       const url = isFeature ? featureUrl(item) : discussionUrl(item);
-      const commentsHtml = isFeature
-        ? renderFeatureCommentThread(item.id, comments, comments.length)
-        : renderCommentThread(item.id, comments, item.comment_count || comments.length, { threadUrl: url });
-      threadPanelBack.href = listUrlFor(kind);
+      const threadOptions = {
+        threadUrl: url,
+        includeComposer: false,
+        highlightId,
+        ...(isFeature ? {
+          expandedCommentThreads: expandedFeatureCommentThreads,
+          expandedReplyThreads: expandedFeatureReplyThreads,
+          reportType: 'feature_request_comment',
+          reportLabel: 'feature request reply',
+          permalinkHref: featureCommentPermalink
+        } : {})
+      };
+      const commentsHtml = renderCommentThread(item.id, comments, isFeature ? comments.length : (item.comment_count || comments.length), threadOptions);
+      if (threadPanelBack) threadPanelBack.href = listUrlFor(kind);
       threadPanelBody.innerHTML = `
-        <article class="community-card">
+        <article class="community-card thread-post">
           <div class="author" style="margin-bottom:8px;">
             <span class="avatar ${isFeature ? '' : escapeHtml(safeAvatarKey(item.author_avatar_key))}">${escapeHtml(initials(isFeature ? item.name : item.author_name))}</span>
             <div>
@@ -1733,19 +1821,42 @@
               <div class="author-meta">${isFeature ? 'Feature request' : escapeHtml(item.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(item.created_at))}</div>
             </div>
           </div>
-          <h1 class="card-title">${escapeHtml(item.title)}</h1>
+          <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}</h1>
           <p class="card-body">${escapeHtml(isFeature ? item.description : item.body)}</p>
           ${renderImages(item.image_urls, isFeature ? 'Feature request attachment' : 'Community attachment')}
-          <div class="${isFeature ? 'comments visible' : 'comments visible'}" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
+          <section class="thread-reply-composer" aria-label="Reply to this post">
+            <h2 class="comments-heading">Post your reply</h2>
+            <div class="comment-form" data-comment-form="main">
+              <textarea placeholder="Post your reply" aria-label="Post your reply"></textarea>
+              <div class="thread-reply-actions">
+                <label class="comment-image-chip">
+                  Image
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+                </label>
+                <button class="btn btn-primary" type="button">Reply</button>
+              </div>
+            </div>
+          </section>
+          <div class="comments visible" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
         </article>
       `;
       setThreadOpen(true);
       const selectedId = isFeature ? `feature-${item.id}` : `post-${item.id}`;
       feed.querySelectorAll('.community-card.is-selected').forEach((card) => card.classList.remove('is-selected'));
       document.getElementById(selectedId)?.classList.add('is-selected');
-      if (isFeature) bindFeatureCommentThread(threadPanelBody.querySelector('[data-feature-comments]'), item.id);
-      else bindCommentThread(threadPanelBody.querySelector('[data-comments]'), item.id);
-      if (highlightId) document.getElementById(`comment-${highlightId}`)?.scrollIntoView({ block: 'nearest' });
+      if (isFeature) bindFeatureCommentThread(threadPanelBody, item.id);
+      else bindCommentThread(threadPanelBody, item.id);
+      threadPanelBody.querySelectorAll('a.comment-permalink, a.more-thread').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          if (isModifiedClick(event)) return;
+          const href = link.getAttribute('href') || '';
+          if (!href.startsWith('/community/')) return;
+          event.preventDefault();
+          window.history.pushState({ community: true }, '', href);
+          loadActiveTab();
+        });
+      });
+      if (highlightId) document.getElementById(`comment-${highlightId}`)?.scrollIntoView({ block: 'center' });
     }
     async function openDiscussionThread(post, { url, highlightId, replace = false } = {}) {
       if (!post) return;
@@ -1755,7 +1866,7 @@
         if (replace) window.history.replaceState({ community: true }, '', href);
         else window.history.pushState({ community: true }, '', href);
       }
-      document.title = `${post.title || 'Community post'} | MolDraw Community`;
+      if (!highlightId) document.title = `${post.title || 'Community post'} | MolDraw Community`;
       expandedCommentThreads.add(post.id);
       let comments = commentCache.get(post.id);
       if (!comments) {
@@ -1778,7 +1889,7 @@
         if (replace) window.history.replaceState({ community: true }, '', href);
         else window.history.pushState({ community: true }, '', href);
       }
-      document.title = `${request.title || 'Feature request'} | MolDraw Community`;
+      if (!highlightId) document.title = `${request.title || 'Feature request'} | MolDraw Community`;
       expandedFeatureCommentThreads.add(request.id);
       let comments = featureCommentCache.get(request.id);
       if (!comments && featureCommentsAvailable) {
@@ -2239,10 +2350,11 @@
       const visibleReplies = repliesExpanded ? allReplies : allReplies.slice(0, 2);
       const replies = visibleReplies.map((reply) => renderSingleComment(reply, postId, true, comment.id, options)).join('');
       const hiddenReplies = Math.max(allReplies.length - visibleReplies.length, 0);
-      const moreRepliesHref = (options.permalinkHref || commentPermalink)(comment.id);
       const images = renderImages(comment.image_urls, 'Reply attachment', 'card-images comment-images');
+      const permalink = (options.permalinkHref || commentPermalink)(comment);
+      const highlighted = options.highlightId && comment.id === options.highlightId;
       return `
-        <div class="comment ${isReply ? 'comment-reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
+        <div class="comment ${isReply ? 'comment-reply' : ''}${highlighted ? ' is-highlight' : ''}" id="comment-${escapeHtml(comment.id)}" data-comment-id="${escapeHtml(comment.id)}">
           <div class="author" style="margin-bottom:3px;">
             <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}" style="width:24px;height:24px;font-size:10px;">${escapeHtml(initials(comment.author_name))}</span>
             <div>
@@ -2253,7 +2365,7 @@
           <div class="comment-body">${escapeHtml(comment.body)}</div>
           ${images}
           <div class="comment-tools">
-            <a class="comment-permalink" href="${escapeHtml((options.permalinkHref || commentPermalink)(comment.id))}">Permalink</a>
+            <a class="comment-permalink" href="${escapeHtml(permalink)}">Permalink</a>
             <button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(rootCommentId)}">Reply</button>
             <button class="comment-tool" type="button" data-report-type="${escapeHtml(reportType)}" data-report-id="${escapeHtml(comment.id)}" data-report-label="${escapeHtml(reportLabel)}">Report</button>
             ${ownerTools}
@@ -2262,7 +2374,7 @@
           ${replies || hiddenReplies ? `
             <div class="comment-replies">
               ${replies}
-              ${hiddenReplies > 0 ? `<a class="more-thread" href="${escapeHtml(moreRepliesHref)}">View ${hiddenReplies} more repl${hiddenReplies === 1 ? 'y' : 'ies'}</a>` : ''}
+              ${hiddenReplies > 0 ? `<a class="more-thread" href="${escapeHtml(permalink)}">View ${hiddenReplies} more repl${hiddenReplies === 1 ? 'y' : 'ies'}</a>` : ''}
             </div>
           ` : ''}
         </div>
@@ -2277,21 +2389,53 @@
       const rendered = visibleComments.map((comment) => renderSingleComment(comment, postId, false, comment.id, options)).join('');
       const hiddenCount = Math.max(roots.length - visibleComments.length, 0);
       const threadUrl = options.threadUrl || discussionUrl(postId);
-
-      return `
-        ${rendered || '<p class="author-meta">No replies yet. Be the first to reply.</p>'}
-        ${hiddenCount > 0 ? `<a class="more-thread" href="${escapeHtml(threadUrl)}">View ${hiddenCount} more thread${hiddenCount === 1 ? '' : 's'}</a>` : ''}
+      const composer = options.includeComposer === false ? '' : `
         <div class="comment-form" data-comment-form="main">
-          <textarea placeholder="Write a reply..."></textarea>
+          <textarea placeholder="Post your reply"></textarea>
           <label class="comment-image-chip">
             Image
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
           </label>
           <button class="btn btn-primary" type="button">Reply</button>
-        </div>
+        </div>`;
+
+      return `
+        ${rendered || '<p class="author-meta">No replies yet. Be the first to reply.</p>'}
+        ${hiddenCount > 0 ? `<a class="more-thread" href="${escapeHtml(threadUrl)}">View ${hiddenCount} more thread${hiddenCount === 1 ? '' : 's'}</a>` : ''}
+        ${composer}
       `;
     }
 
+    function threadBindRoot(wrap) {
+      return wrap?.closest?.('#thread-panel-body') || wrap;
+    }
+    function refreshCommentList(wrap, postId) {
+      const root = threadBindRoot(wrap);
+      const list = root.querySelector(`[data-comments="${postId}"]`) || wrap;
+      const comments = commentCache.get(postId) || [];
+      const post = lastDiscussionItems.find((item) => item.id === postId);
+      list.innerHTML = renderCommentThread(postId, comments, commentTotalCache.get(postId) || comments.length, {
+        includeComposer: false,
+        threadUrl: discussionUrl(post || postId)
+      });
+      bindCommentThread(root, postId);
+    }
+    function refreshFeatureCommentList(wrap, requestId) {
+      const root = threadBindRoot(wrap);
+      const list = root.querySelector(`[data-feature-comments="${requestId}"]`) || wrap;
+      const comments = featureCommentCache.get(requestId) || [];
+      const request = lastFeatureItems.find((item) => item.id === requestId);
+      list.innerHTML = renderCommentThread(requestId, comments, featureCommentTotalCache.get(requestId) || comments.length, {
+        includeComposer: false,
+        expandedCommentThreads: expandedFeatureCommentThreads,
+        expandedReplyThreads: expandedFeatureReplyThreads,
+        reportType: 'feature_request_comment',
+        reportLabel: 'feature request reply',
+        permalinkHref: featureCommentPermalink,
+        threadUrl: featureUrl(request || requestId)
+      });
+      bindFeatureCommentThread(root, requestId);
+    }
     function bindCommentThread(wrap, postId) {
       const mainForm = wrap.querySelector('[data-comment-form="main"]');
       const input = mainForm?.querySelector('textarea');
@@ -2326,9 +2470,7 @@
       wrap.querySelectorAll('[data-more-replies]').forEach((moreRepliesButton) => {
         moreRepliesButton.addEventListener('click', () => {
           expandedReplyThreads.add(moreRepliesButton.getAttribute('data-more-replies'));
-          const comments = commentCache.get(postId) || [];
-          wrap.innerHTML = renderCommentThread(postId, comments, commentTotalCache.get(postId) || comments.length);
-          bindCommentThread(wrap, postId);
+          refreshCommentList(wrap, postId);
         });
       });
       wrap.querySelectorAll('[data-edit-comment]').forEach((editButton) => {
@@ -2369,9 +2511,7 @@
       });
       wrap.querySelector('[data-more-comments]')?.addEventListener('click', () => {
         expandedCommentThreads.add(postId);
-        const comments = commentCache.get(postId) || [];
-        wrap.innerHTML = renderCommentThread(postId, comments, commentTotalCache.get(postId) || comments.length);
-        bindCommentThread(wrap, postId);
+        refreshCommentList(wrap, postId);
       });
     }
 
@@ -2386,8 +2526,12 @@
         .limit(100);
       commentCache.set(postId, data || []);
       commentTotalCache.set(postId, (data || []).length);
-      wrap.innerHTML = renderCommentThread(postId, data || [], (data || []).length);
-      bindCommentThread(wrap, postId);
+      const inModal = Boolean(wrap.closest('#thread-panel-body'));
+      wrap.innerHTML = renderCommentThread(postId, data || [], (data || []).length, {
+        includeComposer: !inModal,
+        threadUrl: discussionUrl(lastDiscussionItems.find((post) => post.id === postId) || postId)
+      });
+      bindCommentThread(wrap.closest('#thread-panel-body') || wrap, postId);
     }
 
     function renderFeatureCommentThread(requestId, comments, totalCount) {
@@ -2489,9 +2633,7 @@
       wrap.querySelectorAll('[data-more-replies]').forEach((moreRepliesButton) => {
         moreRepliesButton.addEventListener('click', () => {
           expandedFeatureReplyThreads.add(moreRepliesButton.getAttribute('data-more-replies'));
-          const comments = featureCommentCache.get(requestId) || [];
-          wrap.innerHTML = renderFeatureCommentThread(requestId, comments, featureCommentTotalCache.get(requestId) || comments.length);
-          bindFeatureCommentThread(wrap, requestId);
+          refreshFeatureCommentList(wrap, requestId);
         });
       });
       wrap.querySelectorAll('[data-edit-comment]').forEach((editButton) => {
@@ -2532,9 +2674,7 @@
       });
       wrap.querySelector('[data-more-comments]')?.addEventListener('click', () => {
         expandedFeatureCommentThreads.add(requestId);
-        const comments = featureCommentCache.get(requestId) || [];
-        wrap.innerHTML = renderFeatureCommentThread(requestId, comments, featureCommentTotalCache.get(requestId) || comments.length);
-        bindFeatureCommentThread(wrap, requestId);
+        refreshFeatureCommentList(wrap, requestId);
       });
     }
 
@@ -2554,8 +2694,16 @@
       }
       featureCommentCache.set(requestId, data || []);
       featureCommentTotalCache.set(requestId, (data || []).length);
-      wrap.innerHTML = renderFeatureCommentThread(requestId, data || [], (data || []).length);
-      bindFeatureCommentThread(wrap, requestId);
+      wrap.innerHTML = renderCommentThread(requestId, data || [], (data || []).length, {
+        includeComposer: false,
+        expandedCommentThreads: expandedFeatureCommentThreads,
+        expandedReplyThreads: expandedFeatureReplyThreads,
+        reportType: 'feature_request_comment',
+        reportLabel: 'feature request reply',
+        permalinkHref: featureCommentPermalink,
+        threadUrl: featureUrl(lastFeatureItems.find((item) => item.id === requestId) || requestId)
+      });
+      bindFeatureCommentThread(wrap.closest('#thread-panel-body') || wrap, requestId);
     }
 
     async function loadDiscussions(setLoading = true) {
@@ -2699,7 +2847,12 @@
       bindFeedOpeners('post', posts);
       const selectedPost = posts.find((post) => post.id === selectedPostId);
       if (selectedPost) {
-        await openDiscussionThread(selectedPost, { url: discussionUrl(selectedPost), highlightId: highlightCommentId, replace: true });
+        const comment = highlightCommentId
+          ? (commentCache.get(selectedPost.id) || []).find((item) => item.id === highlightCommentId)
+          : null;
+        const href = comment ? commentPermalink(comment) : discussionUrl(selectedPost);
+        if (comment) document.title = `${String(comment.body || '').slice(0, 70)} — ${selectedPost.title} | MolDraw Community`;
+        await openDiscussionThread(selectedPost, { url: href, highlightId: highlightCommentId, replace: true });
       } else if (!isThreadRoute(route)) {
         hideThreadPanel();
       }
@@ -2913,7 +3066,12 @@
       renderPaginationNav('features', page, count || 0);
       const selectedRequest = requests.find((request) => request.id === selectedRequestId);
       if (selectedRequest) {
-        await openFeatureThread(selectedRequest, { url: featureUrl(selectedRequest), highlightId: highlightCommentId, replace: true });
+        const comment = highlightCommentId
+          ? (featureCommentCache.get(selectedRequest.id) || []).find((item) => item.id === highlightCommentId)
+          : null;
+        const href = comment ? featureCommentPermalink(comment) : featureUrl(selectedRequest);
+        if (comment) document.title = `${String(comment.body || '').slice(0, 70)} — ${selectedRequest.title} | MolDraw Community`;
+        await openFeatureThread(selectedRequest, { url: href, highlightId: highlightCommentId, replace: true });
       } else if (!isThreadRoute(route)) {
         hideThreadPanel();
       }
@@ -2942,6 +3100,7 @@
     reportModal.addEventListener('click', (event) => { if (event.target === reportModal) closeReportModal(); });
     document.getElementById('community-report-form').addEventListener('submit', submitReport);
     document.getElementById('thread-panel-close')?.addEventListener('click', closeThreadToList);
+    document.getElementById('thread-modal-backdrop')?.addEventListener('click', closeThreadToList);
     document.getElementById('thread-panel-back')?.addEventListener('click', (event) => {
       event.preventDefault();
       closeThreadToList();
@@ -2966,7 +3125,7 @@
       else if (event.key === 'Escape' && postModal.classList.contains('visible')) closePostModal();
       else if (event.key === 'Escape' && featureRequestModal.classList.contains('visible')) closeFeatureRequestModal();
       else if (event.key === 'Escape' && reportModal.classList.contains('visible')) closeReportModal();
-      else if (event.key === 'Escape' && communityShell?.classList.contains('thread-open')) closeThreadToList();
+      else if (event.key === 'Escape' && document.body.classList.contains('thread-modal-open')) closeThreadToList();
     });
     authSignin.addEventListener('click', async () => {
       authMessage.textContent = 'Signing in...';
