@@ -257,7 +257,7 @@ async function fetchFeaturesPage(page) {
   const to = from + PAGE_SIZE - 1;
   return supabaseQuery(
     'community_feature_requests',
-    `select=${FEATURE_SELECT}&order=upvote_count.desc,created_at.desc`,
+    `select=${FEATURE_SELECT}&order=created_at.desc`,
     { range: { from, to } },
   );
 }
@@ -446,10 +446,25 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
           </article>`;
 }
 
+function featureStatusMeta(status) {
+  const key = String(status || 'new');
+  const map = {
+    new: { symbol: '○', label: 'New', className: 'feature-status-new' },
+    under_review: { symbol: '◐', label: 'Under review', className: 'feature-status-review' },
+    under_progress: { symbol: '⟳', label: 'Under progress', className: 'feature-status-progress' },
+    done: { symbol: '✓', label: 'Done', className: 'feature-status-done' },
+  };
+  return map[key] || { symbol: '○', label: key.replace(/_/g, ' '), className: 'feature-status-new' };
+}
+
+function renderFeatureStatus(status) {
+  const meta = featureStatusMeta(status);
+  return `<span class="feature-status ${meta.className}" title="${escapeHtml(meta.label)}"><span class="feature-status-symbol" aria-hidden="true">${meta.symbol}</span><span class="feature-status-label">${escapeHtml(meta.label)}</span></span>`;
+}
+
 function renderFeatureCard(request, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '' } = {}) {
   const url = featurePath(request);
   const titleTag = heading;
-  const status = request.status || 'new';
   return `
           <article class="community-card${selected ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}">
             <div class="card-top">
@@ -460,9 +475,8 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
                   <div class="author-meta">Feature request · <time datetime="${escapeHtml(isoDate(request.created_at) || '')}">${escapeHtml(timeText(request.created_at))}</time></div>
                 </div>
               </div>
-              <span class="pill">${escapeHtml(status.replace(/_/g, ' '))}</span>
             </div>
-            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a></${titleTag}>
+            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(request.status)}</${titleTag}>
             <p class="card-body">${escapeHtml(request.description)}</p>
             ${renderImages(request.image_urls, 'Feature request attachment')}
             <div class="card-actions">
