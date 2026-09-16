@@ -45,6 +45,15 @@ function normalizeProject(raw: SavedProject): SavedProject {
   };
 }
 
+/** IndexedDB structured-clone can fail on live editor objects; JSON is the durable form. */
+function storableProject(project: SavedProject): SavedProject {
+  const normalized = normalizeProject(project);
+  return {
+    ...normalized,
+    molecule: JSON.parse(JSON.stringify(normalized.molecule)),
+  };
+}
+
 export function moleculeHasProjectContent(mol: Molecule): boolean {
   return (
     mol.atoms.length > 0 ||
@@ -122,7 +131,8 @@ export async function listProjectMetas(): Promise<SavedProjectMeta[]> {
     });
     db.close();
     return metas;
-  } catch {
+  } catch (err) {
+    console.warn('[projectStorage] listProjectMetas failed', err);
     return [];
   }
 }
@@ -141,7 +151,8 @@ export async function listAllProjects(): Promise<SavedProject[]> {
     });
     db.close();
     return projects;
-  } catch {
+  } catch (err) {
+    console.warn('[projectStorage] listAllProjects failed', err);
     return [];
   }
 }
@@ -160,7 +171,8 @@ export async function listFolders(): Promise<ProjectFolder[]> {
     });
     db.close();
     return folders;
-  } catch {
+  } catch (err) {
+    console.warn('[projectStorage] listFolders failed', err);
     return [];
   }
 }
@@ -179,7 +191,8 @@ export async function getProject(id: string): Promise<SavedProject | null> {
     });
     db.close();
     return value;
-  } catch {
+  } catch (err) {
+    console.warn('[projectStorage] getProject failed', err);
     return null;
   }
 }
@@ -196,7 +209,7 @@ export async function saveProjectRecords(projects: SavedProject[]): Promise<void
     const tx = db.transaction(PROJECT_STORE, 'readwrite');
     const store = tx.objectStore(PROJECT_STORE);
     for (const project of projects) {
-      store.put(normalizeProject(project), project.id);
+      store.put(storableProject(project), project.id);
     }
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error ?? new Error('IndexedDB write failed'));

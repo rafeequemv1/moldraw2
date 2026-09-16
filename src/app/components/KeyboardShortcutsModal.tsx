@@ -52,9 +52,8 @@ export function KeyboardShortcutsModal({ open, onClose }: KeyboardShortcutsModal
       aria-modal="true"
       aria-label="Keyboard shortcuts"
       className="kb-shortcuts-modal"
-      onMouseDown={onClose}
     >
-      <div className="kb-shortcuts-modal__panel" onMouseDown={e => e.stopPropagation()}>
+      <div className="kb-shortcuts-modal__panel">
         <header className="kb-shortcuts-modal__header">
           <div>
             <div className="kb-shortcuts-modal__title">Keyboard shortcuts</div>

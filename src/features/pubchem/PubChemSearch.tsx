@@ -436,8 +436,8 @@ export const PubChemSearch: React.FC<PubChemSearchProps> = ({
   const canBulkImport = Boolean(onImportQuiet) && selectedCount > 0 && !bulkImporting;
 
   return (
-    <div className="md-import-overlay" onClick={onClose}>
-      <div className="md-import-modal" onClick={e => e.stopPropagation()}>
+    <div className="md-import-overlay">
+      <div className="md-import-modal">
 
         <div className="md-import-modal__header">
           <div className="md-import-modal__brand">

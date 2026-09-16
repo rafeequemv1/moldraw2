@@ -47,12 +47,8 @@ export function AuthModal({
         : 'The editor stays free and open. Accounts power My designs and community actions.';
 
   return (
-    <div className="auth-modal-backdrop" onClick={onClose}>
-      <form
-        className={`auth-modal auth-modal--${mode}`}
-        onSubmit={onSubmit}
-        onClick={e => e.stopPropagation()}
-      >
+    <div className="auth-modal-backdrop">
+      <form className={`auth-modal auth-modal--${mode}`} onSubmit={onSubmit}>
         <div className="auth-modal-header">
           <div>
             <div className="auth-modal-title">{title}</div>

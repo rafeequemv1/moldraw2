@@ -168,8 +168,8 @@ export function UpdatesModal({ open, onClose }: { open: boolean; onClose: () => 
   const hasMore = visibleCount < NEWEST_FIRST.length;
 
   return (
-    <div className="feature-request-backdrop" onClick={onClose}>
-      <div className="updates-modal" onClick={e => e.stopPropagation()}>
+    <div className="feature-request-backdrop">
+      <div className="updates-modal">
         <div className="feature-request-header">
           <div>
             <div className="updates-eyebrow">MolDraw updates</div>

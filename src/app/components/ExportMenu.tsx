@@ -95,6 +95,7 @@ export function ExportMenu({ open, onToggle, onSaveAs, preferSheet }: ExportMenu
           size="auto"
           className="mobile-sheet--menu"
           ariaLabel={t('export.downloadFormatAria')}
+          closeOnBackdrop={false}
         >
           <div className="mobile-sheet-list" role="menu" aria-label={t('export.downloadFormatAria')}>
             {DOWNLOAD_FORMAT_ITEMS.map(({ key, label, ext, icon }) => (

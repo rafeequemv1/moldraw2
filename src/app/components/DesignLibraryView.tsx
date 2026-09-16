@@ -14,6 +14,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ProjectFolder, SavedProjectMeta } from '../projects/types';
+import { projectBelongsInFolderView } from '../projects/libraryListing';
 import { ConfirmDialog } from './ConfirmDialog';
 import { DesignLibraryFolderTree } from './DesignLibraryFolderTree';
 import {
@@ -125,13 +126,15 @@ export function DesignLibraryView({
     [folders, folderId],
   );
 
+  const knownFolderIds = useMemo(() => new Set(folders.map(f => f.id)), [folders]);
+
   const filteredProjects = useMemo(() => {
     const q = search.trim().toLowerCase();
     return projects.filter(p => {
-      if (search.trim()) return p.name.toLowerCase().includes(q);
-      return p.folderId === folderId;
+      if (q) return p.name.toLowerCase().includes(q);
+      return projectBelongsInFolderView(p, folderId, knownFolderIds);
     });
-  }, [projects, search, folderId]);
+  }, [projects, search, folderId, knownFolderIds]);
 
   const folderNameById = useMemo(() => {
     const map = new Map<string, string>();

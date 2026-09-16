@@ -124,13 +124,12 @@ export function ConformerGalleryModal({
 
   // Portal to body so isolation/z-index inside the 3D pane cannot trap the modal.
   return createPortal(
-    <div className="conformer-gallery-backdrop" role="presentation" onClick={onClose}>
+    <div className="conformer-gallery-backdrop" role="presentation">
       <div
         className="conformer-gallery-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="conformer-gallery-title"
-        onClick={e => e.stopPropagation()}
       >
         <header className="conformer-gallery-modal__header">
           <div>

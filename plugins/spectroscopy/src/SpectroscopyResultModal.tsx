@@ -137,7 +137,7 @@ export function SpectroscopyResultModal({ open, result, onClose }: SpectroscopyR
 
   return createPortal(
     <div className="spec-modal" role="dialog" aria-modal="true" aria-labelledby="spec-modal-title">
-      <button type="button" className="spec-modal__backdrop" aria-label="Close" onClick={onClose} />
+      <div className="spec-modal__backdrop" aria-hidden />
       <div className="spec-modal__panel">
         <header className="spec-modal__header">
           <div>

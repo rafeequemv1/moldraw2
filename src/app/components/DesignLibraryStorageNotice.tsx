@@ -1,13 +1,15 @@
 /**
  * Always-visible local-save warning.
  * Color matches Updates / feature-request helper text: `var(--text-muted)`.
+ * Storage is origin-scoped (moldraw.com ≠ localhost ≠ 127.0.0.1).
  */
+import { localSaveOriginWarning } from '../projects/libraryListing';
+
 export function DesignLibraryStorageNotice() {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
   return (
     <p className="design-library__notice" role="note">
-      Be careful: designs are saved locally in this browser. Clearing site data, another
-      browser, or a private window can remove them. Always save a copy on your computer so you
-      don’t lose work in progress.
+      {localSaveOriginWarning(origin)}
     </p>
   );
 }

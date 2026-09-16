@@ -1262,6 +1262,7 @@ export function AppSettingsModal({
         title={t('topBar.settings')}
         size="tall"
         className="mobile-sheet--settings"
+        closeOnBackdrop={false}
         footer={
           <button
             type="button"
@@ -1286,7 +1287,6 @@ export function AppSettingsModal({
       role="dialog"
       aria-modal="true"
       aria-label={t('settings.modalAria')}
-      onMouseDown={onClose}
       style={{
         position: 'fixed',
         inset: 0,

@@ -58,9 +58,8 @@ export function PeriodicTableModal({
       role="dialog"
       aria-modal="true"
       aria-label="Periodic table"
-      onMouseDown={onClose}
     >
-      <div className="periodic-table-dialog" onMouseDown={e => e.stopPropagation()}>
+      <div className="periodic-table-dialog">
         <header className="periodic-table-header">
           <div>
             <div className="periodic-table-header__title">Periodic table</div>

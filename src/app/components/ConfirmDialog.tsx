@@ -29,13 +29,7 @@ export function ConfirmDialog({
   const descId = 'confirm-dialog-desc';
 
   return createPortal(
-    <div
-      className="confirm-dialog-overlay"
-      role="presentation"
-      onMouseDown={e => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
-    >
+    <div className="confirm-dialog-overlay" role="presentation">
       <div
         className="confirm-dialog"
         role="alertdialog"

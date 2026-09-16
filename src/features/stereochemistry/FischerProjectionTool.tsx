@@ -53,7 +53,6 @@ export function FischerProjectionTool({ molecule, chainAtomIds, onClose }: Fisch
         alignItems: 'center',
         justifyContent: 'center',
       }}
-      onMouseDown={onClose}
     >
       <div
         style={{

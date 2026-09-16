@@ -992,6 +992,7 @@ export function AppTopBar(props: AppTopBarProps) {
           size="auto"
           className="mobile-sheet--search"
           ariaLabel={t('search.aria')}
+          closeOnBackdrop={false}
         >
           <div className="mobile-sheet-search">
             <HeaderInlineSearch

@@ -74,8 +74,8 @@ export function FeatureRequestModal({ open, defaultEmail, onClose }: FeatureRequ
   };
 
   return (
-    <div className="feature-request-backdrop" onClick={onClose}>
-      <form className="feature-request-modal" onSubmit={onSubmit} onClick={e => e.stopPropagation()}>
+    <div className="feature-request-backdrop">
+      <form className="feature-request-modal" onSubmit={onSubmit}>
         <div className="feature-request-header">
           <div>
             <div className="feature-request-title">Request a feature</div>

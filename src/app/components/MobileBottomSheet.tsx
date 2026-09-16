@@ -1,5 +1,6 @@
 /**
- * Phone/tablet bottom sheet: overlay + drag handle, swipe-down or backdrop to dismiss.
+ * Phone/tablet bottom sheet: overlay + drag handle. Swipe-down dismisses;
+ * backdrop click dismisses menus unless `closeOnBackdrop` is false (dialogs).
  */
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
@@ -21,6 +22,8 @@ export interface MobileBottomSheetProps {
   ariaLabel?: string;
   /** When false, no dim overlay — canvas above the sheet stays visible and tappable. */
   dimBackdrop?: boolean;
+  /** Dialogs stay open on backdrop press; menus still dismiss. Default true. */
+  closeOnBackdrop?: boolean;
 }
 
 const DISMISS_PX = 72;
@@ -36,12 +39,13 @@ export function MobileBottomSheet({
   className = '',
   ariaLabel,
   dimBackdrop = true,
+  closeOnBackdrop = true,
 }: MobileBottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef<number | null>(null);
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
-  useChromeOverlay(open, onClose, 'modal');
+  useChromeOverlay(open, onClose, closeOnBackdrop ? 'menu' : 'modal');
 
   useEffect(() => {
     if (!open) {
@@ -100,12 +104,16 @@ export function MobileBottomSheet({
       role="presentation"
     >
       {dimBackdrop ? (
-        <button
-          type="button"
-          className="mobile-sheet__backdrop"
-          aria-label="Dismiss"
-          onClick={onClose}
-        />
+        closeOnBackdrop ? (
+          <button
+            type="button"
+            className="mobile-sheet__backdrop"
+            aria-label="Dismiss"
+            onClick={onClose}
+          />
+        ) : (
+          <div className="mobile-sheet__backdrop" aria-hidden />
+        )
       ) : null}
       <div
         ref={sheetRef}

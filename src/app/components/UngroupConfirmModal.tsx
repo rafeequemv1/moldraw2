@@ -14,13 +14,7 @@ export function UngroupConfirmModal({ open, onCancel, onConfirm }: UngroupConfir
   useChromeOverlay(open, onCancel, 'confirm');
   if (!open) return null;
   return createPortal(
-    <div
-      className="ungroup-confirm-overlay"
-      role="presentation"
-      onMouseDown={e => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
-    >
+    <div className="ungroup-confirm-overlay" role="presentation">
       <div
         className="ungroup-confirm-dialog"
         role="alertdialog"

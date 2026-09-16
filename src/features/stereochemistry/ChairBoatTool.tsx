@@ -54,7 +54,7 @@ export function ChairBoatTool({ molecule, ringAtomIds, onClose }: ChairBoatToolP
   }, [mode, flip]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.25)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseDown={onClose}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.25)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 440, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 12px 30px rgba(0,0,0,0.2)', padding: 14 }} onMouseDown={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <strong style={{ fontSize: 14, color: '#0f172a' }}>Cyclohexane Chair/Boat</strong>

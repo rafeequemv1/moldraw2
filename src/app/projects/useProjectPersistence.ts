@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Molecule } from '@moldraw/domain';
 import type { MoleculeEditor } from '@moldraw/core';
 import { navigateToEditor, parseAppRoute } from '../../features/documentation';
@@ -21,6 +21,7 @@ import {
   saveProjectRecord,
   saveProjectRecords,
 } from './projectStorage';
+import { mergeLibraryMetasWithOpenTabs } from './libraryListing';
 import { migrateLegacyMyDesigns } from './migrateLegacyMyDesigns';
 import { renderProjectThumbnailDataUrl } from './projectThumbnail';
 import {
@@ -61,6 +62,7 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
   const folderIdByProjectRef = useRef(new Map<string, string | null>());
   const thumbnailByProjectRef = useRef(new Map<string, string | undefined>());
   const hydratedRef = useRef(false);
+  const bootUpsertedRef = useRef(false);
   const [initialHydrationDone, setInitialHydrationDone] = useState(false);
   const openTabsRef = useRef(openTabs);
   const projectIdRef = useRef(projectId);
@@ -129,9 +131,13 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
       },
     ) => {
       const molecule = opts?.molecule ?? editorStore.getMolecule();
-      moleculeCacheRef.current.set(id, cloneMolecule(molecule));
+      const storedMol = cloneMolecule(molecule);
+      moleculeCacheRef.current.set(id, storedMol);
       const savedOnce = opts?.savedOnce ?? savedOnceByTabRef.current.get(id) ?? savedOnceRef.current;
-      if (!moleculeHasProjectContent(molecule) && !savedOnce) return;
+      const isOpenTab = openTabsRef.current.some(t => t.id === id) || id === projectIdRef.current;
+      // Open / working tabs always upsert so My Designs lists the current canvas,
+      // including empty untitled files. Background records still skip blanks.
+      if (!moleculeHasProjectContent(molecule) && !savedOnce && !isOpenTab) return;
       const trimmedName = name.trim() || defaultProjectName(molecule);
       let folderId = opts?.folderId ?? folderIdByProjectRef.current.get(id);
       if (folderId === undefined) {
@@ -145,11 +151,17 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
       const thumbnailDataUrl = opts?.skipThumbnail
         ? thumbnailByProjectRef.current.get(id)
         : renderProjectThumbnailDataUrl(molecule) ?? thumbnailByProjectRef.current.get(id);
-      const record = buildProjectRecord(id, trimmedName, molecule, {
+      const record = buildProjectRecord(id, trimmedName, storedMol, {
         folderId,
         thumbnailDataUrl,
       });
-      await saveProjectRecord(record);
+      try {
+        await saveProjectRecord(record);
+      } catch (err) {
+        console.warn('[useProjectPersistence] saveProjectRecord failed', err);
+        setSaveNotice('Could not save locally in this browser (private window, blocked storage, or quota).');
+        throw err;
+      }
       rememberMeta(record);
       savedOnceByTabRef.current.set(id, true);
       if (id === projectIdRef.current) {
@@ -174,11 +186,18 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
       moleculeCacheRef.current.set(currentId, currentMol);
       const records: SavedProject[] = [];
       for (const tab of openTabsRef.current) {
-        const molecule = tab.id === currentId ? currentMol : moleculeCacheRef.current.get(tab.id);
-        if (!molecule) continue;
-        const savedOnce =
-          savedOnceByTabRef.current.get(tab.id) ?? (tab.id === currentId && savedOnceRef.current);
-        if (!moleculeHasProjectContent(molecule) && !savedOnce) continue;
+        let molecule = tab.id === currentId ? currentMol : moleculeCacheRef.current.get(tab.id);
+        if (!molecule) {
+          const saved = await getProject(tab.id);
+          if (saved?.molecule) {
+            molecule = cloneMolecule(saved.molecule);
+            moleculeCacheRef.current.set(tab.id, molecule);
+            if (saved.folderId != null) folderIdByProjectRef.current.set(tab.id, saved.folderId);
+            if (saved.thumbnailDataUrl) thumbnailByProjectRef.current.set(tab.id, saved.thumbnailDataUrl);
+          } else {
+            molecule = { atoms: [], bonds: [] };
+          }
+        }
         const name = (tab.id === currentId ? projectNameRef.current : tab.name).trim()
           || defaultProjectName(molecule);
         let folderId = folderIdByProjectRef.current.get(tab.id);
@@ -189,18 +208,34 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
         const record = buildProjectRecord(tab.id, name, molecule, { folderId, thumbnailDataUrl });
         records.push(record);
       }
-      if (records.length === 0) return;
-      await saveProjectRecords(records);
-      for (const record of records) {
-        rememberMeta(record);
-        savedOnceByTabRef.current.set(record.id, true);
-        moleculeCacheRef.current.set(record.id, cloneMolecule(record.molecule));
+      if (records.length > 0) {
+        try {
+          await saveProjectRecords(records);
+        } catch (err) {
+          console.warn('[useProjectPersistence] saveProjectRecords failed', err);
+          setSaveNotice('Could not save locally in this browser (private window, blocked storage, or quota).');
+          throw err;
+        }
+        for (const record of records) {
+          rememberMeta(record);
+          savedOnceByTabRef.current.set(record.id, true);
+          moleculeCacheRef.current.set(record.id, cloneMolecule(record.molecule));
+        }
+        if (records.some(r => r.id === currentId)) savedOnceRef.current = true;
       }
-      if (records.some(r => r.id === currentId)) savedOnceRef.current = true;
-      if (opts?.refresh !== false) void refreshLibrary();
+      if (opts?.refresh !== false) await refreshLibrary();
     },
     [editorStore, refreshLibrary],
   );
+
+  const flushOpenTabsAndRefresh = useCallback(async () => {
+    try {
+      await persistAllOpenTabs({ refresh: false });
+    } catch (err) {
+      console.warn('[useProjectPersistence] flush library failed', err);
+    }
+    await refreshLibrary();
+  }, [persistAllOpenTabs, refreshLibrary]);
 
   const persistCurrent = useCallback(
     async (opts?: { name?: string; announce?: boolean }) => {
@@ -593,13 +628,27 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
   }, [editorStore, projectId]);
 
   useEffect(() => {
+    if (!initialHydrationDone || bootUpsertedRef.current) return;
+    if (urlHasEditorSeedQuery()) {
+      bootUpsertedRef.current = true;
+      return;
+    }
+    bootUpsertedRef.current = true;
+    void persistAllOpenTabs({ skipThumbnail: true, refresh: true }).catch(err => {
+      console.warn('[useProjectPersistence] boot library upsert failed', err);
+    });
+  }, [initialHydrationDone, persistAllOpenTabs]);
+
+  useEffect(() => {
     let timer = 0;
     return editorStore.subscribe(() => {
       const id = projectIdRef.current;
       moleculeCacheRef.current.set(id, cloneMolecule(editorStore.getMolecule()));
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
-        void persistCurrent({ announce: false });
+        void persistCurrent({ announce: false }).catch(() => {
+          /* notice already set */
+        });
       }, AUTOSAVE_DEBOUNCE_MS);
     });
   }, [editorStore, persistCurrent]);
@@ -637,12 +686,17 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
     };
   }, [persistAllOpenTabs]);
 
+  const visibleProjectMetas = useMemo(
+    () => mergeLibraryMetasWithOpenTabs(projectMetas, openTabs),
+    [projectMetas, openTabs],
+  );
+
   return {
     projectId,
     projectName,
     openTabs,
     activeTabId: projectId,
-    projectMetas,
+    projectMetas: visibleProjectMetas,
     folders,
     saveNotice,
     saveProject,
@@ -659,7 +713,7 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
     deleteFolder,
     moveProjectsToFolder: moveProjectsToFolderId,
     refreshLibrary,
-    refreshMetas: refreshLibrary,
+    refreshMetas: flushOpenTabsAndRefresh,
     initialHydrationDone,
   };
 }

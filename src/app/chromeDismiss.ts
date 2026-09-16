@@ -1,7 +1,7 @@
 /**
- * Chrome overlay stack: header/tool menus, docks, and modals that should close
- * when the drawing canvas is pressed. Confirmation dialogs stay registered
- * as `confirm` so a canvas click cannot dismiss a destructive prompt.
+ * Chrome overlay stack: header/tool menus and docks that should close when the
+ * drawing canvas is pressed. Dialogs (`modal`) and confirmation prompts
+ * (`confirm`) stay open until the user hits Close / Cancel (or Escape).
  */
 import { useEffect, useRef } from 'react';
 
@@ -14,6 +14,11 @@ type OverlayEntry = {
 
 let nextId = 1;
 const overlays = new Map<number, OverlayEntry>();
+
+/** Menus and docks close on canvas / outside press. Dialogs do not. */
+export function dismissesOnCanvasPress(kind: ChromeOverlayKind): boolean {
+  return kind === 'menu' || kind === 'dock';
+}
 
 export function registerChromeOverlay(kind: ChromeOverlayKind, close: () => void): () => void {
   const id = nextId++;
@@ -34,24 +39,24 @@ function hasBlockingConfirm(): boolean {
 export function hasDismissibleChrome(): boolean {
   if (hasBlockingConfirm()) return false;
   for (const overlay of overlays.values()) {
-    if (overlay.kind !== 'confirm') return true;
+    if (dismissesOnCanvasPress(overlay.kind)) return true;
   }
   return false;
 }
 
 /**
- * Close menus, docks, and modals. Leaves confirmation dialogs open.
+ * Close menus and docks. Leaves dialogs and confirmation prompts open.
  * Returns true if anything was dismissed.
  */
 export function dismissChromeOverlays(): boolean {
   if (hasBlockingConfirm()) return false;
-  const toClose = [...overlays.values()].filter(overlay => overlay.kind !== 'confirm');
+  const toClose = [...overlays.values()].filter(overlay => dismissesOnCanvasPress(overlay.kind));
   if (toClose.length === 0) return false;
   for (const overlay of toClose) overlay.close();
   return true;
 }
 
-/** Register `onClose` while `open` so a canvas pointerdown can dismiss this overlay. */
+/** Register `onClose` while `open`. Canvas pointerdown only dismisses menus/docks. */
 export function useChromeOverlay(
   open: boolean,
   onClose: () => void,

@@ -319,7 +319,6 @@ export function NewmanProjectionTool({
         alignItems: 'center',
         justifyContent: 'center',
       }}
-      onMouseDown={onClose}
     >
       <div
         style={{

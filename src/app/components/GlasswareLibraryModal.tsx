@@ -100,9 +100,8 @@ export function GlasswareLibraryModal({
       aria-modal="true"
       aria-label="Apparatus library"
       className="template-library-overlay"
-      onMouseDown={handleClose}
     >
-      <div className="template-library-dialog glassware-library-dialog" onMouseDown={e => e.stopPropagation()}>
+      <div className="template-library-dialog glassware-library-dialog">
         <header className="template-library-header">
           <div>
             <div className="template-library-header__title">Apparatus library</div>

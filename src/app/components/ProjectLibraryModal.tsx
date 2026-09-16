@@ -25,7 +25,7 @@ export function ProjectLibraryModal({
 
   return (
     <div className="project-library-modal" role="dialog" aria-modal="true" aria-label="My designs">
-      <button type="button" className="project-library-modal__backdrop" onClick={onClose} aria-label="Close" />
+      <div className="project-library-modal__backdrop" aria-hidden />
       <div className="project-library-modal__panel">
         <header className="project-library-modal__header">
           <h2>My designs</h2>

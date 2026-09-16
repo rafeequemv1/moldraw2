@@ -113,12 +113,8 @@ export function ReactionLibraryModal({
       aria-modal="true"
       aria-label="Reaction library"
       className="template-library-overlay"
-      onMouseDown={onClose}
     >
-      <div
-        className="template-library-dialog reaction-library-dialog"
-        onMouseDown={e => e.stopPropagation()}
-      >
+      <div className="template-library-dialog reaction-library-dialog">
         <header className="template-library-header">
           <div>
             <div className="template-library-header__title">Reaction library</div>
