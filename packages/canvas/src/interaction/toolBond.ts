@@ -7,6 +7,16 @@ import {
   pickAtomOrBondForBondTool,
 } from './hitTest';
 import type { InteractionContext } from './types';
+import {
+  bondMatchesStyle,
+  bondPatchForStyleTool,
+  isBondTool,
+  isOrderCycleTool,
+  skipsValencyTool,
+  type BondToolId,
+} from './bondToolStyles';
+
+export { isBondTool } from './bondToolStyles';
 
 /**
  * Center-only attach radius — label-expanded hits steal neighbors (OH/NH/Cl).
@@ -23,39 +33,13 @@ function bondDragCommitThresholdPx(bondLengthPx: number): number {
   return Math.min(BOND_DRAW_MIN_LENGTH, bl * 0.85);
 }
 
-const BOND_TOOLS = [
-  'single_bond',
-  'double_bond',
-  'triple_bond',
-  'wedge_bond',
-  'dash_bond',
-  'wavy_bond',
-  'dative_bond',
-  'dotted_bond',
-] as const;
-type BondTool = (typeof BOND_TOOLS)[number];
-
-export const isBondTool = (tool: string): tool is BondTool =>
-  (BOND_TOOLS as readonly string[]).includes(tool);
-
-const orderForTool = (tool: string): 1 | 2 | 3 =>
-  tool === 'triple_bond' ? 3 : tool === 'double_bond' ? 2 : 1;
-
-const stereoForTool = (tool: string): 'wedge' | 'dash' | 'wavy' | undefined => {
-  if (tool === 'wedge_bond') return 'wedge';
-  if (tool === 'dash_bond') return 'dash';
-  if (tool === 'wavy_bond') return 'wavy';
-  return undefined;
+const orderForTool = (tool: BondToolId): 1 | 2 | 3 => {
+  const order = bondPatchForStyleTool(tool).order;
+  return order === 3 ? 3 : order === 2 ? 2 : 1;
 };
 
-const dativeForTool = (tool: string): boolean | undefined =>
-  tool === 'dative_bond' ? true : undefined;
-
-const dottedForTool = (tool: string): boolean | undefined =>
-  tool === 'dotted_bond' ? true : undefined;
-
 /**
- * Bond family (single/double/triple/wedge/dash/wavy) — primary chemistry tool.
+ * Bond family (single/double/triple/wedge/dash/wavy and query types) — primary chemistry tool.
  *
  * Pointer-down branches:
  *   - Empty canvas: arm a bond drag from `worldPos`; clear selection.
@@ -105,44 +89,29 @@ export const bondToolMouseDown = (ctx: InteractionContext): boolean => {
   if (bond && ctx.onUpdateBond) {
     const from = molecule.atoms.find(a => a.id === bond.fromAtomId);
     const to = molecule.atoms.find(a => a.id === bond.toAtomId);
-    const nextStereo = stereoForTool(activeTool);
-    const isStereoTool = nextStereo !== undefined;
+    const tool = activeTool as BondToolId;
+    const patch = bondPatchForStyleTool(tool);
 
-    // ── Dative / coordination tool ─────────────────────────────────────
-    if (activeTool === 'dative_bond') {
-      if (bond.dative) {
-        ctx.onUpdateBond(bond.id, { order: 1, stereo: undefined, dative: false, dotted: false });
-      } else {
-        ctx.onUpdateBond(bond.id, { order: 1, stereo: undefined, dative: true, dotted: false });
-      }
-      return true;
-    }
-
-    // ── Dotted / H-bond tool ───────────────────────────────────────────
-    if (activeTool === 'dotted_bond') {
-      if (bond.dotted) {
-        ctx.onUpdateBond(bond.id, { order: 1, stereo: undefined, dotted: false, dative: false });
-      } else {
-        ctx.onUpdateBond(bond.id, { order: 1, stereo: undefined, dotted: true, dative: false });
-      }
-      return true;
-    }
-
-    // ── Stereo tool branch (wedge / dash / wavy) ────────────────────────
-    if (isStereoTool) {
-      const stereoMatches = (bond.stereo ?? null) === nextStereo;
-      // Re-tap with the same stereo: wedge/dash flips direction; wavy is
-      // symmetric so it just toggles off (re-tap to remove the stereo flag).
-      if (stereoMatches) {
-        if (nextStereo === 'wavy') {
-          ctx.onUpdateBond(bond.id, { order: bond.order, stereo: undefined });
-        } else if (ctx.onFlipBond) {
-          ctx.onFlipBond(bond.id);
+    // ── Style tools (stereo / aromatic / query / dative / H-bond / thick) ──
+    if (!isOrderCycleTool(tool)) {
+      if (bondMatchesStyle(bond, tool)) {
+        const stereo = patch.stereo;
+        if (stereo === 'wedge' || stereo === 'dash' || stereo === 'either') {
+          ctx.onFlipBond?.(bond.id);
+        } else {
+          ctx.onUpdateBond(bond.id, {
+            order: 1,
+            stereo: undefined,
+            dative: false,
+            dotted: false,
+            aromatic: false,
+            queryType: undefined,
+            bold: false,
+          });
         }
         return true;
       }
-      // Different stereo (or none) → set to tool's stereo, preserve order.
-      ctx.onUpdateBond(bond.id, { order: bond.order, stereo: nextStereo });
+      ctx.onUpdateBond(bond.id, patch);
       return true;
     }
 
@@ -156,15 +125,24 @@ export const bondToolMouseDown = (ctx: InteractionContext): boolean => {
     // wedge/dash promotes the depiction to plain order). If order already
     // matches the tool and stereo is set (e.g. single tool on a wedge), clear
     // stereo only — do not bump 1 → 2. Valency is guarded on the upward step.
-    const toolOrder = orderForTool(activeTool);
-    if (
-      (activeTool === 'single_bond' ||
-        activeTool === 'double_bond' ||
-        activeTool === 'triple_bond') &&
-      bond.order === toolOrder &&
-      bond.stereo
-    ) {
-      ctx.onUpdateBond(bond.id, { order: bond.order, stereo: undefined, dative: false, dotted: false });
+    const toolOrder = orderForTool(tool);
+    const hasSpecial =
+      Boolean(bond.stereo) ||
+      Boolean(bond.dative) ||
+      Boolean(bond.dotted) ||
+      Boolean(bond.aromatic) ||
+      Boolean(bond.queryType) ||
+      Boolean(bond.bold);
+    if (bond.order === toolOrder && hasSpecial) {
+      ctx.onUpdateBond(bond.id, {
+        order: bond.order,
+        stereo: undefined,
+        dative: false,
+        dotted: false,
+        aromatic: false,
+        queryType: undefined,
+        bold: false,
+      });
       return true;
     }
 
@@ -199,13 +177,23 @@ export const bondToolMouseDown = (ctx: InteractionContext): boolean => {
       orderCycleRamp = 'up';
     }
 
-    ctx.onUpdateBond(bond.id, { order: cycled, stereo: undefined, orderCycleRamp });
+    ctx.onUpdateBond(bond.id, {
+      order: cycled,
+      stereo: undefined,
+      dative: false,
+      dotted: false,
+      aromatic: false,
+      queryType: undefined,
+      bold: false,
+      orderCycleRamp,
+    });
     return true;
   }
 
   if (atom) {
-    const bondOrder = orderForTool(activeTool);
-    if (activeTool !== 'dative_bond' && activeTool !== 'dotted_bond') {
+    const tool = activeTool as BondToolId;
+    const bondOrder = orderForTool(tool);
+    if (!skipsValencyTool(tool)) {
       const currentValency = getAtomValency(atom.id, molecule);
       const maxValency = getMaxValencyForElement(atom.element, atom.charge);
       if (currentValency + bondOrder > maxValency) {
@@ -342,7 +330,9 @@ export const bondToolMouseUp = (ctx: InteractionContext): boolean => {
     pickAtomCenterAt(molecule, worldPos, releaseRadius);
   let startAtomId = ctx.drawingBond.startAtomId;
   let endAtomId = releaseAtom?.id;
-  const bondOrder = orderForTool(activeTool);
+  const tool = activeTool as BondToolId;
+  const style = bondPatchForStyleTool(tool);
+  const bondOrder = orderForTool(tool);
   const startAtom = startAtomId ? molecule.atoms.find(a => a.id === startAtomId) : null;
   const startPos = startAtom ? { x: startAtom.x, y: startAtom.y } : ctx.drawingBond.startPos;
   const drawnLength = Math.hypot(startPos.x - tip.x, startPos.y - tip.y);
@@ -353,12 +343,14 @@ export const bondToolMouseUp = (ctx: InteractionContext): boolean => {
     molecule.atoms.find(a => a.id === id) ?? atomsCreatedThisStroke.find(a => a.id === id);
 
   if (releaseAtom) {
-    const currentValency = getAtomValency(releaseAtom.id, molecule);
-    const maxValency = getMaxValencyForElement(releaseAtom.element, releaseAtom.charge);
-    if (currentValency + bondOrder > maxValency && releaseAtom.id !== startAtomId) {
-      ctx.flashAtomError(releaseAtom.id);
-      ctx.setDrawingBond(null);
-      return true;
+    if (!skipsValencyTool(tool)) {
+      const currentValency = getAtomValency(releaseAtom.id, molecule);
+      const maxValency = getMaxValencyForElement(releaseAtom.element, releaseAtom.charge);
+      if (currentValency + bondOrder > maxValency && releaseAtom.id !== startAtomId) {
+        ctx.flashAtomError(releaseAtom.id);
+        ctx.setDrawingBond(null);
+        return true;
+      }
     }
     if (!startAtomId && drawnLength > minBondDragPx) {
       const newAtom: Atom = {
@@ -413,9 +405,12 @@ export const bondToolMouseUp = (ctx: InteractionContext): boolean => {
         fromAtomId: oriented?.fromAtomId ?? startAtomId,
         toAtomId: oriented?.toAtomId ?? endAtomId,
         order: bondOrder,
-        stereo: stereoForTool(activeTool),
-        dative: dativeForTool(activeTool),
-        dotted: dottedForTool(activeTool),
+        stereo: style.stereo,
+        dative: style.dative || undefined,
+        dotted: style.dotted || undefined,
+        aromatic: style.aromatic || undefined,
+        queryType: style.queryType,
+        bold: style.bold || undefined,
       });
     }
   }

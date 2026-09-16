@@ -13,6 +13,7 @@ export interface TemplateCategory {
 
 export const TEMPLATE_CATEGORIES: readonly TemplateCategory[] = [
   { id: '3d-templates', label: '3D Templates', count: 20, implemented: true },
+  { id: 'r-groups', label: 'R-groups', count: 35, implemented: true },
   { id: 'ligands', label: 'Ligands', count: 16, implemented: true },
   { id: 'alpha-d-sugars', label: 'α-D-Sugars', count: 21 },
   { id: 'aromatics', label: 'Aromatics', count: 18 },

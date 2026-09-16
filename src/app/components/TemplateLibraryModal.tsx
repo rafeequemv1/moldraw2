@@ -1,13 +1,13 @@
 /**
- * Template library: left category list + main pane with previews.
- * Implemented: L-amino acids, ligands, 3D cages / polycycles.
+ * Template library: R-groups, ligands, structure categories, COFs, reactions.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronRight, Folder, X } from 'lucide-react';
 import {
   DEFAULT_TEMPLATE_CATEGORY_ID,
   TEMPLATE_CATEGORIES,
   AMINO_ACID_TEMPLATES,
+  FUNCTIONAL_GROUP_TEMPLATES,
   LIGAND_TEMPLATES,
   STRUCTURE_3D_TEMPLATES,
   categoryHasTemplateMatch,
@@ -26,6 +26,8 @@ import '../../styles/template-library-modal.css';
 import { useChromeOverlay } from '../chromeDismiss';
 
 export type TemplateLibraryTab =
+  | 'r-groups'
+  | 'ligands'
   | 'structures'
   | 'cofs'
   | 'mofs'
@@ -39,6 +41,7 @@ export interface TemplateLibraryModalProps {
   onClose: () => void;
   initialTab?: TemplateLibraryTab;
   onInsertAmino: (code: string) => void;
+  onInsertFunctionalGroup: (smiles: string, label: string) => void;
   onInsertLigand: (id: string) => void;
   onInsertStructure3D: (id: string) => void;
   onInsertCof: (id: string) => void;
@@ -57,6 +60,7 @@ export function TemplateLibraryModal({
   onClose,
   initialTab = 'structures',
   onInsertAmino,
+  onInsertFunctionalGroup,
   onInsertLigand,
   onInsertStructure3D,
   onInsertCof,
@@ -116,6 +120,8 @@ export function TemplateLibraryModal({
 
   const showAminoGrid =
     !searchQuery && activeCategory.implemented === true && activeCategory.id === 'l-amino-acids';
+  const showRGroupGrid =
+    !searchQuery && activeCategory.implemented === true && activeCategory.id === 'r-groups';
   const showLigandGrid =
     !searchQuery && activeCategory.implemented === true && activeCategory.id === 'ligands';
   const showStructure3DGrid =
@@ -129,10 +135,22 @@ export function TemplateLibraryModal({
     );
   }, [searchQuery, showAminoGrid]);
 
+  const filteredRGroups = useMemo(() => {
+    if (!searchQuery) return [...FUNCTIONAL_GROUP_TEMPLATES];
+    return FUNCTIONAL_GROUP_TEMPLATES.filter(
+      t => t.label.toLowerCase().includes(searchQuery) || t.id.toLowerCase().includes(searchQuery),
+    );
+  }, [searchQuery]);
+
   const filteredLigands = useMemo(() => {
-    if (!showLigandGrid) return [];
-    return [...LIGAND_TEMPLATES];
-  }, [showLigandGrid]);
+    if (!searchQuery) return [...LIGAND_TEMPLATES];
+    return LIGAND_TEMPLATES.filter(
+      t =>
+        t.label.toLowerCase().includes(searchQuery) ||
+        t.name.toLowerCase().includes(searchQuery) ||
+        t.id.toLowerCase().includes(searchQuery),
+    );
+  }, [searchQuery]);
 
   const filteredStructures = useMemo(() => {
     if (!showStructure3DGrid) return [];
@@ -142,17 +160,20 @@ export function TemplateLibraryModal({
   const showGlobalSearchResults = searchQuery.length > 0 && globalSearchHits.length > 0;
   const showCategoryAminoGrid = showAminoGrid && filteredAminos.length > 0;
   const showCategoryAminoEmpty = showAminoGrid && filteredAminos.length === 0;
+  const showCategoryRGroupGrid = showRGroupGrid && filteredRGroups.length > 0;
   const showCategoryLigandGrid = showLigandGrid && filteredLigands.length > 0;
   const showCategoryStructureGrid = showStructure3DGrid && filteredStructures.length > 0;
   const categoryMatchCount = showGlobalSearchResults
     ? globalSearchHits.length
     : showCategoryAminoGrid
       ? filteredAminos.length
-      : showCategoryLigandGrid
-        ? filteredLigands.length
-        : showCategoryStructureGrid
-          ? filteredStructures.length
-          : 0;
+      : showCategoryRGroupGrid
+        ? filteredRGroups.length
+        : showCategoryLigandGrid
+          ? filteredLigands.length
+          : showCategoryStructureGrid
+            ? filteredStructures.length
+            : 0;
 
   if (!open) return null;
 
@@ -173,9 +194,27 @@ export function TemplateLibraryModal({
               </span>
             </div>
             <div className="template-library-header__subtitle">
-              Structure templates, COFs, MOFs, graphene, polymers, dendrimers, and named reaction schemes — place on canvas.
+              R-groups, ligands, structure templates, COFs, MOFs, graphene, polymers, dendrimers, and named reactions — place on canvas.
             </div>
             <div className="template-library-tabs" role="tablist" aria-label="Library sections">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={libraryTab === 'r-groups'}
+                className={`template-library-tab${libraryTab === 'r-groups' ? ' template-library-tab--active' : ''}`}
+                onClick={() => setLibraryTab('r-groups')}
+              >
+                R-groups
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={libraryTab === 'ligands'}
+                className={`template-library-tab${libraryTab === 'ligands' ? ' template-library-tab--active' : ''}`}
+                onClick={() => setLibraryTab('ligands')}
+              >
+                Ligands
+              </button>
               <button
                 type="button"
                 role="tab"
@@ -248,7 +287,52 @@ export function TemplateLibraryModal({
           </button>
         </header>
 
-        {libraryTab === 'reactions' && onInsertReaction ? (
+        {libraryTab === 'r-groups' ? (
+          <LibraryFlatCollection
+            title="R-groups"
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search R-groups…"
+            searchAria="Search R-groups"
+            empty={filteredRGroups.length === 0}
+          >
+            <div className="template-library-grid">
+              {filteredRGroups.map(t => (
+                <SmilesTemplateCard
+                  key={t.id}
+                  code={t.label}
+                  name="R-group"
+                  hint="Click an atom to attach"
+                  smiles={t.smiles}
+                  requestMolblock={requestSmilesMolblock}
+                  onInsert={() => onInsertFunctionalGroup(t.smiles, t.label)}
+                />
+              ))}
+            </div>
+          </LibraryFlatCollection>
+        ) : libraryTab === 'ligands' ? (
+          <LibraryFlatCollection
+            title="Ligands"
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search ligands…"
+            searchAria="Search ligands"
+            empty={filteredLigands.length === 0}
+          >
+            <div className="template-library-grid">
+              {filteredLigands.map(t => (
+                <SmilesTemplateCard
+                  key={t.id}
+                  code={t.label}
+                  name={t.name}
+                  smiles={t.smiles}
+                  requestMolblock={requestSmilesMolblock}
+                  onInsert={() => onInsertLigand(t.id)}
+                />
+              ))}
+            </div>
+          </LibraryFlatCollection>
+        ) : libraryTab === 'reactions' && onInsertReaction ? (
           <ReactionLibraryPanel
             active
             onInsert={onInsertReaction}
@@ -341,6 +425,19 @@ export function TemplateLibraryModal({
                         />
                       );
                     }
+                    if (hit.kind === 'functional_group') {
+                      return (
+                        <SmilesTemplateCard
+                          key={`fg-${hit.group.id}`}
+                          code={hit.group.label}
+                          name="R-group"
+                          hint="Click an atom to attach"
+                          smiles={hit.group.smiles}
+                          requestMolblock={requestSmilesMolblock}
+                          onInsert={() => onInsertFunctionalGroup(hit.group.smiles, hit.group.label)}
+                        />
+                      );
+                    }
                     if (hit.kind === 'ligand') {
                       return (
                         <SmilesTemplateCard
@@ -380,6 +477,20 @@ export function TemplateLibraryModal({
                     />
                   ))}
                 </div>
+              ) : showCategoryRGroupGrid ? (
+                <div className="template-library-grid">
+                  {filteredRGroups.map(t => (
+                    <SmilesTemplateCard
+                      key={t.id}
+                      code={t.label}
+                      name="R-group"
+                  hint="Click an atom to attach"
+                      smiles={t.smiles}
+                      requestMolblock={requestSmilesMolblock}
+                      onInsert={() => onInsertFunctionalGroup(t.smiles, t.label)}
+                    />
+                  ))}
+                </div>
               ) : showCategoryLigandGrid ? (
                 <div className="template-library-grid">
                   {filteredLigands.map(t => (
@@ -412,8 +523,8 @@ export function TemplateLibraryModal({
                 <div className="template-library-placeholder">
                   <p className="template-library-placeholder__title">No templates found</p>
                   <p>
-                    No implemented templates match &ldquo;{search.trim()}&rdquo;. Try amino acids,
-                    ligands, or 3D cages (cubane, C₆₀). COFs, MOFs, polymers, and dendrimers have their own tabs.
+                    No implemented templates match &ldquo;{search.trim()}&rdquo;. Try R-groups,
+                    amino acids, ligands, or 3D cages (cubane, C₆₀). COFs, MOFs, polymers, and dendrimers have their own tabs.
                   </p>
                 </div>
               ) : (
@@ -421,12 +532,11 @@ export function TemplateLibraryModal({
                   <p className="template-library-placeholder__title">Coming soon</p>
                   <p>
                     {activeCategory.label} templates are not available yet. Browse{' '}
-                    <strong>L-Amino Acids</strong>, <strong>Ligands</strong>, or{' '}
+                    <strong>R-groups</strong>, <strong>Ligands</strong>, <strong>L-Amino Acids</strong>, or{' '}
                     <strong>3D Templates</strong>. COFs, MOFs, polymers, and dendrimers are top-level tabs.
                   </p>
                   <p className="template-library-placeholder__hint">
-                    Common substituents (COOMe, Ph, Boc, …) are in the toolbar <strong>R-groups</strong>{' '}
-                    menu. Metals are on the atom palette.
+                    Metals are on the atom palette.
                   </p>
                 </div>
               )}
@@ -435,6 +545,45 @@ export function TemplateLibraryModal({
         </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function LibraryFlatCollection({
+  title,
+  search,
+  onSearchChange,
+  searchPlaceholder,
+  searchAria,
+  empty,
+  children,
+}: {
+  title: string;
+  search: string;
+  onSearchChange: (value: string) => void;
+  searchPlaceholder: string;
+  searchAria: string;
+  empty: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="template-library-body template-library-body--single">
+      <div className="template-library-search-wrap">
+        <input
+          type="search"
+          className="template-library-search"
+          placeholder={searchPlaceholder}
+          value={search}
+          onChange={e => onSearchChange(e.target.value)}
+          aria-label={searchAria}
+        />
+      </div>
+      <section className="template-library-main" aria-label={title}>
+        <div className="template-library-main__head">{title}</div>
+        <div className="template-library-main__scroll">
+          {empty ? <p className="template-library-nav__empty">No matches.</p> : children}
+        </div>
+      </section>
     </div>
   );
 }

@@ -176,7 +176,9 @@ export interface InteractionContext {
   onAddBond?: (bond: Bond) => void;
   onUpdateBond?: (
     bondId: string,
-    patch: Partial<Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted'>>,
+    patch: Partial<
+      Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted' | 'aromatic' | 'queryType' | 'bold'>
+    >,
   ) => void;
   /**
    * Swap a bond's endpoints. Used by the wedge / dash tool's re-tap branch

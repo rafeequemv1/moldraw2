@@ -70,19 +70,32 @@ export function useDefaultCanvasCommands({
   );
 
   const onUpdateBond = useCallback(
-    (bondId: string, patch: Partial<Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative'>>) => {
-      // Zod strips `undefined`; send `null` to clear stereo / ramp.
+    (
+      bondId: string,
+      patch: Partial<
+        Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted' | 'aromatic' | 'queryType' | 'bold'>
+      >,
+    ) => {
+      // Zod strips `undefined`; send `null` to clear stereo / ramp / query.
       const input: {
         bondId: string;
         order?: number;
-        stereo?: 'wedge' | 'dash' | 'wavy' | null;
+        stereo?: Bond['stereo'] | null;
         dative?: boolean;
+        dotted?: boolean;
+        aromatic?: boolean;
+        queryType?: Bond['queryType'] | null;
+        bold?: boolean;
         orderCycleRamp?: 'up' | 'down' | null;
       } = { bondId };
       if (patch.order !== undefined) input.order = patch.order;
       if ('stereo' in patch) input.stereo = patch.stereo ?? null;
       if ('orderCycleRamp' in patch) input.orderCycleRamp = patch.orderCycleRamp ?? null;
       if ('dative' in patch) input.dative = patch.dative;
+      if ('dotted' in patch) input.dotted = patch.dotted;
+      if ('aromatic' in patch) input.aromatic = patch.aromatic;
+      if ('queryType' in patch) input.queryType = patch.queryType ?? null;
+      if ('bold' in patch) input.bold = patch.bold;
       applyCommand(CMD.UpdateBond, input);
     },
     [applyCommand],

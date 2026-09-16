@@ -9,6 +9,7 @@ import {
 import { useI18n } from '../i18n';
 import { localizeTool } from '../i18n/localeTools';
 import {
+  BOND_MENU_SECTIONS,
   CHARGE_SYMBOL_TOOL_IDS,
   SRU_BRACKET_SUBSCRIPT_OPTIONS,
   TOOL_DEFS,
@@ -199,6 +200,25 @@ export function useToolbarI18n() {
         { value: 'wavy_bond', label: t('toolbar.menuWavy') },
         { value: 'dative_bond', label: t('toolbar.menuDative') },
       ],
+      bondMenuGroups: BOND_MENU_SECTIONS.map(section => ({
+        id: section.id,
+        label: t(
+          section.id === 'main'
+            ? 'toolbar.bondMenuMain'
+            : section.id === 'more'
+              ? 'toolbar.bondMenuMore'
+              : 'toolbar.bondMenuAdvanced',
+        ),
+        options: section.tools.map(id => {
+          const tool = TOOL_DEFS.find(x => x.id === id);
+          const lt = tool ? localizeTool(tool, t) : null;
+          return {
+            value: id,
+            label: lt?.label ?? id,
+            keywords: lt?.title,
+          };
+        }),
+      })),
     };
   }, [t]);
 }

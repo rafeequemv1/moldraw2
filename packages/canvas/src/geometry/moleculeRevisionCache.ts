@@ -36,8 +36,9 @@ export const getMoleculeRevisionCache = (mol: Molecule): MoleculeRevisionCache =
 
   const valencyMap = new Map<string, number>();
   for (const b of mol.bonds) {
-    valencyMap.set(b.fromAtomId, (valencyMap.get(b.fromAtomId) || 0) + b.order);
-    valencyMap.set(b.toAtomId, (valencyMap.get(b.toAtomId) || 0) + b.order);
+    if (b.dative || b.dotted || b.queryType) continue;
+    valencyMap.set(b.fromAtomId, (valencyMap.get(b.fromAtomId) || 0) + (b.aromatic ? 1 : b.order));
+    valencyMap.set(b.toAtomId, (valencyMap.get(b.toAtomId) || 0) + (b.aromatic ? 1 : b.order));
   }
 
   const ringCenterByBondId = new Map<string, Point>();

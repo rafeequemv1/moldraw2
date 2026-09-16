@@ -26,6 +26,14 @@ export const zhToolOverrides: Record<
     title: '点线键 — 氢键与弱相互作用（不占用价键）',
     shortLabel: '···',
   },
+  aromatic_bond: { label: '芳香键', title: '芳香键（环内实线圆）', shortLabel: '芳' },
+  either_bond: { label: '楔/虚楔', title: '楔/虚楔（未指定立体）', shortLabel: '上下' },
+  cis_trans_bond: { label: '顺/反', title: '顺反双键（E/Z 未指定）', shortLabel: 'E/Z' },
+  any_bond: { label: '任意', title: '任意键（查询）', shortLabel: '任意' },
+  single_double_bond: { label: '单/双', title: '单键或双键（查询）', shortLabel: '1/2' },
+  single_aromatic_bond: { label: '单/芳', title: '单键或芳香键（查询）', shortLabel: '1/芳' },
+  double_aromatic_bond: { label: '双/芳', title: '双键或芳香键（查询）', shortLabel: '2/芳' },
+  bold_bond: { label: '粗键', title: '粗前景键（仅显示）', shortLabel: '粗' },
   perspective: {
     label: '3D 视图',
     title: '结构透视：拖动以旋转画布上的 3D 整理构象',
@@ -134,8 +142,8 @@ export const zhToolOverrides: Record<
   },
   image: { label: '图片', title: '向画布添加 PNG/JPEG/WebP/GIF 图片标注' },
   template_library: {
-    label: '模板库',
-    title: '模板库 — 氨基酸、配体、3D 笼形分子（立方烷、C₆₀…）',
+    label: '资源库',
+    title: '资源库 — R 基、配体、结构、COF、反应…',
     shortLabel: '库',
   },
   functional_groups: {

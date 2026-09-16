@@ -2,6 +2,7 @@
  * @moldraw/domain — Atom/Bond/Molecule types and chemistry rules (no React).
  */
 export * from './types';
+export * from './bondTypes';
 export * from './glasswareLibrary';
 export * from './glasswarePorts';
 export * from './valency';

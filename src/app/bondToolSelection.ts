@@ -7,22 +7,18 @@
  */
 import type { Molecule } from '@moldraw/domain';
 import { connectedComponents } from '@moldraw/engine/graph';
+import {
+  BOND_TOOLS,
+  bondCommandPatchForStyleTool,
+  isCanvasBondTool,
+  type BondToolId,
+} from '@moldraw/canvas';
 
-export const BOND_STYLE_TOOL_IDS = [
-  'single_bond',
-  'double_bond',
-  'triple_bond',
-  'wedge_bond',
-  'dash_bond',
-  'wavy_bond',
-  'dative_bond',
-  'dotted_bond',
-] as const;
-
-export type BondStyleToolId = (typeof BOND_STYLE_TOOL_IDS)[number];
+export const BOND_STYLE_TOOL_IDS = BOND_TOOLS;
+export type BondStyleToolId = BondToolId;
 
 export function isBondStyleToolId(toolId: string): toolId is BondStyleToolId {
-  return (BOND_STYLE_TOOL_IDS as readonly string[]).includes(toolId);
+  return isCanvasBondTool(toolId);
 }
 
 const bondsFullyInAtoms = (mol: Molecule, atomIds: Iterable<string>): string[] => {
@@ -92,30 +88,7 @@ export function bondIdsTargetedBySelection(
   return [...selectedBondIds];
 }
 
-/** Patch sent to `molecule.updateBond` (`null` clears stereo / ramp). */
-export function bondPatchForStyleTool(toolId: BondStyleToolId): {
-  order?: 1 | 2 | 3;
-  stereo?: 'wedge' | 'dash' | 'wavy' | null;
-  dative?: boolean;
-  dotted?: boolean;
-  orderCycleRamp?: 'up' | 'down' | null;
-} {
-  switch (toolId) {
-    case 'single_bond':
-      return { order: 1, stereo: null, dative: false, dotted: false, orderCycleRamp: null };
-    case 'double_bond':
-      return { order: 2, stereo: null, dative: false, dotted: false, orderCycleRamp: 'up' };
-    case 'triple_bond':
-      return { order: 3, stereo: null, dative: false, dotted: false, orderCycleRamp: null };
-    case 'wedge_bond':
-      return { stereo: 'wedge', dative: false, dotted: false };
-    case 'dash_bond':
-      return { stereo: 'dash', dative: false, dotted: false };
-    case 'wavy_bond':
-      return { stereo: 'wavy', dative: false, dotted: false };
-    case 'dative_bond':
-      return { order: 1, stereo: null, dative: true, dotted: false, orderCycleRamp: null };
-    case 'dotted_bond':
-      return { order: 1, stereo: null, dative: false, dotted: true, orderCycleRamp: null };
-  }
+/** Patch sent to `molecule.updateBond` (`null` clears stereo / ramp / query). */
+export function bondPatchForStyleTool(toolId: BondStyleToolId) {
+  return bondCommandPatchForStyleTool(toolId);
 }

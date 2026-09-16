@@ -27,7 +27,7 @@ import {
   ORBITAL_TOOL_IDS,
   MOBILE_CATEGORY_TOOL_IDS,
   MOBILE_TOOL_CATEGORIES,
-  STEREO_BOND_TOOL_IDS,
+  BOND_MENU_TOOL_IDS,
   TOOL_DEFS,
   TOOL_GROUPS_LEFT_STRUCTURE,
   TOOL_IDS_BOTTOM_RINGS,
@@ -35,7 +35,6 @@ import {
   TOOL_IDS_LEFT_ANNOTATE,
   TOOL_IDS_LEFT_MARKS,
   TOOL_IDS_LEFT_SELECT,
-  TOOL_IDS_LEFT_TEMPLATES,
   TOOL_IDS_TOP_BAR,
   type MobileToolCategory,
   type ShapeMenuValue,
@@ -47,8 +46,6 @@ import { tooltipShortcutSuffix } from '../keyboard/shortcutCatalog';
 import { usePluginHostOptional } from '../plugins';
 import { renderToolIcon } from '../toolIcons';
 import { ToolbarSplitTool } from './ToolbarSplitTool';
-import { ToolbarFunctionalGroupsTool } from './ToolbarFunctionalGroupsTool';
-import { ToolbarLigandsTool } from './ToolbarLigandsTool';
 import { ArrowKindPreview, ShapeKindPreview } from './toolOptionPreviews';
 import { GlasswareLibraryModal } from './GlasswareLibraryModal';
 import { useToolbarI18n, type ToolbarI18n } from './toolbarI18n';
@@ -76,17 +73,8 @@ export interface ToolbarRailProps {
   onShapeMenuValueChange?: (value: ShapeMenuValue) => void;
   sruBracketSubscript?: string;
   onSruBracketSubscriptChange?: (value: string) => void;
-  onBeginFunctionalGroupPlacement?: (
-    smiles: string,
-    label: string,
-    molblock?: string | null,
-  ) => void;
-  onBeginLigandPlacement?: (id: string, molblock?: string | null) => void;
-  requestFunctionalGroupMolblock?: (smiles: string) => Promise<string | null>;
   /** App settings — pinned to the bottom-left of the left rail. */
   onOpenSettings?: () => void;
-  /** Compact FG / ligands open as bottom sheets. */
-  preferSheetMenus?: boolean;
   /** Objects list panel open (mobile dock highlight). */
   showObjectsPanel?: boolean;
   onToggleObjectsPanel?: () => void;
@@ -102,7 +90,7 @@ const categoryForTool = (toolId: string): MobileToolCategory | null => {
   if ((CHARGE_MENU_TOOL_IDS as readonly string[]).includes(toolId)) return 'draw';
   if ((LONE_PAIR_TOOL_IDS as readonly string[]).includes(toolId)) return 'draw';
   if (toolId === 'erase') return 'draw';
-  if ((STEREO_BOND_TOOL_IDS as readonly string[]).includes(toolId)) return 'draw';
+  if ((BOND_MENU_TOOL_IDS as readonly string[]).includes(toolId)) return 'draw';
   if ((C6_RING_TOOL_IDS as readonly string[]).includes(toolId)) return 'rings';
   if ((ORBITAL_TOOL_IDS as readonly string[]).includes(toolId)) return 'annotate';
   return null;
@@ -167,35 +155,9 @@ const renderToolOrArrowRow = (
     | 'onShapeMenuValueChange'
     | 'sruBracketSubscript'
     | 'onSruBracketSubscriptChange'
-    | 'onBeginFunctionalGroupPlacement'
-    | 'onBeginLigandPlacement'
-    | 'requestFunctionalGroupMolblock'
-    | 'preferSheetMenus'
   > & { onOpenGlasswareLibrary?: () => void; flattenShapes?: boolean; i18n: ToolbarI18n },
 ) => {
   tool = props.i18n.localizeTool(tool);
-  if (tool.id === 'functional_groups') {
-    if (!props.onBeginFunctionalGroupPlacement || !props.requestFunctionalGroupMolblock) return null;
-    return (
-      <ToolbarFunctionalGroupsTool
-        key={tool.id}
-        onBeginPlacement={props.onBeginFunctionalGroupPlacement}
-        requestSmilesMolblock={props.requestFunctionalGroupMolblock}
-        preferSheet={props.preferSheetMenus}
-      />
-    );
-  }
-  if (tool.id === 'ligands') {
-    if (!props.onBeginLigandPlacement || !props.requestFunctionalGroupMolblock) return null;
-    return (
-      <ToolbarLigandsTool
-        key={tool.id}
-        onBeginPlacement={props.onBeginLigandPlacement}
-        requestSmilesMolblock={props.requestFunctionalGroupMolblock}
-        preferSheet={props.preferSheetMenus}
-      />
-    );
-  }
   if ((CHARGE_MENU_TOOL_IDS as readonly string[]).includes(tool.id)) {
     if (tool.id !== 'charge_plus') return null;
     const chargeActive = (CHARGE_MENU_TOOL_IDS as readonly string[]).includes(props.activeTool);
@@ -285,29 +247,24 @@ const renderToolOrArrowRow = (
       />
     );
   }
-  if (
-    tool.id === 'wedge_bond' ||
-    tool.id === 'dash_bond' ||
-    tool.id === 'wavy_bond' ||
-    tool.id === 'dative_bond'
-  ) {
-    // One dropdown: wedge / dash / wavy / dative (siblings hidden).
-    if (tool.id !== 'wedge_bond') return null;
-    const stereoActive = (STEREO_BOND_TOOL_IDS as readonly string[]).includes(props.activeTool);
-    const stereoToolId = stereoActive ? props.activeTool : 'wedge_bond';
-    const stereoTool = props.i18n.localizeTool(TOOL_DEFS.find(t => t.id === stereoToolId) ?? tool);
+  if ((BOND_MENU_TOOL_IDS as readonly string[]).includes(tool.id)) {
+    if (tool.id !== 'single_bond') return null;
+    const bondActive = (BOND_MENU_TOOL_IDS as readonly string[]).includes(props.activeTool);
+    const bondToolId = bondActive ? props.activeTool : 'single_bond';
+    const bondTool = props.i18n.localizeTool(TOOL_DEFS.find(t => t.id === bondToolId) ?? tool);
     return (
       <ToolbarSplitTool
-        key="stereo-bond"
-        toolId={stereoToolId}
-        toolLabel={stereoTool.label}
-        toolTitle={`${stereoTool.title}${tooltipShortcutSuffix(stereoToolId)}`}
-        isActive={stereoActive}
-        value={stereoToolId}
-        options={props.i18n.stereoBondOptions}
-        onSelectTool={() => props.onSelect(stereoToolId)}
+        key="bond-types"
+        toolId={bondToolId}
+        toolLabel={bondTool.shortLabel ?? bondTool.label}
+        toolTitle={`${bondTool.title}${tooltipShortcutSuffix(bondToolId)}`}
+        isActive={bondActive}
+        value={bondToolId}
+        groups={props.i18n.bondMenuGroups}
+        onSelectTool={() => props.onSelect(bondToolId)}
         onChangeValue={v => props.onSelect(v)}
-        menuAriaLabel={props.i18n.t('toolbar.menuStereoBond')}
+        menuAriaLabel={props.i18n.t('toolbar.menuBondTypes')}
+        menuSize="wide"
         renderPreview={id => renderToolIcon(id)}
       />
     );
@@ -488,11 +445,7 @@ export function ToolbarRail({
   onShapeMenuValueChange,
   sruBracketSubscript = 'n',
   onSruBracketSubscriptChange,
-  onBeginFunctionalGroupPlacement,
-  onBeginLigandPlacement,
-  requestFunctionalGroupMolblock,
   onOpenSettings,
-  preferSheetMenus = false,
   showObjectsPanel = false,
   onToggleObjectsPanel,
   showDrawTools = false,
@@ -575,10 +528,6 @@ export function ToolbarRail({
     onShapeMenuValueChange,
     sruBracketSubscript,
     onSruBracketSubscriptChange,
-    onBeginFunctionalGroupPlacement,
-    onBeginLigandPlacement,
-    requestFunctionalGroupMolblock,
-    preferSheetMenus: false,
     onOpenGlasswareLibrary: () => setGlasswareLibraryOpen(true),
     i18n,
   };
@@ -652,7 +601,16 @@ export function ToolbarRail({
             role="toolbar"
             aria-label={i18n.mobileCategoryLabel(mobileCategory)}
           >
-            {stripTools.map(tool => renderToolOrArrowRow(tool, rowProps))}
+            {stripTools.map(tool => {
+              const node = renderToolOrArrowRow(tool, rowProps);
+              if (tool.id !== 'template_library') return node;
+              return (
+                <span key="library" className="toolbar-bottom__library">
+                  <span className="toolbar-bottom__sep" aria-hidden />
+                  {node}
+                </span>
+              );
+            })}
             {mobileCategory === 'more' ? settingsControl : null}
             <button
               type="button"
@@ -721,7 +679,16 @@ export function ToolbarRail({
 
   const ringsBar = (
     <div className="toolbar-bottom toolbar-bottom--rings" role="toolbar" aria-label={i18n.t('toolbar.ringTools')}>
-      {ringTools.map(tool => renderToolOrArrowRow(tool, rowProps))}
+      {ringTools.map(tool => {
+        const node = renderToolOrArrowRow(tool, rowProps);
+        if (tool.id !== 'template_library') return node;
+        return (
+          <span key="library" className="toolbar-bottom__library">
+            <span className="toolbar-bottom__sep" aria-hidden />
+            {node}
+          </span>
+        );
+      })}
     </div>
   );
 
@@ -741,12 +708,6 @@ export function ToolbarRail({
         {TOOL_GROUPS_LEFT_STRUCTURE.map(renderGroup)}
         <div className="toolbar-group">
           {annotateToolIds.map(id => {
-            const tool = TOOL_DEFS.find(t => t.id === id);
-            return tool ? renderToolOrArrowRow(tool, rowProps) : null;
-          })}
-        </div>
-        <div className="toolbar-group">
-          {TOOL_IDS_LEFT_TEMPLATES.map(id => {
             const tool = TOOL_DEFS.find(t => t.id === id);
             return tool ? renderToolOrArrowRow(tool, rowProps) : null;
           })}
@@ -785,9 +746,6 @@ type TopStripProps = Pick<
   | 'onShapeMenuValueChange'
   | 'sruBracketSubscript'
   | 'onSruBracketSubscriptChange'
-  | 'onBeginFunctionalGroupPlacement'
-  | 'onBeginLigandPlacement'
-  | 'requestFunctionalGroupMolblock'
 >;
 
 function ToolbarIdStrip({

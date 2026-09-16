@@ -10,6 +10,12 @@
  * `M CHG` and `M ISO` property blocks.
  */
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
+import {
+  molfileBondOrder,
+  molfileBondStereoCode,
+  parseMolfileBondStereo,
+  parseMolfileBondType,
+} from '@moldraw/domain';
 import { findMolfileCountsLineIndex } from '@moldraw/core';
 import { makeIdFactory } from '../ids';
 import { MOLBLOCK_SCALE } from '../types';
@@ -50,14 +56,8 @@ export const moleculeToMolblockV2000 = (mol: Molecule, opts: ToMolblockOpts = {}
   mol.bonds.forEach(b => {
     const from = pad(idToIndex.get(b.fromAtomId) ?? 0, 3);
     const to = pad(idToIndex.get(b.toAtomId) ?? 0, 3);
-    const molOrder = b.aromatic
-      ? 4
-      : b.dative && opts.dativeAsType9
-        ? MOLFILE_BOND_TYPE_DATIVE
-        : b.order;
-    const order = pad(molOrder, 3);
-    const stereo =
-      b.stereo === 'wedge' ? '  1' : b.stereo === 'dash' ? '  6' : b.stereo === 'wavy' ? '  4' : '  0';
+    const order = pad(molfileBondOrder(b, opts.dativeAsType9), 3);
+    const stereo = pad(molfileBondStereoCode(b), 3);
     out += `${from}${to}${order}${stereo}  0  0  0\n`;
   });
 
@@ -134,34 +134,21 @@ export const parseMolblockV2000 = (molblock: string): Molecule => {
     if (!line) continue;
     const fromIdx = parseInt(line.substring(0, 3).trim(), 10) - 1;
     const toIdx = parseInt(line.substring(3, 6).trim(), 10) - 1;
-    let order = parseInt(line.substring(6, 9).trim() || '1', 10);
+    const rawOrder = parseInt(line.substring(6, 9).trim() || '1', 10);
     const stereoCode = parseInt(line.substring(9, 12).trim() || '0', 10);
     if (!atomIds[fromIdx] || !atomIds[toIdx]) continue;
 
-    let aromatic = false;
-    let dative = false;
-    if (order === 4) {
-      aromatic = true;
-      order = 1;
-    } else if (order === MOLFILE_BOND_TYPE_DATIVE) {
-      // Coordination / dative bond (ChemAxon / RDKit / Indigo extension).
-      dative = true;
-      order = 1;
-    }
-    let stereo: 'wedge' | 'dash' | 'wavy' | undefined;
-    if (!aromatic) {
-      if (stereoCode === 1) stereo = 'wedge';
-      else if (stereoCode === 6) stereo = 'dash';
-      else if (stereoCode === 4 || stereoCode === 9) stereo = 'wavy';
-    }
+    const parsedType = parseMolfileBondType(rawOrder);
+    const stereo = parseMolfileBondStereo(stereoCode, parsedType.order, parsedType.aromatic);
 
     bonds.push({
       id: ids.bond(i + 1),
       fromAtomId: atomIds[fromIdx],
       toAtomId: atomIds[toIdx],
-      order: Number.isFinite(order) && order > 0 && order <= 3 ? order : 1,
-      ...(aromatic ? { aromatic: true } : {}),
-      ...(dative ? { dative: true } : {}),
+      order: parsedType.order,
+      ...(parsedType.aromatic ? { aromatic: true } : {}),
+      ...(parsedType.dative ? { dative: true } : {}),
+      ...(parsedType.queryType ? { queryType: parsedType.queryType } : {}),
       stereo,
     });
   }

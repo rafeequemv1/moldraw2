@@ -1,14 +1,17 @@
 /**
  * Build a minimal MDL V2000 molblock from atom/bond tables (Å coordinates, y up).
  */
+import { molfileBondOrder, molfileBondStereoCode } from '@moldraw/domain';
+
 export type MolblockAtomRow = { element: string; x: number; y: number; z?: number };
 export type MolblockBondRow = {
   from: number;
   to: number;
   order: number;
-  stereo?: 'wedge' | 'dash' | 'wavy';
+  stereo?: 'wedge' | 'dash' | 'wavy' | 'either' | 'cis_trans';
   /** When true, written as molfile bond type 4 (aromatic). */
   aromatic?: boolean;
+  queryType?: 'any' | 'single_double' | 'single_aromatic' | 'double_aromatic';
 };
 
 export function buildV2000Molblock(atoms: MolblockAtomRow[], bonds: MolblockBondRow[]): string {
@@ -26,10 +29,8 @@ export function buildV2000Molblock(atoms: MolblockAtomRow[], bonds: MolblockBond
   for (const b of bonds) {
     const from = String(b.from + 1).padStart(3, ' ');
     const to = String(b.to + 1).padStart(3, ' ');
-    const orderNum = b.aromatic ? 4 : b.order;
-    const order = String(orderNum).padStart(3, ' ');
-    const stereo =
-      b.stereo === 'wedge' ? '  1' : b.stereo === 'dash' ? '  6' : b.stereo === 'wavy' ? '  4' : '  0';
+    const order = String(molfileBondOrder(b)).padStart(3, ' ');
+    const stereo = String(molfileBondStereoCode(b)).padStart(3, ' ');
     out += `${from}${to}${order}${stereo}  0  0  0\n`;
   }
   out += 'M  END\n';

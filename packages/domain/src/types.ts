@@ -90,13 +90,21 @@ export interface Bond {
   fromAtomId: string;
   toAtomId: string;
   order: number; // 1 (single), 2 (double), 3 (triple)
-  /** From molfile bond type 4; exported back as aromatic. Not used for user-drawn kekulé rings. */
+  /**
+   * From molfile bond type 4; exported back as aromatic. Complete aromatic rings
+   * draw a solid inner circle; isolated aromatic bonds draw solid + dashed inner.
+   */
   aromatic?: boolean;
-  stereo?: 'wedge' | 'dash' | 'wavy';
+  /**
+   * Stereo depiction from fromAtomId toward toAtomId:
+   * wedge (up), dash (down), wavy (unknown), either (wedge/hash unknown),
+   * cis_trans (unspecified E/Z on a double).
+   */
+  stereo?: 'wedge' | 'dash' | 'wavy' | 'either' | 'cis_trans';
   /**
    * Coordination / dative bond (ChemDraw-style). Drawn as a dashed or arrow bond;
    * does not consume full covalent valency on the acceptor (typically a metal).
-   * Order is usually 1. Not written to classic V2000 molfiles.
+   * Order is usually 1. Not written to classic V2000 molfiles (type 9 optional).
    */
   dative?: boolean;
   /**
@@ -104,6 +112,16 @@ export interface Bond {
    * Does not consume covalent valency. Not written to classic V2000 molfiles.
    */
   dotted?: boolean;
+  /**
+   * Query-only bond type (molfile 5–8). Does not consume covalent valency.
+   * `any` = type 8, `single_double` = 5, `single_aromatic` = 6, `double_aromatic` = 7.
+   */
+  queryType?: 'any' | 'single_double' | 'single_aromatic' | 'double_aromatic';
+  /**
+   * Chair / perspective foreground: extra-thick single bond. Display-only;
+   * not written to molfile (use Settings / per-bond thickness for export-less look).
+   */
+  bold?: boolean;
   /**
    * UI-only: when cycling bond order by clicking (1↔2↔3), remembers whether the
    * bond reached double from below (`up`) or from triple (`down`) so the next

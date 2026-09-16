@@ -62,7 +62,7 @@ export const explicitBondOrderSum = (g: MoleculeGraph, atomId: string): number =
     if (!b) continue;
     // Dative / dotted (H-bond) bonds do not consume covalent valence on either
     // end — NH₃→M keeps three hydrogens (matches core mutations).
-    if (b.dative || b.dotted) continue;
+    if (b.dative || b.dotted || b.queryType) continue;
     sum += b.aromatic ? 1 : b.order;
   }
   return sum;

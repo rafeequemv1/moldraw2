@@ -176,7 +176,7 @@ export function MoleculeInfoPanel({
 
         <ValueRow label="Formula" display={formula} copyText={formulaText} onCopy={onCopyText} />
         <ValueRow
-          label="Mass"
+          label="MW"
           display={massText || '—'}
           copyText={massText}
           onCopy={onCopyText}

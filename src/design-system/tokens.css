@@ -57,7 +57,7 @@
   --app-top-bar-height: calc(
     var(--app-top-bar-site-row) + var(--app-top-bar-main-height) + var(--app-top-bar-tools-row)
   );
-  --app-status-bar-height: 28px;
+  --app-status-bar-height: 0px;
   --app-site-footer-height: 28px;
   --app-page-footer-stack: calc(
     var(--app-status-bar-height) + var(--app-site-footer-height)

@@ -1,7 +1,9 @@
 /**
  * One toolbar cell (26×26): tool icon like peers + tiny in-corner chevron menu.
  * Menus portal to document.body (fixed) so top-bar overflow cannot clip them.
- * A single click on the icon (or caret) selects the tool and toggles the menu.
+ *
+ * Ketcher two-click: first click (tool not active) activates the last-used type
+ * and does not open the flyout; a second click while already active toggles it.
  */
 import {
   useEffect,
@@ -90,7 +92,7 @@ function menuFixedStyle(
   trigger?: HTMLElement | null,
 ): CSSProperties {
   const compact = document.documentElement.classList.contains('app-mobile-compact');
-  const tall = compact ? Math.max(280, window.innerHeight * 0.55) : 280;
+  const tall = compact ? Math.max(280, window.innerHeight * 0.55) : 400;
   if (placement === 'above' || placement === 'slider') {
     return dropUpMenuStyle(anchor, menuWidth);
   }
@@ -111,7 +113,7 @@ function menuFixedStyle(
     };
   }
   const col = trigger ? leftRailColumnRect(trigger) : null;
-  const pos = placeLeftRailFlyout(anchor, { menuWidth, menuHeight: 280 }, col);
+  const pos = placeLeftRailFlyout(anchor, { menuWidth, menuHeight: tall }, col);
   return {
     position: 'fixed',
     top: pos.top,
@@ -163,9 +165,21 @@ export function ToolbarSplitTool<T extends string>({
   };
   useChromeOverlay(open, closeMenu);
 
-  const toggleMenu = () => {
+  useEffect(() => {
+    if (!isActive) {
+      setOpen(false);
+      setQuery('');
+    }
+  }, [isActive]);
+
+  /** First click activates; second click (already the active tool) toggles the flyout. */
+  const onControlClick = () => {
+    if (isActive) {
+      setOpen(v => !v);
+      return;
+    }
     onSelectTool();
-    setOpen(v => !v);
+    setOpen(false);
   };
 
   useLayoutEffect(() => {
@@ -378,8 +392,8 @@ export function ToolbarSplitTool<T extends string>({
       <button
         type="button"
         className="toolbar-split-tool__icon"
-        onClick={toggleMenu}
-        title={`${toolTitle} — click to open options (${currentLabel})`}
+        onClick={onControlClick}
+        title={`${toolTitle} (${currentLabel}). Click to use; click again for options.`}
         aria-label={toolLabel}
         aria-pressed={isActive}
         aria-expanded={open}
@@ -394,7 +408,7 @@ export function ToolbarSplitTool<T extends string>({
         onPointerDown={e => e.stopPropagation()}
         onClick={e => {
           e.stopPropagation();
-          toggleMenu();
+          onControlClick();
         }}
         title={`${toolLabel}: ${currentLabel}`}
         aria-label={menuAriaLabel}

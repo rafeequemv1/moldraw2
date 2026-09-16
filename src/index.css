@@ -36,8 +36,8 @@
 @import './styles/spectroscopy-modal.css';
 @import '../plugins/proteins/src/proteins.css';
 
-/* SPA host fills the viewport. The site footer is moved under the formula
-   row (SiteFooterHost) so it stays visible without covering the canvas. */
+/* SPA host fills the viewport. The site footer is moved under the editor
+   (SiteFooterHost) so it stays visible without covering the canvas. */
 html,
 body {
   margin: 0;

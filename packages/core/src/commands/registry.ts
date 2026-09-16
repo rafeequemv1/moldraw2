@@ -98,7 +98,6 @@ import {
   applyModelStereoToDepiction,
   cleanupMolecule,
   engine,
-  kekulize,
   parseSmilesToMolecule,
 } from '@moldraw/engine';
 import { schemas } from './schemas';
@@ -792,16 +791,21 @@ const addBondCmd: MoleculeCommand<z.infer<typeof schemas.addBond>, NewIdsExtra> 
 const updateBondCmd: MoleculeCommand<z.infer<typeof schemas.updateBond>> = {
   id: CMD.UpdateBond,
   description:
-    'Update bond order, stereo, dative, and/or dotted (H-bond) flag. Valency-checked (except dative/dotted).',
+    'Update bond order, stereo, aromatic, query type, dative, dotted (H-bond), and/or bold. Valency-checked (except dative/dotted/query).',
   inputSchema: schemas.updateBond,
   apply: (prev, input) => {
-    const patch: Partial<Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted'>> = {};
+    const patch: Partial<
+      Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted' | 'aromatic' | 'queryType' | 'bold'>
+    > = {};
     if (input.order !== undefined) patch.order = input.order;
     // `null` → clear (Zod omits bare `undefined`, so clients must send null).
     if ('stereo' in input) patch.stereo = input.stereo ?? undefined;
     if ('orderCycleRamp' in input) patch.orderCycleRamp = input.orderCycleRamp ?? undefined;
     if ('dative' in input) patch.dative = input.dative;
     if ('dotted' in input) patch.dotted = input.dotted;
+    if ('aromatic' in input) patch.aromatic = input.aromatic;
+    if ('queryType' in input) patch.queryType = input.queryType ?? undefined;
+    if ('bold' in input) patch.bold = input.bold;
     return { next: Mut.updateBondSafe(prev, input.bondId, patch) };
   },
 };
@@ -1296,9 +1300,9 @@ const aromatizeCmd: MoleculeCommand<z.infer<typeof schemas.aromatize>> = {
   id: CMD.Aromatize,
   description: 'Aromatize or dearomatize bonds (native perceiveAromaticity / kekulize).',
   inputSchema: schemas.aromatize,
-  apply: (prev, { molBlock }) => {
+  apply: (prev, { molBlock, atomIds }) => {
     if (prev.atoms.length === 0) return { next: prev };
-    const next = Mut.mergeBondOrdersFromMolblock(prev, molBlock);
+    const next = Mut.mergeBondOrdersFromMolblock(prev, molBlock, atomIds);
     if (next === prev) {
       throw new Error('Aromatize/dearomatize could not merge bond orders (topology mismatch).');
     }
@@ -1373,10 +1377,9 @@ const importSmilesCmd: MoleculeCommand<
   tags: ['import'],
   apply: (prev, { smiles, mode }) => {
     // Strict parse: throws `SmilesSyntaxError` with character positions.
-    // Kekulize so aromatic (lowercase) SMILES land on the canvas as explicit
-    // alternating double bonds — the same form ChemDraw / Indigo import produce
-    // and what formula / valency / implicit-H maths expect.
-    const parsed = kekulize(parseSmilesToMolecule(smiles, { strict: true }));
+    // Do not kekulize — aromatic SMILES stay aromatic on the canvas; Kekulé
+    // SMILES stay explicit doubles. Toolbar Aromatize / Dearomatize convert later.
+    const parsed = parseSmilesToMolecule(smiles, { strict: true });
     if (parsed.atoms.length === 0) {
       throw new Error(`Could not parse SMILES: ${smiles}`);
     }

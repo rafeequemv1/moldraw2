@@ -23,7 +23,6 @@ export { InlineTextEditor } from './InlineTextEditor';
 export { StereochemistryDialogs } from './StereochemistryDialogs';
 export { MoleculeInfoPanel } from './MoleculeInfoPanel';
 export type { InfoPanelData, PubChemImportContext } from './MoleculeInfoPanel';
-export { MoleculeStatusBar } from './MoleculeStatusBar';
 export { SiteFooterHost } from './SiteFooterHost';
 export { CanvasContextMenu } from './CanvasContextMenu';
 export type { CanvasContextMenuState } from './CanvasContextMenu';

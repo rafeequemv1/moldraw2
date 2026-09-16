@@ -36,8 +36,8 @@ export interface AsyncMolblockResolver {
    */
   chemDrawToMolblock?: (data: string, format: 'cdxml' | 'cdx') => Promise<string>;
   /**
-   * Prefer PubChem precomputed 2D SDF (same depiction as PubChem import).
-   * Default true when online; set false for offline-only.
+   * Unused for SMILES (local parse preserves aromatic vs Kekulé). Kept so
+   * callers that used to prefer PubChem 2D SDF keep compiling.
    */
   preferPubChem2D?: boolean;
 }

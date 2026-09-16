@@ -23,7 +23,9 @@ import type {
   Stroke,
 } from '@moldraw/domain';
 import {
+  bondSkipsCovalentValence,
   canApplyFormalChargeDelta,
+  covalentBondOrderContribution,
   getMaxValencyForElement,
   getMaxLonePairsForAtom,
 } from '@moldraw/domain';
@@ -101,8 +103,7 @@ export const syncSruBracketsToAtoms = (
 const bondOrderSumOf = (mol: Molecule, atomId: string): number =>
   mol.bonds
     .filter(b => b.fromAtomId === atomId || b.toAtomId === atomId)
-    // Dative / coordination bonds do not consume covalent valency.
-    .reduce((s, b) => s + (b.dative || b.dotted ? 0 : b.order), 0);
+    .reduce((s, b) => s + covalentBondOrderContribution(b), 0);
 
 const isBondInRing = (mol: Molecule, bond: Pick<Bond, 'id' | 'fromAtomId' | 'toAtomId'>): boolean => {
   const queue: string[] = [bond.fromAtomId];
@@ -644,7 +645,11 @@ export const reflectAtoms = (
 /** Whether `bond` may be added to `prev` (valency, duplicates, ring rules). */
 export const canAddBond = (
   prev: Molecule,
-  bond: Pick<Bond, 'fromAtomId' | 'toAtomId' | 'order'> & { dative?: boolean; dotted?: boolean },
+  bond: Pick<Bond, 'fromAtomId' | 'toAtomId' | 'order'> & {
+    dative?: boolean;
+    dotted?: boolean;
+    queryType?: Bond['queryType'];
+  },
 ): boolean => {
   const duplicate = prev.bonds.some(
     b =>
@@ -658,8 +663,8 @@ export const canAddBond = (
   if (!fromAtom || !toAtom) return false;
   if (bond.order === 3 && wouldCloseRing(prev, bond.fromAtomId, bond.toAtomId)) return false;
 
-  // Dative / dotted (H-bond): allow without covalent valency checks.
-  if (bond.dative || bond.dotted) return true;
+  // Dative / dotted (H-bond) / query: allow without covalent valency checks.
+  if (bondSkipsCovalentValence(bond)) return true;
 
   const ringAtomIds = new Set(uniqueRingPaths(prev).flat());
   const nextFromDoubleCount =
@@ -693,7 +698,11 @@ export const canAddBond = (
  */
 export const explainBondRejection = (
   prev: Molecule,
-  bond: Pick<Bond, 'fromAtomId' | 'toAtomId' | 'order'> & { dative?: boolean; dotted?: boolean },
+  bond: Pick<Bond, 'fromAtomId' | 'toAtomId' | 'order'> & {
+    dative?: boolean;
+    dotted?: boolean;
+    queryType?: Bond['queryType'];
+  },
 ): string | null => {
   if (bond.fromAtomId === bond.toAtomId) return 'a bond cannot connect an atom to itself';
   const duplicate = prev.bonds.find(
@@ -711,7 +720,7 @@ export const explainBondRejection = (
   if (bond.order === 3 && wouldCloseRing(prev, bond.fromAtomId, bond.toAtomId)) {
     return 'a triple bond cannot close a ring';
   }
-  if (bond.dative || bond.dotted) return null;
+  if (bondSkipsCovalentValence(bond)) return null;
   const ringAtomIds = new Set(uniqueRingPaths(prev).flat());
   const doubleCount = (id: string) =>
     prev.bonds.filter(b => (b.fromAtomId === id || b.toAtomId === id) && b.order === 2).length;
@@ -793,18 +802,23 @@ export const swapAtomPositions = (prev: Molecule, atomIdA: string, atomIdB: stri
 };
 
 /**
- * Replace bond aromatic flags / Kekulé orders from an Indigo aromatize/dearomatize
+ * Replace bond aromatic flags / Kekulé orders from an aromatize/dearomatize
  * molblock while preserving atom ids, coords, aliases, and bond ids.
+ * When `atomIds` is set, only bonds whose both endpoints are in that set change.
  */
 export const mergeBondOrdersFromMolblock = (
   prev: Molecule,
   molblock: string,
+  atomIds?: readonly string[],
 ): Molecule => {
   const parsed = parseMolblock(molblock);
   if (parsed.bonds.length !== prev.bonds.length) return prev;
+  const limit =
+    atomIds && atomIds.length > 0 ? new Set(atomIds) : null;
   return {
     ...prev,
     bonds: prev.bonds.map((b, i) => {
+      if (limit && (!limit.has(b.fromAtomId) || !limit.has(b.toAtomId))) return b;
       const src = parsed.bonds[i]!;
       if (src.aromatic) {
         return { ...b, order: 1, aromatic: true };
@@ -854,11 +868,13 @@ export const clearAtomMaps = (prev: Molecule): Molecule => {
   return changed ? { ...prev, atoms } : prev;
 };
 
-/** Update bond order/stereo, dropping the edit if it would violate valency. */
+/** Update bond order/stereo/query flags, dropping the edit if it would violate valency. */
 export const updateBondSafe = (
   prev: Molecule,
   bondId: string,
-  patch: Partial<Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted'>>,
+  patch: Partial<
+    Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted' | 'aromatic' | 'queryType' | 'bold'>
+  >,
 ): Molecule => {
   const existing = prev.bonds.find(b => b.id === bondId);
   if (!existing) return prev;
@@ -867,26 +883,38 @@ export const updateBondSafe = (
   const nextRamp = 'orderCycleRamp' in patch ? patch.orderCycleRamp : existing.orderCycleRamp;
   const nextDative = 'dative' in patch ? patch.dative : existing.dative;
   const nextDotted = 'dotted' in patch ? patch.dotted : existing.dotted;
+  const nextAromatic = 'aromatic' in patch ? patch.aromatic : existing.aromatic;
+  const nextQuery = 'queryType' in patch ? patch.queryType : existing.queryType;
+  const nextBold = 'bold' in patch ? patch.bold : existing.bold;
 
   const fromAtom = prev.atoms.find(a => a.id === existing.fromAtomId);
   const toAtom = prev.atoms.find(a => a.id === existing.toAtomId);
   if (!fromAtom || !toAtom) return prev;
 
-  // Dative / dotted (H-bond): skip covalent valency / ring double rules.
-  if (nextDative || nextDotted) {
+  const applyFlags = (b: Bond): Bond => ({
+    ...b,
+    order: nextOrder,
+    stereo: nextStereo || undefined,
+    orderCycleRamp: nextRamp || undefined,
+    dative: nextDative ? true : undefined,
+    dotted: nextDotted && !nextDative ? true : undefined,
+    aromatic: nextAromatic && !nextDative && !nextDotted && !nextQuery ? true : undefined,
+    queryType: nextQuery && !nextDative && !nextDotted ? nextQuery : undefined,
+    bold: nextBold && !nextDative && !nextDotted && !nextQuery ? true : undefined,
+  });
+
+  // Dative / dotted (H-bond) / query: skip covalent valency / ring double rules.
+  if (bondSkipsCovalentValence({ dative: nextDative, dotted: nextDotted, queryType: nextQuery })) {
     return {
       ...prev,
       bonds: prev.bonds.map(b =>
         b.id === bondId
-          ? {
+          ? applyFlags({
               ...b,
               order: 1,
               stereo: undefined,
-              dative: nextDative ? true : undefined,
-              dotted: nextDotted && !nextDative ? true : undefined,
               orderCycleRamp: undefined,
-              aromatic: undefined,
-            }
+            })
           : b,
       ),
     };
@@ -908,10 +936,10 @@ export const updateBondSafe = (
 
   const currentFromExcl = prev.bonds
     .filter(b => b.id !== existing.id && (b.fromAtomId === fromAtom.id || b.toAtomId === fromAtom.id))
-    .reduce((sum, b) => sum + (b.dative || b.dotted ? 0 : b.order), 0);
+    .reduce((sum, b) => sum + covalentBondOrderContribution(b), 0);
   const currentToExcl = prev.bonds
     .filter(b => b.id !== existing.id && (b.fromAtomId === toAtom.id || b.toAtomId === toAtom.id))
-    .reduce((sum, b) => sum + (b.dative || b.dotted ? 0 : b.order), 0);
+    .reduce((sum, b) => sum + covalentBondOrderContribution(b), 0);
   const maxFromValency = getMaxValencyForElement(fromAtom.element, fromAtom.charge);
   const maxToValency = getMaxValencyForElement(toAtom.element, toAtom.charge);
   if (currentFromExcl + nextOrder > maxFromValency) return prev;
@@ -924,19 +952,7 @@ export const updateBondSafe = (
   return {
     ...prev,
     atoms: nextOrder === 3 ? linearlyAdjustedTripleBondAtoms(prev, existing) : prev.atoms,
-    bonds: prev.bonds.map(b =>
-      b.id === bondId
-        ? {
-            ...b,
-            order: nextOrder,
-            stereo: nextStereo,
-            orderCycleRamp: nextRamp,
-            dative: nextDative ? true : undefined,
-            dotted: nextDotted ? true : undefined,
-            ...(patch.order !== undefined ? { aromatic: undefined } : {}),
-          }
-        : b,
-    ),
+    bonds: prev.bonds.map(b => (b.id === bondId ? applyFlags(b) : b)),
   };
 };
 

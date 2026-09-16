@@ -7,6 +7,8 @@ import type { Molecule } from '@moldraw/domain';
 import { ringConformationsInAtomSet } from '@moldraw/domain';
 import { moleculeToMolblock } from '@moldraw/core/io/molblock';
 import { structureKeyFor3D } from '@moldraw/engine-3d';
+import { aromatizeMolecule } from '@moldraw/engine';
+import { expandAtomIdsToConnectedFragments } from '@moldraw/canvas/geometry';
 import {
   buildCleanupWorkerPayload,
   collectConnectedComponent,
@@ -25,11 +27,12 @@ export interface UseIndigoEngineActionsOptions {
   bondLengthPxRef: React.MutableRefObject<number>;
   bondLengthPx: number; // resolvedCanvasPreferences.bondLengthPx
   selectedAtomIds: string[];
+  selectedBondIds?: string[];
   resetAutoCleanup: () => void;
   setShowInfoPanel: React.Dispatch<React.SetStateAction<boolean>>;
   /**
    * When false, Cleanup / local cleanup force native 2D layout (skip Indigo).
-   * Default true. CIP / aromatize remain Indigo-only.
+   * Default true. Aromatize/dearomatize run natively; CIP still uses the worker.
    */
   preferIndigo2d?: boolean;
   /** When true, fetch and expose CIP tags for canvas labels. Default false. */
@@ -45,6 +48,7 @@ export function useIndigoEngineActions(opts: UseIndigoEngineActionsOptions) {
     bondLengthPxRef,
     bondLengthPx,
     selectedAtomIds,
+    selectedBondIds = [],
     resetAutoCleanup,
     setShowInfoPanel,
     preferIndigo2d = true,
@@ -208,19 +212,29 @@ export function useIndigoEngineActions(opts: UseIndigoEngineActionsOptions) {
 
   const handleAromatize = useCallback(
     (mode: 'aromatize' | 'dearomatize') => {
-      if (molecule.atoms.length === 0) return;
-      const worker = workerRef.current;
-      if (!worker) {
-        alert('Structure worker is not ready.');
-        return;
+      const mol = moleculeRef.current;
+      if (mol.atoms.length === 0) return;
+      const next = aromatizeMolecule(mol, mode);
+      const molBlock = moleculeToMolblock(next);
+      const seeds = [...selectedAtomIds];
+      for (const bid of selectedBondIds) {
+        const b = mol.bonds.find(x => x.id === bid);
+        if (b) {
+          seeds.push(b.fromAtomId, b.toAtomId);
+        }
       }
-      worker.post({
-        type: 'AROMATIZE',
-        payload: { molBlock: moleculeToMolblock(molecule), mode },
-        id: `aromatize-${mode}`,
+      const atomIds =
+        seeds.length > 0 ? expandAtomIdsToConnectedFragments(mol, seeds) : undefined;
+      const result = applyCommand(CMD.Aromatize, {
+        mode,
+        molBlock,
+        ...(atomIds && atomIds.length > 0 ? { atomIds } : {}),
       });
+      if (!result.ok) {
+        alert(result.error?.message ?? 'Aromatize/dearomatize failed');
+      }
     },
-    [molecule, workerRef],
+    [applyCommand, moleculeRef, selectedAtomIds, selectedBondIds],
   );
 
   /**

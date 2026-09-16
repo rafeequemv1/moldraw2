@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
@@ -11,7 +12,7 @@ const pkg = (name: string) => path.resolve(root, `packages/${name}/src`)
 
 /** Serve crawlable community HTML in Vite (dev + preview), matching Vercel SSR. */
 function communitySeoPlugin(): Plugin {
-  const communitySeo = require('./server/community-seo.js') as {
+  type CommunitySeo = {
     isCommunitySeoPath: (pathname: string) => boolean
     renderCommunityPage: (pathname: string, options?: { accept?: string }) => Promise<{
       status: number
@@ -25,12 +26,39 @@ function communitySeoPlugin(): Plugin {
     }>
   }
 
+  let cachedSeo: CommunitySeo | null = null
+  let cachedSeoMtime = 0
+  const loadCommunitySeo = (): CommunitySeo => {
+    const seoPath = require.resolve('./server/community-seo.js')
+    const mtime = fs.statSync(seoPath).mtimeMs
+    if (cachedSeo && cachedSeoMtime === mtime) return cachedSeo
+    delete require.cache[seoPath]
+    const loaded = require('./server/community-seo.js') as CommunitySeo
+    if (typeof loaded?.isCommunitySeoPath !== 'function') {
+      throw new Error('community-seo.js did not export isCommunitySeoPath')
+    }
+    cachedSeo = loaded
+    cachedSeoMtime = mtime
+    return loaded
+  }
+
   const handle = async (
     req: { url?: string; headers?: { accept?: string } },
     res: { statusCode: number; setHeader: (key: string, value: string) => void; end: (body: string) => void },
     next: (err?: unknown) => void,
   ) => {
     const urlPath = (req.url || '').split('?')[0]
+    if (!urlPath.startsWith('/community')) {
+      next()
+      return
+    }
+    let communitySeo: CommunitySeo
+    try {
+      communitySeo = loadCommunitySeo()
+    } catch {
+      next()
+      return
+    }
     if (urlPath === '/community/sitemap.xml') {
       try {
         const result = await communitySeo.renderCommunitySitemap()

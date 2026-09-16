@@ -1,10 +1,10 @@
 /**
  * Resolve SMILES to a 2D molblock for canvas import.
  *
- * Prefer PubChem's precomputed 2D SDF when online, then native certifyLayout,
- * then optional Indigo accelerator.
+ * Uses local parse + 2D layout so aromatic SMILES (`c1ccccc1`) stay aromatic
+ * and Kekulé SMILES (`C1=CC=CC=C1`) stay explicit doubles. PubChem SDF is not
+ * used here — it always kekulizes and would erase that distinction.
  */
-import { pubchemMolblockFromSmiles } from './pubchemSmiles';
 import { indigoSmilesTo2DMolblock, nativeSmilesTo2DMolblock } from './smilesToMolblock';
 
 export type Smiles2DSource = 'pubchem' | 'indigo' | 'native';
@@ -15,12 +15,13 @@ export interface ResolveSmiles2DResult {
 }
 
 /**
- * SMILES → 2D molblock. Tries PubChem SDF, then native, then Indigo.
+ * SMILES → 2D molblock. Native layout first (preserves aromatic flags), then
+ * optional worker / Indigo for coordinates only.
  */
 export async function resolveSmilesTo2DMolblock(
   smiles: string,
   options?: {
-    /** Skip network (offline / tests). Default false. */
+    /** Skip network (offline / tests). Unused for SMILES — PubChem is not consulted. */
     offline?: boolean;
     /** Worker Indigo/native path when direct load is unavailable. */
     workerSmilesToMolblock?: (smiles: string) => Promise<string>;
@@ -28,11 +29,7 @@ export async function resolveSmilesTo2DMolblock(
 ): Promise<ResolveSmiles2DResult | null> {
   const trimmed = smiles.trim();
   if (!trimmed) return null;
-
-  if (!options?.offline) {
-    const pc = await pubchemMolblockFromSmiles(trimmed);
-    if (pc?.trim()) return { molblock: pc, source: 'pubchem' };
-  }
+  void options?.offline;
 
   if (options?.workerSmilesToMolblock) {
     try {

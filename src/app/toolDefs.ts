@@ -38,22 +38,86 @@ export const TOOL_DEFS: ToolDef[] = [
   { id: 'single_bond', label: 'Single', title: 'Single Bond', category: 'bonds', group: 'bond_types' },
   { id: 'double_bond', label: 'Double', title: 'Double Bond', category: 'bonds', group: 'bond_types' },
   { id: 'triple_bond', label: 'Triple', title: 'Triple Bond', category: 'bonds', group: 'bond_types' },
-  { id: 'wedge_bond', label: 'Wedge', shortLabel: 'Wedge', title: 'Wedge Bond', category: 'stereo', group: 'bond_types' },
-  { id: 'dash_bond', label: 'Dash', shortLabel: 'Dash', title: 'Dash Bond', category: 'stereo', group: 'bond_types' },
-  { id: 'wavy_bond', label: 'Wavy', shortLabel: 'Wavy', title: 'Wavy Bond', category: 'stereo', group: 'bond_types' },
+  {
+    id: 'aromatic_bond',
+    label: 'Aromatic',
+    shortLabel: 'Arom',
+    title: 'Aromatic bond (molfile type 4; solid inner circle in rings)',
+    category: 'bonds',
+    group: 'bond_types',
+  },
+  { id: 'wedge_bond', label: 'Wedge up', shortLabel: 'Up', title: 'Wedge up (solid stereo)', category: 'stereo', group: 'bond_types' },
+  { id: 'dash_bond', label: 'Hash down', shortLabel: 'Down', title: 'Hashed wedge down', category: 'stereo', group: 'bond_types' },
+  {
+    id: 'either_bond',
+    label: 'Wedge/hash',
+    shortLabel: 'Up/Dn',
+    title: 'Wedge/hash unknown stereo (either tetrahedral)',
+    category: 'stereo',
+    group: 'bond_types',
+  },
+  { id: 'wavy_bond', label: 'Wavy', shortLabel: 'Wavy', title: 'Wavy / either stereo (unknown)', category: 'stereo', group: 'bond_types' },
+  {
+    id: 'cis_trans_bond',
+    label: 'Cis/trans',
+    shortLabel: 'E/Z',
+    title: 'Cis/trans double — unspecified E/Z (crossed double)',
+    category: 'stereo',
+    group: 'bond_types',
+  },
   {
     id: 'dative_bond',
     label: 'Dative',
     shortLabel: 'Dat',
-    title: 'Dative / coordination bond (dashed arrow; metal ligands)',
+    title: 'Dative / coordinate bond (dashed arrow; metal ligands)',
+    category: 'bonds',
+    group: 'bond_types',
+  },
+  {
+    id: 'any_bond',
+    label: 'Any',
+    shortLabel: 'Any',
+    title: 'Any bond (query, molfile type 8)',
+    category: 'bonds',
+    group: 'bond_types',
+  },
+  {
+    id: 'single_double_bond',
+    label: 'Single/double',
+    shortLabel: '1/2',
+    title: 'Single or double (query, molfile type 5)',
+    category: 'bonds',
+    group: 'bond_types',
+  },
+  {
+    id: 'single_aromatic_bond',
+    label: 'Single/arom.',
+    shortLabel: '1/arom',
+    title: 'Single or aromatic (query, molfile type 6)',
+    category: 'bonds',
+    group: 'bond_types',
+  },
+  {
+    id: 'double_aromatic_bond',
+    label: 'Double/arom.',
+    shortLabel: '2/arom',
+    title: 'Double or aromatic (query, molfile type 7)',
     category: 'bonds',
     group: 'bond_types',
   },
   {
     id: 'dotted_bond',
-    label: 'Dotted',
-    shortLabel: '···',
-    title: 'Dotted bond — hydrogen bonds and weak interactions (does not use valency)',
+    label: 'H-bond',
+    shortLabel: 'H',
+    title: 'Hydrogen bond / weak interaction (dotted; does not use valency)',
+    category: 'bonds',
+    group: 'bond_types',
+  },
+  {
+    id: 'bold_bond',
+    label: 'Thick',
+    shortLabel: 'Thick',
+    title: 'Thick foreground bond (chair front edge; display-only)',
     category: 'bonds',
     group: 'bond_types',
   },
@@ -251,9 +315,9 @@ export const TOOL_DEFS: ToolDef[] = [
   { id: 'image', label: 'Image', title: 'Add a PNG/JPEG/WebP/GIF image annotation to the canvas', category: 'edit', group: 'annotate' },
   {
     id: 'template_library',
-    label: 'Templates',
+    label: 'Library',
     shortLabel: 'Lib',
-    title: 'Template library — amino acids, ligands, 3D cages (cubane, C₆₀, …)',
+    title: 'Library — R-groups, ligands, structures, COFs, reactions…',
     category: 'edit',
     group: 'templates',
   },
@@ -295,7 +359,7 @@ export const TOOL_IDS_LEFT_MARKS: readonly string[] = [
 /** Left rail: bonds including wedge (rings live on the bottom dock). */
 export const TOOL_GROUPS_LEFT_STRUCTURE: ToolGroup[] = ['bond_types'];
 
-/** Bottom dock: ring tools (horizontal island). Orbitals live on the left rail. */
+/** Bottom dock: ring tools (horizontal island), Library last. Orbitals live on the left rail. */
 export const TOOL_IDS_BOTTOM_RINGS: readonly string[] = [
   'cyclopropane',
   'cyclobutane',
@@ -307,6 +371,7 @@ export const TOOL_IDS_BOTTOM_RINGS: readonly string[] = [
   'boat_cyclohexane',
   'cycloheptane',
   'cyclooctane',
+  'template_library',
 ];
 
 /** Shown in the Draw tab flyout beside the left rail. */
@@ -321,15 +386,10 @@ export const TOOL_IDS_LEFT_ANNOTATE: readonly string[] = [
   'orbital_p',
 ];
 
-/** Left rail: R-groups + ligands. */
-export const TOOL_IDS_LEFT_TEMPLATES: readonly string[] = [
-  'functional_groups',
-  'ligands',
-];
-
 /**
- * Home tools row: text (library is the top-nav Library tab).
+ * Home tools row: text.
  * Pencil, shapes, image, and glassware live on the Draw flyout.
+ * Library / R-groups / ligands live on the ring toolbar → Library modal.
  */
 export const TOOL_IDS_TOP_BAR: readonly string[] = [
   'text',
@@ -361,16 +421,12 @@ export const MOBILE_CATEGORY_TOOL_IDS: Record<MobileToolCategory, readonly strin
     'charge_plus',
     'lone_pair',
     'single_bond',
-    'double_bond',
-    'triple_bond',
-    'wedge_bond',
-    'dotted_bond',
     'chain',
   ],
   rings: TOOL_IDS_BOTTOM_RINGS,
   annotate: [...TOOL_IDS_DRAW_PANEL, ...TOOL_IDS_LEFT_ANNOTATE, 'text', 'glassware'],
   objects: [],
-  more: [...TOOL_IDS_LEFT_TEMPLATES, 'template_library'],
+  more: [],
 };
 
 /** Charge / δ / radical-ion tools collapsed into one left-rail dropdown (primary: +). */
@@ -415,10 +471,44 @@ export const ORBITAL_TOOL_IDS = [
 /** Flat / chair / boat C6 collapsed into one bottom-dock dropdown (primary: flat hexagon). */
 export const C6_RING_TOOL_IDS = ['hexagon', 'cyclohexane', 'boat_cyclohexane'] as const;
 
-/** Stereo / specialty bonds collapsed into one left-rail dropdown (primary: wedge). */
+/** Bond types in the single Ketcher-style dropdown (alkyl chain is separate). */
+export const BOND_MENU_SECTIONS = [
+  {
+    id: 'main',
+    tools: [
+      'single_bond',
+      'double_bond',
+      'triple_bond',
+      'aromatic_bond',
+      'wedge_bond',
+      'dash_bond',
+      'either_bond',
+      'wavy_bond',
+    ],
+  },
+  {
+    id: 'more',
+    tools: ['cis_trans_bond', 'dative_bond', 'any_bond'],
+  },
+  {
+    id: 'advanced',
+    tools: [
+      'single_double_bond',
+      'single_aromatic_bond',
+      'double_aromatic_bond',
+      'dotted_bond',
+      'bold_bond',
+    ],
+  },
+] as const;
+
+export const BOND_MENU_TOOL_IDS = BOND_MENU_SECTIONS.flatMap(s => [...s.tools]);
+
+/** @deprecated Use BOND_MENU_TOOL_IDS. Stereo subset kept for older callers. */
 export const STEREO_BOND_TOOL_IDS = [
   'wedge_bond',
   'dash_bond',
+  'either_bond',
   'wavy_bond',
   'dative_bond',
 ] as const;

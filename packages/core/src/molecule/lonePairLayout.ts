@@ -7,10 +7,14 @@ import type { Atom, Molecule } from '@moldraw/domain';
 export type Point2 = { x: number; y: number };
 
 /** Distance from atom center to lone-pair midpoint (world px). */
-export const LONE_PAIR_DIST_PX = 19;
+export const LONE_PAIR_DIST_PX = 13;
 /** Half-separation of the two dots in a pair. */
 export const LONE_PAIR_DOT_SEP_PX = 3.6;
 export const LONE_PAIR_DOT_R_PX = 2.45;
+/** Radial gap from glyph AABB to nearest dot (keep-out, not overlap). */
+const LONE_PAIR_RADIAL_PAD_PX = LONE_PAIR_DOT_R_PX + 1;
+/** Lateral keep-out: two dots sit `sep` off the radial axis. */
+const LONE_PAIR_LATERAL_PAD_PX = LONE_PAIR_DOT_SEP_PX + LONE_PAIR_DOT_R_PX;
 /** Free-radical single dot: farther above the atom than lone pairs. */
 export const RADICAL_DIST_PX = 23;
 export const RADICAL_DOT_R_PX = 2.75;
@@ -113,16 +117,20 @@ const pairHitsHeadBox = (
   const ly = dir.x * s + dir.y * c;
   const mx = lx * dist;
   const my = ly * dist;
-  const pad = LONE_PAIR_DOT_R_PX + LONE_PAIR_DOT_SEP_PX + 1;
+  // Radial vs lateral: dots are offset perpendicular to `dir`, so only the
+  // radial pad must clear the letter. Using sep on both axes used to shove
+  // pairs ~font-height away from the glyph.
+  const padX = Math.abs(lx) * LONE_PAIR_RADIAL_PAD_PX + Math.abs(ly) * LONE_PAIR_LATERAL_PAD_PX;
+  const padY = Math.abs(ly) * LONE_PAIR_RADIAL_PAD_PX + Math.abs(lx) * LONE_PAIR_LATERAL_PAD_PX;
   return (
-    mx + pad >= headBox.left &&
-    mx - pad <= headBox.right &&
-    my + pad >= headBox.top &&
-    my - pad <= headBox.bottom
+    mx + padX >= headBox.left &&
+    mx - padX <= headBox.right &&
+    my + padY >= headBox.top &&
+    my - padY <= headBox.bottom
   );
 };
 
-/** Push / rotate placements so lone-pair dots clear the atom glyph AABB. */
+/** Push placements so lone-pair dots clear the atom glyph AABB. */
 const clearHeadBox = (
   placements: LonePairPlacement[],
   headBox: LabelBoxLocal | null | undefined,
@@ -131,21 +139,14 @@ const clearHeadBox = (
   if (!headBox) return placements;
   return placements.map(p => {
     let dist = p.dist;
-    let dir = p.dir;
-    for (let attempt = 0; attempt < 6; attempt++) {
+    const dir = p.dir;
+    for (let attempt = 0; attempt < 10; attempt++) {
       if (!pairHitsHeadBox(dir, dist, headBox, labelCounterRad)) {
         return { dir, dist };
       }
-      dist += 2.5;
-      // Nudge angle slightly away from the box center (toward free space).
-      const ang = Math.atan2(dir.y, dir.x);
-      const boxCx = (headBox.left + headBox.right) / 2;
-      const boxCy = (headBox.top + headBox.bottom) / 2;
-      const away = Math.atan2(-boxCy, -boxCx);
-      const nudged = ang + 0.18 * Math.sign(shortestAngleDiff(ang, away) || 1);
-      dir = { x: Math.cos(nudged), y: Math.sin(nudged) };
+      dist += 1;
     }
-    return { dir, dist: Math.max(dist, LONE_PAIR_DIST_PX + 6) };
+    return { dir, dist };
   });
 };
 

@@ -51,7 +51,7 @@ export const buildCleanupWorkerPayload = (
 };
 
 const isDepictedStereo = (stereo: string | undefined): boolean =>
-  stereo === 'wedge' || stereo === 'dash' || stereo === 'wavy';
+  stereo === 'wedge' || stereo === 'dash' || stereo === 'wavy' || stereo === 'either';
 
 /** True when the subset has wedge/dash/wavy bonds (reflection would invert depiction). */
 export const componentHasDepictedStereo = (

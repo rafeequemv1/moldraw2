@@ -104,6 +104,42 @@ function RegularNGon({
   );
 }
 
+/** Ketcher-style aromatize: hexagon with inner aromatic circle. */
+export function AromatizeIcon() {
+  const hex = nGonVerts(6, 7.35, 10, 10, true);
+  return (
+    <IconSvg>
+      <polygon points={vertsToPoints(hex)} {...stroke} strokeWidth={1.55} />
+      <circle cx="10" cy="10" r="3.2" {...stroke} strokeWidth={1.45} />
+    </IconSvg>
+  );
+}
+
+/** Ketcher-style dearomatize: Kekulé benzene (alternating double bonds). */
+export function DearomatizeIcon() {
+  const hex = nGonVerts(6, 7.35, 10, 10, true);
+  const doubles = [0, 2, 4].map(i =>
+    doubleBondAlongEdge(hex[i]!, hex[(i + 1) % 6]!, 10, 10, 0.26, 1.95),
+  );
+  return (
+    <IconSvg>
+      <polygon points={vertsToPoints(hex)} {...stroke} strokeWidth={1.55} />
+      {doubles.map((d, i) => (
+        <line
+          key={i}
+          x1={d.x1}
+          y1={d.y1}
+          x2={d.x2}
+          y2={d.y2}
+          {...stroke}
+          strokeWidth={1.45}
+          strokeLinecap="butt"
+        />
+      ))}
+    </IconSvg>
+  );
+}
+
 /** Parallel bond lines at −30° (single / double / triple). */
 function BondLines({ count }: { count: 1 | 2 | 3 }) {
   // Wider spacing between double / triple strokes for clarity.
@@ -221,6 +257,120 @@ export const renderToolIcon = (toolId: string) => {
               strokeDasharray="1.4 2.8"
               strokeLinecap="round"
             />
+          </g>
+        </IconSvg>
+      );
+    case 'aromatic_bond':
+      return (
+        <IconSvg>
+          <g transform="rotate(-30 10 10)">
+            <line x1="2.4" y1="8.4" x2="17.6" y2="8.4" {...stroke} strokeWidth={1.85} />
+            <line
+              x1="3.2"
+              y1="11.7"
+              x2="16.8"
+              y2="11.7"
+              {...stroke}
+              strokeWidth={1.55}
+              strokeDasharray="2.4 1.8"
+            />
+          </g>
+        </IconSvg>
+      );
+    case 'either_bond':
+      return (
+        <IconSvg>
+          <g transform="rotate(-28 10 10)">
+            <polygon points="1.2,10 18.6,10 18.6,5.8" fill="currentColor" />
+            {[
+              [5.2, 10, 5.2, 11.2],
+              [8.2, 10, 8.2, 12.0],
+              [11.2, 10, 11.2, 12.8],
+              [14.2, 10, 14.2, 13.6],
+              [17.0, 10, 17.0, 14.2],
+            ].map(([x1, y1, x2, y2], i) => (
+              <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} {...stroke} strokeWidth={1.4} />
+            ))}
+          </g>
+        </IconSvg>
+      );
+    case 'cis_trans_bond':
+      return (
+        <IconSvg>
+          <g transform="rotate(-30 10 10)">
+            <polyline points="2.4,7.4 10,12.6 17.6,7.4" {...stroke} strokeWidth={1.7} fill="none" />
+            <polyline points="2.4,12.6 10,7.4 17.6,12.6" {...stroke} strokeWidth={1.7} fill="none" />
+          </g>
+        </IconSvg>
+      );
+    case 'any_bond':
+      return (
+        <IconSvg>
+          <g transform="rotate(-30 10 10)">
+            <line x1="2.4" y1="10" x2="17.6" y2="10" {...stroke} strokeWidth={1.7} strokeDasharray="3.2 2.2" />
+            <line x1="10" y1="6.6" x2="10" y2="13.4" {...stroke} strokeWidth={1.5} />
+          </g>
+        </IconSvg>
+      );
+    case 'single_double_bond':
+      return (
+        <IconSvg>
+          <g transform="rotate(-30 10 10)">
+            <line x1="2.4" y1="8.4" x2="17.6" y2="8.4" {...stroke} strokeWidth={1.85} />
+            <line
+              x1="3.2"
+              y1="11.7"
+              x2="16.8"
+              y2="11.7"
+              {...stroke}
+              strokeWidth={1.55}
+              strokeDasharray="4.2 2.6"
+            />
+          </g>
+        </IconSvg>
+      );
+    case 'single_aromatic_bond':
+      return (
+        <IconSvg>
+          <g transform="rotate(-30 10 10)">
+            <line x1="2.4" y1="8.4" x2="17.6" y2="8.4" {...stroke} strokeWidth={1.85} />
+            <line
+              x1="3.2"
+              y1="11.7"
+              x2="16.8"
+              y2="11.7"
+              {...stroke}
+              strokeWidth={1.55}
+              strokeDasharray="1.4 2.6"
+              strokeLinecap="round"
+            />
+          </g>
+        </IconSvg>
+      );
+    case 'double_aromatic_bond':
+      return (
+        <IconSvg>
+          <g transform="rotate(-30 10 10)">
+            <line x1="2.4" y1="7.6" x2="17.6" y2="7.6" {...stroke} strokeWidth={1.7} />
+            <line x1="2.4" y1="10.4" x2="17.6" y2="10.4" {...stroke} strokeWidth={1.7} strokeDasharray="3 2" />
+            <line
+              x1="3.2"
+              y1="13.2"
+              x2="16.8"
+              y2="13.2"
+              {...stroke}
+              strokeWidth={1.45}
+              strokeDasharray="1.4 2.6"
+              strokeLinecap="round"
+            />
+          </g>
+        </IconSvg>
+      );
+    case 'bold_bond':
+      return (
+        <IconSvg>
+          <g transform="rotate(-30 10 10)">
+            <line x1="2.2" y1="10" x2="17.8" y2="10" {...stroke} strokeWidth={4.2} strokeLinecap="butt" />
           </g>
         </IconSvg>
       );

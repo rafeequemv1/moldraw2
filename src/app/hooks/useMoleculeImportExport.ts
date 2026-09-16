@@ -713,11 +713,11 @@ export function useMoleculeImportExport({
           smilesToMolblock: s => workerMolblockFromText('smiles', s),
           textToMolblock: t => workerMolblockFromText('text', t),
           chemDrawToMolblock: workerChemDrawToMolblock,
-          preferPubChem2D: true,
+          preferPubChem2D: false,
         });
         await importClipboardMolblock(molblock);
         if (format === 'smiles') {
-          setSmilesBarHint('Pasted (PubChem 2D when available)');
+          setSmilesBarHint('Pasted SMILES');
           window.setTimeout(() => setSmilesBarHint(''), 2500);
         }
         return true;
@@ -1589,21 +1589,29 @@ export function useMoleculeImportExport({
     setQuickSearchLoading(true);
     setQuickSearchError('');
     try {
-      let molblock = await pubchemMolblockFromSmilesOrName(term);
+      let molblock: string | null = null;
       let compoundName: string | undefined;
 
-      if (!molblock && (looksLikeCompoundName(term) || !looksLikeSmiles(term))) {
-        const resolved = await resolveCompoundNameFromPubChem(term);
-        if (resolved) {
-          compoundName = term;
-          molblock =
-            (await pubchemMolblockFromCid(resolved.cid)) ??
-            nativeSmilesTo2DMolblock(resolved.smiles);
-        }
-      }
-
-      if (!molblock && looksLikeSmiles(term)) {
+      if (looksLikeSmiles(term)) {
         molblock = nativeSmilesTo2DMolblock(term);
+        if (!molblock) {
+          try {
+            molblock = await workerMolblockFromText('smiles', term);
+          } catch {
+            molblock = null;
+          }
+        }
+      } else {
+        molblock = await pubchemMolblockFromSmilesOrName(term);
+        if (!molblock && looksLikeCompoundName(term)) {
+          const resolved = await resolveCompoundNameFromPubChem(term);
+          if (resolved) {
+            compoundName = term;
+            molblock =
+              (await pubchemMolblockFromCid(resolved.cid)) ??
+              nativeSmilesTo2DMolblock(resolved.smiles);
+          }
+        }
       }
 
       if (molblock) {
@@ -1614,15 +1622,21 @@ export function useMoleculeImportExport({
         revealAtomsInView?.(newIds);
         setQuickSearch('');
       } else {
-        setQuickSearchError('Not found on PubChem');
+        setQuickSearchError(looksLikeSmiles(term) ? 'Could not parse SMILES' : 'Not found on PubChem');
       }
     } catch (err) {
       const aborted = err instanceof DOMException && err.name === 'AbortError';
-      setQuickSearchError(aborted ? 'Search timed out' : 'Could not reach PubChem');
+      setQuickSearchError(
+        aborted
+          ? 'Search timed out'
+          : looksLikeSmiles(term)
+            ? 'Could not parse SMILES'
+            : 'Could not reach PubChem',
+      );
     } finally {
       setQuickSearchLoading(false);
     }
-  }, [importMolblock, quickSearch, revealAtomsInView]);
+  }, [importMolblock, quickSearch, revealAtomsInView, workerMolblockFromText]);
 
   return {
     openFileBusy,

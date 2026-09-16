@@ -220,6 +220,20 @@ html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-ta
   gap: 2px;
 }
 
+.toolbar-bottom__library {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.toolbar-bottom__sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px 0 2px;
+  background: var(--chrome-border);
+  flex: 0 0 auto;
+}
+
 .toolbar-bottom__group {
   display: flex;
   flex-direction: row;

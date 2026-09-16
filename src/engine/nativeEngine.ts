@@ -47,8 +47,9 @@ export class NativeEngine implements MoleculeEngine {
   }
 
   parseSmiles(smiles: string): Molecule {
-    // Parse then kekulize so downstream (valence/H, export) sees explicit bonds.
-    return kekulize(parseSmilesToMolecule(smiles));
+    // Keep aromatic vs Kekulé as written: `c1ccccc1` stays aromatic, `C1=CC=CC=C1`
+    // stays explicit doubles. Valence / formula / SMILES export kekulize internally.
+    return parseSmilesToMolecule(smiles);
   }
 
   toMolblock(mol: Molecule, opts: ToMolblockOptions = {}): string {

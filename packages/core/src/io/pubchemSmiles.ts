@@ -114,6 +114,8 @@ export function looksLikeCompoundName(query: string): boolean {
   if (!t) return false;
   if (/^\d{2,7}-\d{2}-\d$/.test(t)) return true;
   if (/[=#\[\]@\\\/+]/.test(t)) return false;
+  // Compact ring SMILES (`c1ccccc1`, `C1CCCCC1`) are not names.
+  if (!/\s/.test(t) && /[A-Za-z]/.test(t) && /\d/.test(t)) return false;
   return /^[A-Za-z][A-Za-z0-9\s\-'.()]{1,80}$/.test(t);
 }
 

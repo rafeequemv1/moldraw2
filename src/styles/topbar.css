@@ -1728,6 +1728,10 @@ html.app-top-rows-3 {
   font-weight: 500;
 }
 
+.app-top-bar--compact .app-top-bar__info-symbol {
+  font-size: 16px;
+}
+
 .app-top-bar__history-btn {
   display: inline-flex;
   align-items: center;
@@ -2314,6 +2318,13 @@ html.app-top-rows-3 {
 .app-top-bar__designs-btn--active {
   background: var(--chrome-active);
   border-color: var(--chrome-border);
+}
+
+.app-top-bar__info-symbol {
+  font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
 }
 
 .app-top-bar__style-tab--on {

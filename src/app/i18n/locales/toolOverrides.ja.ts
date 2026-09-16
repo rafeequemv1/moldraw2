@@ -30,6 +30,14 @@ export const jaToolOverrides: Record<
     title: '点線結合 — 水素結合と弱い相互作用（価数を消費しない）',
     shortLabel: '···',
   },
+  aromatic_bond: { label: '芳香', title: '芳香結合（環内の実線円）', shortLabel: '芳香' },
+  either_bond: { label: '楔/破線', title: '楔/破線（未指定立体）', shortLabel: '上下' },
+  cis_trans_bond: { label: 'シス/トランス', title: 'シス/トランス二重結合（E/Z 未指定）', shortLabel: 'E/Z' },
+  any_bond: { label: '任意', title: '任意結合（クエリ）', shortLabel: '任意' },
+  single_double_bond: { label: '単/二重', title: '単結合または二重結合（クエリ）', shortLabel: '1/2' },
+  single_aromatic_bond: { label: '単/芳香', title: '単結合または芳香結合（クエリ）', shortLabel: '1/芳' },
+  double_aromatic_bond: { label: '二重/芳香', title: '二重結合または芳香結合（クエリ）', shortLabel: '2/芳' },
+  bold_bond: { label: '太線', title: '太線（前景、表示のみ）', shortLabel: '太' },
   perspective: {
     label: '3Dビュー',
     title: '構造パースペクティブ：ドラッグでキャンバス上の3D整理ポーズを回転',
@@ -199,8 +207,8 @@ export const jaToolOverrides: Record<
     title: 'PNG/JPEG/WebP/GIF画像注釈をキャンバスに追加',
   },
   template_library: {
-    label: 'テンプレート',
-    title: 'テンプレートライブラリ — アミノ酸、配位子、3Dケージ（キュベイン、C₆₀…）',
+    label: 'ライブラリ',
+    title: 'ライブラリ — R基、配位子、構造、COF、反応…',
     shortLabel: 'Lib',
   },
   functional_groups: {

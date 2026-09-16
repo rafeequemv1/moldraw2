@@ -64,7 +64,9 @@ export interface InfiniteCanvasProps {
   onAddBond?: (bond: Bond) => void;
   onUpdateBond?: (
     bondId: string,
-    patch: Partial<Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp'>>,
+    patch: Partial<
+      Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted' | 'aromatic' | 'queryType' | 'bold'>
+    >,
   ) => void;
   /** Swap a bond's endpoints (wedge/dash narrow→wide flip on re-tap). */
   onFlipBond?: (bondId: string) => void;

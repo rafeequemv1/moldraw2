@@ -116,13 +116,20 @@ const bondFields = {
   fromAtomId: z.string().describe('Id of the first atom (existing).'),
   toAtomId: z.string().describe('Id of the second atom (existing).'),
   order: z.number().int().min(1).max(3).describe('Bond order: 1 single, 2 double, 3 triple.'),
-  aromatic: z.boolean().optional().describe('Render as aromatic (dashed inner line).'),
+  aromatic: z.boolean().optional().describe('Render as aromatic (solid inner circle in rings).'),
   stereo: z
-    .enum(['wedge', 'dash', 'wavy'])
+    .enum(['wedge', 'dash', 'wavy', 'either', 'cis_trans'])
     .optional()
-    .describe('Stereo depiction from fromAtomId toward toAtomId: wedge (up), dash (down), wavy (unknown).'),
+    .describe(
+      'Stereo depiction: wedge (up), dash (down), wavy (unknown), either (wedge/hash), cis_trans (unspecified E/Z).',
+    ),
   dative: z.boolean().optional().describe('Dative / coordination arrow bond (from donor to acceptor).'),
   dotted: z.boolean().optional().describe('Dotted partial / hydrogen bond rendering.'),
+  queryType: z
+    .enum(['any', 'single_double', 'single_aromatic', 'double_aromatic'])
+    .optional()
+    .describe('Query-only bond (molfile 5–8): any, single/double, single/aromatic, double/aromatic.'),
+  bold: z.boolean().optional().describe('Thick foreground single bond (display-only).'),
   orderCycleRamp: z.enum(['up', 'down']).optional().describe('Internal: direction of the bond-order cycle ramp.'),
   color: z.string().optional().describe('CSS colour for the bond.'),
   thicknessPx: z.number().min(0.5).max(14).optional().describe('Bond line thickness in px.'),
@@ -673,12 +680,21 @@ export const schemas = {
     order: z.number().int().min(1).max(3).describe('New bond order: 1 single, 2 double, 3 triple; omit to keep.').optional(),
     /** Pass `null` to clear stereo (Zod strips `undefined`, so null is required to remove wedges). */
     stereo: z
-      .enum(['wedge', 'dash', 'wavy'])
+      .enum(['wedge', 'dash', 'wavy', 'either', 'cis_trans'])
       .nullable()
-      .describe('Stereo mark from fromAtomId to toAtomId: wedge (up), dash (down), wavy (unknown); null clears.')
+      .describe(
+        'Stereo mark: wedge (up), dash (down), wavy (unknown), either (wedge/hash), cis_trans (E/Z unspecified); null clears.',
+      )
       .optional(),
     dative: z.boolean().describe('True renders a dative / coordination arrow bond; false makes it normal.').optional(),
     dotted: z.boolean().describe('True renders a dotted partial / hydrogen bond; false makes it solid.').optional(),
+    aromatic: z.boolean().describe('True renders an aromatic bond (solid inner circle in rings); false clears.').optional(),
+    queryType: z
+      .enum(['any', 'single_double', 'single_aromatic', 'double_aromatic'])
+      .nullable()
+      .describe('Query bond type (molfile 5–8); null clears.')
+      .optional(),
+    bold: z.boolean().describe('True draws a thick foreground bond; false clears.').optional(),
     orderCycleRamp: z
       .enum(['up', 'down'])
       .nullable()
@@ -973,10 +989,16 @@ export const schemas = {
           toTempId: z.string().min(1).describe('tempId of the second atom.'),
           order: z.number().int().min(1).max(3).describe('Bond order: 1 single, 2 double, 3 triple.'),
           stereo: z
-            .enum(['wedge', 'dash', 'wavy'])
-            .describe('Stereo mark from fromTempId to toTempId: wedge (up), dash (down), wavy (unknown).')
+            .enum(['wedge', 'dash', 'wavy', 'either', 'cis_trans'])
+            .describe('Stereo mark: wedge, dash, wavy, either (wedge/hash), cis_trans (unspecified E/Z).')
             .optional(),
-          aromatic: z.boolean().describe('True renders the bond as aromatic (dashed inner line).').optional(),
+          aromatic: z.boolean().describe('True renders the bond as aromatic (solid inner circle in rings).').optional(),
+          queryType: z
+            .enum(['any', 'single_double', 'single_aromatic', 'double_aromatic'])
+            .optional(),
+          dotted: z.boolean().optional(),
+          dative: z.boolean().optional(),
+          bold: z.boolean().optional(),
         }),
       )
       .describe('Sketch bonds between tempIds (may be empty).'),
@@ -1132,8 +1154,10 @@ export const schemas = {
     mode: z
       .enum(['aromatize', 'dearomatize'])
       .describe('aromatize = mark aromatic rings; dearomatize = restore explicit Kekule double bonds.'),
-    /** Indigo result molblock; bond orders/aromatic flags are merged onto the live graph. */
-    molBlock: z.string().min(1).describe('V2000 molblock returned by the Indigo (de)aromatize step; bond orders are merged onto the live graph.'),
+    /** Result molblock; bond orders/aromatic flags are merged onto the live graph. */
+    molBlock: z.string().min(1).describe('V2000 molblock returned by the (de)aromatize step; bond orders are merged onto the live graph.'),
+    /** When set, only bonds fully inside this atom set are updated (current molecule / selection). */
+    atomIds: z.array(z.string()).optional(),
   }),
   applyExplicitHydrogens: z.object({
     mode: z

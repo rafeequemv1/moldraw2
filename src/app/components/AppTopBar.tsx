@@ -8,8 +8,6 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import {
   Wand2,
   SlidersHorizontal,
-  LayoutTemplate,
-  Info,
   Box,
   Triangle,
   Layers2,
@@ -18,7 +16,6 @@ import {
   Undo2,
   Redo2,
   Settings,
-  Library,
   Home,
   RotateCw,
   Pencil,
@@ -35,6 +32,7 @@ import { MobileBottomSheet } from './MobileBottomSheet';
 import { InstallWindowsLink } from './InstallWindowsLink';
 import { ThemeToggleButton } from './ThemeToggleButton';
 import { MolDrawLogoMark } from './MolDrawLogoMark';
+import { AromatizeIcon, DearomatizeIcon } from '../toolIcons';
 import type { UiThemeId } from '../theme';
 import { useI18n } from '../i18n';
 import { useChromeOverlay } from '../chromeDismiss';
@@ -197,8 +195,6 @@ export interface AppTopBarProps {
   onChangeUiTheme?: (theme: UiThemeId) => void;
   showGrid?: boolean;
   onToggleGrid?: () => void;
-  /** Structure / COF / reaction template library. */
-  onOpenTemplateLibrary?: () => void;
   /** Pencil / shape / image flyout beside the left tool rail. */
   drawToolsOpen?: boolean;
   onToggleDrawTools?: () => void;
@@ -343,7 +339,6 @@ export function AppTopBar(props: AppTopBarProps) {
     onChangeUiTheme,
     showGrid = false,
     onToggleGrid,
-    onOpenTemplateLibrary,
     drawToolsOpen = false,
     onToggleDrawTools,
     onGoHome,
@@ -388,6 +383,36 @@ export function AppTopBar(props: AppTopBarProps) {
     Boolean(ringPaintActive);
   const showExplicitH = selectedAtomCount > 0;
   const showFormatCluster = hasStyleSelection || showExplicitH || perspectiveActive;
+  const aromatizeDisabled = molecule.atoms.length === 0;
+  const aromatizeButtons =
+    onAromatize || onDearomatize ? (
+      <>
+        {onAromatize ? (
+          <button
+            type="button"
+            className="action-btn icon-only"
+            title={t('topBar.aromatizeTitle')}
+            aria-label={t('topBar.aromatize')}
+            disabled={aromatizeDisabled}
+            onClick={onAromatize}
+          >
+            <AromatizeIcon />
+          </button>
+        ) : null}
+        {onDearomatize ? (
+          <button
+            type="button"
+            className="action-btn icon-only"
+            title={t('topBar.dearomatizeTitle')}
+            aria-label={t('topBar.dearomatize')}
+            disabled={aromatizeDisabled}
+            onClick={onDearomatize}
+          >
+            <DearomatizeIcon />
+          </button>
+        ) : null}
+      </>
+    ) : null;
 
   // Keep workspace top offset in sync with content height (header is height:auto).
   useLayoutEffect(() => {
@@ -527,29 +552,6 @@ export function AppTopBar(props: AppTopBarProps) {
               {drawToolsOpen ? <X size={11} strokeWidth={2.4} aria-hidden /> : null}
             </button>
           ) : null}
-          {onOpenTemplateLibrary && !isCompact ? (
-            <button
-              type="button"
-              className="app-top-bar__designs-btn app-top-bar__style-tab"
-              onClick={onOpenTemplateLibrary}
-              title={t('topBar.libraryTitle')}
-              aria-label={t('topBar.library')}
-            >
-              <Library size={13} strokeWidth={2} aria-hidden />
-              {t('topBar.library')}
-            </button>
-          ) : null}
-          {onOpenTemplateLibrary && isCompact ? (
-            <button
-              type="button"
-              className="app-top-bar__designs-btn app-top-bar__designs-btn--icon"
-              onClick={onOpenTemplateLibrary}
-              title={t('topBar.libraryTitle')}
-              aria-label={t('topBar.library')}
-            >
-              <LayoutTemplate size={18} strokeWidth={2} aria-hidden />
-            </button>
-          ) : null}
           {isCompact ? (
             <button
               type="button"
@@ -589,7 +591,9 @@ export function AppTopBar(props: AppTopBarProps) {
               aria-pressed={showInfoPanel}
               onClick={onToggleInfoPanel}
             >
-              <Info size={12} strokeWidth={2} aria-hidden />
+              <span className="app-top-bar__info-symbol" aria-hidden>
+                ⌬
+              </span>
               {t('topBar.info')}
             </button>
           ) : null}
@@ -740,7 +744,9 @@ export function AppTopBar(props: AppTopBarProps) {
               aria-pressed={showInfoPanel}
               onClick={onToggleInfoPanel}
             >
-              <Info size={16} strokeWidth={2} aria-hidden />
+              <span className="app-top-bar__info-symbol" aria-hidden>
+                ⌬
+              </span>
             </button>
           ) : null}
           {onUndo ? (
@@ -811,6 +817,7 @@ export function AppTopBar(props: AppTopBarProps) {
           >
             <Box size={18} strokeWidth={2} />
           </button>
+          {isCompact ? aromatizeButtons : null}
           {perspectiveActive ? (
             <>
               <button
@@ -971,6 +978,7 @@ export function AppTopBar(props: AppTopBarProps) {
         {!isCompact && ribbonMode === 'home' ? (
         <ToolCluster label={t('topBar.clusterArrange')}>
           {contextRow}
+          {aromatizeButtons}
           <a
             className="app-top-bar__select-trigger app-top-bar__tools-link"
             href="/tools/"

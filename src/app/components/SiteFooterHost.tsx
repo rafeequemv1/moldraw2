@@ -1,7 +1,6 @@
 /**
- * Relocates the crawler footer from `index.html` to sit directly under the
- * formula / MW / charge row, and publishes its real height so mobile docks
- * stay above it.
+ * Relocates the crawler footer from `index.html` under the editor, and
+ * publishes its real height so mobile docks stay above it.
  */
 import { useLayoutEffect, useRef } from 'react';
 

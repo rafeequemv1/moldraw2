@@ -3,12 +3,21 @@
  * and dative/coordination bonds. Double bonds offset uses `% of bond length`.
  * Adjacent solid wedges merge into a continuous thick ribbon (chair front-edge).
  *
+ * Complete aromatic rings (Aromatize / aromatic SMILES) draw a solid inner
+ * circle; isolated aromatic bonds keep a solid + dashed inner companion.
+ *
  * Under Structure Perspective, ring double (inner) lines are offset in the ring
  * plane then projected — a pure screen-perpendicular offset lifts off-plane when
  * the pose rotates.
  */
 import type { PerspectivePose } from '@moldraw/domain';
-import { bondEndPoints, bondStrokeColor, type BondTrimContext } from '../geometry';
+import {
+  bondEndPoints,
+  bondStrokeColor,
+  collectAromaticCircles,
+  type AromaticCircle,
+  type BondTrimContext,
+} from '../geometry';
 import type { RenderContext } from './types';
 import { collectWedgeChains, drawContinuousWedgeRibbon } from './drawWedgeChains';
 
@@ -91,6 +100,156 @@ const alignOffsetTowardNeighbors = (
   return { nx, ny };
 };
 
+type BondEnds = { ax: number; ay: number; bx: number; by: number };
+
+const drawDashedCompanion = (
+  ctx: CanvasRenderingContext2D,
+  T: BondEnds,
+  nx: number,
+  ny: number,
+  ux: number,
+  uy: number,
+  inset: number,
+  dash: number[],
+): void => {
+  ctx.save();
+  ctx.lineCap = 'butt';
+  ctx.setLineDash(dash);
+  ctx.beginPath();
+  ctx.moveTo(T.ax + nx + ux * inset, T.ay + ny + uy * inset);
+  ctx.lineTo(T.bx + nx - ux * inset, T.by + ny - uy * inset);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+};
+
+const drawQueryAnyBond = (
+  ctx: CanvasRenderingContext2D,
+  T: BondEnds,
+  dx: number,
+  dy: number,
+  len: number,
+  thickness: number,
+): void => {
+  ctx.lineWidth = thickness;
+  ctx.setLineDash([3.2, 2.4]);
+  ctx.beginPath();
+  ctx.moveTo(T.ax, T.ay);
+  ctx.lineTo(T.bx, T.by);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  const mx = (T.ax + T.bx) / 2;
+  const my = (T.ay + T.by) / 2;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const tick = Math.max(3.2, thickness * 2.4);
+  ctx.lineWidth = Math.max(1.1, thickness);
+  ctx.beginPath();
+  ctx.moveTo(mx + nx * tick, my + ny * tick);
+  ctx.lineTo(mx - nx * tick, my - ny * tick);
+  ctx.stroke();
+};
+
+const drawEitherStereo = (
+  ctx: CanvasRenderingContext2D,
+  T: BondEnds,
+  dx: number,
+  dy: number,
+  len: number,
+  width: number,
+  color: string,
+): void => {
+  const perpX = -dy / len;
+  const perpY = dx / len;
+  const endGap = 4;
+  const tx = T.bx - (dx / len) * endGap;
+  const ty = T.by - (dy / len) * endGap;
+  const w = width / 2;
+  ctx.beginPath();
+  ctx.moveTo(T.ax, T.ay);
+  ctx.lineTo(tx + perpX * w, ty + perpY * w);
+  ctx.lineTo(tx, ty);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  const numDashes = Math.max(4, Math.min(12, Math.round(len / 4.5)));
+  ctx.lineWidth = Math.max(1.1, width * 0.12);
+  ctx.beginPath();
+  for (let i = 1; i <= numDashes; i++) {
+    const t = i / (numDashes + 0.5);
+    const px = T.ax + dx * t;
+    const py = T.ay + dy * t;
+    const hw = t * w;
+    ctx.moveTo(px, py);
+    ctx.lineTo(px - perpX * hw, py - perpY * hw);
+  }
+  ctx.stroke();
+};
+
+const drawCisTransDouble = (
+  ctx: CanvasRenderingContext2D,
+  T: BondEnds,
+  dx: number,
+  dy: number,
+  len: number,
+  offset: number,
+  thickness: number,
+): void => {
+  const nx = (-dy / len) * offset;
+  const ny = (dx / len) * offset;
+  const mx = (T.ax + T.bx) / 2;
+  const my = (T.ay + T.by) / 2;
+  ctx.lineWidth = thickness;
+  ctx.lineCap = 'butt';
+  ctx.beginPath();
+  ctx.moveTo(T.ax + nx, T.ay + ny);
+  ctx.lineTo(mx - nx, my - ny);
+  ctx.lineTo(T.bx + nx, T.by + ny);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(T.ax - nx, T.ay - ny);
+  ctx.lineTo(mx + nx, my + ny);
+  ctx.lineTo(T.bx - nx, T.by - ny);
+  ctx.stroke();
+};
+
+/**
+ * Kekulé-style aromatic circle: continuous stroke, never dashed.
+ * `setLineDash([])` is required so fragment-placement ghosts (which wrap
+ * `drawBonds` in a dashed dash) cannot leak a dashed circle.
+ */
+const drawAromaticCircles = (
+  ctx: CanvasRenderingContext2D,
+  R: RenderContext,
+  circles: AromaticCircle[],
+  thickness: number,
+): void => {
+  if (circles.length === 0) return;
+  const visibleAtoms = R.visibleAtomIds;
+  const ink = R.structureTheme.ink;
+  ctx.save();
+  // Continuous stroke: empty dash (SVG omits stroke-dasharray).
+  ctx.setLineDash([]);
+  ctx.lineDashOffset = 0;
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = thickness;
+  for (const ring of circles) {
+    if (visibleAtoms && !ring.atomIds.some(id => visibleAtoms.has(id))) continue;
+    let opacity = 1;
+    for (const id of ring.atomIds) {
+      const op = R.atomOpacityById?.get(id) ?? 1;
+      if (op < opacity) opacity = op;
+    }
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = ink;
+    ctx.beginPath();
+    ctx.arc(ring.center.x, ring.center.y, ring.radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+};
+
 export const drawBonds = (ctx: CanvasRenderingContext2D, R: RenderContext): void => {
   const P = R.displayPrefs;
   const mol = R.renderedMolecule;
@@ -168,6 +327,12 @@ export const drawBonds = (ctx: CanvasRenderingContext2D, R: RenderContext): void
       drawContinuousWedgeRibbon(ctx, pts, halfW, chain.color, chain.opacity);
     }
   }
+
+  const { circles: aromaticCircles, bondIds: aromaticCircleBondIds } = collectAromaticCircles(
+    mol,
+    atomById,
+    R.ringAtomIdsByBondId ?? new Map(),
+  );
 
   // Painter's algorithm: far bonds first when a 3D pose is active.
   const bondsSorted = pose
@@ -316,6 +481,66 @@ export const drawBonds = (ctx: CanvasRenderingContext2D, R: RenderContext): void
           }
           ctx.stroke();
         }
+      } else if (bond.stereo === 'either' && len >= 1e-6) {
+        drawEitherStereo(ctx, T, dx, dy, len, P.stereoWedgeWidthPx, bcol);
+      } else if (bond.queryType && len >= 1e-6) {
+        const ux = dx / len;
+        const uy = dy / len;
+        const offset = Math.max((len * spacingFrac) / 2, bondThickness * 3.25, 5.5);
+        const nx = (-dy / len) * offset;
+        const ny = (dx / len) * offset;
+        const inset = Math.min(1.25, len * 0.02);
+        ctx.lineWidth = singleThickness;
+        if (bond.queryType === 'any') {
+          drawQueryAnyBond(ctx, T, dx, dy, len, singleThickness);
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(T.ax, T.ay);
+          ctx.lineTo(T.bx, T.by);
+          ctx.stroke();
+          if (bond.queryType === 'single_double') {
+            drawDashedCompanion(ctx, T, nx, ny, ux, uy, inset, [5, 3.5]);
+          } else if (bond.queryType === 'single_aromatic') {
+            drawDashedCompanion(ctx, T, nx, ny, ux, uy, inset, [1.6, 2.8]);
+          } else if (bond.queryType === 'double_aromatic') {
+            drawDashedCompanion(ctx, T, nx, ny, ux, uy, inset, [3.2, 2.2]);
+            drawDashedCompanion(ctx, T, -nx, -ny, ux, uy, inset, [1.6, 2.8]);
+          }
+        }
+      } else if (bond.aromatic && len >= 1e-6) {
+        ctx.lineWidth = singleThickness;
+        ctx.beginPath();
+        ctx.moveTo(T.ax, T.ay);
+        ctx.lineTo(T.bx, T.by);
+        ctx.stroke();
+        // Complete rings get a solid inner circle (drawn after all bonds).
+        // Isolated aromatic bonds keep the solid + dashed inner companion.
+        if (!aromaticCircleBondIds.has(bond.id)) {
+          const ux = dx / len;
+          const uy = dy / len;
+          const offset = Math.max((len * spacingFrac) / 2, bondThickness * 3.25, 6.5);
+          let nx = (-dy / len) * offset;
+          let ny = (dx / len) * offset;
+          const ringCenter = R.ringCenterByBondId?.get(bond.id);
+          if (ringCenter) {
+            const mx = (T.ax + T.bx) / 2;
+            const my = (T.ay + T.by) / 2;
+            if (nx * (ringCenter.x - mx) + ny * (ringCenter.y - my) < 0) {
+              nx = -nx;
+              ny = -ny;
+            }
+          }
+          const inset = Math.min(1.25, len * 0.02);
+          drawDashedCompanion(ctx, T, nx, ny, ux, uy, inset, [3.4, 2.6]);
+        }
+      } else if (bond.bold && len >= 1e-6) {
+        ctx.lineWidth = Math.max(singleThickness * 2.8, 5);
+        ctx.lineCap = 'butt';
+        ctx.beginPath();
+        ctx.moveTo(T.ax, T.ay);
+        ctx.lineTo(T.bx, T.by);
+        ctx.stroke();
+        ctx.lineCap = 'round';
       } else {
         // Depth taper: near end = normal bond half-width (parallel sides);
         // far end → point (0). Equal depth → constant-width “normal” line.
@@ -357,6 +582,12 @@ export const drawBonds = (ctx: CanvasRenderingContext2D, R: RenderContext): void
       const dx = T.bx - T.ax;
       const dy = T.by - T.ay;
       const len = Math.hypot(dx, dy);
+      if (len >= 1e-6 && bond.stereo === 'cis_trans') {
+        const offset = Math.max((len * spacingFrac) / 2, bondThickness * 3.25, 6.5);
+        drawCisTransDouble(ctx, T, dx, dy, len, offset, bondThickness);
+        ctx.restore();
+        return;
+      }
       if (len >= 1e-6) {
         // Separation between the two lines; floor so short bonds (e.g. N=O) stay readable.
         const separation = Math.max(
@@ -479,6 +710,8 @@ export const drawBonds = (ctx: CanvasRenderingContext2D, R: RenderContext): void
     }
     ctx.restore();
   });
+
+  drawAromaticCircles(ctx, R, aromaticCircles, P.bondThicknessPx);
 
   ctx.strokeStyle = R.structureTheme.ink;
   ctx.globalAlpha = 1;

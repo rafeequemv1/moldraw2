@@ -27,6 +27,7 @@ const FEATURE_SELECT = 'id,name,title,description,image_urls,status,upvote_count
 const FEATURE_COMMENT_SELECT = 'id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
 
 let templateCache = null;
+let templateMtime = 0;
 
 function escapeHtml(value) {
   return String(value || '')
@@ -200,7 +201,6 @@ function wantsMarkdown(acceptHeader) {
 }
 
 function loadTemplate() {
-  if (templateCache) return templateCache;
   const candidates = [
     path.join(__dirname, '../public/community/index.html'),
     path.join(process.cwd(), 'public/community/index.html'),
@@ -208,7 +208,10 @@ function loadTemplate() {
   ];
   for (const file of candidates) {
     if (fs.existsSync(file)) {
+      const mtime = fs.statSync(file).mtimeMs;
+      if (templateCache && templateMtime === mtime) return templateCache;
       templateCache = fs.readFileSync(file, 'utf8');
+      templateMtime = mtime;
       return templateCache;
     }
   }
@@ -304,6 +307,40 @@ async function fetchFeatureComments(requestIds, limit = COMMENT_LIMIT) {
   }
 }
 
+function latestChronological(comments, limit = LIST_COMMENT_PREVIEW) {
+  return [...(comments || [])]
+    .sort((a, b) => {
+      const delta = new Date(a.created_at || 0) - new Date(b.created_at || 0);
+      return delta !== 0 ? delta : String(a.id || '').localeCompare(String(b.id || ''));
+    })
+    .slice(-limit);
+}
+
+async function fetchLatestCommentsByParent(table, parentKey, parentIds, select, knownTotals) {
+  const byParent = new Map();
+  const totals = new Map();
+  if (!parentIds.length) return { byParent, totals };
+  parentIds.forEach((id) => {
+    byParent.set(id, []);
+    totals.set(id, Number(knownTotals?.get(id)) || 0);
+  });
+  await Promise.all(parentIds.map(async (id) => {
+    try {
+      const { data, total } = await supabaseQuery(
+        table,
+        `select=${select}&${parentKey}=eq.${encodeEq(id)}&order=created_at.desc`,
+        { range: { from: 0, to: LIST_COMMENT_PREVIEW - 1 } },
+      );
+      const newestFirst = data || [];
+      byParent.set(id, [...newestFirst].reverse());
+      totals.set(id, Number.isFinite(total) ? total : (Number(knownTotals?.get(id)) || newestFirst.length));
+    } catch {
+      byParent.set(id, []);
+    }
+  }));
+  return { byParent, totals };
+}
+
 async function fetchComment(id) {
   const { data } = await supabaseQuery(
     'community_comments',
@@ -371,59 +408,74 @@ function renderImages(imageUrls, altText) {
   return `<div class="card-images">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="${escapeHtml(altText)}"></a>`).join('')}</div>`;
 }
 
-function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllReplies = true, highlightId = '' }) {
+function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllReplies = true, highlightId = '', useDomId = false }) {
   const replies = showAllReplies ? (comment.replies || []) : (comment.replies || []).slice(0, 2);
   const hiddenReplies = Math.max((comment.replies || []).length - replies.length, 0);
-  const replyHtml = replies.map((reply) => renderSingleComment(reply, { permalinkHref, heading, showAllReplies, highlightId })).join('');
+  const replyHtml = replies.map((reply) => renderSingleComment(reply, { permalinkHref, heading, showAllReplies, highlightId, useDomId })).join('');
   const images = renderImages(comment.image_urls, 'Reply attachment');
   const highlighted = highlightId && comment.id === highlightId;
+  const permalink = permalinkHref(comment);
+  const domId = useDomId ? `id="comment-${escapeHtml(comment.id)}"` : '';
   return `
-        <article class="comment${comment.parent_comment_id ? ' comment-reply' : ''}${highlighted ? ' is-highlight' : ''}" id="comment-${escapeHtml(comment.id)}" data-comment-id="${escapeHtml(comment.id)}">
+        <article class="comment${comment.parent_comment_id ? ' comment-reply' : ''}${highlighted ? ' is-highlight' : ''}" ${domId} data-comment-id="${escapeHtml(comment.id)}">
           <${heading} class="comment-heading">${escapeHtml(comment.author_name || 'Community member')}</${heading}>
-          <div class="author" style="margin-bottom:3px;">
-            <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}" style="width:24px;height:24px;font-size:10px;">${escapeHtml(initials(comment.author_name))}</span>
+          <div class="author">
+            <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
             <div>
               <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)}</strong>
-              <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · <time datetime="${escapeHtml(isoDate(comment.created_at) || '')}">${escapeHtml(timeText(comment.created_at))}</time></div>
+              <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · <a class="comment-time-link" href="${escapeHtml(permalink)}"><time datetime="${escapeHtml(isoDate(comment.created_at) || '')}">${escapeHtml(timeText(comment.created_at))}</time></a></div>
             </div>
           </div>
           <p class="comment-body">${escapeHtml(comment.body)}</p>
           ${images}
-          <p class="comment-tools"><a class="comment-permalink" href="${escapeHtml(permalinkHref(comment))}">Permalink</a></p>
-          ${replyHtml || hiddenReplies ? `<div class="comment-replies">${replyHtml}${hiddenReplies > 0 ? `<a class="more-thread" href="${escapeHtml(permalinkHref(comment))}">View ${hiddenReplies} more ${hiddenReplies === 1 ? 'reply' : 'replies'}</a>` : ''}</div>` : ''}
+          <p class="comment-tools">
+            <button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(comment.id)}">Reply</button>
+            <button class="comment-tool" type="button">Report</button>
+          </p>
+          <div class="comment-inline-slot" data-comment-slot="${escapeHtml(comment.id)}"></div>
+          ${replyHtml || hiddenReplies ? `<div class="comment-replies">${replyHtml}${hiddenReplies > 0 ? `<a class="more-thread" href="${escapeHtml(permalink)}">View ${hiddenReplies} more ${hiddenReplies === 1 ? 'reply' : 'replies'}</a>` : ''}</div>` : ''}
         </article>`;
 }
 
-function renderReplyComposer() {
+function renderCardReplyComposer() {
   return `
-        <section class="thread-reply-composer" aria-label="Reply to this post">
-          <h2 class="comments-heading">Post your reply</h2>
+        <section class="card-reply-composer" aria-label="Write a reply">
           <div class="comment-form" data-comment-form="main">
-            <textarea placeholder="Post your reply" aria-label="Post your reply"></textarea>
+            <textarea placeholder="Write a reply…" aria-label="Write a reply"></textarea>
             <label class="comment-image-chip">Image<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple></label>
             <button class="btn btn-primary" type="button">Reply</button>
           </div>
-          <p class="author-meta">Sign in to reply. Public comments below are crawlable on their own permalinks.</p>
         </section>`;
 }
 
-function renderCommentThread(comments, { permalinkHref, pageUrl, showAll = false, highlightId = '' }) {
+function renderCommentList(comments, { permalinkHref, pageUrl, showAll = false, highlightId = '', useDomId = false, emptyMessage = false, totalCount = 0 }) {
   const roots = buildCommentTree(comments);
   const visible = showAll ? roots : roots.slice(0, LIST_COMMENT_PREVIEW);
-  const hidden = Math.max(roots.length - visible.length, 0);
-  const rendered = visible.map((comment) => renderSingleComment(comment, { permalinkHref, showAllReplies: showAll, highlightId })).join('');
+  const hidden = Math.max((Number(totalCount) || comments.length) - visible.length, 0);
+  const rendered = visible.map((comment) => renderSingleComment(comment, { permalinkHref, showAllReplies: showAll, highlightId, useDomId })).join('');
+  if (!rendered) {
+    if (emptyMessage) return '<p class="author-meta">No replies yet. Be the first to reply.</p>';
+    if ((Number(totalCount) || 0) > 0) return `<a class="more-thread" data-open-thread href="${escapeHtml(pageUrl)}">View more comments</a>`;
+    return '';
+  }
   return `
-        ${showAll ? renderReplyComposer() : ''}
-        <section class="comments visible" aria-label="Comments">
-          <h2 class="comments-heading">Comments</h2>
-          ${rendered || '<p class="author-meta">No replies yet. Be the first to reply.</p>'}
-          ${hidden > 0 ? `<a class="more-thread" href="${escapeHtml(pageUrl)}">View ${hidden} more ${hidden === 1 ? 'thread' : 'threads'}</a>` : ''}
-        </section>`;
+          ${rendered}
+          ${!showAll && hidden > 0 ? `<a class="more-thread" data-open-thread href="${escapeHtml(pageUrl)}">View more comments</a>` : ''}`;
 }
 
-function renderPostCard(post, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '' } = {}) {
+function renderPostCard(post, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '', commentTotal } = {}) {
   const url = discussionPath(post);
   const titleTag = heading;
+  const replies = commentTotal ?? post.comment_count ?? comments.length ?? 0;
+  const commentsHtml = renderCommentList(comments, {
+    permalinkHref: commentPath,
+    pageUrl: url,
+    showAll: showAllComments,
+    highlightId,
+    useDomId: includeComments,
+    emptyMessage: includeComments,
+    totalCount: replies,
+  });
   return `
           <article class="community-card${selected ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}">
             <div class="card-top">
@@ -440,9 +492,10 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
             ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
               <span class="pill">▲ ${escapeHtml(post.upvote_count || 0)}</span>
-              <a class="pill" data-open-thread href="${escapeHtml(url)}">${escapeHtml(post.comment_count || comments.length || 0)} replies</a>
+              <button class="pill" type="button" data-focus-reply>Reply ${escapeHtml(replies)}</button>
             </div>
-            ${includeComments ? renderCommentThread(comments, { permalinkHref: commentPath, pageUrl: url, showAll: showAllComments, highlightId }) : ''}
+            <div class="comments visible" data-comments="${escapeHtml(post.id)}" aria-label="Comments">${commentsHtml}</div>
+            ${renderCardReplyComposer()}
           </article>`;
 }
 
@@ -462,9 +515,19 @@ function renderFeatureStatus(status) {
   return `<span class="feature-status ${meta.className}" title="${escapeHtml(meta.label)}"><span class="feature-status-symbol" aria-hidden="true">${meta.symbol}</span><span class="feature-status-label">${escapeHtml(meta.label)}</span></span>`;
 }
 
-function renderFeatureCard(request, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '' } = {}) {
+function renderFeatureCard(request, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '', commentTotal } = {}) {
   const url = featurePath(request);
   const titleTag = heading;
+  const replies = commentTotal ?? comments.length ?? 0;
+  const commentsHtml = renderCommentList(comments, {
+    permalinkHref: featureCommentPath,
+    pageUrl: url,
+    showAll: showAllComments,
+    highlightId,
+    useDomId: includeComments,
+    emptyMessage: includeComments,
+    totalCount: replies,
+  });
   return `
           <article class="community-card${selected ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}">
             <div class="card-top">
@@ -481,9 +544,10 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
             ${renderImages(request.image_urls, 'Feature request attachment')}
             <div class="card-actions">
               <span class="pill">▲ ${escapeHtml(request.upvote_count || 0)}</span>
-              <a class="pill" data-open-thread href="${escapeHtml(url)}">${escapeHtml(comments.length || 0)} replies</a>
+              <button class="pill" type="button" data-focus-reply>Reply ${escapeHtml(replies)}</button>
             </div>
-            ${includeComments ? renderCommentThread(comments, { permalinkHref: featureCommentPath, pageUrl: url, showAll: showAllComments, highlightId }) : ''}
+            <div class="comments visible" data-feature-comments="${escapeHtml(request.id)}" aria-label="Comments">${commentsHtml}</div>
+            ${renderCardReplyComposer()}
           </article>`;
 }
 
@@ -834,10 +898,10 @@ async function renderListPage(route, { accept } = {}) {
   const rows = fetched.data || [];
   const total = fetched.total || rows.length;
   const ids = rows.map((row) => row.id);
-  const comments = isFeatures
-    ? await fetchFeatureComments(ids, LIST_COMMENT_PREVIEW * PAGE_SIZE)
-    : await fetchCommentsForPosts(ids, LIST_COMMENT_PREVIEW * PAGE_SIZE);
-  const grouped = groupBy(comments, isFeatures ? 'feature_request_id' : 'post_id');
+  const knownTotals = new Map(rows.map((row) => [row.id, Number(row.comment_count) || 0]));
+  const previews = isFeatures
+    ? await fetchLatestCommentsByParent('feature_request_comments', 'feature_request_id', ids, FEATURE_COMMENT_SELECT)
+    : await fetchLatestCommentsByParent('community_comments', 'post_id', ids, COMMENT_SELECT, knownTotals);
 
   const canonicalPath = isFeatures
     ? (page <= 1 ? '/community/features' : `/community/features/page/${page}`)
@@ -851,8 +915,8 @@ async function renderListPage(route, { accept } = {}) {
     : excerpt(rows.map((row) => row.title).filter(Boolean).join('. ') || 'Public MolDraw community discussions about chemical structure drawing, editor workflows, and 3D molecule viewing.');
 
   const feedHtml = isFeatures
-    ? `<section class="feature-cta-card"><div><h2>Have an idea for MolDraw?</h2><p>Request a feature here so the community can vote and track progress. Sign in to submit.</p></div></section>${rows.map((request) => renderFeatureCard(request, grouped.get(request.id) || [])).join('')}`
-    : rows.map((post) => renderPostCard(post, grouped.get(post.id) || [])).join('')
+    ? `<section class="feature-cta-card"><div><h2>Have an idea for MolDraw?</h2><p>Request a feature here so the community can vote and track progress. Sign in to submit.</p></div></section>${rows.map((request) => renderFeatureCard(request, previews.byParent.get(request.id) || [], { commentTotal: previews.totals.get(request.id) })).join('')}`
+    : rows.map((post) => renderPostCard(post, previews.byParent.get(post.id) || [], { commentTotal: post.comment_count ?? previews.totals.get(post.id) })).join('')
       || '<p>No discussions yet. Start the first one.</p>';
 
   const items = rows.map((row) => ({

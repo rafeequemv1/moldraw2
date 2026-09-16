@@ -117,6 +117,13 @@ export {
 export { applyMarqueeMovePreview, type MarqueeMovePreviewIds } from './marqueePreview';
 export { getSmallestRingCenter, getSmallestCycleAtomIds } from './rings';
 export {
+  collectAromaticCircles,
+  AROMATIC_CIRCLE_INSET,
+  MIN_AROMATIC_CIRCLE_ATOMS,
+  MAX_AROMATIC_CIRCLE_ATOMS,
+  type AromaticCircle,
+} from './aromaticCircles';
+export {
   pickCanvasOrbitalAt,
   resolveOrbitalCenter,
   orbitalSupportsRotation,

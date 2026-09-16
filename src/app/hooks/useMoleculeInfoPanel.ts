@@ -57,12 +57,13 @@ export function useMoleculeInfoPanel({
   const [infoPanelDismissed, setInfoPanelDismissed] = useState(() => !readInfoPanelOpenPref());
   const [infoData, setInfoData] = useState<InfoPanelData | null>(null);
 
-  /** Connectivity of the current selection — used to refresh the info panel when chemistry changes. */
+  /** Connectivity of the current selection (or whole molecule) — refresh when chemistry changes. */
   const selectedInfoConnectivityKey = useMemo(() => {
-    if (selectedAtomIds.length === 0) return '';
-    const idSet = new Set(selectedAtomIds);
-    const atoms = molecule.atoms.filter(a => idSet.has(a.id));
-    const bonds = molecule.bonds.filter(b => idSet.has(b.fromAtomId) && idSet.has(b.toAtomId));
+    const idSet = selectedAtomIds.length > 0 ? new Set(selectedAtomIds) : null;
+    const atoms = idSet ? molecule.atoms.filter(a => idSet.has(a.id)) : molecule.atoms;
+    const bonds = idSet
+      ? molecule.bonds.filter(b => idSet.has(b.fromAtomId) && idSet.has(b.toAtomId))
+      : molecule.bonds;
     const aKey = atoms
       .map(a => `${a.id}:${a.element}:${a.charge ?? 0}`)
       .sort()
@@ -71,7 +72,7 @@ export function useMoleculeInfoPanel({
       .map(b => `${b.fromAtomId}-${b.toAtomId}-${b.order}`)
       .sort()
       .join('|');
-    return `${aKey}#${bKey}`;
+    return `${idSet ? 'sel' : 'mol'}#${aKey}#${bKey}`;
   }, [molecule.atoms, molecule.bonds, selectedAtomIds]);
 
   // Re-show when selection returns (unless user dismissed). Do not clear on deselect.
@@ -83,12 +84,25 @@ export function useMoleculeInfoPanel({
   }, [selectedAtomIds.length, infoPanelDismissed]);
 
   useEffect(() => {
-    // Refresh only when there is a live selection; keep last snapshot if user clicks canvas empty.
-    if (!showInfoPanel || selectedAtomIds.length === 0 || !selectedInfoConnectivityKey) return;
-    const idSet = new Set(selectedAtomIds);
-    const atoms = molecule.atoms.filter(a => idSet.has(a.id));
-    const bonds = molecule.bonds.filter(b => idSet.has(b.fromAtomId) && idSet.has(b.toAtomId));
-    if (atoms.length === 0) return;
+    if (!showInfoPanel) return;
+    const idSet = selectedAtomIds.length > 0 ? new Set(selectedAtomIds) : null;
+    const atoms = idSet ? molecule.atoms.filter(a => idSet.has(a.id)) : molecule.atoms;
+    const bonds = idSet
+      ? molecule.bonds.filter(b => idSet.has(b.fromAtomId) && idSet.has(b.toAtomId))
+      : molecule.bonds;
+    if (atoms.length === 0) {
+      setInfoData({
+        empirical: { order: [], counts: {} },
+        mw: 0,
+        charge: 0,
+        smiles: '',
+        smilesLoading: false,
+        inchiLoading: false,
+        iupacLoading: false,
+        copied: false,
+      });
+      return;
+    }
     const subMol: Molecule = { atoms, bonds };
     const { empirical, mw } = getMolecularData(subMol);
     const charge = atoms.reduce((s, a) => s + (a.charge || 0), 0);
@@ -126,11 +140,10 @@ export function useMoleculeInfoPanel({
   }, [showInfoPanel, selectedInfoConnectivityKey, selectedAtomIds, structureCheck]);
 
   const openInfoPanel = useCallback(() => {
-    if (selectedAtomIds.length === 0 && !infoData) return;
     setInfoPanelDismissed(false);
     setShowInfoPanel(true);
     writeInfoPanelOpenPref(true);
-  }, [selectedAtomIds.length, infoData]);
+  }, []);
 
   const closeInfoPanel = useCallback(() => {
     setInfoPanelDismissed(true);
@@ -143,9 +156,8 @@ export function useMoleculeInfoPanel({
       closeInfoPanel();
       return;
     }
-    if (selectedAtomIds.length === 0 && !infoData) return;
     openInfoPanel();
-  }, [selectedAtomIds.length, showInfoPanel, infoData, closeInfoPanel, openInfoPanel]);
+  }, [showInfoPanel, closeInfoPanel, openInfoPanel]);
 
   const selectionMatchesPubchemImport =
     !!pubchemImport &&

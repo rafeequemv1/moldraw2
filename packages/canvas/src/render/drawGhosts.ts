@@ -17,11 +17,19 @@ const BOND_TOOL_NAMES = new Set([
   'single_bond',
   'double_bond',
   'triple_bond',
+  'aromatic_bond',
   'wedge_bond',
   'dash_bond',
+  'either_bond',
   'wavy_bond',
+  'cis_trans_bond',
   'dative_bond',
+  'any_bond',
+  'single_double_bond',
+  'single_aromatic_bond',
+  'double_aromatic_bond',
   'dotted_bond',
+  'bold_bond',
 ]);
 
 /**

@@ -19,6 +19,12 @@ export {
 export { getSelectionAabb, getMarqueeSelectionAabb } from './geometry';
 export { useDefaultCanvasCommands } from './useDefaultCanvasCommands';
 export {
+  BOND_TOOLS,
+  bondCommandPatchForStyleTool,
+  isBondTool as isCanvasBondTool,
+} from './interaction/bondToolStyles';
+export type { BondToolId } from './interaction/bondToolStyles';
+export {
   SMART_DRAW_TOOL_ID,
   SMART_DRAW_IDLE_MS,
   isSmartDrawTool,

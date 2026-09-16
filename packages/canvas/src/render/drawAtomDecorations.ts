@@ -565,7 +565,8 @@ function resolveLonePairLabelLayout(
   }): LonePairLabelLayout => {
     if (m.w < 2) return { headBox: null, labelTailLocal: null };
     return {
-      headBox: labelBoxFromExtents(m.left, m.headRight, m.h),
+      // Alias metrics add ~10px for bond trim; lone-pair keep-out uses the glyph.
+      headBox: labelBoxFromExtents(m.left, m.headRight, Math.max(10, m.h - 10)),
       labelTailLocal: m.hasTail
         ? m.tailGoesLeft
           ? { x: -1, y: 0 }
@@ -639,10 +640,10 @@ function measureElementLabelBox(
     const headRight = elW / 2;
     if (isotopeStr) left -= isoW;
 
-    const m = ctx.measureText('Mg');
+    const m = ctx.measureText(displayElement || 'O');
     const asc = m.actualBoundingBoxAscent ?? 0;
     const desc = m.actualBoundingBoxDescent ?? 0;
-    const h = (asc + desc || 14) + 10;
+    const h = (asc + desc || 14) + 1;
 
     let labelTailLocal: { x: number; y: number } | null = null;
     if (numH > 0 || hasCharge) {

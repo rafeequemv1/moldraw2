@@ -130,13 +130,18 @@ export function useFragmentPlacement({
 
   const handleBeginFunctionalGroupPlacement = useCallback(
     (smiles: string, _label?: string, molblock?: string | null) => {
-      if (molblock?.trim()) {
-        beginMolblockPlacement(molblock, 'functional_group');
-        return;
-      }
-      beginFragmentPlacement(smiles, `placement-prep:fg:${crypto.randomUUID()}`);
+      setShowTemplateLibrary(false);
+      const start = () => {
+        if (molblock?.trim()) {
+          beginMolblockPlacement(molblock, 'functional_group');
+          return;
+        }
+        beginFragmentPlacement(smiles, `placement-prep:fg:${crypto.randomUUID()}`);
+      };
+      if (molblock?.trim()) start();
+      else deferAfterLibraryClose(start);
     },
-    [beginFragmentPlacement, beginMolblockPlacement],
+    [beginFragmentPlacement, beginMolblockPlacement, setShowTemplateLibrary],
   );
 
   const handleBeginLigandPlacement = useCallback(

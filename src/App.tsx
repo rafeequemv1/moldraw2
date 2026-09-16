@@ -85,7 +85,6 @@ import {
   FeatureRequestModal,
   UpdatesModal,
   MoleculeInfoPanel,
-  MoleculeStatusBar,
   SiteFooterHost,
   type PubChemImportContext,
   PencilOptionsBar,
@@ -830,6 +829,7 @@ function App() {
     onOpenTemplateLibrary: () => {
       setTemplateLibraryTab('structures');
       setShowTemplateLibrary(true);
+      setShowDrawTools(false);
     },
     onPickImageFile: () => imageFileInputRef.current?.click(),
     onLeaveFragmentPlacement: () => clearFragmentPlacementRef.current(),
@@ -845,6 +845,7 @@ function App() {
     bondLengthPxRef,
     bondLengthPx: resolvedCanvasPreferences.bondLengthPx,
     selectedAtomIds,
+    selectedBondIds,
     resetAutoCleanup,
     setShowInfoPanel: v => setShowInfoPanelRef.current(v),
     preferIndigo2d: appSettings.general.preferIndigo2d === true,
@@ -1251,7 +1252,30 @@ function App() {
             const dativeOk =
               patch.dative === undefined ||
               Boolean(after?.dative) === Boolean(patch.dative);
-            if (before && after && orderOk && stereoOk && dativeOk) {
+            const dottedOk =
+              patch.dotted === undefined ||
+              Boolean(after?.dotted) === Boolean(patch.dotted);
+            const aromaticOk =
+              patch.aromatic === undefined ||
+              Boolean(after?.aromatic) === Boolean(patch.aromatic);
+            const queryOk =
+              !('queryType' in patch) ||
+              (patch.queryType == null
+                ? after?.queryType == null
+                : after?.queryType === patch.queryType);
+            const boldOk =
+              patch.bold === undefined || Boolean(after?.bold) === Boolean(patch.bold);
+            if (
+              before &&
+              after &&
+              orderOk &&
+              stereoOk &&
+              dativeOk &&
+              dottedOk &&
+              aromaticOk &&
+              queryOk &&
+              boldOk
+            ) {
               changed += 1;
             } else {
               blocked += 1;
@@ -2110,9 +2134,6 @@ function App() {
                   onCanvasShapeKindChange={setCanvasShapeKind}
                   shapeMenuValue={shapeMenuValue}
                   onShapeMenuValueChange={handleShapeMenuValueChange}
-                  onBeginFunctionalGroupPlacement={handleBeginFunctionalGroupPlacement}
-                  onBeginLigandPlacement={handleBeginLigandPlacement}
-                  requestFunctionalGroupMolblock={requestTemplateSmilesMolblock}
                 />
               ) : null
             }
@@ -2131,9 +2152,6 @@ function App() {
                   onCanvasShapeKindChange={setCanvasShapeKind}
                   shapeMenuValue={shapeMenuValue}
                   onShapeMenuValueChange={handleShapeMenuValueChange}
-                  onBeginFunctionalGroupPlacement={handleBeginFunctionalGroupPlacement}
-                  onBeginLigandPlacement={handleBeginLigandPlacement}
-                  requestFunctionalGroupMolblock={requestTemplateSmilesMolblock}
                 />
               ) : null
             }
@@ -2261,11 +2279,6 @@ function App() {
             onToggleGrid={() =>
               updateAppSettingsGeneral({ showGrid: appSettings.general.showGrid !== true })
             }
-            onOpenTemplateLibrary={() => {
-              setTemplateLibraryTab('structures');
-              setShowTemplateLibrary(true);
-              setShowDrawTools(false);
-            }}
             drawToolsOpen={showDrawTools}
             onToggleDrawTools={() => {
               setShowDrawTools(v => !v);
@@ -2478,7 +2491,6 @@ function App() {
               activeTool={activeTool}
               onSelect={handleToolbarSelectWithPerspective}
               isCompact={isCompactViewport}
-              preferSheetMenus={isCompactViewport}
               groupedTools={groupedTools}
               reactionArrowKind={reactionArrowKind}
               onReactionArrowKindChange={setReactionArrowKind}
@@ -2490,9 +2502,6 @@ function App() {
               onCanvasShapeKindChange={setCanvasShapeKind}
               shapeMenuValue={shapeMenuValue}
               onShapeMenuValueChange={handleShapeMenuValueChange}
-              onBeginFunctionalGroupPlacement={handleBeginFunctionalGroupPlacement}
-              onBeginLigandPlacement={handleBeginLigandPlacement}
-              requestFunctionalGroupMolblock={requestTemplateSmilesMolblock}
               onOpenSettings={isCompactViewport ? () => setShowAppSettings(true) : undefined}
               showObjectsPanel={showObjectsPanel}
               onToggleObjectsPanel={() => setShowObjectsPanel(v => !v)}
@@ -2638,16 +2647,7 @@ function App() {
       />
       </div>
 
-      {isCompactViewport ? null : (
-        <>
-          <MoleculeStatusBar
-            molecule={molecule}
-            selectedAtomIds={selectedAtomIds}
-            selectedCanvasShapeId={colorEditCanvasShapeId}
-          />
-          <SiteFooterHost />
-        </>
-      )}
+      {isCompactViewport ? null : <SiteFooterHost />}
       </div>
 
       {editingArrowReagent && inlineArrowReagentPos ? (
@@ -2714,6 +2714,7 @@ function App() {
         onClose={() => setShowTemplateLibrary(false)}
         initialTab={templateLibraryTab}
         onInsertAmino={handleBeginAminoPlacement}
+        onInsertFunctionalGroup={handleBeginFunctionalGroupPlacement}
         onInsertLigand={handleBeginLigandPlacement}
         onInsertStructure3D={handleBeginStructure3DPlacement}
         onInsertCof={id => {

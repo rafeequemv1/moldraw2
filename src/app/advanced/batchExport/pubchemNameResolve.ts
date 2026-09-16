@@ -7,10 +7,11 @@ const CAS_PATTERN = /^\d{2,7}-\d{2}-\d$/;
 /** True when the query is more likely SMILES than a compound name / CAS. */
 export function looksLikeSmiles(term: string): boolean {
   const t = term.trim();
-  if (!t || looksLikeCompoundName(t)) return false;
+  if (!t) return false;
   if (/[=\[\]\(\)@#\\\/]/.test(t)) return true;
   if (/^[BCNOPSFIbcnops]\d/.test(t)) return true;
-  if (/c\d|n\d|o\d/i.test(t)) return true;
+  if (!/\s/.test(t) && /[cnosp]\d/i.test(t)) return true;
+  if (looksLikeCompoundName(t)) return false;
   return false;
 }
 

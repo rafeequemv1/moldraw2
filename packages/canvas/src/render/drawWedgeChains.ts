@@ -34,7 +34,7 @@ export function collectWedgeChains(
     if (opts.visibleBondIds && !opts.visibleBondIds.has(bond.id)) continue;
     if (bond.stereo !== 'wedge') continue;
     const order = bond.order === 4 ? 1 : bond.order;
-    if (order !== 1 || bond.dative || bond.dotted) continue;
+    if (order !== 1 || bond.dative || bond.dotted || bond.queryType || bond.aromatic) continue;
     const from = atomById.get(bond.fromAtomId);
     const to = atomById.get(bond.toAtomId);
     if (!from || !to) continue;

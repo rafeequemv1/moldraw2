@@ -1,4 +1,10 @@
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
+import {
+  molfileBondOrder,
+  molfileBondStereoCode,
+  parseMolfileBondStereo,
+  parseMolfileBondType,
+} from '@moldraw/domain';
 import { expandInstanceArrays } from '../molecule/instanceArrays';
 import { molfileCoordsAngstrom } from '../molecule/perspective3D';
 import { findMolfileCountsLineIndex } from './molblockHeader';
@@ -33,9 +39,8 @@ export const moleculeToMolblock = (molIn: Molecule): string => {
   mol.bonds.forEach(b => {
     const fromIdx = idToIndex.get(b.fromAtomId)!.toString().padStart(3, ' ');
     const toIdx = idToIndex.get(b.toAtomId)!.toString().padStart(3, ' ');
-    const molOrder = b.aromatic ? 4 : b.order;
-    const order = molOrder.toString().padStart(3, ' ');
-    const stereo = b.stereo === 'wedge' ? '  1' : b.stereo === 'dash' ? '  6' : b.stereo === 'wavy' ? '  4' : '  0';
+    const order = molfileBondOrder(b).toString().padStart(3, ' ');
+    const stereo = molfileBondStereoCode(b).toString().padStart(3, ' ');
     molblock += `${fromIdx}${toIdx}${order}${stereo}  0  0  0\n`;
   });
   mol.atoms.forEach((a, i) => {
@@ -191,28 +196,18 @@ export const parseMolblock = (molblock: string): Molecule => {
     if (!line) continue;
     const parsed = parseMolfileBondLine(line, numAtoms);
     if (!parsed) continue;
-    let { fromIdx, toIdx, order, stereoCode } = parsed;
-    let stereo: 'wedge' | 'dash' | 'wavy' | undefined = undefined;
-
-    let aromatic = false;
-    if (order === 4) {
-      aromatic = true;
-      order = 1;
-    }
-
-    // Bond stereo: 1 up, 6 down, 4 either (single); 3 cis/trans (double); 9 unspecified either (some vendors).
-    if (!aromatic) {
-      if (stereoCode === 1) stereo = 'wedge';
-      else if (stereoCode === 6) stereo = 'dash';
-      else if (stereoCode === 4 || stereoCode === 9) stereo = 'wavy';
-    }
+    const { fromIdx, toIdx, order: rawOrder, stereoCode } = parsed;
+    const parsedType = parseMolfileBondType(rawOrder);
+    const stereo = parseMolfileBondStereo(stereoCode, parsedType.order, parsedType.aromatic);
 
     bonds.push({
       id: `${prefix}_b${i + 1}`,
       fromAtomId: atomIds[fromIdx],
       toAtomId:   atomIds[toIdx],
-      order,
-      ...(aromatic ? { aromatic: true } : {}),
+      order: parsedType.order,
+      ...(parsedType.aromatic ? { aromatic: true } : {}),
+      ...(parsedType.dative ? { dative: true } : {}),
+      ...(parsedType.queryType ? { queryType: parsedType.queryType } : {}),
       stereo,
     });
   }

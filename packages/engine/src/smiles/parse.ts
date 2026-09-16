@@ -12,8 +12,9 @@
  *   - `atom.chiralParity`  — from `@`/`@@`, encoded against id-sorted neighbors.
  *   - `bond.cisTransRef`   — from `/`,`\` directional bonds around a double bond.
  *
- * Aromatic atoms/bonds are flagged; the engine kekulizes afterwards so the rest
- * of the pipeline works on explicit Kekulé structures.
+ * Aromatic atoms/bonds are flagged from lowercase SMILES (`c1ccccc1`) and left
+ * aromatic for depiction. Kekulé SMILES (`C1=CC=CC=C1`) stay explicit doubles.
+ * Callers that need Kekulé form (valence, 3D, canonical SMILES) call `kekulize`.
  */
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
 import { makeIdFactory } from '../ids';

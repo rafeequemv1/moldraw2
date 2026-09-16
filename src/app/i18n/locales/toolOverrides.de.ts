@@ -31,6 +31,14 @@ export const deToolOverrides: Record<
       'Punktierte Bindung — Wasserstoffbrücken und schwache Wechselwirkungen (verbraucht keine Valenz)',
     shortLabel: '···',
   },
+  aromatic_bond: { label: 'Aromatisch', title: 'Aromatische Bindung (durchgezogener Innenkreis im Ring)', shortLabel: 'Arom' },
+  either_bond: { label: 'Keil/Hash', title: 'Keil/Hash (unbekannte Stereo)', shortLabel: 'Auf/Ab' },
+  cis_trans_bond: { label: 'Cis/Trans', title: 'Cis/Trans-Doppelbindung (E/Z unbestimmt)', shortLabel: 'E/Z' },
+  any_bond: { label: 'Beliebig', title: 'Beliebige Bindung (Query)', shortLabel: 'Any' },
+  single_double_bond: { label: 'Einfach/Doppel', title: 'Einfach oder Doppel (Query)', shortLabel: '1/2' },
+  single_aromatic_bond: { label: 'Einfach/Arom.', title: 'Einfach oder aromatisch (Query)', shortLabel: '1/Ar' },
+  double_aromatic_bond: { label: 'Doppel/Arom.', title: 'Doppel oder aromatisch (Query)', shortLabel: '2/Ar' },
+  bold_bond: { label: 'Dick', title: 'Dicke Vordergrundbindung (nur Anzeige)', shortLabel: 'Dick' },
   perspective: {
     label: '3D-Ansicht',
     title:
@@ -205,8 +213,8 @@ export const deToolOverrides: Record<
     title: 'PNG/JPEG/WebP/GIF-Bildannotation zur Leinwand hinzufügen',
   },
   template_library: {
-    label: 'Vorlagen',
-    title: 'Vorlagenbibliothek — Aminosäuren, Liganden, 3D-Käfige (Cuban, C₆₀, …)',
+    label: 'Bibliothek',
+    title: 'Bibliothek — R-Gruppen, Liganden, Strukturen, COFs, Reaktionen…',
     shortLabel: 'Lib',
   },
   functional_groups: {

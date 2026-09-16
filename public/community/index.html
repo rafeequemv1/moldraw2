@@ -110,9 +110,12 @@
   </script>
   <style>
     * { box-sizing: border-box; }
+    html,
+    body {
+      background: #e4e9ee;
+    }
     body {
       margin: 0;
-      background: #f3f6f8;
       color: #0f172a;
       font-family: 'Libre Franklin', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
@@ -142,10 +145,10 @@
     .composer,
     .auth-panel,
     .cta-card {
-      border: 1px solid #dfe6ee;
+      border: 1px solid #c9d3dc;
       border-radius: 16px;
       background: #fff;
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     }
     .community-sidebar {
       height: fit-content;
@@ -265,14 +268,14 @@
       box-shadow: 0 0 0 1px #2C7A7B;
     }
     .community-card {
-      cursor: pointer;
+      cursor: default;
     }
     .thread-modal {
       display: none;
     }
     .thread-modal.is-open,
     body.thread-modal-open .thread-modal {
-      display: block;
+      display: flex;
     }
     body.thread-modal-open {
       overflow: hidden;
@@ -281,6 +284,10 @@
       position: fixed;
       inset: 0;
       z-index: 5000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 16px;
     }
     .thread-modal-backdrop {
       position: absolute;
@@ -290,20 +297,22 @@
       margin: 0;
       width: 100%;
       height: 100%;
-      background: rgba(15, 23, 42, 0.58);
+      background: rgba(15, 23, 42, 0.45);
       cursor: pointer;
     }
     .thread-modal-dialog {
       position: relative;
       z-index: 1;
-      width: min(680px, 100vw);
-      height: 100%;
-      max-height: 100dvh;
-      margin: 0 auto;
+      width: min(540px, calc(100vw - 32px));
+      height: auto;
+      max-height: min(80vh, 720px);
+      margin: 0;
       background: #fff;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 24px 80px rgba(15, 23, 42, 0.35);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 18px 48px rgba(15, 23, 42, 0.22);
     }
     .thread-modal-head {
       display: flex;
@@ -347,27 +356,39 @@
       cursor: default;
     }
     .thread-modal-body .card-title {
-      font-size: 22px;
+      font-size: 18px;
     }
-    .thread-reply-composer {
-      margin: 14px 0 18px;
-      padding: 12px;
-      border: 1px solid #dfe6ee;
-      border-radius: 12px;
-      background: #f8fafc;
+    .thread-reply-composer,
+    .card-reply-composer {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #edf1f5;
     }
-    .thread-reply-composer .comment-form {
-      grid-template-columns: minmax(0, 1fr);
+    .thread-reply-composer .comment-form,
+    .card-reply-composer .comment-form,
+    .reply-form.comment-form {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
     }
-    .thread-reply-composer textarea {
-      min-height: 72px;
-      border-radius: 12px;
+    .thread-reply-composer textarea,
+    .card-reply-composer textarea,
+    .reply-form textarea {
+      min-height: 40px;
+      border-radius: 10px;
       width: 100%;
+      padding: 9px 12px;
+      font-size: 13px;
+      resize: none;
     }
-    .thread-reply-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
+    .thread-reply-composer .comment-image-chip,
+    .card-reply-composer .comment-image-chip,
+    .reply-form .comment-image-chip,
+    .thread-reply-composer .btn,
+    .card-reply-composer .btn,
+    .reply-form .btn {
+      border-radius: 999px;
+      min-height: 36px;
+      padding: 0 14px;
     }
     .comment.is-highlight {
       outline: 2px solid #2C7A7B;
@@ -606,11 +627,17 @@
       overflow: hidden;
       background: #f8fafc;
     }
-    .inline-image-preview-card img {
+    .inline-image-preview-card img,
+    .post-modal .card-images img {
       width: 100%;
-      height: 74px;
+      height: auto;
+      max-height: 280px;
       display: block;
-      object-fit: cover;
+      object-fit: contain;
+    }
+    .inline-image-preview-card img {
+      height: 120px;
+      max-height: 280px;
     }
     .inline-image-remove {
       position: absolute;
@@ -817,38 +844,57 @@
       margin-top: 12px;
       border-radius: 10px;
       overflow: hidden;
-      background: #0b0f14;
+      background: #f1f5f9;
     }
     .card-images a {
       display: block;
       border: none;
       border-radius: 0;
       overflow: hidden;
-      background: #0b0f14;
+      background: #f1f5f9;
+      cursor: zoom-in;
     }
     .card-images img {
       width: 100%;
       height: auto;
-      max-height: min(560px, 72vh);
+      max-height: 280px;
       display: block;
       object-fit: contain;
-      background: #0b0f14;
+      background: #f1f5f9;
     }
     .card-images:has(a:nth-child(2)) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .card-images:has(a:nth-child(2)) img {
-      height: 280px;
-      max-height: none;
-      object-fit: cover;
+    .card-images:has(a:nth-child(2)) img,
+    .card-images:has(a:nth-child(3)) img {
+      height: auto;
+      max-height: 280px;
+      object-fit: contain;
     }
     .card-images:has(a:nth-child(3)) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .card-images:has(a:nth-child(3)) img {
-      height: 220px;
-      max-height: none;
-      object-fit: cover;
+    .image-lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 7000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.72);
+      cursor: zoom-out;
+    }
+    .image-lightbox.is-open { display: flex; }
+    .image-lightbox img {
+      max-width: min(96vw, 1200px);
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.35);
+    }
+    .comment.is-pending {
+      opacity: 0.72;
     }
     .card-actions {
       display: flex;
@@ -883,29 +929,53 @@
     .comments {
       margin-top: 8px;
       display: grid;
-      gap: 6px;
+      gap: 2px;
       padding-top: 8px;
       border-top: 1px solid #edf1f5;
     }
     .comments.visible {
       display: grid;
     }
+    .feed-more-comments,
+    a.more-thread {
+      width: fit-content;
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748b;
+      text-decoration: none;
+    }
+    .feed-more-comments:hover,
+    a.more-thread:hover {
+      color: #2C7A7B;
+      text-decoration: underline;
+    }
     .comment {
-      border-left: 2px solid #e2e8f0;
-      padding: 5px 0 5px 8px;
+      padding: 10px 0 8px;
       color: #334155;
-      font-size: 12px;
-      line-height: 1.42;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .comment .author {
+      margin-bottom: 4px;
+    }
+    .comment .avatar {
+      width: 28px;
+      height: 28px;
+      font-size: 11px;
     }
     .comment strong {
       color: #0f172a;
-      font-size: 12px;
+      font-size: 13px;
+    }
+    .comment-body {
+      margin: 0 0 0 37px;
+      white-space: pre-wrap;
     }
     .comment-form {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto auto;
-      gap: 6px;
-      align-items: flex-start;
+      gap: 8px;
+      align-items: center;
     }
     .comment-edit-form {
       display: flex;
@@ -937,19 +1007,20 @@
       margin-top: 8px;
       max-width: none;
       border-radius: 10px;
-      background: #0b0f14;
+      background: #f1f5f9;
     }
     .comment-images img {
       width: 100%;
       height: auto;
-      max-height: min(420px, 60vh);
+      max-height: 280px;
       object-fit: contain;
-      background: #0b0f14;
+      background: #f1f5f9;
     }
     .comment-tools {
       display: flex;
-      gap: 8px;
-      margin-top: 3px;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 4px 0 0 37px;
     }
     .comment-tool {
       border: 0;
@@ -966,14 +1037,20 @@
     }
     .comment-replies {
       display: grid;
-      gap: 5px;
-      margin-top: 5px;
-      margin-left: 18px;
+      gap: 2px;
+      margin-top: 4px;
+      margin-left: 37px;
     }
     .comment-reply {
-      border-left-color: #dbeafe;
-      background: #fbfdff;
-      border-radius: 0 10px 10px 0;
+      background: transparent;
+    }
+    .comment-time-link {
+      color: inherit;
+      text-decoration: none;
+    }
+    .comment-time-link:hover {
+      color: #2C7A7B;
+      text-decoration: underline;
     }
     .reply-form,
     .comment-edit-form {
@@ -1042,11 +1119,11 @@
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 12px;
-      padding: 14px;
-      border: 1px solid #bfdbfe;
+      padding: 16px;
+      border: 1px solid #c9d3dc;
       border-radius: 16px;
-      background: linear-gradient(135deg, #eff6ff, #ffffff);
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     }
     .feature-cta-card h2 {
       margin: 0 0 3px;
@@ -1210,7 +1287,7 @@
       margin-top: 12px;
     }
 
-    /* Compact community refinement: simpler cards, smaller radius, lighter shadows. */
+    /* Compact community refinement: simpler cards, smaller radius. */
     .community-sidebar,
     .community-right-rail,
     .community-card,
@@ -1218,11 +1295,11 @@
     .auth-panel,
     .cta-card {
       border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.035);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     }
     .community-card,
     .composer {
-      padding: 12px;
+      padding: 16px;
     }
     .tab-btn,
     .btn,
@@ -1257,17 +1334,25 @@
       padding-top: 8px;
     }
     .comment {
-      padding-top: 4px;
-      padding-bottom: 4px;
+      padding-top: 8px;
+      padding-bottom: 6px;
     }
     .comment-form textarea,
     .comment-edit-form textarea {
-      border-radius: 8px;
+      border-radius: 10px;
+    }
+    .card-reply-composer .comment-image-chip,
+    .card-reply-composer .btn,
+    .thread-reply-composer .comment-image-chip,
+    .thread-reply-composer .btn,
+    .reply-form .comment-image-chip,
+    .reply-form .btn {
+      border-radius: 999px;
     }
     .feature-cta-card {
       border-radius: 10px;
-      padding: 12px;
-      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.035);
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     }
     .modal,
     .post-modal input[type="text"],
@@ -1301,20 +1386,25 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
       }
+      .thread-modal.is-open {
+        padding: 16px 12px;
+      }
       .thread-modal-dialog {
-        width: 100vw;
+        width: min(540px, calc(100vw - 24px));
+        max-height: min(86vh, 720px);
       }
       .community-right-rail .auth-panel,
       .community-right-rail .cta-card {
         margin: 0;
       }
       .comment-form {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) auto auto;
       }
     }
     @media (max-width: 600px) {
+      html,
       body {
-        background: #f6f8fb;
+        background: #e4e9ee;
       }
       .community-shell {
         width: 100%;
@@ -1327,7 +1417,7 @@
       .auth-panel,
       .cta-card {
         border-radius: 14px;
-        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
       }
       .community-right-rail {
         grid-template-columns: 1fr;
@@ -1345,7 +1435,7 @@
       .composer,
       .post-launcher,
       .community-card {
-        padding: 12px;
+        padding: 16px;
       }
       .post-launcher-top {
         gap: 8px;
@@ -1390,7 +1480,7 @@
       .card-images:has(a:nth-child(2)) img,
       .card-images:has(a:nth-child(3)) img {
         height: auto;
-        max-height: min(480px, 68vh);
+        max-height: 280px;
         object-fit: contain;
       }
       .card-actions {
@@ -1401,10 +1491,14 @@
         padding: 0 10px;
       }
       .comment {
-        padding-left: 7px;
+        padding-left: 0;
+      }
+      .comment-body,
+      .comment-tools {
+        margin-left: 36px;
       }
       .comment-replies {
-        margin-left: 8px;
+        margin-left: 18px;
       }
       .comment-edit-form {
         display: grid;
@@ -1412,13 +1506,20 @@
       }
       .comment-form textarea,
       .comment-edit-form textarea {
-        border-radius: 14px;
-        min-height: 44px;
+        border-radius: 10px;
+        min-height: 40px;
       }
-      .comment-image-chip,
-      .comment-form .btn,
       .comment-edit-form .btn {
         width: 100%;
+        min-height: 36px;
+      }
+      .card-reply-composer .comment-image-chip,
+      .card-reply-composer .btn,
+      .thread-reply-composer .comment-image-chip,
+      .thread-reply-composer .btn,
+      .reply-form .comment-image-chip,
+      .reply-form .btn {
+        width: auto;
         min-height: 36px;
       }
       .feature-cta-card {
@@ -1668,6 +1769,10 @@
     </div>
   </div>
 
+  <div id="image-lightbox" class="image-lightbox" hidden>
+    <img id="image-lightbox-img" alt="Community attachment">
+  </div>
+
   <script src="/js/site-topbar.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -1724,6 +1829,80 @@
       return `<span class="feature-status ${meta.className}" title="${escapeHtml(label)}"><span class="feature-status-symbol" aria-hidden="true">${meta.symbol}</span><span class="feature-status-label">${escapeHtml(label)}</span></span>`;
     }
     const COMMUNITY_PAGE_SIZE = 20;
+    const FEED_COMMENT_PREVIEW = 3;
+    const FEED_CACHE_VERSION = 2;
+    const FEED_CACHE_PREFIX = 'moldraw.community.feed.v2';
+    const DISCUSSION_LIST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at';
+    const DISCUSSION_HEAD_SELECT = 'id,created_at,comment_count,upvote_count';
+    const FEATURE_LIST_SELECT = 'id,name,title,description,image_urls,status,upvote_count,created_at';
+    const FEATURE_HEAD_SELECT = 'id,created_at,upvote_count,status';
+    const COMMENT_PREVIEW_SELECT = 'id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
+    const FEATURE_COMMENT_PREVIEW_SELECT = 'id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
+    const dirtyDiscussionPreviewIds = new Set();
+    const dirtyFeaturePreviewIds = new Set();
+
+    function feedCacheKey(kind, page) {
+      return `${FEED_CACHE_PREFIX}:${kind}:${page}`;
+    }
+    function readFeedCache(kind, page) {
+      try {
+        const raw = localStorage.getItem(feedCacheKey(kind, page));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || parsed.v !== FEED_CACHE_VERSION || !Array.isArray(parsed.items)) return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+    function writeFeedCache(kind, page, items, totalCount) {
+      try {
+        const newestCreatedAt = items.reduce((max, item) => {
+          const stamp = item?.created_at || '';
+          return stamp > max ? stamp : max;
+        }, '');
+        localStorage.setItem(feedCacheKey(kind, page), JSON.stringify({
+          v: FEED_CACHE_VERSION,
+          kind,
+          page,
+          savedAt: new Date().toISOString(),
+          newestCreatedAt,
+          totalCount: Number(totalCount) || items.length,
+          items: items.map((item) => ({
+            ...item,
+            commentsPreview: latestChronological(item.commentsPreview || [], FEED_COMMENT_PREVIEW),
+            commentTotal: item.commentTotal ?? item.comment_count ?? (item.commentsPreview || []).length
+          }))
+        }));
+      } catch {
+        /* quota / private mode */
+      }
+    }
+    function newestCreatedAtOf(items, fallback) {
+      return (items || []).reduce((max, item) => {
+        const stamp = item?.created_at || '';
+        return stamp > max ? stamp : max;
+      }, fallback || '');
+    }
+    function latestChronological(comments, limit = FEED_COMMENT_PREVIEW) {
+      return [...(comments || [])]
+        .sort((a, b) => {
+          const delta = new Date(a.created_at || 0) - new Date(b.created_at || 0);
+          return delta !== 0 ? delta : String(a.id || '').localeCompare(String(b.id || ''));
+        })
+        .slice(-limit);
+    }
+    function excerpt(text, max = 220) {
+      const clean = String(text || '').replace(/\s+/g, ' ').trim();
+      if (clean.length <= max) return clean;
+      return `${clean.slice(0, max - 1).trim()}…`;
+    }
+    function sortNewestFirst(items) {
+      return [...(items || [])].sort((a, b) => {
+        const delta = new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        return delta !== 0 ? delta : String(b.id || '').localeCompare(String(a.id || ''));
+      });
+    }
 
     const SLUG_STOPWORDS = new Set([
       'a', 'an', 'the', 'and', 'or', 'but', 'of', 'to', 'for', 'in', 'on', 'at', 'by',
@@ -1862,6 +2041,9 @@
       const threadOptions = {
         threadUrl: url,
         includeComposer: false,
+        allowEmptyMessage: true,
+        useCommentDomId: true,
+        showAll: true,
         highlightId,
         ...(isFeature ? {
           expandedCommentThreads: expandedFeatureCommentThreads,
@@ -1885,20 +2067,17 @@
           <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}${isFeature ? renderFeatureStatus(item.status) : ''}</h1>
           <p class="card-body">${escapeHtml(isFeature ? item.description : item.body)}</p>
           ${renderImages(item.image_urls, isFeature ? 'Feature request attachment' : 'Community attachment')}
-          <section class="thread-reply-composer" aria-label="Reply to this post">
-            <h2 class="comments-heading">Post your reply</h2>
+          <div class="comments visible" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
+          <section class="thread-reply-composer card-reply-composer" aria-label="Write a reply">
             <div class="comment-form" data-comment-form="main">
-              <textarea placeholder="Post your reply" aria-label="Post your reply"></textarea>
-              <div class="thread-reply-actions">
-                <label class="comment-image-chip">
-                  Image
-                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-                </label>
-                <button class="btn btn-primary" type="button">Reply</button>
-              </div>
+              <textarea placeholder="Write a reply…" aria-label="Write a reply"></textarea>
+              <label class="comment-image-chip">
+                Image
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+              </label>
+              <button class="btn btn-primary" type="button">Reply</button>
             </div>
           </section>
-          <div class="comments visible" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
         </article>
       `;
       setThreadOpen(true);
@@ -1907,7 +2086,7 @@
       document.getElementById(selectedId)?.classList.add('is-selected');
       if (isFeature) bindFeatureCommentThread(threadPanelBody, item.id);
       else bindCommentThread(threadPanelBody, item.id);
-      threadPanelBody.querySelectorAll('a.comment-permalink, a.more-thread').forEach((link) => {
+      threadPanelBody.querySelectorAll('a.comment-permalink, a.comment-time-link, a.more-thread').forEach((link) => {
         link.addEventListener('click', (event) => {
           if (isModifiedClick(event)) return;
           const href = link.getAttribute('href') || '';
@@ -1980,12 +2159,6 @@
         card.querySelectorAll('a.card-title-link, a[data-open-thread]').forEach((link) => {
           link.addEventListener('click', (event) => open(event, link.getAttribute('href')));
         });
-        card.addEventListener('click', (event) => {
-          if (event.target.closest('button, select, textarea, input, label, a[target="_blank"]')) return;
-          if (event.target.closest('a.card-title-link, a[data-open-thread]')) return;
-          const link = card.querySelector('a.card-title-link');
-          if (link) open(event, link.getAttribute('href'));
-        });
       });
     }
 
@@ -2020,10 +2193,322 @@
       return /^https?:\/\//i.test(value) && !value.includes('${');
     }
 
+    function isDisplayableImageUrl(url) {
+      const value = String(url || '').trim();
+      if (isSafeRemoteUrl(value)) return true;
+      return /^blob:/i.test(value) && !value.includes('${');
+    }
+
     function renderImages(imageUrls, altText = 'Community attachment', className = 'card-images') {
-      const images = Array.isArray(imageUrls) ? imageUrls.filter(isSafeRemoteUrl) : [];
+      const images = Array.isArray(imageUrls) ? imageUrls.filter(isDisplayableImageUrl) : [];
       if (!images.length) return '';
       return `<div class="${className}">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="${escapeHtml(altText)}"></a>`).join('')}</div>`;
+    }
+
+    function openImageLightbox(url) {
+      const box = document.getElementById('image-lightbox');
+      const img = document.getElementById('image-lightbox-img');
+      if (!box || !img || !isDisplayableImageUrl(url)) return;
+      img.src = url;
+      box.hidden = false;
+      box.classList.add('is-open');
+    }
+
+    function closeImageLightbox() {
+      const box = document.getElementById('image-lightbox');
+      const img = document.getElementById('image-lightbox-img');
+      if (!box) return;
+      box.classList.remove('is-open');
+      box.hidden = true;
+      if (img) img.removeAttribute('src');
+    }
+
+    function bindEnterToSubmit(input, onSubmit) {
+      if (!input || input.dataset.enterBound === '1') return;
+      input.dataset.enterBound = '1';
+      input.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+        if (event.isComposing || event.keyCode === 229) return;
+        event.preventDefault();
+        onSubmit();
+      });
+    }
+
+    function bindComposerControls(form, onSubmit) {
+      if (!form) return;
+      const input = form.querySelector('textarea');
+      const imageChip = form.querySelector('.comment-image-chip, .inline-image-chip');
+      const button = form.querySelector('.btn, .btn-primary');
+      const submit = () => {
+        if (!requireAuth()) return;
+        onSubmit();
+      };
+      imageChip?.addEventListener('click', (event) => {
+        if (session?.user) return;
+        event.preventDefault();
+        openAuthModal('Sign in to continue');
+      });
+      if (button) button.addEventListener('click', submit);
+      bindEnterToSubmit(input, submit);
+    }
+
+    function renderCardReplyComposer() {
+      return `
+        <section class="card-reply-composer" aria-label="Write a reply">
+          <div class="comment-form" data-comment-form="main">
+            <textarea placeholder="Write a reply…" aria-label="Write a reply"></textarea>
+            <label class="comment-image-chip">
+              Image
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+            </label>
+            <button class="btn btn-primary" type="button">Reply</button>
+          </div>
+        </section>`;
+    }
+
+    function canManageComment(comment) {
+      return isOwn(comment.user_id) || isAdmin();
+    }
+
+    function commentBindRoot(wrap) {
+      if (!wrap || !wrap.closest) return wrap;
+      return wrap.closest('#thread-panel-body') || wrap.closest('.community-card') || wrap;
+    }
+
+    function bindMainReplyForm(root, onSubmit) {
+      const mainForm = root?.querySelector?.('[data-comment-form="main"]');
+      if (!mainForm || mainForm.dataset.bound === '1') return;
+      mainForm.dataset.bound = '1';
+      const input = mainForm.querySelector('textarea');
+      const imageInput = mainForm.querySelector('input[type="file"]');
+      bindComposerControls(mainForm, () => onSubmit(input, imageInput));
+    }
+
+    function inlineReplyFormHtml(placeholder) {
+      return `
+            <div class="comment-form reply-form">
+              <textarea placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}"></textarea>
+              <label class="comment-image-chip">
+                Image
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+              </label>
+              <button class="btn btn-primary" type="button">Reply</button>
+            </div>`;
+    }
+
+    async function fetchLatestCommentsByParent(table, parentKey, parentIds, select, knownTotals) {
+      const byParent = new Map();
+      const totals = new Map();
+      if (!parentIds.length) return { byParent, totals };
+      parentIds.forEach((id) => {
+        byParent.set(id, []);
+        totals.set(id, Number(knownTotals?.get(id)) || 0);
+      });
+      await Promise.all(parentIds.map(async (id) => {
+        const query = client
+          .from(table)
+          .select(select, { count: 'exact' })
+          .eq(parentKey, id)
+          .order('created_at', { ascending: false })
+          .limit(FEED_COMMENT_PREVIEW);
+        const { data, count, error } = await query;
+        if (error) {
+          if (table === 'feature_request_comments') featureCommentsAvailable = false;
+          return;
+        }
+        const newestFirst = data || [];
+        byParent.set(id, [...newestFirst].reverse());
+        totals.set(id, Number.isFinite(count) ? count : (Number(knownTotals?.get(id)) || newestFirst.length));
+      }));
+      return { byParent, totals };
+    }
+
+    function attachCommentPreviews(items, parentKey, previews) {
+      return (items || []).map((item) => {
+        const comments = previews.byParent.get(item.id) || item.commentsPreview || [];
+        const commentTotal = item.comment_count ?? previews.totals.get(item.id) ?? item.commentTotal ?? comments.length;
+        return { ...item, commentsPreview: latestChronological(comments, FEED_COMMENT_PREVIEW), commentTotal };
+      });
+    }
+
+    async function loadDiscussionRowsIncremental(page, cached) {
+      const from = (page - 1) * COMMUNITY_PAGE_SIZE;
+      if (page !== 1 || !cached?.items?.length) {
+        const { data, error, count } = await client
+          .from('community_posts')
+          .select(DISCUSSION_LIST_SELECT, { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, from + COMMUNITY_PAGE_SIZE - 1);
+        if (error) return { error, posts: [], count: 0 };
+        const posts = data || [];
+        const knownTotals = new Map(posts.map((post) => [post.id, Number(post.comment_count) || 0]));
+        const previews = await fetchLatestCommentsByParent('community_comments', 'post_id', posts.map((post) => post.id), COMMENT_PREVIEW_SELECT, knownTotals);
+        return { posts: attachCommentPreviews(posts, 'post_id', previews), count: count || posts.length };
+      }
+
+      const { data: head, error: headError, count } = await client
+        .from('community_posts')
+        .select(DISCUSSION_HEAD_SELECT, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(0, COMMUNITY_PAGE_SIZE - 1);
+      if (headError) return { error: headError, posts: [], count: 0 };
+
+      const cachedById = new Map(cached.items.map((item) => [item.id, item]));
+      const newestCached = cached.newestCreatedAt || newestCreatedAtOf(cached.items);
+      const { data: newer } = newestCached
+        ? await client
+          .from('community_posts')
+          .select(DISCUSSION_LIST_SELECT)
+          .gt('created_at', newestCached)
+          .order('created_at', { ascending: false })
+          .limit(COMMUNITY_PAGE_SIZE)
+        : { data: [] };
+      const newById = new Map((newer || []).map((row) => [row.id, row]));
+      const missingIds = (head || []).filter((row) => !cachedById.has(row.id) && !newById.has(row.id)).map((row) => row.id);
+      if (missingIds.length) {
+        const { data: extra } = await client.from('community_posts').select(DISCUSSION_LIST_SELECT).in('id', missingIds);
+        (extra || []).forEach((row) => newById.set(row.id, row));
+      }
+
+      const dirty = [...dirtyDiscussionPreviewIds];
+      dirtyDiscussionPreviewIds.clear();
+      const commentChangedIds = (head || []).filter((row) => {
+        const prev = cachedById.get(row.id);
+        if (!prev) return false;
+        if (dirty.includes(row.id)) return true;
+        const cachedComments = prev.commentsPreview || [];
+        const count = Number(row.comment_count || 0);
+        if (count > 0 && cachedComments.length === 0) return true;
+        return Number(prev.comment_count ?? prev.commentTotal ?? 0) !== count;
+      }).map((row) => row.id);
+      const commentFetchIds = [...new Set([...newById.keys(), ...commentChangedIds, ...dirty])];
+      const knownTotals = new Map((head || []).map((row) => [row.id, Number(row.comment_count) || 0]));
+      const previews = commentFetchIds.length
+        ? await fetchLatestCommentsByParent('community_comments', 'post_id', commentFetchIds, COMMENT_PREVIEW_SELECT, knownTotals)
+        : { byParent: new Map(), totals: new Map() };
+
+      const posts = (head || []).map((row) => {
+        const fresh = newById.get(row.id);
+        const prev = cachedById.get(row.id);
+        const base = fresh || prev;
+        if (!base) return null;
+        const comments = previews.byParent.has(row.id)
+          ? previews.byParent.get(row.id)
+          : (prev?.commentsPreview || []);
+        const commentTotal = row.comment_count ?? previews.totals.get(row.id) ?? prev?.commentTotal ?? comments.length;
+        return {
+          ...base,
+          upvote_count: row.upvote_count ?? base.upvote_count,
+          comment_count: commentTotal,
+          commentsPreview: latestChronological(comments, FEED_COMMENT_PREVIEW),
+          commentTotal
+        };
+      }).filter(Boolean);
+      return { posts, count: count || cached.totalCount || posts.length };
+    }
+
+    async function loadFeatureRowsIncremental(page, cached) {
+      const from = (page - 1) * COMMUNITY_PAGE_SIZE;
+      if (page !== 1 || !cached?.items?.length || !featureCommentsAvailable) {
+        const { data, error, count } = await client
+          .from('community_feature_requests')
+          .select(FEATURE_LIST_SELECT, { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, from + COMMUNITY_PAGE_SIZE - 1);
+        if (error) return { error, requests: [], count: 0 };
+        const requests = data || [];
+        const previews = featureCommentsAvailable
+          ? await fetchLatestCommentsByParent('feature_request_comments', 'feature_request_id', requests.map((item) => item.id), FEATURE_COMMENT_PREVIEW_SELECT)
+          : { byParent: new Map(), totals: new Map() };
+        if (!featureCommentsAvailable) {
+          return { requests: requests.map((item) => ({ ...item, commentsPreview: [], commentTotal: 0 })), count: count || requests.length };
+        }
+        return { requests: attachCommentPreviews(requests, 'feature_request_id', previews), count: count || requests.length };
+      }
+
+      const { data: head, error: headError, count } = await client
+        .from('community_feature_requests')
+        .select(FEATURE_HEAD_SELECT, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(0, COMMUNITY_PAGE_SIZE - 1);
+      if (headError) return { error: headError, requests: [], count: 0 };
+
+      const cachedById = new Map(cached.items.map((item) => [item.id, item]));
+      const newestCached = cached.newestCreatedAt || newestCreatedAtOf(cached.items);
+      const { data: newer } = newestCached
+        ? await client
+          .from('community_feature_requests')
+          .select(FEATURE_LIST_SELECT)
+          .gt('created_at', newestCached)
+          .order('created_at', { ascending: false })
+          .limit(COMMUNITY_PAGE_SIZE)
+        : { data: [] };
+      const newById = new Map((newer || []).map((row) => [row.id, row]));
+      const missingIds = (head || []).filter((row) => !cachedById.has(row.id) && !newById.has(row.id)).map((row) => row.id);
+      if (missingIds.length) {
+        const { data: extra } = await client.from('community_feature_requests').select(FEATURE_LIST_SELECT).in('id', missingIds);
+        (extra || []).forEach((row) => newById.set(row.id, row));
+      }
+
+      const dirty = [...dirtyFeaturePreviewIds];
+      dirtyFeaturePreviewIds.clear();
+      const headIds = (head || []).map((row) => row.id);
+      let commentTouched = new Set(dirty);
+      if (headIds.length) {
+        const { data: recentComments, error: recentError } = await client
+          .from('feature_request_comments')
+          .select('id,feature_request_id,created_at')
+          .in('feature_request_id', headIds)
+          .order('created_at', { ascending: false })
+          .limit(80);
+        if (recentError) featureCommentsAvailable = false;
+        const newestByRequest = new Map();
+        (recentComments || []).forEach((comment) => {
+          if (!newestByRequest.has(comment.feature_request_id)) newestByRequest.set(comment.feature_request_id, comment.created_at);
+        });
+        headIds.forEach((id) => {
+          const prev = cachedById.get(id);
+          const cachedComments = prev?.commentsPreview || [];
+          const cachedLatest = cachedComments.reduce((max, comment) => (
+            comment.created_at > max ? comment.created_at : max
+          ), '');
+          if (newestByRequest.has(id) && cachedComments.length === 0) commentTouched.add(id);
+          if ((newestByRequest.get(id) || '') !== cachedLatest) commentTouched.add(id);
+        });
+      }
+
+      const updatedIds = (head || []).filter((row) => {
+        const prev = cachedById.get(row.id);
+        if (!prev) return false;
+        return commentTouched.has(row.id)
+          || Number(prev.upvote_count || 0) !== Number(row.upvote_count || 0)
+          || String(prev.status || 'new') !== String(row.status || 'new');
+      }).map((row) => row.id);
+      const commentFetchIds = [...new Set([...newById.keys(), ...updatedIds, ...dirty])];
+      const previews = commentFetchIds.length && featureCommentsAvailable
+        ? await fetchLatestCommentsByParent('feature_request_comments', 'feature_request_id', commentFetchIds, FEATURE_COMMENT_PREVIEW_SELECT)
+        : { byParent: new Map(), totals: new Map() };
+
+      const requests = (head || []).map((row) => {
+        const fresh = newById.get(row.id);
+        const prev = cachedById.get(row.id);
+        const base = fresh || prev;
+        if (!base) return null;
+        const comments = previews.byParent.has(row.id)
+          ? previews.byParent.get(row.id)
+          : (prev?.commentsPreview || []);
+        const commentTotal = previews.totals.has(row.id)
+          ? previews.totals.get(row.id)
+          : (prev?.commentTotal ?? comments.length);
+        return {
+          ...base,
+          upvote_count: row.upvote_count ?? base.upvote_count,
+          status: row.status ?? base.status,
+          commentsPreview: latestChronological(comments, FEED_COMMENT_PREVIEW),
+          commentTotal
+        };
+      }).filter(Boolean);
+      return { requests, count: count || cached.totalCount || requests.length };
     }
 
     function requireAuth() {
@@ -2328,23 +2813,85 @@
       setTimeout(closeReportModal, 900);
     }
 
+    function currentAuthorPreview() {
+      return {
+        user_id: session?.user?.id || '',
+        author_name: profile?.name || displayNameFromEmail(session?.user?.email) || 'You',
+        author_designation: profile?.designation || 'MolDraw user',
+        author_avatar_key: safeAvatarKey(profile?.avatar_key),
+        author_is_admin: isAdmin(),
+        author_karma_score: profile?.karma_score || 0
+      };
+    }
+
+    function restoreReplyDraft(selector, body) {
+      const input = document.querySelector(selector);
+      if (input && !input.value.trim()) input.value = body;
+    }
+
+    function syncDiscussionCommentViews(postId) {
+      document.querySelectorAll(`[data-comments="${postId}"]`).forEach((wrap) => refreshCommentList(wrap, postId));
+      const total = commentTotalCache.get(postId) || 0;
+      document.querySelectorAll(`[data-post-id="${postId}"] [data-focus-reply]`).forEach((btn) => {
+        btn.textContent = `Reply ${total}`;
+      });
+    }
+
+    function syncFeatureCommentViews(requestId) {
+      document.querySelectorAll(`[data-feature-comments="${requestId}"]`).forEach((wrap) => refreshFeatureCommentList(wrap, requestId));
+      const total = featureCommentTotalCache.get(requestId) || 0;
+      document.querySelectorAll(`[data-feature-id="${requestId}"] [data-focus-reply]`).forEach((btn) => {
+        btn.textContent = `Reply ${total}`;
+      });
+    }
+
     async function submitComment(postId, input, parentCommentId = null, imageInput = null) {
       if (!requireAuth()) return;
       const body = input.value.trim();
       if (!body) return;
-      const imageUrls = await uploadImages(imageInput?.files);
-      const { error } = await client.from('community_comments').insert({
+      const pendingFiles = imageInput?.files ? Array.from(imageInput.files) : [];
+      const localUrls = pendingFiles.map((file) => URL.createObjectURL(file));
+      const pendingId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const optimistic = {
+        id: pendingId,
         post_id: postId,
         parent_comment_id: parentCommentId,
         body,
-        image_urls: imageUrls
-      });
-      if (!error) {
-        input.value = '';
-        if (imageInput) imageInput.value = '';
+        image_urls: localUrls,
+        created_at: new Date().toISOString(),
+        pending: true,
+        ...currentAuthorPreview()
+      };
+      const previous = commentCache.get(postId) || [];
+      const previousTotal = commentTotalCache.get(postId) || previous.length;
+      commentCache.set(postId, [...previous, optimistic]);
+      commentTotalCache.set(postId, previousTotal + 1);
+      expandedCommentThreads.add(postId);
+      if (parentCommentId) expandedReplyThreads.add(parentCommentId);
+      input.value = '';
+      if (imageInput) imageInput.value = '';
+      syncDiscussionCommentViews(postId);
+      try {
+        const imageUrls = await uploadImages(pendingFiles);
+        const { error } = await client.from('community_comments').insert({
+          post_id: postId,
+          parent_comment_id: parentCommentId,
+          body,
+          image_urls: imageUrls
+        });
+        if (error) throw error;
+        dirtyDiscussionPreviewIds.add(postId);
+        await openComments(postId);
+        loadDiscussions(false);
+      } catch (error) {
+        commentCache.set(postId, (commentCache.get(postId) || []).filter((comment) => comment.id !== pendingId));
+        commentTotalCache.set(postId, previousTotal);
+        syncDiscussionCommentViews(postId);
+        restoreReplyDraft(`[data-post-id="${postId}"] [data-comment-form="main"] textarea`, body);
+        statusEl.textContent = error?.message || 'Could not add reply.';
+      } finally {
+        localUrls.forEach((url) => URL.revokeObjectURL(url));
       }
-      await openComments(postId);
-      await loadDiscussions(false);
     }
 
     const isOwn = (userId) => Boolean(session?.user?.id && userId === session.user.id);
@@ -2360,6 +2907,7 @@
         statusEl.textContent = error.message || 'Could not update reply.';
         return;
       }
+      dirtyDiscussionPreviewIds.add(postId);
       await openComments(postId);
       await loadDiscussions(false);
     }
@@ -2375,6 +2923,7 @@
         statusEl.textContent = error.message || 'Could not delete reply. Delete nested replies first if any.';
         return;
       }
+      dirtyDiscussionPreviewIds.add(postId);
       await openComments(postId);
       await loadDiscussions(false);
     }
@@ -2401,7 +2950,7 @@
       const reportType = options.reportType || 'comment';
       const reportLabel = options.reportLabel || 'comment';
       const replyThreads = options.expandedReplyThreads || expandedReplyThreads;
-      const ownerTools = isOwn(comment.user_id)
+      const ownerTools = canManageComment(comment)
         ? `<button class="comment-tool" type="button" data-edit-comment="${escapeHtml(comment.id)}">Edit</button>
            <button class="comment-tool" type="button" data-delete-comment="${escapeHtml(comment.id)}">Delete</button>`
         : '';
@@ -2414,28 +2963,34 @@
       const images = renderImages(comment.image_urls, 'Reply attachment', 'card-images comment-images');
       const permalink = (options.permalinkHref || commentPermalink)(comment);
       const highlighted = options.highlightId && comment.id === options.highlightId;
+      const pending = Boolean(comment.pending);
+      const domId = pending || options.useCommentDomId === false ? '' : `id="comment-${escapeHtml(comment.id)}"`;
+      const timeHtml = pending
+        ? escapeHtml(timeText(comment.created_at))
+        : `<a class="comment-time-link" data-open-thread href="${escapeHtml(permalink)}">${escapeHtml(timeText(comment.created_at))}</a>`;
       return `
-        <div class="comment ${isReply ? 'comment-reply' : ''}${highlighted ? ' is-highlight' : ''}" id="comment-${escapeHtml(comment.id)}" data-comment-id="${escapeHtml(comment.id)}">
-          <div class="author" style="margin-bottom:3px;">
-            <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}" style="width:24px;height:24px;font-size:10px;">${escapeHtml(initials(comment.author_name))}</span>
+        <div class="comment ${isReply ? 'comment-reply' : ''}${highlighted ? ' is-highlight' : ''}${pending ? ' is-pending' : ''}" ${domId} data-comment-id="${escapeHtml(comment.id)}">
+          <div class="author">
+            <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
             <div>
               <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)}</strong>
-              <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(comment.created_at))}</div>
+              <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · ${timeHtml}</div>
             </div>
           </div>
           <div class="comment-body">${escapeHtml(comment.body)}</div>
           ${images}
           <div class="comment-tools">
-            <a class="comment-permalink" href="${escapeHtml(permalink)}">Permalink</a>
-            <button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(rootCommentId)}">Reply</button>
+            ${pending
+              ? '<span class="author-meta">Sending…</span>'
+              : `<button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(comment.id)}">Reply</button>
             <button class="comment-tool" type="button" data-report-type="${escapeHtml(reportType)}" data-report-id="${escapeHtml(comment.id)}" data-report-label="${escapeHtml(reportLabel)}">Report</button>
-            ${ownerTools}
+            ${ownerTools}`}
           </div>
           <div class="comment-inline-slot" data-comment-slot="${escapeHtml(comment.id)}"></div>
           ${replies || hiddenReplies ? `
             <div class="comment-replies">
               ${replies}
-              ${hiddenReplies > 0 ? `<a class="more-thread" href="${escapeHtml(permalink)}">View ${hiddenReplies} more repl${hiddenReplies === 1 ? 'y' : 'ies'}</a>` : ''}
+              ${hiddenReplies > 0 ? `<a class="more-thread" data-open-thread href="${escapeHtml(permalink)}">View ${hiddenReplies} more repl${hiddenReplies === 1 ? 'y' : 'ies'}</a>` : ''}
             </div>
           ` : ''}
         </div>
@@ -2444,50 +2999,48 @@
 
     function renderCommentThread(postId, comments, totalCount, options = {}) {
       const commentThreads = options.expandedCommentThreads || expandedCommentThreads;
-      const expanded = commentThreads.has(postId);
+      const expanded = Boolean(options.showAll) || commentThreads.has(postId);
       const roots = buildCommentTree(comments);
-      const visibleComments = expanded ? roots : roots.slice(0, 3);
+      const visibleComments = expanded ? roots : roots.slice(0, FEED_COMMENT_PREVIEW);
       const rendered = visibleComments.map((comment) => renderSingleComment(comment, postId, false, comment.id, options)).join('');
-      const hiddenCount = Math.max(roots.length - visibleComments.length, 0);
+      const hiddenCount = Math.max((Number(totalCount) || comments.length) - visibleComments.length, 0);
       const threadUrl = options.threadUrl || discussionUrl(postId);
-      const composer = options.includeComposer === false ? '' : `
-        <div class="comment-form" data-comment-form="main">
-          <textarea placeholder="Post your reply"></textarea>
-          <label class="comment-image-chip">
-            Image
-            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-          </label>
-          <button class="btn btn-primary" type="button">Reply</button>
-        </div>`;
+      const empty = options.allowEmptyMessage === false
+        ? ''
+        : '<p class="author-meta">No replies yet. Be the first to reply.</p>';
+      const composer = options.includeComposer ? renderCardReplyComposer() : '';
 
       return `
-        ${rendered || '<p class="author-meta">No replies yet. Be the first to reply.</p>'}
-        ${hiddenCount > 0 ? `<a class="more-thread" href="${escapeHtml(threadUrl)}">View ${hiddenCount} more thread${hiddenCount === 1 ? '' : 's'}</a>` : ''}
+        ${rendered || empty}
+        ${!expanded && hiddenCount > 0 ? `<a class="more-thread" data-open-thread href="${escapeHtml(threadUrl)}">View more comments</a>` : ''}
         ${composer}
       `;
     }
 
-    function threadBindRoot(wrap) {
-      return wrap?.closest?.('#thread-panel-body') || wrap;
-    }
     function refreshCommentList(wrap, postId) {
-      const root = threadBindRoot(wrap);
+      const root = commentBindRoot(wrap);
       const list = root.querySelector(`[data-comments="${postId}"]`) || wrap;
       const comments = commentCache.get(postId) || [];
       const post = lastDiscussionItems.find((item) => item.id === postId);
+      const inModal = Boolean(root.closest?.('#thread-panel-body') || root.id === 'thread-panel-body');
       list.innerHTML = renderCommentThread(postId, comments, commentTotalCache.get(postId) || comments.length, {
         includeComposer: false,
+        allowEmptyMessage: inModal,
+        useCommentDomId: inModal,
         threadUrl: discussionUrl(post || postId)
       });
       bindCommentThread(root, postId);
     }
     function refreshFeatureCommentList(wrap, requestId) {
-      const root = threadBindRoot(wrap);
+      const root = commentBindRoot(wrap);
       const list = root.querySelector(`[data-feature-comments="${requestId}"]`) || wrap;
       const comments = featureCommentCache.get(requestId) || [];
       const request = lastFeatureItems.find((item) => item.id === requestId);
+      const inModal = Boolean(root.closest?.('#thread-panel-body') || root.id === 'thread-panel-body');
       list.innerHTML = renderCommentThread(requestId, comments, featureCommentTotalCache.get(requestId) || comments.length, {
         includeComposer: false,
+        allowEmptyMessage: inModal,
+        useCommentDomId: inModal,
         expandedCommentThreads: expandedFeatureCommentThreads,
         expandedReplyThreads: expandedFeatureReplyThreads,
         reportType: 'feature_request_comment',
@@ -2498,49 +3051,36 @@
       bindFeatureCommentThread(root, requestId);
     }
     function bindCommentThread(wrap, postId) {
-      const mainForm = wrap.querySelector('[data-comment-form="main"]');
-      const input = mainForm?.querySelector('textarea');
-      const imageInput = mainForm?.querySelector('input[type="file"]');
-      const button = mainForm?.querySelector('.btn');
-      if (input) input.addEventListener('focus', requireAuth);
-      if (button && input) button.addEventListener('click', () => submitComment(postId, input, null, imageInput));
-      wrap.querySelectorAll('[data-reply-comment]').forEach((replyButton) => {
+      const root = commentBindRoot(wrap);
+      bindMainReplyForm(root, (input, imageInput) => submitComment(postId, input, null, imageInput));
+      const list = root.querySelector(`[data-comments="${postId}"]`) || root;
+      list.querySelectorAll('[data-reply-comment]').forEach((replyButton) => {
         replyButton.addEventListener('click', () => {
-          if (!requireAuth()) return;
           const commentId = replyButton.getAttribute('data-reply-comment');
           const parentCommentId = replyButton.getAttribute('data-reply-parent') || commentId;
-          const slot = wrap.querySelector(`[data-comment-slot="${commentId}"]`);
+          const slot = list.querySelector(`[data-comment-slot="${commentId}"]`);
           if (!slot) return;
-          slot.innerHTML = `
-            <div class="comment-form reply-form">
-              <textarea placeholder="Reply to this comment..."></textarea>
-              <label class="comment-image-chip">
-                Image
-                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-              </label>
-              <button class="btn btn-primary" type="button">Reply</button>
-            </div>
-          `;
+          slot.innerHTML = inlineReplyFormHtml('Write a reply…');
+          const replyForm = slot.querySelector('.reply-form');
           const replyInput = slot.querySelector('textarea');
           const replyImageInput = slot.querySelector('input[type="file"]');
-          const replySubmit = slot.querySelector('button');
-          replySubmit.addEventListener('click', () => submitComment(postId, replyInput, parentCommentId, replyImageInput));
+          bindComposerControls(replyForm, () => submitComment(postId, replyInput, parentCommentId, replyImageInput));
           replyInput.focus();
         });
       });
-      wrap.querySelectorAll('[data-more-replies]').forEach((moreRepliesButton) => {
+      list.querySelectorAll('[data-more-replies]').forEach((moreRepliesButton) => {
         moreRepliesButton.addEventListener('click', () => {
           expandedReplyThreads.add(moreRepliesButton.getAttribute('data-more-replies'));
-          refreshCommentList(wrap, postId);
+          refreshCommentList(root, postId);
         });
       });
-      wrap.querySelectorAll('[data-edit-comment]').forEach((editButton) => {
+      list.querySelectorAll('[data-edit-comment]').forEach((editButton) => {
         editButton.addEventListener('click', () => {
           if (!requireAuth()) return;
           const commentId = editButton.getAttribute('data-edit-comment');
           const comments = commentCache.get(postId) || [];
           const comment = comments.find((item) => item.id === commentId);
-          const slot = wrap.querySelector(`[data-comment-slot="${commentId}"]`);
+          const slot = list.querySelector(`[data-comment-slot="${commentId}"]`);
           if (!slot || !comment) return;
           slot.innerHTML = `
             <div class="comment-edit-form">
@@ -2555,13 +3095,12 @@
           editInput.focus();
         });
       });
-      wrap.querySelectorAll('[data-delete-comment]').forEach((deleteButton) => {
+      list.querySelectorAll('[data-delete-comment]').forEach((deleteButton) => {
         deleteButton.addEventListener('click', () => {
-          const commentId = deleteButton.getAttribute('data-delete-comment');
-          deleteComment(commentId, postId);
+          deleteComment(deleteButton.getAttribute('data-delete-comment'), postId);
         });
       });
-      wrap.querySelectorAll('[data-report-type]').forEach((reportButton) => {
+      list.querySelectorAll('[data-report-type]').forEach((reportButton) => {
         reportButton.addEventListener('click', () => {
           openReportModal(
             reportButton.getAttribute('data-report-type'),
@@ -2570,15 +3109,15 @@
           );
         });
       });
-      wrap.querySelector('[data-more-comments]')?.addEventListener('click', () => {
+      list.querySelector('[data-more-comments]')?.addEventListener('click', () => {
         expandedCommentThreads.add(postId);
-        refreshCommentList(wrap, postId);
+        refreshCommentList(root, postId);
       });
     }
 
     async function openComments(postId) {
-      const wrap = document.querySelector(`[data-comments="${postId}"]`);
-      if (!wrap) return;
+      const wraps = [...document.querySelectorAll(`[data-comments="${postId}"]`)];
+      if (!wraps.length) return;
       const { data } = await client
         .from('community_comments')
         .select('id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at')
@@ -2587,12 +3126,16 @@
         .limit(100);
       commentCache.set(postId, data || []);
       commentTotalCache.set(postId, (data || []).length);
-      const inModal = Boolean(wrap.closest('#thread-panel-body'));
-      wrap.innerHTML = renderCommentThread(postId, data || [], (data || []).length, {
-        includeComposer: !inModal,
-        threadUrl: discussionUrl(lastDiscussionItems.find((post) => post.id === postId) || postId)
+      wraps.forEach((wrap) => {
+        const inModal = Boolean(wrap.closest('#thread-panel-body'));
+        wrap.innerHTML = renderCommentThread(postId, data || [], (data || []).length, {
+          includeComposer: false,
+          allowEmptyMessage: inModal,
+          useCommentDomId: inModal,
+          threadUrl: discussionUrl(lastDiscussionItems.find((post) => post.id === postId) || postId)
+        });
+        bindCommentThread(commentBindRoot(wrap), postId);
       });
-      bindCommentThread(wrap.closest('#thread-panel-body') || wrap, postId);
     }
 
     function renderFeatureCommentThread(requestId, comments, totalCount) {
@@ -2600,6 +3143,8 @@
         return '<p class="author-meta">Feature request replies are being enabled. Try again after the next database update.</p>';
       }
       return renderCommentThread(requestId, comments, totalCount, {
+        includeComposer: false,
+        allowEmptyMessage: false,
         expandedCommentThreads: expandedFeatureCommentThreads,
         expandedReplyThreads: expandedFeatureReplyThreads,
         reportType: 'feature_request_comment',
@@ -2613,21 +3158,49 @@
       if (!requireAuth()) return;
       const body = input.value.trim();
       if (!body) return;
-      const imageUrls = await uploadImages(imageInput?.files);
-      const { error } = await client.from('feature_request_comments').insert({
+      const pendingFiles = imageInput?.files ? Array.from(imageInput.files) : [];
+      const localUrls = pendingFiles.map((file) => URL.createObjectURL(file));
+      const pendingId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const optimistic = {
+        id: pendingId,
         feature_request_id: requestId,
         parent_comment_id: parentCommentId,
         body,
-        image_urls: imageUrls
-      });
-      if (error) {
-        statusEl.textContent = error.message || 'Could not add reply.';
-        return;
-      }
+        image_urls: localUrls,
+        created_at: new Date().toISOString(),
+        pending: true,
+        ...currentAuthorPreview()
+      };
+      const previous = featureCommentCache.get(requestId) || [];
+      const previousTotal = featureCommentTotalCache.get(requestId) || previous.length;
+      featureCommentCache.set(requestId, [...previous, optimistic]);
+      featureCommentTotalCache.set(requestId, previousTotal + 1);
+      expandedFeatureCommentThreads.add(requestId);
+      if (parentCommentId) expandedFeatureReplyThreads.add(parentCommentId);
       input.value = '';
       if (imageInput) imageInput.value = '';
-      await openFeatureComments(requestId);
-      await loadFeatureRequests();
+      syncFeatureCommentViews(requestId);
+      try {
+        const imageUrls = await uploadImages(pendingFiles);
+        const { error } = await client.from('feature_request_comments').insert({
+          feature_request_id: requestId,
+          parent_comment_id: parentCommentId,
+          body,
+          image_urls: imageUrls
+        });
+        if (error) throw error;
+        dirtyFeaturePreviewIds.add(requestId);
+        await openFeatureComments(requestId);
+        loadFeatureRequests();
+      } catch (error) {
+        featureCommentCache.set(requestId, (featureCommentCache.get(requestId) || []).filter((comment) => comment.id !== pendingId));
+        featureCommentTotalCache.set(requestId, previousTotal);
+        syncFeatureCommentViews(requestId);
+        restoreReplyDraft(`[data-feature-id="${requestId}"] [data-comment-form="main"] textarea`, body);
+        statusEl.textContent = error?.message || 'Could not add reply.';
+      } finally {
+        localUrls.forEach((url) => URL.revokeObjectURL(url));
+      }
     }
 
     async function updateFeatureComment(commentId, requestId, body) {
@@ -2641,6 +3214,7 @@
         statusEl.textContent = error.message || 'Could not update reply.';
         return;
       }
+      dirtyFeaturePreviewIds.add(requestId);
       await openFeatureComments(requestId);
       await loadFeatureRequests();
     }
@@ -2656,54 +3230,42 @@
         statusEl.textContent = error.message || 'Could not delete reply. Delete nested replies first if any.';
         return;
       }
+      dirtyFeaturePreviewIds.add(requestId);
       await openFeatureComments(requestId);
       await loadFeatureRequests();
     }
 
     function bindFeatureCommentThread(wrap, requestId) {
-      const mainForm = wrap.querySelector('[data-comment-form="main"]');
-      const input = mainForm?.querySelector('textarea');
-      const imageInput = mainForm?.querySelector('input[type="file"]');
-      const button = mainForm?.querySelector('.btn');
-      if (input) input.addEventListener('focus', requireAuth);
-      if (button && input) button.addEventListener('click', () => submitFeatureComment(requestId, input, null, imageInput));
-      wrap.querySelectorAll('[data-reply-comment]').forEach((replyButton) => {
+      const root = commentBindRoot(wrap);
+      bindMainReplyForm(root, (input, imageInput) => submitFeatureComment(requestId, input, null, imageInput));
+      const list = root.querySelector(`[data-feature-comments="${requestId}"]`) || root;
+      list.querySelectorAll('[data-reply-comment]').forEach((replyButton) => {
         replyButton.addEventListener('click', () => {
-          if (!requireAuth()) return;
           const commentId = replyButton.getAttribute('data-reply-comment');
           const parentCommentId = replyButton.getAttribute('data-reply-parent') || commentId;
-          const slot = wrap.querySelector(`[data-comment-slot="${commentId}"]`);
+          const slot = list.querySelector(`[data-comment-slot="${commentId}"]`);
           if (!slot) return;
-          slot.innerHTML = `
-            <div class="comment-form reply-form">
-              <textarea placeholder="Reply to this feature request comment..."></textarea>
-              <label class="comment-image-chip">
-                Image
-                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-              </label>
-              <button class="btn btn-primary" type="button">Reply</button>
-            </div>
-          `;
+          slot.innerHTML = inlineReplyFormHtml('Write a reply…');
+          const replyForm = slot.querySelector('.reply-form');
           const replyInput = slot.querySelector('textarea');
           const replyImageInput = slot.querySelector('input[type="file"]');
-          const replySubmit = slot.querySelector('button');
-          replySubmit.addEventListener('click', () => submitFeatureComment(requestId, replyInput, parentCommentId, replyImageInput));
+          bindComposerControls(replyForm, () => submitFeatureComment(requestId, replyInput, parentCommentId, replyImageInput));
           replyInput.focus();
         });
       });
-      wrap.querySelectorAll('[data-more-replies]').forEach((moreRepliesButton) => {
+      list.querySelectorAll('[data-more-replies]').forEach((moreRepliesButton) => {
         moreRepliesButton.addEventListener('click', () => {
           expandedFeatureReplyThreads.add(moreRepliesButton.getAttribute('data-more-replies'));
-          refreshFeatureCommentList(wrap, requestId);
+          refreshFeatureCommentList(root, requestId);
         });
       });
-      wrap.querySelectorAll('[data-edit-comment]').forEach((editButton) => {
+      list.querySelectorAll('[data-edit-comment]').forEach((editButton) => {
         editButton.addEventListener('click', () => {
           if (!requireAuth()) return;
           const commentId = editButton.getAttribute('data-edit-comment');
           const comments = featureCommentCache.get(requestId) || [];
           const comment = comments.find((item) => item.id === commentId);
-          const slot = wrap.querySelector(`[data-comment-slot="${commentId}"]`);
+          const slot = list.querySelector(`[data-comment-slot="${commentId}"]`);
           if (!slot || !comment) return;
           slot.innerHTML = `
             <div class="comment-edit-form">
@@ -2718,13 +3280,12 @@
           editInput.focus();
         });
       });
-      wrap.querySelectorAll('[data-delete-comment]').forEach((deleteButton) => {
+      list.querySelectorAll('[data-delete-comment]').forEach((deleteButton) => {
         deleteButton.addEventListener('click', () => {
-          const commentId = deleteButton.getAttribute('data-delete-comment');
-          deleteFeatureComment(commentId, requestId);
+          deleteFeatureComment(deleteButton.getAttribute('data-delete-comment'), requestId);
         });
       });
-      wrap.querySelectorAll('[data-report-type]').forEach((reportButton) => {
+      list.querySelectorAll('[data-report-type]').forEach((reportButton) => {
         reportButton.addEventListener('click', () => {
           openReportModal(
             reportButton.getAttribute('data-report-type'),
@@ -2733,15 +3294,15 @@
           );
         });
       });
-      wrap.querySelector('[data-more-comments]')?.addEventListener('click', () => {
+      list.querySelector('[data-more-comments]')?.addEventListener('click', () => {
         expandedFeatureCommentThreads.add(requestId);
-        refreshFeatureCommentList(wrap, requestId);
+        refreshFeatureCommentList(root, requestId);
       });
     }
 
     async function openFeatureComments(requestId) {
-      const wrap = document.querySelector(`[data-feature-comments="${requestId}"]`);
-      if (!wrap || !featureCommentsAvailable) return;
+      const wraps = [...document.querySelectorAll(`[data-feature-comments="${requestId}"]`)];
+      if (!wraps.length || !featureCommentsAvailable) return;
       const { data, error } = await client
         .from('feature_request_comments')
         .select('id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at')
@@ -2750,21 +3311,203 @@
         .limit(100);
       if (error) {
         featureCommentsAvailable = false;
-        wrap.innerHTML = renderFeatureCommentThread(requestId, [], 0);
+        wraps.forEach((wrap) => { wrap.innerHTML = renderFeatureCommentThread(requestId, [], 0); });
         return;
       }
       featureCommentCache.set(requestId, data || []);
       featureCommentTotalCache.set(requestId, (data || []).length);
-      wrap.innerHTML = renderCommentThread(requestId, data || [], (data || []).length, {
-        includeComposer: false,
-        expandedCommentThreads: expandedFeatureCommentThreads,
-        expandedReplyThreads: expandedFeatureReplyThreads,
-        reportType: 'feature_request_comment',
-        reportLabel: 'feature request reply',
-        permalinkHref: featureCommentPermalink,
-        threadUrl: featureUrl(lastFeatureItems.find((item) => item.id === requestId) || requestId)
+      wraps.forEach((wrap) => {
+        const inModal = Boolean(wrap.closest('#thread-panel-body'));
+        wrap.innerHTML = renderCommentThread(requestId, data || [], (data || []).length, {
+          includeComposer: false,
+          allowEmptyMessage: inModal,
+          useCommentDomId: inModal,
+          expandedCommentThreads: expandedFeatureCommentThreads,
+          expandedReplyThreads: expandedFeatureReplyThreads,
+          reportType: 'feature_request_comment',
+          reportLabel: 'feature request reply',
+          permalinkHref: featureCommentPermalink,
+          threadUrl: featureUrl(lastFeatureItems.find((item) => item.id === requestId) || requestId)
+        });
+        bindFeatureCommentThread(commentBindRoot(wrap), requestId);
       });
-      bindFeatureCommentThread(wrap.closest('#thread-panel-body') || wrap, requestId);
+    }
+
+    function paintDiscussionCards(posts, myVotes, selectedPostId) {
+      feed.innerHTML = posts.map((post) => {
+        const voted = myVotes.has(post.id);
+        const comments = post.commentsPreview || [];
+        const commentTotal = post.commentTotal ?? post.comment_count ?? comments.length;
+        const ownerActions = isOwn(post.user_id)
+          ? `<button class="pill" type="button" data-edit-post="${escapeHtml(post.id)}">Edit post</button>
+             <button class="pill" type="button" data-delete-post="${escapeHtml(post.id)}">Delete post</button>`
+          : '';
+        const url = discussionUrl(post);
+        if (!commentCache.has(post.id) && comments.length) commentCache.set(post.id, comments);
+        const commentsHtml = renderCommentThread(post.id, comments, commentTotal, {
+          includeComposer: false,
+          allowEmptyMessage: false,
+          useCommentDomId: false,
+          threadUrl: url
+        });
+        return `
+          <article class="community-card${selectedPostId === post.id ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}">
+            <div class="card-top">
+              <div class="author">
+                <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
+                <div>
+                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)}</div>
+                  <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(post.created_at))}</div>
+                </div>
+              </div>
+            </div>
+            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a></h2>
+            <p class="card-body">${escapeHtml(post.body)}</p>
+            ${renderImages(post.image_urls, 'Community attachment')}
+            <div class="card-actions">
+              <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-post="${escapeHtml(post.id)}" data-voted="${voted ? '1' : '0'}">▲ ${post.upvote_count || 0}</button>
+              <button class="pill" type="button" data-focus-reply>Reply ${commentTotal}</button>
+              <button class="pill" type="button" data-report-type="post" data-report-id="${escapeHtml(post.id)}" data-report-label="post">Report</button>
+              ${ownerActions}
+            </div>
+            <div class="comments visible" data-comments="${escapeHtml(post.id)}">${commentsHtml}</div>
+            ${renderCardReplyComposer()}
+          </article>
+        `;
+      }).join('') || '<p>No discussions yet. Start the first one.</p>';
+      feed.querySelectorAll('[data-vote-post]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          togglePostVote(btn.getAttribute('data-vote-post'), btn.getAttribute('data-voted') === '1');
+        });
+      });
+      feed.querySelectorAll('[data-edit-post]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const post = posts.find((item) => item.id === btn.getAttribute('data-edit-post'));
+          if (post) openPostModal(null, post);
+        });
+      });
+      feed.querySelectorAll('[data-delete-post]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          deletePost(btn.getAttribute('data-delete-post'));
+        });
+      });
+      feed.querySelectorAll('[data-report-type="post"]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          openReportModal(
+            btn.getAttribute('data-report-type'),
+            btn.getAttribute('data-report-id'),
+            btn.getAttribute('data-report-label')
+          );
+        });
+      });
+      posts.forEach((post) => {
+        const card = document.getElementById(`post-${post.id}`);
+        if (!card) return;
+        bindCommentThread(card, post.id);
+        card.querySelector('[data-focus-reply]')?.addEventListener('click', (event) => {
+          event.stopPropagation();
+          card.querySelector('[data-comment-form="main"] textarea')?.focus();
+        });
+      });
+      bindFeedOpeners('post', posts);
+    }
+
+    function paintFeatureCards(requests, myVotes, selectedRequestId) {
+      const requestCards = requests.map((request) => {
+        const images = Array.isArray(request.image_urls) ? request.image_urls.filter(isSafeRemoteUrl) : [];
+        const voted = myVotes.has(request.id);
+        const comments = request.commentsPreview || [];
+        const commentTotal = request.commentTotal ?? comments.length;
+        const currentStatus = request.status || 'new';
+        const statusControl = isAdmin()
+          ? `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="Change request status">
+              ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === currentStatus ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
+            </select>`
+          : '';
+        const url = featureUrl(request);
+        if (!featureCommentCache.has(request.id) && comments.length) featureCommentCache.set(request.id, comments);
+        const commentsHtml = renderCommentThread(request.id, comments, commentTotal, {
+          includeComposer: false,
+          allowEmptyMessage: false,
+          useCommentDomId: false,
+          expandedCommentThreads: expandedFeatureCommentThreads,
+          expandedReplyThreads: expandedFeatureReplyThreads,
+          reportType: 'feature_request_comment',
+          reportLabel: 'feature request reply',
+          permalinkHref: featureCommentPermalink,
+          threadUrl: url
+        });
+        return `
+          <article class="community-card${selectedRequestId === request.id ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}">
+            <div class="card-top">
+              <div class="author">
+                <span class="avatar">${escapeHtml(initials(request.name))}</span>
+                <div>
+                  <div class="author-name">${escapeHtml(request.name || 'MolDraw user')}</div>
+                  <div class="author-meta">Feature request · ${escapeHtml(timeText(request.created_at))}</div>
+                </div>
+              </div>
+            </div>
+            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(currentStatus)}${statusControl}</h2>
+            <p class="card-body">${escapeHtml(request.description)}</p>
+            ${images.length ? `<div class="card-images">${images.map((imageUrl) => `<a href="${escapeHtml(imageUrl)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(imageUrl)}" loading="lazy" alt="Feature request attachment"></a>`).join('')}</div>` : ''}
+            <div class="card-actions">
+              <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-feature="${escapeHtml(request.id)}" data-voted="${voted ? '1' : '0'}">▲ ${request.upvote_count || 0}</button>
+              <button class="pill" type="button" data-focus-reply>Reply ${commentTotal}</button>
+              <button class="pill" type="button" data-report-type="feature_request" data-report-id="${escapeHtml(request.id)}" data-report-label="feature request">Report</button>
+            </div>
+            <div class="comments visible" data-feature-comments="${escapeHtml(request.id)}">${commentsHtml}</div>
+            ${renderCardReplyComposer()}
+          </article>
+        `;
+      }).join('');
+      feed.innerHTML = `
+        <section class="feature-cta-card">
+          <div>
+            <h2>Have an idea for MolDraw?</h2>
+            <p>Request a feature here so the community can vote and track progress.</p>
+          </div>
+          <button id="open-community-feature-request" class="btn btn-primary" type="button">Request feature</button>
+        </section>
+        ${requestCards || '<p>No feature requests yet.</p>'}
+      `;
+      document.getElementById('open-community-feature-request')?.addEventListener('click', openFeatureRequestModal);
+      feed.querySelectorAll('[data-vote-feature]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          toggleFeatureVote(btn.getAttribute('data-vote-feature'), btn.getAttribute('data-voted') === '1');
+        });
+      });
+      feed.querySelectorAll('[data-feature-status]').forEach((select) => {
+        select.addEventListener('change', (event) => {
+          event.stopPropagation();
+          updateFeatureStatus(select.getAttribute('data-feature-status'), select.value);
+        });
+      });
+      feed.querySelectorAll('[data-report-type="feature_request"]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          openReportModal(
+            btn.getAttribute('data-report-type'),
+            btn.getAttribute('data-report-id'),
+            btn.getAttribute('data-report-label')
+          );
+        });
+      });
+      requests.forEach((request) => {
+        const card = document.getElementById(`feature-${request.id}`);
+        if (!card) return;
+        bindFeatureCommentThread(card, request.id);
+        card.querySelector('[data-focus-reply]')?.addEventListener('click', (event) => {
+          event.stopPropagation();
+          card.querySelector('[data-comment-form="main"] textarea')?.focus();
+        });
+      });
+      bindFeedOpeners('feature', requests);
     }
 
     async function loadDiscussions(setLoading = true) {
@@ -2800,22 +3543,29 @@
       }
 
       const page = route.view === 'list' ? (route.page || 1) : 1;
-      const from = (page - 1) * COMMUNITY_PAGE_SIZE;
-      let query = client
-        .from('community_posts')
-        .select('id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, from + COMMUNITY_PAGE_SIZE - 1);
-
-      const { data, error, count } = await query;
-      let posts = data || [];
+      const cached = readFeedCache('discussions', page);
+      if (cached?.items?.length && !hasSsr) {
+        lastDiscussionItems = cached.items;
+        paintDiscussionCards(cached.items, new Set(), selectedPostId);
+      }
+      const { posts: fetchedPosts, error, count } = await loadDiscussionRowsIncremental(page, cached);
+      let posts = sortNewestFirst(fetchedPosts || []);
       if (selectedPostId && !posts.some((post) => post.id === selectedPostId)) {
         const { data: selected } = await client
           .from('community_posts')
-          .select('id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at')
+          .select(DISCUSSION_LIST_SELECT)
           .eq('id', selectedPostId)
           .maybeSingle();
-        if (selected) posts = [selected, ...posts];
+        if (selected) {
+          const preview = await fetchLatestCommentsByParent(
+            'community_comments',
+            'post_id',
+            [selected.id],
+            COMMENT_PREVIEW_SELECT,
+            new Map([[selected.id, Number(selected.comment_count) || 0]])
+          );
+          posts = [attachCommentPreviews([selected], 'post_id', preview)[0], ...posts];
+        }
       }
       if (error) {
         statusEl.textContent = error.message;
@@ -2827,91 +3577,26 @@
         const { data: votes } = await client.from('community_post_votes').select('post_id').eq('user_id', session.user.id).in('post_id', postIds);
         myVotes = new Set((votes || []).map((vote) => vote.post_id));
       }
-      let commentsByPost = new Map();
-      if (postIds.length) {
-        const { data: comments } = await client
-          .from('community_comments')
-          .select('id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at')
-          .in('post_id', postIds)
-          .order('created_at', { ascending: true })
-          .limit(240);
-        (comments || []).forEach((comment) => {
-          if (!commentsByPost.has(comment.post_id)) commentsByPost.set(comment.post_id, []);
-          commentsByPost.get(comment.post_id).push(comment);
-        });
-        commentsByPost.forEach((comments, postId) => commentCache.set(postId, comments));
-      }
       statusEl.textContent = posts.length ? '' : 'No discussions yet. Start the first one.';
       lastDiscussionItems = posts;
-      feed.innerHTML = posts.map((post) => {
-        const voted = myVotes.has(post.id);
-        const comments = commentsByPost.get(post.id) || [];
-        commentTotalCache.set(post.id, post.comment_count || comments.length);
-        const ownerActions = isOwn(post.user_id)
-          ? `<button class="pill" type="button" data-edit-post="${escapeHtml(post.id)}">Edit post</button>
-             <button class="pill" type="button" data-delete-post="${escapeHtml(post.id)}">Delete post</button>`
-          : '';
-        const url = discussionUrl(post);
-        return `
-          <article class="community-card${selectedPostId === post.id ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}">
-            <div class="card-top">
-              <div class="author">
-                <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
-                <div>
-                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)}</div>
-                  <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(post.created_at))}</div>
-                </div>
-              </div>
-            </div>
-            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a></h2>
-            <p class="card-body">${escapeHtml(post.body)}</p>
-            ${renderImages(post.image_urls, 'Community attachment')}
-            <div class="card-actions">
-              <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-post="${escapeHtml(post.id)}" data-voted="${voted ? '1' : '0'}">▲ ${post.upvote_count || 0}</button>
-              <a class="pill" data-open-thread href="${escapeHtml(url)}">${post.comment_count || comments.length || 0} replies</a>
-              <button class="pill" type="button" data-report-type="post" data-report-id="${escapeHtml(post.id)}" data-report-label="post">Report</button>
-              ${ownerActions}
-            </div>
-          </article>
-        `;
-      }).join('') || '<p>No discussions yet. Start the first one.</p>';
+      posts.forEach((post) => commentTotalCache.set(post.id, post.commentTotal ?? post.comment_count ?? (post.commentsPreview || []).length));
+      const fetchedIds = new Set((fetchedPosts || []).map((post) => post.id));
+      writeFeedCache(
+        'discussions',
+        page,
+        posts.filter((post) => fetchedIds.has(post.id) || post.id !== selectedPostId).slice(0, COMMUNITY_PAGE_SIZE),
+        count || posts.length
+      );
+      paintDiscussionCards(posts, myVotes, selectedPostId);
       renderPaginationNav('discussions', page, count || 0);
-      feed.querySelectorAll('[data-vote-post]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          togglePostVote(btn.getAttribute('data-vote-post'), btn.getAttribute('data-voted') === '1');
-        });
-      });
-      feed.querySelectorAll('[data-edit-post]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          const post = posts.find((item) => item.id === btn.getAttribute('data-edit-post'));
-          if (post) openPostModal(null, post);
-        });
-      });
-      feed.querySelectorAll('[data-delete-post]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          deletePost(btn.getAttribute('data-delete-post'));
-        });
-      });
-      feed.querySelectorAll('[data-report-type="post"]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          openReportModal(
-            btn.getAttribute('data-report-type'),
-            btn.getAttribute('data-report-id'),
-            btn.getAttribute('data-report-label')
-          );
-        });
-      });
-      bindFeedOpeners('post', posts);
       const selectedPost = posts.find((post) => post.id === selectedPostId);
       if (selectedPost) {
         const comment = highlightCommentId
-          ? (commentCache.get(selectedPost.id) || []).find((item) => item.id === highlightCommentId)
+          ? (commentCache.get(selectedPost.id) || selectedPost.commentsPreview || []).find((item) => item.id === highlightCommentId)
           : null;
-        const href = comment ? commentPermalink(comment) : discussionUrl(selectedPost);
+        const href = highlightCommentId
+          ? (comment ? commentPermalink(comment) : `/community/c/${encodeURIComponent(highlightCommentId)}/comment`)
+          : discussionUrl(selectedPost);
         if (comment) document.title = `${String(comment.body || '').slice(0, 70)} — ${selectedPost.title} | MolDraw Community`;
         await openDiscussionThread(selectedPost, { url: href, highlightId: highlightCommentId, replace: true });
       } else if (!isThreadRoute(route)) {
@@ -3008,20 +3693,25 @@
       }
 
       const page = route.view === 'features' ? (route.page || 1) : 1;
-      const from = (page - 1) * COMMUNITY_PAGE_SIZE;
-      const { data, error, count } = await client
-        .from('community_feature_requests')
-        .select('id,name,title,description,image_urls,status,upvote_count,created_at', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, from + COMMUNITY_PAGE_SIZE - 1);
-      let requests = data || [];
+      const cached = readFeedCache('features', page);
+      if (cached?.items?.length && !hasSsr) {
+        lastFeatureItems = cached.items;
+        paintFeatureCards(cached.items, new Set(), selectedRequestId);
+      }
+      const { requests: fetchedRequests, error, count } = await loadFeatureRowsIncremental(page, cached);
+      let requests = sortNewestFirst(fetchedRequests || []);
       if (selectedRequestId && !requests.some((request) => request.id === selectedRequestId)) {
         const { data: selected } = await client
           .from('community_feature_requests')
-          .select('id,name,title,description,image_urls,status,upvote_count,created_at')
+          .select(FEATURE_LIST_SELECT)
           .eq('id', selectedRequestId)
           .maybeSingle();
-        if (selected) requests = [selected, ...requests];
+        if (selected) {
+          const preview = featureCommentsAvailable
+            ? await fetchLatestCommentsByParent('feature_request_comments', 'feature_request_id', [selected.id], FEATURE_COMMENT_PREVIEW_SELECT)
+            : { byParent: new Map(), totals: new Map() };
+          requests = [attachCommentPreviews([selected], 'feature_request_id', preview)[0], ...requests];
+        }
       }
       if (error) {
         statusEl.textContent = error.message;
@@ -3033,102 +3723,26 @@
         const { data: votes } = await client.from('feature_request_votes').select('feature_request_id').eq('user_id', session.user.id).in('feature_request_id', requestIds);
         myVotes = new Set((votes || []).map((vote) => vote.feature_request_id));
       }
-      let commentsByRequest = new Map();
-      if (featureCommentsAvailable && requestIds.length) {
-        const { data: comments, error: commentsError } = await client
-          .from('feature_request_comments')
-          .select('id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at')
-          .in('feature_request_id', requestIds)
-          .order('created_at', { ascending: true })
-          .limit(240);
-        if (commentsError) {
-          featureCommentsAvailable = false;
-        } else {
-          (comments || []).forEach((comment) => {
-            if (!commentsByRequest.has(comment.feature_request_id)) commentsByRequest.set(comment.feature_request_id, []);
-            commentsByRequest.get(comment.feature_request_id).push(comment);
-          });
-          commentsByRequest.forEach((comments, requestId) => featureCommentCache.set(requestId, comments));
-        }
-      }
       statusEl.textContent = requests.length ? '' : 'No feature requests yet.';
       lastFeatureItems = requests;
-      const requestCards = requests.map((request) => {
-        const images = Array.isArray(request.image_urls) ? request.image_urls.filter(isSafeRemoteUrl) : [];
-        const voted = myVotes.has(request.id);
-        const comments = commentsByRequest.get(request.id) || [];
-        const commentTotal = comments.length;
-        featureCommentTotalCache.set(request.id, commentTotal);
-        const currentStatus = request.status || 'new';
-        const statusControl = isAdmin()
-          ? `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="Change request status">
-              ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === currentStatus ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
-            </select>`
-          : '';
-        const url = featureUrl(request);
-        return `
-          <article class="community-card${selectedRequestId === request.id ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}">
-            <div class="card-top">
-              <div class="author">
-                <span class="avatar">${escapeHtml(initials(request.name))}</span>
-                <div>
-                  <div class="author-name">${escapeHtml(request.name || 'MolDraw user')}</div>
-                  <div class="author-meta">Feature request · ${escapeHtml(timeText(request.created_at))}</div>
-                </div>
-              </div>
-            </div>
-            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(currentStatus)}${statusControl}</h2>
-            <p class="card-body">${escapeHtml(request.description)}</p>
-            ${images.length ? `<div class="card-images">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="Feature request attachment"></a>`).join('')}</div>` : ''}
-            <div class="card-actions">
-              <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-feature="${escapeHtml(request.id)}" data-voted="${voted ? '1' : '0'}">▲ ${request.upvote_count || 0}</button>
-              <a class="pill" data-open-thread href="${escapeHtml(url)}">${commentTotal} replies</a>
-              <button class="pill" type="button" data-report-type="feature_request" data-report-id="${escapeHtml(request.id)}" data-report-label="feature request">Report</button>
-            </div>
-          </article>
-        `;
-      }).join('');
-      feed.innerHTML = `
-        <section class="feature-cta-card">
-          <div>
-            <h2>Have an idea for MolDraw?</h2>
-            <p>Request a feature here so the community can vote and track progress.</p>
-          </div>
-          <button id="open-community-feature-request" class="btn btn-primary" type="button">Request feature</button>
-        </section>
-        ${requestCards || '<p>No feature requests yet.</p>'}
-      `;
-      document.getElementById('open-community-feature-request')?.addEventListener('click', openFeatureRequestModal);
-      feed.querySelectorAll('[data-vote-feature]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          toggleFeatureVote(btn.getAttribute('data-vote-feature'), btn.getAttribute('data-voted') === '1');
-        });
-      });
-      feed.querySelectorAll('[data-feature-status]').forEach((select) => {
-        select.addEventListener('change', (event) => {
-          event.stopPropagation();
-          updateFeatureStatus(select.getAttribute('data-feature-status'), select.value);
-        });
-      });
-      feed.querySelectorAll('[data-report-type="feature_request"]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          openReportModal(
-            btn.getAttribute('data-report-type'),
-            btn.getAttribute('data-report-id'),
-            btn.getAttribute('data-report-label')
-          );
-        });
-      });
-      bindFeedOpeners('feature', requests);
+      requests.forEach((request) => featureCommentTotalCache.set(request.id, request.commentTotal ?? (request.commentsPreview || []).length));
+      const fetchedIds = new Set((fetchedRequests || []).map((request) => request.id));
+      writeFeedCache(
+        'features',
+        page,
+        requests.filter((request) => fetchedIds.has(request.id) || request.id !== selectedRequestId).slice(0, COMMUNITY_PAGE_SIZE),
+        count || requests.length
+      );
+      paintFeatureCards(requests, myVotes, selectedRequestId);
       renderPaginationNav('features', page, count || 0);
       const selectedRequest = requests.find((request) => request.id === selectedRequestId);
       if (selectedRequest) {
         const comment = highlightCommentId
-          ? (featureCommentCache.get(selectedRequest.id) || []).find((item) => item.id === highlightCommentId)
+          ? (featureCommentCache.get(selectedRequest.id) || selectedRequest.commentsPreview || []).find((item) => item.id === highlightCommentId)
           : null;
-        const href = comment ? featureCommentPermalink(comment) : featureUrl(selectedRequest);
+        const href = highlightCommentId
+          ? (comment ? featureCommentPermalink(comment) : `/community/fc/${encodeURIComponent(highlightCommentId)}/comment`)
+          : featureUrl(selectedRequest);
         if (comment) document.title = `${String(comment.body || '').slice(0, 70)} — ${selectedRequest.title} | MolDraw Community`;
         await openFeatureThread(selectedRequest, { url: href, highlightId: highlightCommentId, replace: true });
       } else if (!isThreadRoute(route)) {
@@ -3152,6 +3766,20 @@
     document.getElementById('post-modal-close').addEventListener('click', closePostModal);
     postModal.addEventListener('click', (event) => { if (event.target === postModal) closePostModal(); });
     document.getElementById('submit-post').addEventListener('click', submitPost);
+    bindEnterToSubmit(document.getElementById('post-body'), () => {
+      if (!requireAuth()) return;
+      submitPost();
+    });
+    document.getElementById('image-lightbox')?.addEventListener('click', closeImageLightbox);
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('.card-images a');
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const href = link.getAttribute('href');
+      if (!isDisplayableImageUrl(href)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openImageLightbox(href);
+    });
     document.getElementById('feature-request-modal-close').addEventListener('click', closeFeatureRequestModal);
     featureRequestModal.addEventListener('click', (event) => { if (event.target === featureRequestModal) closeFeatureRequestModal(); });
     document.getElementById('community-feature-request-form').addEventListener('submit', submitCommunityFeatureRequest);
@@ -3180,7 +3808,8 @@
     document.getElementById('auth-cancel').addEventListener('click', closeAuthModal);
     authModal.addEventListener('click', (event) => { if (event.target === authModal) closeAuthModal(); });
     window.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && authModal.classList.contains('visible')) closeAuthModal();
+      if (event.key === 'Escape' && document.getElementById('image-lightbox')?.classList.contains('is-open')) closeImageLightbox();
+      else if (event.key === 'Escape' && authModal.classList.contains('visible')) closeAuthModal();
       else if (event.key === 'Escape' && postModal.classList.contains('visible')) closePostModal();
       else if (event.key === 'Escape' && featureRequestModal.classList.contains('visible')) closeFeatureRequestModal();
       else if (event.key === 'Escape' && reportModal.classList.contains('visible')) closeReportModal();
