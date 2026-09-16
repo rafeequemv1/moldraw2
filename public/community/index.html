@@ -118,6 +118,7 @@
       margin: 0;
       color: #0f172a;
       font-family: 'Libre Franklin', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 15px;
     }
     .sr-only {
       position: absolute;
@@ -167,13 +168,13 @@
     }
     .sidebar-title {
       margin: 0 0 6px;
-      font-size: 18px;
+      font-size: 16px;
       letter-spacing: -0.03em;
     }
     .sidebar-text {
       margin: 0 0 14px;
       color: #64748b;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.5;
     }
     .tabs {
@@ -188,7 +189,7 @@
       background: #fff;
       color: #334155;
       font: inherit;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       text-align: left;
       padding: 0 12px;
@@ -205,7 +206,7 @@
     }
     .community-page-title {
       margin: 0 0 12px;
-      font-size: 22px;
+      font-size: 20px;
       line-height: 1.25;
     }
     .card-title-link {
@@ -229,7 +230,7 @@
     }
     .comments-heading,
     .comment-heading {
-      font-size: 14px;
+      font-size: 13px;
       margin: 0 0 8px;
     }
     a.pill {
@@ -243,7 +244,7 @@
       gap: 8px;
       align-items: center;
       margin: 14px 0 8px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
     }
     .community-pagination a,
@@ -340,7 +341,7 @@
     .thread-close {
       width: 28px;
       padding: 0;
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1;
     }
     .thread-modal-body {
@@ -356,7 +357,7 @@
       cursor: default;
     }
     .thread-modal-body .card-title {
-      font-size: 18px;
+      font-size: 16px;
     }
     .thread-reply-composer,
     .card-reply-composer {
@@ -466,7 +467,7 @@
     }
     .cta-card h2 {
       margin: 0 0 6px;
-      font-size: 18px;
+      font-size: 16px;
       letter-spacing: -0.03em;
     }
     .cta-card p,
@@ -557,7 +558,7 @@
       background: #f8fafc;
       color: #64748b;
       font: inherit;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       text-align: left;
       padding: 12px 14px;
@@ -667,7 +668,7 @@
       background: #fff;
       color: #334155;
       font: inherit;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 900;
       cursor: pointer;
     }
@@ -679,7 +680,7 @@
     }
     .composer-title {
       margin: 0 0 10px;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 900;
     }
     .composer-grid {
@@ -725,7 +726,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 900;
       flex-shrink: 0;
     }
@@ -737,7 +738,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 900;
       white-space: nowrap;
       overflow: hidden;
@@ -783,7 +784,7 @@
       align-items: center;
       gap: 8px;
       margin: 8px 0 6px;
-      font-size: 18px;
+      font-size: 16px;
       letter-spacing: -0.02em;
     }
     .feature-status {
@@ -793,7 +794,7 @@
       min-height: 24px;
       padding: 0 8px;
       border-radius: 999px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       line-height: 1;
       white-space: nowrap;
@@ -834,7 +835,7 @@
     .card-body {
       margin: 0;
       color: #334155;
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.6;
       white-space: pre-wrap;
     }
@@ -916,7 +917,7 @@
       background: #fff;
       color: #334155;
       font: inherit;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       padding: 0 10px;
       cursor: pointer;
@@ -939,7 +940,7 @@
     .feed-more-comments,
     a.more-thread {
       width: fit-content;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: #64748b;
       text-decoration: none;
@@ -952,7 +953,7 @@
     .comment {
       padding: 10px 0 8px;
       color: #334155;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.5;
     }
     .comment .author {
@@ -965,11 +966,63 @@
     }
     .comment strong {
       color: #0f172a;
-      font-size: 13px;
+      font-size: 12px;
     }
     .comment-body {
       margin: 0 0 0 37px;
       white-space: pre-wrap;
+    }
+    .comment-mention {
+      color: #1f6b4a;
+      font-weight: 800;
+    }
+    .mention-composer {
+      position: relative;
+      min-width: 0;
+    }
+    .mention-menu {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(100% + 6px);
+      z-index: 30;
+      margin: 0;
+      padding: 4px;
+      list-style: none;
+      background: #fff;
+      border: 1px solid #c9d3dc;
+      border-radius: 10px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+      max-height: 220px;
+      overflow: auto;
+    }
+    .mention-menu[hidden] { display: none; }
+    .mention-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      padding: 7px 8px;
+      cursor: pointer;
+    }
+    .mention-option[aria-selected="true"],
+    .mention-option:hover {
+      background: #eef6f3;
+    }
+    .mention-option strong {
+      display: block;
+      font-size: 12px;
+    }
+    .mention-option span {
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 700;
     }
     .comment-form {
       display: grid;
@@ -1127,7 +1180,7 @@
     }
     .feature-cta-card h2 {
       margin: 0 0 3px;
-      font-size: 16px;
+      font-size: 15px;
       letter-spacing: -0.02em;
     }
     .feature-cta-card p {
@@ -1183,7 +1236,7 @@
     }
     .post-modal-head h2 {
       margin: 0;
-      font-size: 18px;
+      font-size: 16px;
       letter-spacing: -0.02em;
     }
     .modal-close-btn {
@@ -1220,7 +1273,7 @@
       border: 0;
       border-radius: 0;
       padding: 8px 0;
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1.45;
       box-shadow: none;
     }
@@ -1261,7 +1314,7 @@
       background: #2C7A7B;
       color: #fff;
       font: inherit;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
       cursor: pointer;
     }
@@ -1271,7 +1324,7 @@
     }
     .modal h2 {
       margin: 0 0 8px;
-      font-size: 22px;
+      font-size: 20px;
       letter-spacing: -0.03em;
     }
     .modal p {
@@ -1322,11 +1375,11 @@
       margin-bottom: 6px;
     }
     .card-title {
-      font-size: 16px;
+      font-size: 15px;
       margin-bottom: 5px;
     }
     .card-body {
-      font-size: 13px;
+      font-size: 12.5px;
       line-height: 1.48;
     }
     .card-actions {
@@ -1423,7 +1476,7 @@
         grid-template-columns: 1fr;
       }
       .sidebar-title {
-        font-size: 16px;
+        font-size: 15px;
       }
       .sidebar-text {
         font-size: 12px;
@@ -1463,11 +1516,11 @@
         margin-top: 2px;
       }
       .card-title {
-        font-size: 16px;
+        font-size: 15px;
         line-height: 1.3;
       }
       .card-body {
-        font-size: 13px;
+        font-size: 12.5px;
         line-height: 1.55;
       }
       .card-images {
@@ -1840,6 +1893,7 @@
     const FEATURE_COMMENT_PREVIEW_SELECT = 'id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
     const dirtyDiscussionPreviewIds = new Set();
     const dirtyFeaturePreviewIds = new Set();
+    const mentionState = new WeakMap();
 
     function feedCacheKey(kind, page) {
       return `${FEED_CACHE_PREFIX}:${kind}:${page}`;
@@ -2070,7 +2124,10 @@
           <div class="comments visible" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
           <section class="thread-reply-composer card-reply-composer" aria-label="Write a reply">
             <div class="comment-form" data-comment-form="main">
-              <textarea placeholder="Write a reply…" aria-label="Write a reply"></textarea>
+              <div class="mention-composer">
+                <textarea placeholder="Write a reply…" aria-label="Write a reply"></textarea>
+                <div class="mention-menu" hidden role="listbox" aria-label="Mention people"></div>
+              </div>
               <label class="comment-image-chip">
                 Image
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
@@ -2223,10 +2280,175 @@
       if (img) img.removeAttribute('src');
     }
 
+    function mentionHandle(user) {
+      const fromName = String(user?.handle || user?.name || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '');
+      if (fromName.length >= 2) return fromName;
+      return `user${String(user?.id || '').replace(/-/g, '').slice(0, 8)}`;
+    }
+
+    function renderCommentBody(body) {
+      return escapeHtml(body).replace(/@([A-Za-z0-9_]{2,40})/g, '<span class="comment-mention">@$1</span>');
+    }
+
+    function mentionsInBody(input, body) {
+      const selected = mentionState.get(input)?.selected || [];
+      const text = String(body || '');
+      const unique = [];
+      const seen = new Set();
+      selected.forEach((user) => {
+        if (!user?.id || seen.has(user.id) || user.id === session?.user?.id) return;
+        const handle = mentionHandle(user);
+        if (!new RegExp(`@${handle}\\b`, 'i').test(text) && !text.includes(`@${user.name || ''}`)) return;
+        seen.add(user.id);
+        unique.push({ id: user.id, handle, name: user.name });
+      });
+      return unique;
+    }
+
+    async function saveMentions(source, commentId, mentioned) {
+      if (!commentId || !mentioned.length) return;
+      const rows = mentioned.map((user) => ({
+        source,
+        comment_id: commentId,
+        mentioned_user_id: user.id,
+        created_by: session?.user?.id
+      }));
+      await client.from('community_comment_mentions').insert(rows);
+    }
+
+    async function pingCommunityNotify(payload) {
+      try {
+        const { data } = await client.auth.getSession();
+        const accessToken = data?.session?.access_token || session?.access_token || '';
+        await fetch('/api/community-notify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch {
+        /* notification delivery is best-effort */
+      }
+    }
+
+    function hideMentionMenu(input) {
+      const state = mentionState.get(input);
+      if (!state?.menu) return;
+      state.menu.hidden = true;
+      state.menu.innerHTML = '';
+      state.active = -1;
+      state.matches = [];
+    }
+
+    function renderMentionMenu(input) {
+      const state = mentionState.get(input);
+      if (!state?.menu) return;
+      const matches = state.matches || [];
+      if (!matches.length) {
+        hideMentionMenu(input);
+        return;
+      }
+      if (state.active < 0 || state.active >= matches.length) state.active = 0;
+      state.menu.hidden = false;
+      state.menu.innerHTML = matches.map((user, index) => `
+        <button class="mention-option" type="button" role="option" data-mention-index="${index}" aria-selected="${index === state.active ? 'true' : 'false'}">
+          <span class="avatar ${escapeHtml(safeAvatarKey(user.avatar_key))}">${escapeHtml(initials(user.name))}</span>
+          <span>
+            <strong>${escapeHtml(user.name || 'Community member')}</strong>
+            <span>@${escapeHtml(mentionHandle(user))}${user.designation ? ` · ${escapeHtml(user.designation)}` : ''}</span>
+          </span>
+        </button>
+      `).join('');
+      state.menu.querySelectorAll('[data-mention-index]').forEach((button) => {
+        button.addEventListener('mousedown', (event) => {
+          event.preventDefault();
+          chooseMention(input, Number(button.getAttribute('data-mention-index')));
+        });
+      });
+    }
+
+    function chooseMention(input, index) {
+      const state = mentionState.get(input);
+      const user = state?.matches?.[index];
+      if (!user) return;
+      const value = input.value;
+      const cursor = input.selectionStart || value.length;
+      const before = value.slice(0, cursor);
+      const match = before.match(/@([A-Za-z0-9_]*)$/);
+      if (!match) return;
+      const handle = mentionHandle(user);
+      const start = cursor - match[0].length;
+      input.value = `${value.slice(0, start)}@${handle} ${value.slice(cursor)}`;
+      const nextCursor = start + handle.length + 2;
+      input.setSelectionRange(nextCursor, nextCursor);
+      if (!state.selected.some((item) => item.id === user.id)) state.selected.push(user);
+      hideMentionMenu(input);
+      input.focus();
+    }
+
+    async function searchMentions(input, query) {
+      const state = mentionState.get(input);
+      if (!state) return;
+      const requestId = (state.requestId || 0) + 1;
+      state.requestId = requestId;
+      const { data, error } = await client.rpc('search_community_mention_users', { q: query || '' });
+      if (error || state.requestId !== requestId) return;
+      state.matches = (data || []).filter((user) => user.id !== session?.user?.id);
+      renderMentionMenu(input);
+    }
+
+    function bindMentionComposer(input) {
+      if (!input || input.dataset.mentionBound === '1') return;
+      const menu = input.parentElement?.querySelector?.('.mention-menu');
+      if (!menu) return;
+      input.dataset.mentionBound = '1';
+      mentionState.set(input, { menu, selected: [], matches: [], active: 0, requestId: 0 });
+      let timer = 0;
+      const onQuery = () => {
+        const cursor = input.selectionStart || 0;
+        const before = input.value.slice(0, cursor);
+        const match = before.match(/@([A-Za-z0-9_]*)$/);
+        if (!match) {
+          hideMentionMenu(input);
+          return;
+        }
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => searchMentions(input, match[1]), 120);
+      };
+      input.addEventListener('input', onQuery);
+      input.addEventListener('click', onQuery);
+      input.addEventListener('blur', () => window.setTimeout(() => hideMentionMenu(input), 150));
+    }
+
     function bindEnterToSubmit(input, onSubmit) {
       if (!input || input.dataset.enterBound === '1') return;
       input.dataset.enterBound = '1';
       input.addEventListener('keydown', (event) => {
+        const state = mentionState.get(input);
+        const menuOpen = state?.menu && !state.menu.hidden && (state.matches || []).length;
+        if (menuOpen && ['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(event.key)) {
+          event.preventDefault();
+          if (event.key === 'Escape') {
+            hideMentionMenu(input);
+            return;
+          }
+          if (event.key === 'ArrowDown') {
+            state.active = (state.active + 1) % state.matches.length;
+            renderMentionMenu(input);
+            return;
+          }
+          if (event.key === 'ArrowUp') {
+            state.active = (state.active - 1 + state.matches.length) % state.matches.length;
+            renderMentionMenu(input);
+            return;
+          }
+          chooseMention(input, state.active);
+          return;
+        }
         if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
         if (event.isComposing || event.keyCode === 229) return;
         event.preventDefault();
@@ -2249,6 +2471,7 @@
         openAuthModal('Sign in to continue');
       });
       if (button) button.addEventListener('click', submit);
+      bindMentionComposer(input);
       bindEnterToSubmit(input, submit);
     }
 
@@ -2256,7 +2479,10 @@
       return `
         <section class="card-reply-composer" aria-label="Write a reply">
           <div class="comment-form" data-comment-form="main">
-            <textarea placeholder="Write a reply…" aria-label="Write a reply"></textarea>
+            <div class="mention-composer">
+              <textarea placeholder="Write a reply…" aria-label="Write a reply"></textarea>
+              <div class="mention-menu" hidden role="listbox" aria-label="Mention people"></div>
+            </div>
             <label class="comment-image-chip">
               Image
               <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
@@ -2287,7 +2513,10 @@
     function inlineReplyFormHtml(placeholder) {
       return `
             <div class="comment-form reply-form">
-              <textarea placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}"></textarea>
+              <div class="mention-composer">
+                <textarea placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}"></textarea>
+                <div class="mention-menu" hidden role="listbox" aria-label="Mention people"></div>
+              </div>
               <label class="comment-image-chip">
                 Image
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
@@ -2873,13 +3102,16 @@
       syncDiscussionCommentViews(postId);
       try {
         const imageUrls = await uploadImages(pendingFiles);
-        const { error } = await client.from('community_comments').insert({
+        const mentioned = mentionsInBody(input, body);
+        const { data, error } = await client.from('community_comments').insert({
           post_id: postId,
           parent_comment_id: parentCommentId,
           body,
           image_urls: imageUrls
-        });
+        }).select('id').single();
         if (error) throw error;
+        await saveMentions('community_comments', data?.id, mentioned);
+        await pingCommunityNotify({ table: 'community_comments', type: 'INSERT', record: { id: data?.id } });
         dirtyDiscussionPreviewIds.add(postId);
         await openComments(postId);
         loadDiscussions(false);
@@ -2977,7 +3209,7 @@
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · ${timeHtml}</div>
             </div>
           </div>
-          <div class="comment-body">${escapeHtml(comment.body)}</div>
+          <div class="comment-body">${renderCommentBody(comment.body)}</div>
           ${images}
           <div class="comment-tools">
             ${pending
@@ -3182,13 +3414,16 @@
       syncFeatureCommentViews(requestId);
       try {
         const imageUrls = await uploadImages(pendingFiles);
-        const { error } = await client.from('feature_request_comments').insert({
+        const mentioned = mentionsInBody(input, body);
+        const { data, error } = await client.from('feature_request_comments').insert({
           feature_request_id: requestId,
           parent_comment_id: parentCommentId,
           body,
           image_urls: imageUrls
-        });
+        }).select('id').single();
         if (error) throw error;
+        await saveMentions('feature_request_comments', data?.id, mentioned);
+        await pingCommunityNotify({ table: 'feature_request_comments', type: 'INSERT', record: { id: data?.id } });
         dirtyFeaturePreviewIds.add(requestId);
         await openFeatureComments(requestId);
         loadFeatureRequests();
@@ -3620,6 +3855,7 @@
         return;
       }
       statusEl.textContent = 'Updating request status...';
+      const previous = lastFeatureItems.find((item) => item.id === featureRequestId);
       const { error } = await client
         .from('feature_requests')
         .update({ status })
@@ -3628,6 +3864,12 @@
         statusEl.textContent = error.message || 'Could not update status.';
         return;
       }
+      await pingCommunityNotify({
+        table: 'feature_requests',
+        type: 'UPDATE',
+        record: { id: featureRequestId, status },
+        old_record: { status: previous?.status }
+      });
       await loadFeatureRequests();
     }
 

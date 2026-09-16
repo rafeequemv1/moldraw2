@@ -21,6 +21,9 @@
     },
     "api/community-notify.js": {
       "maxDuration": 10
+    },
+    "api/community-unsubscribe.js": {
+      "maxDuration": 10
     }
   },
   "headers": [
@@ -206,6 +209,10 @@
     {
       "source": "/community/sitemap.xml",
       "destination": "/api/community-sitemap"
+    },
+    {
+      "source": "/community/unsubscribe",
+      "destination": "/api/community-unsubscribe"
     },
     {
       "source": "/community",
