@@ -20,6 +20,7 @@ export interface StructureCheckResult {
 
 const MAX_VALENCE: Record<string, number> = {
   H: 1,
+  B: 4,
   C: 4,
   N: 3,
   O: 2,

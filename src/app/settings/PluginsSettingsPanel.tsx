@@ -36,6 +36,7 @@ function PluginRow({
   onUninstall,
   onDisable,
   onEnable,
+  showDescriptions,
 }: {
   entry: PluginCatalogEntry;
   state: PluginStateRecord;
@@ -43,6 +44,7 @@ function PluginRow({
   onUninstall: () => void;
   onDisable: () => void;
   onEnable: () => void;
+  showDescriptions: boolean;
 }) {
   const { t } = useI18n();
   const badgeTone = stateBadgeTone(state.state);
@@ -61,7 +63,7 @@ function PluginRow({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
             {entry.name}
             {entry.id === 'smart-draw' ? (
               <span className="app-top-bar__beta" title={t('settings.beta')}>
@@ -69,7 +71,9 @@ function PluginRow({
               </span>
             ) : null}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{entry.description}</div>
+          {showDescriptions ? (
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{entry.description}</div>
+          ) : null}
           <div style={{ fontSize: 11, marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ color: badgeTone, fontWeight: 600 }}>{t(stateBadgeKey(state.state))}</span>
             {needsAi ? <span style={{ color: 'var(--text-muted)' }}>{t('settings.plugins.requiresAi')}</span> : null}
@@ -111,7 +115,7 @@ function PluginRow({
   );
 }
 
-export function PluginsSettingsPanel() {
+export function PluginsSettingsPanel({ showDescriptions = false }: { showDescriptions?: boolean }) {
   const { t } = useI18n();
   const host = usePluginHostOptional();
   if (!host) {
@@ -126,9 +130,11 @@ export function PluginsSettingsPanel() {
 
   return (
     <div>
-      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 0, marginBottom: 12 }}>
-        {t('settings.plugins.intro')}
-      </p>
+      {showDescriptions ? (
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 0, marginBottom: 12 }}>
+          {t('settings.plugins.intro')}
+        </p>
+      ) : null}
       {host.catalog.map(entry => (
         <PluginRow
           key={entry.id}
@@ -138,11 +144,14 @@ export function PluginsSettingsPanel() {
           onUninstall={() => host.uninstallPlugin(entry.id)}
           onDisable={() => host.disablePlugin(entry.id)}
           onEnable={() => host.enablePlugin(entry.id)}
+          showDescriptions={showDescriptions}
         />
       ))}
-      <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>
-        {t('settings.plugins.buildYourOwn')}
-      </p>
+      {showDescriptions ? (
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>
+          {t('settings.plugins.buildYourOwn')}
+        </p>
+      ) : null}
     </div>
   );
 }

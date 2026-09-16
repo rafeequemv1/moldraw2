@@ -19,6 +19,7 @@ export interface ShortcutsSettingsPanelProps {
   bindingsOverride: ShortcutBindingsMap | undefined;
   onChangeBindings: (next: ShortcutBindingsMap) => void;
   onResetAll: () => void;
+  showDescriptions?: boolean;
 }
 
 const rowStyle: CSSProperties = {
@@ -77,6 +78,7 @@ export function ShortcutsSettingsPanel({
   bindingsOverride,
   onChangeBindings,
   onResetAll,
+  showDescriptions = false,
 }: ShortcutsSettingsPanelProps) {
   const { t } = useI18n();
   const bindings = useMemo(
@@ -152,11 +154,13 @@ export function ShortcutsSettingsPanel({
 
   return (
     <div>
-      <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-        {t('settings.shortcuts.introBefore')}{' '}
-        <strong style={{ color: 'var(--text-main)' }}>{t('settings.shortcuts.introEdit')}</strong>
-        {t('settings.shortcuts.introAfter')}
-      </p>
+      {showDescriptions ? (
+        <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          {t('settings.shortcuts.introBefore')}{' '}
+          <strong style={{ color: 'var(--text-main)' }}>{t('settings.shortcuts.introEdit')}</strong>
+          {t('settings.shortcuts.introAfter')}
+        </p>
+      ) : null}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
         <button
           type="button"

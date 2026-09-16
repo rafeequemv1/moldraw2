@@ -254,6 +254,7 @@ export const zh: LocaleMessages = {
     title: '绘制设置',
     intro:
       '设置保存在本浏览器中。字体、导出格式与化学键样式会一直保持，直到您再次修改。样式预设用于对比不同期刊版式 — 缩略图以阿司匹林为例展示该预设效果。',
+    showDescriptions: '显示说明',
     resetDefaults: '恢复默认',
     sections: '分区',
     closeAria: '关闭',
@@ -295,15 +296,6 @@ export const zh: LocaleMessages = {
         '拖动分子或反应箭头时，中心对齐背景网格。按住 Shift 可自由移动。对齐参考线仍可对齐其他分子边界。',
       showGrid: '显示网格',
       showGridHint: '在 2D 画布上绘制浅色背景网格（默认开启）。',
-      touchPanOnEmptyCanvas: '触控：空白画布单指平移',
-      touchPanOnEmptyCanvasHint:
-        '选择工具下，单指在空白处拖动为平移而非框选。默认关闭：双指或平移工具平移，双指缩放，双指轻触撤销，三指轻触重做。',
-      touchLoupe: '触控：绘制时放大镜',
-      touchLoupeHint:
-        '拖动键、环、链或在原子上时，在指尖上方显示 2× 放大镜，避免手指遮挡。',
-      pointerDebugHud: '指针调试叠加层',
-      pointerDebugHudHint:
-        '开发辅助：在画布上显示最近指针的类型、压力、倾斜、按钮、接触面积与手势状态。',
       reactionComponentMargin: '反应组分间距',
       imageResolution: '图片分辨率',
       imageResolutionHint:
@@ -314,6 +306,18 @@ export const zh: LocaleMessages = {
       resolutionHigh: '高 (4×)',
       unitPt: 'pt',
       unitPx: 'px',
+    },
+    touch: {
+      nav: '触摸屏',
+      touchPanOnEmptyCanvas: '空白画布单指平移',
+      touchPanOnEmptyCanvasHint:
+        '选择工具下，单指在空白处拖动为平移而非框选。默认关闭：双指或平移工具平移，双指缩放，双指轻触撤销，三指轻触重做。',
+      touchLoupe: '绘制时放大镜',
+      touchLoupeHint:
+        '拖动键、环、链或在原子上时，在指尖上方显示 2× 放大镜，避免手指遮挡。',
+      pointerDebugHud: '指针调试叠加层',
+      pointerDebugHudHint:
+        '开发辅助：在画布上显示最近指针的类型、压力、倾斜、按钮、接触面积与手势状态。',
     },
     style: {
       nav: '样式',

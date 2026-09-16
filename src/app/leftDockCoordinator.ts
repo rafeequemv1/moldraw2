@@ -4,7 +4,6 @@ const STYLE_CLOSE = '.format-left-panel.mol-color-side-panel .format-left-panel_
 const PARAMS_CLOSE = '.left-params-dock .format-left-panel__close';
 const OBJECTS_CLOSE =
   '.objects-panel:not(.objects-panel--sheet) [aria-label="Close objects panel"]';
-const SETTINGS_ROOT = '.app-settings-modal';
 
 let active: LeftDockId | null = null;
 let closing = false;
@@ -21,10 +20,6 @@ function closeExcept(keep: LeftDockId): void {
     if (keep !== 'style') clickAll(STYLE_CLOSE);
     if (keep !== 'params') clickAll(PARAMS_CLOSE);
     if (keep !== 'objects') clickAll(OBJECTS_CLOSE);
-    if (keep !== 'settings') {
-      const root = document.querySelector(SETTINGS_ROOT);
-      root?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    }
   } finally {
     queueMicrotask(() => {
       closing = false;
@@ -41,7 +36,6 @@ function setActive(id: LeftDockId): void {
 
 function nodeOpensPanel(node: Node): LeftDockId | null {
   if (!(node instanceof Element)) return null;
-  if (node.matches?.(SETTINGS_ROOT) || node.querySelector?.(SETTINGS_ROOT)) return 'settings';
   if (
     (node.matches?.('.objects-panel') && !node.classList.contains('objects-panel--sheet')) ||
     node.querySelector?.('.objects-panel:not(.objects-panel--sheet)')
@@ -78,7 +72,6 @@ function installLeftDockCoordinator(): void {
     if (
       active &&
       !root.classList.contains('format-left-panel-open') &&
-      !document.querySelector(SETTINGS_ROOT) &&
       !document.querySelector('.left-params-dock:not(:empty) .left-params-panel') &&
       !document.querySelector('.objects-panel:not(.objects-panel--sheet)')
     ) {

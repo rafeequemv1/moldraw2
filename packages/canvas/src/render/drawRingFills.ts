@@ -16,8 +16,8 @@ export const drawRingHoverFill = (ctx: CanvasRenderingContext2D, R: RenderContex
   if (!ordered || ordered.length < 3) return;
   const verts = ordered.map(id => R.atomById.get(id)).filter((a): a is Atom => !!a);
   if (verts.length < 3) return;
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
-  ctx.strokeStyle = 'rgba(14, 165, 233, 0.55)';
+  ctx.fillStyle = 'rgba(45, 212, 191, 0.18)';
+  ctx.strokeStyle = 'rgba(45, 212, 191, 0.55)';
   ctx.lineWidth = 1.5 / R.viewport.zoom;
   ctx.beginPath();
   ctx.moveTo(verts[0].x, verts[0].y);

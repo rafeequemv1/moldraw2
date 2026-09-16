@@ -1,5 +1,5 @@
 /**
- * Selection wash (behind the molecule) + hover as a thin blue outline (overlay).
+ * Selection wash (behind the molecule) + hover as a thin teal outline (overlay).
  *
  * Painted as one opaque mask on an offscreen canvas, then tinted, so overlapping
  * bonds / labels do not stack into darker blobs. Ring interiors are filled in
@@ -22,7 +22,7 @@ import { safeDrawImage } from './safeDrawImage';
 import type { RenderContext } from './types';
 import { canvasBackingDpr } from '../geometry';
 
-const HOVER_OUTLINE = 'rgba(14, 165, 233, 1)';
+const HOVER_OUTLINE = 'rgba(45, 212, 191, 1)';
 /** Hover ring thickness in CSS pixels (world = css / zoom). */
 const HOVER_OUTLINE_CSS_PX = 1.35;
 const HIGHLIGHT_MAX_EDGE = 4096;
@@ -381,13 +381,13 @@ export const drawSelectionFillBehind = (
     ctx,
     R,
     R.selectedAtomIds,
-    theme.selectionFill ?? 'rgba(59, 130, 246, 0.28)',
+    theme.selectionFill ?? 'rgba(45, 212, 191, 0.36)',
     'fill',
     extraBonds.size ? extraBonds : undefined,
   );
 };
 
-/** Thin blue outline on hover (overlay, above the molecule). */
+/** Thin teal outline on hover (overlay, above the molecule). */
 export const drawHoverOutlineAndToolHints = (
   ctx: CanvasRenderingContext2D,
   R: RenderContext,

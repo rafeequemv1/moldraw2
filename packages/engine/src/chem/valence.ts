@@ -12,14 +12,14 @@ import { CHARGE_ADDS_VALENCE, NORMAL_VALENCES, normalizeElementSymbol } from '..
 /**
  * Charge-adjusted normal valence tiers for an element.
  * Right-side elements (N, O, halogens…) gain valence with +charge;
- * left-side elements (B, C, Si) lose valence with |charge|.
+ * C / Si lose valence with |charge|. Boron is signed: B 3, B− 4 (BH4−), B+ 2.
  */
 export const chargeAdjustedValences = (element: string, charge: number): number[] => {
   const el = normalizeElementSymbol(element);
   const base = NORMAL_VALENCES[el];
   if (!base) return [];
   const q = charge || 0;
-  const shift = CHARGE_ADDS_VALENCE.has(el) ? q : -Math.abs(q);
+  const shift = el === 'B' ? -q : CHARGE_ADDS_VALENCE.has(el) ? q : -Math.abs(q);
   return base.map(v => Math.max(0, v + shift));
 };
 

@@ -362,14 +362,11 @@ body,
     background: var(--chrome-hover) !important;
   }
 
-  /* Settings overlay stays translucent so theme changes show on the app behind. */
+  /* Settings centered modal: chrome + canvas still visible through the dimmed backdrop. */
   .app-settings-modal {
     --text-muted: var(--text-main);
     --md-text-muted: var(--text-main);
-    display: grid !important;
-    place-items: center !important;
-    background: rgba(0, 0, 0, 0.22) !important;
-    backdrop-filter: none !important;
+    background: var(--sheet-backdrop) !important;
     color: var(--text-main);
   }
 
@@ -516,8 +513,9 @@ body,
     color: var(--text-main) !important;
   }
 
-  .app-settings-modal__nav-btn.is-active {
-    background: var(--chrome-hover) !important;
+  .app-settings-modal__nav-btn.is-active,
+  .app-settings-modal__nav-btn:hover {
+    background: color-mix(in srgb, #14b8a6 22%, transparent) !important;
   }
 
   .app-settings-modal__nav-btn svg {

@@ -104,7 +104,7 @@ export const ORGANIC_SUBSET = new Set(['B', 'C', 'N', 'O', 'P', 'S', 'F', 'Cl', 
  */
 export const NORMAL_VALENCES: Readonly<Record<string, number[]>> = Object.freeze({
   H: [1],
-  B: [3],
+  B: [3, 4],
   C: [4],
   N: [3],
   O: [2],
@@ -120,7 +120,7 @@ export const NORMAL_VALENCES: Readonly<Record<string, number[]>> = Object.freeze
 
 /**
  * Elements whose bonding capacity increases with positive charge (right side:
- * N, O, P, S, Se, halogens). Others (left side: B, C, Si) lose capacity with
- * any nonzero charge magnitude.
+ * N, O, P, S, Se, halogens). C / Si lose capacity with |charge|. Boron is
+ * handled separately in chargeAdjustedValences (B− → 4, B+ → 2).
  */
 export const CHARGE_ADDS_VALENCE = new Set(['N', 'O', 'P', 'S', 'Se', 'F', 'Cl', 'Br', 'I']);

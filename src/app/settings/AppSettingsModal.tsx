@@ -2,9 +2,9 @@
  * Application preferences: General, Style, Bonds, Style presets, AI, Shortcuts.
  * Compact viewports use a full-screen bottom sheet.
  */
-import { useEffect, useState, type CSSProperties } from 'react';
+import { createContext, useContext, useEffect, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Bot, FolderOpen, Keyboard, Palette, Puzzle, Type, X } from 'lucide-react';
+import { Bot, FolderOpen, Hand, Keyboard, Palette, Puzzle, Type, X } from 'lucide-react';
 import { MobileBottomSheet } from '../components/MobileBottomSheet';
 import { useCompactViewport } from '../hooks/useCompactViewport';
 import {
@@ -25,8 +25,7 @@ import { UI_THEME_OPTIONS, type UiThemeId } from '../theme';
 import { useInstalledStructureThemes } from '../hooks/useStructureTheme';
 import { resolveUiLanguage, UI_LANGUAGES, useI18n, type UiLanguage } from '../i18n';
 
-/** Fixed content viewport so every section shares the same modal size (scroll inside). */
-const SETTINGS_CONTENT_HEIGHT = 460;
+const ShowSettingsDescContext = createContext(false);
 
 const RESOLUTION_VALUES: ImageResolutionPreset[] = ['document', 'low', 'medium', 'high'];
 
@@ -90,7 +89,15 @@ export interface AppSettingsModalProps {
   };
 }
 
-type SettingsCategory = 'general' | 'style' | 'bonds' | 'presets' | 'ai' | 'plugins' | 'shortcuts';
+type SettingsCategory =
+  | 'general'
+  | 'touch'
+  | 'style'
+  | 'bonds'
+  | 'presets'
+  | 'ai'
+  | 'plugins'
+  | 'shortcuts';
 
 function SettingsBetaTag() {
   const { t } = useI18n();
@@ -106,13 +113,14 @@ const rowStyle: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 10,
-  padding: '6px 0',
+  padding: '5px 0',
   borderBottom: '1px solid var(--chrome-border)',
-  fontSize: 12,
+  fontSize: 13,
+  minHeight: 28,
   color: 'var(--text-main)',
 };
 
-const labelStyle: CSSProperties = { flex: '1 1 auto', minWidth: 0 };
+const labelStyle: CSSProperties = { flex: '1 1 auto', minWidth: 0, fontSize: 14, fontWeight: 650, lineHeight: 1.25 };
 
 const hintStyle: CSSProperties = {
   display: 'block',
@@ -125,10 +133,15 @@ const hintStyle: CSSProperties = {
 
 function SettingsFieldLabel({ labelKey, hintKey }: { labelKey: string; hintKey?: string }) {
   const { t } = useI18n();
+  const showDescriptions = useContext(ShowSettingsDescContext);
   return (
-    <span style={labelStyle}>
+    <span className="app-settings-field-title" style={labelStyle}>
       {t(labelKey)}
-      {hintKey ? <span style={hintStyle}>{t(hintKey)}</span> : null}
+      {showDescriptions && hintKey ? (
+        <span className="app-settings-field-hint" style={hintStyle}>
+          {t(hintKey)}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -159,9 +172,8 @@ const navBtnStyle = (active: boolean, first = false): CSSProperties => ({
   gap: 8,
   borderRadius: 'var(--radius-control)',
   border: 'none',
-  padding: '9px 10px',
-  marginTop: first ? 0 : 4,
-  background: active ? 'var(--chrome-hover)' : 'transparent',
+  padding: '7px 10px',
+  marginTop: first ? 0 : 2,
   color: 'var(--text-main)',
   cursor: 'pointer',
   fontSize: 13,
@@ -172,22 +184,28 @@ function BoolSwitch({
   checked,
   onToggle,
   ariaLabel,
+  compact = true,
 }: {
   checked: boolean;
   onToggle: () => void;
   ariaLabel: string;
+  compact?: boolean;
 }) {
+  const w = compact ? 32 : 44;
+  const h = compact ? 16 : 24;
+  const knob = compact ? 12 : 18;
   return (
     <button
       type="button"
       role="switch"
+      className="app-settings-switch"
       aria-checked={checked}
       aria-label={ariaLabel}
       onClick={onToggle}
       style={{
-        width: 44,
-        height: 24,
-        borderRadius: 12,
+        width: w,
+        height: h,
+        borderRadius: h / 2,
         border: 'none',
         background: checked ? '#0d9488' : '#cbd5e1',
         cursor: 'pointer',
@@ -198,10 +216,10 @@ function BoolSwitch({
       <span
         style={{
           position: 'absolute',
-          top: 3,
-          left: checked ? 22 : 3,
-          width: 18,
-          height: 18,
+          top: (h - knob) / 2,
+          left: checked ? w - knob - 2 : 2,
+          width: knob,
+          height: knob,
           borderRadius: '50%',
           background: '#fff',
           transition: 'left 0.15s ease',
@@ -266,99 +284,83 @@ export function AppSettingsModal({
   if (!open) return null;
 
   const g = settings.general;
+  const showDescriptions = g.showSettingsDescriptions === true;
   const uiLang = resolveUiLanguage(g.uiLanguage);
   const b = settings.bonds;
 
   const panelStyle: CSSProperties = {
-    width: isCompact ? '100%' : 'min(700px, calc(100vw - 20px))',
+    width: isCompact ? '100%' : undefined,
     height: isCompact ? '100%' : undefined,
-    maxHeight: isCompact ? 'none' : 'calc(100vh - 40px)',
+    maxHeight: isCompact ? 'none' : undefined,
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
     background: 'var(--chrome-bg-elevated)',
-    borderRadius: isCompact ? 0 : 12,
-    boxShadow: isCompact ? 'none' : 'var(--shadow-elevated)',
-    border: isCompact ? 'none' : '1px solid var(--chrome-border)',
+    borderRadius: isCompact ? 0 : undefined,
+    boxShadow: isCompact ? 'none' : undefined,
+    border: isCompact ? 'none' : undefined,
     color: 'var(--text-main)',
   };
 
   const settingsInner = (
+    <ShowSettingsDescContext.Provider value={showDescriptions}>
       <div
         className={`app-settings-modal__panel${isCompact ? ' app-settings-sheet-inner' : ''}`}
         onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         style={panelStyle}
       >
         {!isCompact ? (
-          <div
-            className="app-settings-sheet-head"
-            style={{
-              padding: '10px 14px',
-              borderBottom: '1px solid var(--chrome-border)',
-              background: 'var(--chrome-bg-elevated)',
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-              <div>
-                <span className="app-settings-sheet-title" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-                  {t('settings.title')}
-                  <SettingsBetaTag />
-                </span>
-                <div className="app-settings-sheet-intro" style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>
-                  {t('settings.intro')}
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div className="app-settings-sheet-head">
+            <div className="app-settings-sheet-head-row">
+              <span className="app-settings-sheet-title">
+                {t('settings.title')}
+                <SettingsBetaTag />
+              </span>
+              <div className="app-settings-sheet-head-actions">
                 <button
                   type="button"
+                  className="app-settings-btn-secondary app-settings-reset-btn"
                   onClick={() => {
                     setPresetId('default');
                     resetToDefaults();
-                  }}
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: 'var(--text-main)',
-                    background: 'var(--chrome-bg)',
-                    border: '1px solid var(--chrome-border-strong)',
-                    borderRadius: 'var(--radius-control)',
-                    padding: '8px 12px',
-                    cursor: 'pointer',
                   }}
                 >
                   {t('settings.resetDefaults')}
                 </button>
                 <button
                   type="button"
+                  className="app-settings-modal__close"
                   aria-label={t('settings.closeAria')}
                   onClick={onClose}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 36,
-                    height: 36,
-                    border: '1px solid var(--chrome-border)',
-                    borderRadius: 'var(--radius-control)',
-                    background: 'var(--chrome-bg-elevated)',
-                    cursor: 'pointer',
-                    color: 'var(--text-muted)',
-                  }}
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               </div>
             </div>
           </div>
         ) : null}
 
+        <div className="app-settings-desc-toggle">
+          <span>{t('settings.showDescriptions')}</span>
+          <BoolSwitch
+            compact
+            checked={showDescriptions}
+            onToggle={() => updateGeneral({ showSettingsDescriptions: !showDescriptions })}
+            ariaLabel={t('settings.showDescriptions')}
+          />
+        </div>
+
+        {showDescriptions ? (
+          <div className="app-settings-sheet-intro">{t('settings.intro')}</div>
+        ) : null}
+
         <div
-          className={isCompact ? 'app-settings-sheet-layout' : undefined}
+          className="app-settings-sheet-layout"
           style={{
             display: 'grid',
-            gridTemplateColumns: isCompact ? '118px minmax(0, 1fr)' : '148px minmax(0, 1fr)',
-            flex: isCompact ? '1 1 auto' : '0 1 auto',
+            gridTemplateColumns: isCompact ? '118px minmax(0, 1fr)' : undefined,
+            flex: '1 1 auto',
             minHeight: 0,
             background: 'var(--chrome-bg-elevated)',
           }}
@@ -394,7 +396,15 @@ export function AppSettingsModal({
             >
               <FolderOpen size={16} />
               {t('settings.general.nav')}
-              {!isCompact ? <SettingsBetaTag /> : null}
+            </button>
+            <button
+              type="button"
+              className={`app-settings-modal__nav-btn${activeCategory === 'touch' ? ' is-active' : ''}`}
+              onClick={() => setActiveCategory('touch')}
+              style={navBtnStyle(activeCategory === 'touch')}
+            >
+              <Hand size={16} />
+              {t('settings.touch.nav')}
             </button>
             <button
               type="button"
@@ -404,7 +414,6 @@ export function AppSettingsModal({
             >
               <Type size={16} />
               {t('settings.style.nav')}
-              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -414,7 +423,6 @@ export function AppSettingsModal({
             >
               <FolderOpen size={16} />
               {t('settings.bonds.nav')}
-              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -424,7 +432,6 @@ export function AppSettingsModal({
             >
               <Palette size={16} />
               {t('settings.presets.nav')}
-              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -434,7 +441,6 @@ export function AppSettingsModal({
             >
               <Bot size={16} />
               {t('settings.ai.nav')}
-              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -444,7 +450,6 @@ export function AppSettingsModal({
             >
               <Puzzle size={16} />
               {t('settings.plugins.nav')}
-              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
             <button
               type="button"
@@ -454,24 +459,18 @@ export function AppSettingsModal({
             >
               <Keyboard size={16} />
               {t('settings.shortcuts.nav')}
-              {!isCompact ? <SettingsBetaTag /> : null}
             </button>
           </div>
 
           <div
-            className={isCompact ? 'app-settings-sheet-content' : undefined}
+            className="app-settings-sheet-content"
             style={{
-              padding: isCompact ? '10px 14px 16px' : '8px 12px 12px',
+              padding: isCompact ? '10px 14px 16px' : '8px 10px 12px',
               background: 'var(--chrome-bg-elevated)',
               overflowY: 'auto',
               boxSizing: 'border-box',
-              ...(isCompact
-                ? { minHeight: 0, height: 'auto', maxHeight: 'none' }
-                : {
-                    height: SETTINGS_CONTENT_HEIGHT,
-                    minHeight: SETTINGS_CONTENT_HEIGHT,
-                    maxHeight: SETTINGS_CONTENT_HEIGHT,
-                  }),
+              minHeight: 0,
+              flex: '1 1 auto',
             }}
           >
             {activeCategory === 'shortcuts' ? (
@@ -479,26 +478,29 @@ export function AppSettingsModal({
                 bindingsOverride={settings.shortcuts?.bindings}
                 onChangeBindings={updateShortcutBindings}
                 onResetAll={resetShortcutBindings}
+                showDescriptions={showDescriptions}
               />
             ) : null}
             {activeCategory === 'presets' ? (
               <>
-                <p
-                  style={{
-                    margin: '0 0 10px',
-                    fontSize: 12,
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {t('settings.presets.introBefore')}{' '}
-                  <strong style={{ color: 'var(--text-main)' }}>{t('settings.presets.aspirin')}</strong>{' '}
-                  {t('settings.presets.introAfter')}
-                </p>
+                {showDescriptions ? (
+                  <p
+                    style={{
+                      margin: '0 0 10px',
+                      fontSize: 12,
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {t('settings.presets.introBefore')}{' '}
+                    <strong style={{ color: 'var(--text-main)' }}>{t('settings.presets.aspirin')}</strong>{' '}
+                    {t('settings.presets.introAfter')}
+                  </p>
+                ) : null}
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                    gridTemplateColumns: '1fr',
                     gap: 8,
                   }}
                 >
@@ -532,14 +534,14 @@ export function AppSettingsModal({
                           boxShadow: 'none',
                         }}
                       >
-                        <StylePresetPreview settings={p.settings} width={220} height={140} />
+                        <StylePresetPreview settings={p.settings} width={208} height={120} />
                         <span
                           className="app-settings-preset-card__title"
-                          style={{ fontSize: 12, fontWeight: selected ? 700 : 600, color: 'var(--text-main)' }}
+                          style={{ fontSize: 13, fontWeight: selected ? 700 : 600, color: 'var(--text-main)' }}
                         >
                           {t(PRESET_LABEL_KEYS[p.id])}
                         </span>
-                        {presetDesc ? (
+                        {showDescriptions && presetDesc ? (
                           <span
                             className="app-settings-preset-card__desc"
                             style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.35 }}
@@ -556,13 +558,13 @@ export function AppSettingsModal({
 
             {activeCategory === 'general' ? (
               <>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.language" hintKey="settings.languageHint" />
                   <div style={controlStyle}>
                     <select
                       value={uiLang}
                       onChange={e => updateGeneral({ uiLanguage: e.target.value as UiLanguage })}
-                      style={{ ...inputNumStyle, width: 140, textAlign: 'left' }}
+                      style={{ ...inputNumStyle, width: 118, textAlign: 'left' }}
                       aria-label={t('settings.language')}
                     >
                       {UI_LANGUAGES.map(opt => (
@@ -573,7 +575,7 @@ export function AppSettingsModal({
                     </select>
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.general.theme" hintKey="settings.general.themeHint" />
                   <div className="theme-picker">
                     {UI_THEME_OPTIONS.map(opt => {
@@ -593,7 +595,7 @@ export function AppSettingsModal({
                     })}
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.showImplicitH"
                     hintKey="settings.general.showImplicitHHint"
@@ -606,7 +608,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.colorAtomLabels"
                     hintKey="settings.general.colorAtomLabelsHint"
@@ -619,7 +621,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.colorBondsToHeteroatoms"
                     hintKey="settings.general.colorBondsToHeteroatomsHint"
@@ -634,7 +636,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.condensedGroupLabels"
                     hintKey="settings.general.condensedGroupLabelsHint"
@@ -647,7 +649,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.showCipLabels"
                     hintKey="settings.general.showCipLabelsHint"
@@ -660,7 +662,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.autoLayoutAfterBondBurst"
                     hintKey="settings.general.autoLayoutAfterBondBurstHint"
@@ -675,7 +677,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.general.preferIndigo2d"
                     hintKey="settings.general.preferIndigo2dHint"
@@ -690,7 +692,7 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.general.snapToGrid" hintKey="settings.general.snapToGridHint" />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
@@ -700,54 +702,13 @@ export function AppSettingsModal({
                     />
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.general.showGrid" hintKey="settings.general.showGridHint" />
                   <div style={{ ...controlStyle, paddingTop: 2 }}>
                     <BoolSwitch
                       checked={g.showGrid === true}
                       onToggle={() => updateGeneral({ showGrid: g.showGrid !== true })}
                       ariaLabel={t('settings.general.showGrid')}
-                    />
-                  </div>
-                </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <SettingsFieldLabel
-                    labelKey="settings.general.touchPanOnEmptyCanvas"
-                    hintKey="settings.general.touchPanOnEmptyCanvasHint"
-                  />
-                  <div style={{ ...controlStyle, paddingTop: 2 }}>
-                    <BoolSwitch
-                      checked={g.touchPanOnEmptyCanvas === true}
-                      onToggle={() =>
-                        updateGeneral({ touchPanOnEmptyCanvas: g.touchPanOnEmptyCanvas !== true })
-                      }
-                      ariaLabel={t('settings.general.touchPanOnEmptyCanvas')}
-                    />
-                  </div>
-                </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <SettingsFieldLabel
-                    labelKey="settings.general.touchLoupe"
-                    hintKey="settings.general.touchLoupeHint"
-                  />
-                  <div style={{ ...controlStyle, paddingTop: 2 }}>
-                    <BoolSwitch
-                      checked={g.touchLoupe !== false}
-                      onToggle={() => updateGeneral({ touchLoupe: g.touchLoupe === false })}
-                      ariaLabel={t('settings.general.touchLoupe')}
-                    />
-                  </div>
-                </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
-                  <SettingsFieldLabel
-                    labelKey="settings.general.pointerDebugHud"
-                    hintKey="settings.general.pointerDebugHudHint"
-                  />
-                  <div style={{ ...controlStyle, paddingTop: 2 }}>
-                    <BoolSwitch
-                      checked={g.pointerDebugHud === true}
-                      onToggle={() => updateGeneral({ pointerDebugHud: g.pointerDebugHud !== true })}
-                      ariaLabel={t('settings.general.pointerDebugHud')}
                     />
                   </div>
                 </div>
@@ -768,30 +729,14 @@ export function AppSettingsModal({
                 </div>
                 <div style={{ ...rowStyle, borderBottom: 'none' }}>
                   <SettingsFieldLabel labelKey="settings.general.imageResolution" />
-                  <div style={{ ...controlStyle, gap: 10 }}>
-                    <span
-                      title={t('settings.general.imageResolutionHint')}
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: '50%',
-                        border: '1px solid var(--chrome-border-strong)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      i
-                    </span>
+                  <div style={controlStyle}>
                     <select
                       value={g.imageResolution}
                       onChange={e =>
                         updateGeneral({ imageResolution: e.target.value as ImageResolutionPreset })
                       }
-                      style={{ ...inputNumStyle, width: 180, textAlign: 'left' }}
+                      title={t('settings.general.imageResolutionHint')}
+                      style={{ ...inputNumStyle, width: 132, textAlign: 'left' }}
                       aria-label={t('settings.general.imageResolution')}
                     >
                       {RESOLUTION_VALUES.map(value => (
@@ -805,9 +750,55 @@ export function AppSettingsModal({
               </>
             ) : null}
 
+            {activeCategory === 'touch' ? (
+              <>
+                <div style={rowStyle}>
+                  <SettingsFieldLabel
+                    labelKey="settings.touch.touchPanOnEmptyCanvas"
+                    hintKey="settings.touch.touchPanOnEmptyCanvasHint"
+                  />
+                  <div style={{ ...controlStyle, paddingTop: 2 }}>
+                    <BoolSwitch
+                      checked={g.touchPanOnEmptyCanvas === true}
+                      onToggle={() =>
+                        updateGeneral({ touchPanOnEmptyCanvas: g.touchPanOnEmptyCanvas !== true })
+                      }
+                      ariaLabel={t('settings.touch.touchPanOnEmptyCanvas')}
+                    />
+                  </div>
+                </div>
+                <div style={rowStyle}>
+                  <SettingsFieldLabel
+                    labelKey="settings.touch.touchLoupe"
+                    hintKey="settings.touch.touchLoupeHint"
+                  />
+                  <div style={{ ...controlStyle, paddingTop: 2 }}>
+                    <BoolSwitch
+                      checked={g.touchLoupe !== false}
+                      onToggle={() => updateGeneral({ touchLoupe: g.touchLoupe === false })}
+                      ariaLabel={t('settings.touch.touchLoupe')}
+                    />
+                  </div>
+                </div>
+                <div style={{ ...rowStyle, borderBottom: 'none' }}>
+                  <SettingsFieldLabel
+                    labelKey="settings.touch.pointerDebugHud"
+                    hintKey="settings.touch.pointerDebugHudHint"
+                  />
+                  <div style={{ ...controlStyle, paddingTop: 2 }}>
+                    <BoolSwitch
+                      checked={g.pointerDebugHud === true}
+                      onToggle={() => updateGeneral({ pointerDebugHud: g.pointerDebugHud !== true })}
+                      ariaLabel={t('settings.touch.pointerDebugHud')}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : null}
+
             {activeCategory === 'style' ? (
               <>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.style.structureTheme"
                     hintKey="settings.style.structureThemeHint"
@@ -824,7 +815,7 @@ export function AppSettingsModal({
                         });
                         onStructureThemeChange?.(next.id, next.drawMode);
                       }}
-                      style={{ ...inputNumStyle, width: 160, textAlign: 'left' }}
+                      style={{ ...inputNumStyle, width: 118, textAlign: 'left' }}
                       aria-label={t('settings.style.structureTheme')}
                     >
                       {structureThemes.map(th => (
@@ -841,7 +832,7 @@ export function AppSettingsModal({
                     <select
                       value={g.fontFamily}
                       onChange={e => updateGeneral({ fontFamily: e.target.value })}
-                      style={{ ...inputNumStyle, width: 160, textAlign: 'left' }}
+                      style={{ ...inputNumStyle, width: 118, textAlign: 'left' }}
                       aria-label={t('settings.style.font')}
                     >
                       {CANVAS_FONT_FAMILIES.map(f => (
@@ -852,7 +843,7 @@ export function AppSettingsModal({
                     </select>
                   </div>
                 </div>
-                <div style={{ ...rowStyle, alignItems: 'flex-start' }}>
+                <div style={rowStyle}>
                   <SettingsFieldLabel
                     labelKey="settings.style.boldAtomLabels"
                     hintKey="settings.style.boldAtomLabelsHint"
@@ -1008,31 +999,35 @@ export function AppSettingsModal({
               </>
             ) : null}
 
-            {activeCategory === 'plugins' ? <PluginsSettingsPanel /> : null}
+            {activeCategory === 'plugins' ? (
+              <PluginsSettingsPanel showDescriptions={showDescriptions} />
+            ) : null}
 
             {activeCategory === 'ai' ? (
               <>
-                <p
-                  style={{
-                    margin: '0 0 12px',
-                    fontSize: 12,
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {t('settings.ai.introBefore')}
-                  <code style={{ fontSize: 11 }}>localStorage</code>
-                  {t('settings.ai.introAfter')}{' '}
-                  <a
-                    href="https://aistudio.google.com/apikey"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: 'var(--chrome-accent)' }}
+                {showDescriptions ? (
+                  <p
+                    style={{
+                      margin: '0 0 12px',
+                      fontSize: 12,
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.5,
+                    }}
                   >
-                    {t('settings.ai.googleAiStudio')}
-                  </a>
-                  .
-                </p>
+                    {t('settings.ai.introBefore')}
+                    <code style={{ fontSize: 11 }}>localStorage</code>
+                    {t('settings.ai.introAfter')}{' '}
+                    <a
+                      href="https://aistudio.google.com/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'var(--chrome-accent)' }}
+                    >
+                      {t('settings.ai.googleAiStudio')}
+                    </a>
+                    .
+                  </p>
+                ) : null}
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.ai.geminiModel" />
                   <div style={controlStyle}>
@@ -1047,7 +1042,7 @@ export function AppSettingsModal({
                       style={{
                         ...inputNumStyle,
                         width: '100%',
-                        minWidth: 200,
+                        minWidth: 0,
                         textAlign: 'left',
                       }}
                       aria-label={t('settings.ai.geminiModel')}
@@ -1055,24 +1050,26 @@ export function AppSettingsModal({
                       {MOLDRAW_CHAT_MODELS.map(m => (
                         <option key={m.id} value={m.id}>
                           {m.displayName}
-                          {m.hint ? ` — ${m.hint}` : ''}
+                          {showDescriptions && m.hint ? ` — ${m.hint}` : ''}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
-                <p
-                  style={{
-                    margin: '0 0 12px',
-                    fontSize: 11,
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {t('settings.ai.modelHintBefore')}{' '}
-                  <strong>{t('settings.ai.modelHintPro')}</strong>{' '}
-                  {t('settings.ai.modelHintAfter')}
-                </p>
+                {showDescriptions ? (
+                  <p
+                    style={{
+                      margin: '0 0 12px',
+                      fontSize: 11,
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {t('settings.ai.modelHintBefore')}{' '}
+                    <strong>{t('settings.ai.modelHintPro')}</strong>{' '}
+                    {t('settings.ai.modelHintAfter')}
+                  </p>
+                ) : null}
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.ai.geminiApiKey" />
                   <div style={{ ...controlStyle, flexDirection: 'column', alignItems: 'stretch' }}>
@@ -1085,7 +1082,7 @@ export function AppSettingsModal({
                       style={{
                         ...inputNumStyle,
                         width: '100%',
-                        minWidth: 200,
+                        minWidth: 0,
                         textAlign: 'left',
                       }}
                       aria-label={t('settings.ai.geminiApiKey')}
@@ -1135,19 +1132,21 @@ export function AppSettingsModal({
                   </button>
                 </div>
 
-                <h4 style={{ margin: '20px 0 6px', fontSize: 12, color: 'var(--text-main)' }}>
+                <h4 style={{ margin: '20px 0 6px', fontSize: 14, color: 'var(--text-main)' }}>
                   {t('settings.ai.localSessionTitle')}
                 </h4>
-                <p
-                  style={{
-                    margin: '0 0 8px',
-                    fontSize: 11,
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {t('settings.ai.localSessionIntro')}
-                </p>
+                {showDescriptions ? (
+                  <p
+                    style={{
+                      margin: '0 0 8px',
+                      fontSize: 11,
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {t('settings.ai.localSessionIntro')}
+                  </p>
+                ) : null}
                 <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.ai.connectLocalSession" />
                   <div style={controlStyle}>
@@ -1166,7 +1165,7 @@ export function AppSettingsModal({
                       value={g.localSessionUrl ?? 'http://127.0.0.1:8787'}
                       onChange={e => updateGeneral({ localSessionUrl: e.target.value })}
                       spellCheck={false}
-                      style={{ ...inputNumStyle, width: 220, textAlign: 'left' }}
+                      style={{ ...inputNumStyle, width: 148, textAlign: 'left' }}
                       aria-label={t('settings.ai.sessionUrl')}
                     />
                   </div>
@@ -1210,6 +1209,7 @@ export function AppSettingsModal({
           </div>
         </div>
       </div>
+    </ShowSettingsDescContext.Provider>
   );
 
   if (isCompact) {
@@ -1240,11 +1240,19 @@ export function AppSettingsModal({
 
   return createPortal(
     <div
-      className="app-settings-modal"
+      className="app-settings-modal app-settings-modal--overlay"
       role="dialog"
       aria-modal="true"
       aria-label={t('settings.modalAria')}
       onMouseDown={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 28000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
       {settingsInner}
     </div>,

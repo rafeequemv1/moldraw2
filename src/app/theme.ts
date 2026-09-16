@@ -87,10 +87,10 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
         gridMajor: 'rgba(255, 255, 255, 0.18)',
         gridAxis: 'rgba(255, 255, 255, 0.28)',
         selectionHoverFill: 'rgba(45, 212, 191, 0.28)',
-        selectionFill: 'rgba(56, 189, 248, 0.38)',
-        selectionHoverStroke: 'rgba(125, 211, 252, 0.85)',
+        selectionFill: 'rgba(45, 212, 191, 0.38)',
+        selectionHoverStroke: 'rgba(94, 234, 212, 0.85)',
         selectionStroke: 'rgba(45, 212, 191, 0.7)',
-        selectionBond: 'rgba(56, 189, 248, 0.55)',
+        selectionBond: 'rgba(45, 212, 191, 0.55)',
         ...TRANSFORM_DARK,
       };
     case 'ink-dark':
@@ -101,10 +101,10 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
         gridMajor: 'rgba(255, 255, 255, 0.2)',
         gridAxis: 'rgba(255, 255, 255, 0.32)',
         selectionHoverFill: 'rgba(45, 212, 191, 0.3)',
-        selectionFill: 'rgba(56, 189, 248, 0.4)',
-        selectionHoverStroke: 'rgba(125, 211, 252, 0.9)',
+        selectionFill: 'rgba(45, 212, 191, 0.4)',
+        selectionHoverStroke: 'rgba(94, 234, 212, 0.9)',
         selectionStroke: 'rgba(94, 234, 212, 0.75)',
-        selectionBond: 'rgba(56, 189, 248, 0.6)',
+        selectionBond: 'rgba(45, 212, 191, 0.6)',
         ...TRANSFORM_DARK,
       };
     case 'light':
@@ -115,11 +115,11 @@ export function structureInkForTheme(theme: UiThemeId | undefined): StructureThe
         gridMinor: 'rgba(15, 23, 42, 0.1)',
         gridMajor: 'rgba(15, 23, 42, 0.18)',
         gridAxis: 'rgba(15, 23, 42, 0.28)',
-        selectionHoverFill: 'rgba(125, 211, 252, 0.28)',
-        selectionFill: 'rgba(56, 189, 248, 0.42)',
-        selectionHoverStroke: 'rgba(14, 165, 233, 0.7)',
-        selectionStroke: 'rgba(45, 212, 191, 0.45)',
-        selectionBond: 'rgba(56, 189, 248, 0.42)',
+        selectionHoverFill: 'rgba(45, 212, 191, 0.28)',
+        selectionFill: 'rgba(45, 212, 191, 0.36)',
+        selectionHoverStroke: 'rgba(45, 212, 191, 0.85)',
+        selectionStroke: 'rgba(20, 184, 166, 0.7)',
+        selectionBond: 'rgba(45, 212, 191, 0.42)',
         ...TRANSFORM_LIGHT,
       };
   }

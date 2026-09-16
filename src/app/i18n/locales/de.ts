@@ -255,6 +255,7 @@ export const de: LocaleMessages = {
     title: 'Zeicheneinstellungen',
     intro:
       'In diesem Browser gespeichert. Typografie, Export und Bindungsdarstellung bleiben, bis Sie sie ändern. Stil-Vorlagen vergleichen Zeitschriftenlayouts — jede Miniatur zeigt Aspirin mit dieser Vorlage.',
+    showDescriptions: 'Beschreibungen anzeigen',
     resetDefaults: 'Standard wiederherstellen',
     sections: 'Bereiche',
     closeAria: 'Schließen',
@@ -297,15 +298,6 @@ export const de: LocaleMessages = {
         'Beim Ziehen von Molekülen oder Reaktionspfeilen Zentren am Hintergrundraster ausrichten. Umschalttaste für freie Bewegung. Ausrichtungshilfen rasten weiterhin an Molekülgrenzen ein.',
       showGrid: 'Raster anzeigen',
       showGridHint: 'Das helle Hintergrundraster auf der 2D-Leinwand zeichnen (standardmäßig an).',
-      touchPanOnEmptyCanvas: 'Touch: Ein-Finger-Schwenken auf leerer Leinwand',
-      touchPanOnEmptyCanvasHint:
-        'Mit dem Auswahlwerkzeug schwenkt ein Finger auf leerer Leinwand die Ansicht statt eine Auswahlbox zu zeichnen. Standard aus: mit zwei Fingern schwenken oder Handwerkzeug, kneifen zum Zoomen, zwei Finger tippen für Rückgängig, drei Finger für Wiederholen.',
-      touchLoupe: 'Touch: Lupe beim Zeichnen',
-      touchLoupeHint:
-        'Zeigt eine 2×-Lupe über dem Finger beim Ziehen einer Bindung, eines Rings oder einer Kette oder beim Verweilen auf einem Atom, damit der Finger das Ziel nicht verdeckt.',
-      pointerDebugHud: 'Zeiger-Debug-Overlay',
-      pointerDebugHudHint:
-        'Entwicklerhilfe für Stifte und Touchscreens: zeigt Typ, Druck, Neigung, Tasten, Kontaktgröße und Gestenstatus des letzten Zeigers auf der Leinwand.',
       reactionComponentMargin: 'Reaktionskomponenten-Randgröße',
       imageResolution: 'Bildauflösung',
       imageResolutionHint:
@@ -316,6 +308,18 @@ export const de: LocaleMessages = {
       resolutionHigh: 'hoch (4×)',
       unitPt: 'pt',
       unitPx: 'px',
+    },
+    touch: {
+      nav: 'Touchscreen',
+      touchPanOnEmptyCanvas: 'Ein-Finger-Schwenken auf leerer Leinwand',
+      touchPanOnEmptyCanvasHint:
+        'Mit dem Auswahlwerkzeug schwenkt ein Finger auf leerer Leinwand die Ansicht statt eine Auswahlbox zu zeichnen. Standard aus: mit zwei Fingern schwenken oder Handwerkzeug, kneifen zum Zoomen, zwei Finger tippen für Rückgängig, drei Finger für Wiederholen.',
+      touchLoupe: 'Lupe beim Zeichnen',
+      touchLoupeHint:
+        'Zeigt eine 2×-Lupe über dem Finger beim Ziehen einer Bindung, eines Rings oder einer Kette oder beim Verweilen auf einem Atom, damit der Finger das Ziel nicht verdeckt.',
+      pointerDebugHud: 'Zeiger-Debug-Overlay',
+      pointerDebugHudHint:
+        'Entwicklerhilfe für Stifte und Touchscreens: zeigt Typ, Druck, Neigung, Tasten, Kontaktgröße und Gestenstatus des letzten Zeigers auf der Leinwand.',
     },
     style: {
       nav: 'Stil',

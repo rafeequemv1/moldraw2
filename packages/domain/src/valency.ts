@@ -27,7 +27,10 @@ export function getMaxValencyForElement(element: string, charge: number): number
   if (['F', 'Cl', 'Br', 'I'].includes(element)) return Math.max(0, 1 + q);
   if (element === 'P') return 5;
   if (element === 'S') return 6;
-  if (element === 'B') return Math.max(0, 3 - Math.abs(q));
+  // Tetrahedral boron (BH4−, BF4−, borane adducts) needs 4 bonds. Using
+  // |charge| was wrong: B− dropped to 2 and blocked borohydride. Neutral and
+  // anionic B may have 4; B+ is typically divalent (3 − q).
+  if (element === 'B') return q > 0 ? Math.max(0, 3 - q) : 4;
   if (element === 'Si') return 4;
   if (isCoordinationMetal(element)) return 12;
   return 4;
@@ -41,6 +44,9 @@ export function getMaxValencyForElement(element: string, charge: number): number
 export function getEffectiveValencyForImplicitHydrogen(element: string, charge: number): number {
   if (isCoordinationMetal(element)) return 0;
   const q = charge || 0;
+  // Drawing allows 4 bonds on B, but implicit H stays borane-like: BH3,
+  // BH4−, B+ typically 2. Otherwise an isolated B would read as BH4.
+  if (element === 'B') return Math.max(0, 3 - q);
   const phys = getMaxValencyForElement(element, charge);
   if (element === 'S' && q === 0) return Math.min(phys, 2);
   return phys;

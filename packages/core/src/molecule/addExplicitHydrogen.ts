@@ -7,7 +7,11 @@
  *   - geminal partner → outward equatorial (not stacked on C–C bonds)
  */
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
-import { getEffectiveValencyForImplicitHydrogen, uniqueRingPaths } from '@moldraw/domain';
+import {
+  getEffectiveValencyForImplicitHydrogen,
+  getMaxValencyForElement,
+  uniqueRingPaths,
+} from '@moldraw/domain';
 import { addAtom, addBondSafe } from './mutations';
 
 const newId = () => Math.random().toString(36).slice(2, 11);
@@ -30,7 +34,12 @@ const bondOrderSum = (mol: Molecule, atomId: string): number =>
 const implicitHCount = (mol: Molecule, atom: Atom): number => {
   if (atom.element === 'H') return 0;
   if (atom.alias?.trim()) return 0;
-  const max = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
+  // Boron hydrides: fill to drawing max (4) so BH4− can be expanded even
+  // before charge is set. Other elements keep implicit-H (BH3-style) caps.
+  const max =
+    atom.element === 'B'
+      ? getMaxValencyForElement(atom.element, atom.charge || 0)
+      : getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
   return Math.max(0, max - bondOrderSum(mol, atom.id));
 };
 

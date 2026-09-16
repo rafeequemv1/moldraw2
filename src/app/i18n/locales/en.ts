@@ -253,6 +253,7 @@ export const en = {
     title: 'Drawing settings',
     intro:
       'Saved in this browser. Typography, export, and bond appearance stay until you change them. Style presets compare journal layouts — each thumbnail shows aspirin with that preset.',
+    showDescriptions: 'Show descriptions',
     resetDefaults: 'Reset defaults',
     sections: 'Sections',
     closeAria: 'Close',
@@ -295,15 +296,6 @@ export const en = {
         'When dragging molecules or reaction arrows, snap centers to the background grid. Hold Shift to move freely. Alignment guides still snap to other molecule bounds.',
       showGrid: 'Show grid',
       showGridHint: 'Draw the light background grid on the 2D canvas (off by default).',
-      touchPanOnEmptyCanvas: 'Touch: one-finger pan on empty canvas',
-      touchPanOnEmptyCanvasHint:
-        'With the Select tool, dragging one finger on empty canvas pans the view instead of drawing a selection box. Off by default: pan with two fingers or the Hand tool, pinch to zoom, two-finger tap to undo, three-finger tap to redo.',
-      touchLoupe: 'Touch: magnifier while drawing',
-      touchLoupeHint:
-        'Shows a 2× loupe above the fingertip while dragging a bond, ring or chain or resting on an atom, so the finger does not hide what it is pointing at.',
-      pointerDebugHud: 'Pointer debug overlay',
-      pointerDebugHudHint:
-        "Developer aid for checking pens and touch screens: shows the last pointer's type, pressure, tilt, buttons, contact size and gesture state on the canvas.",
       reactionComponentMargin: 'Reaction component margin size',
       imageResolution: 'Image resolution',
       imageResolutionHint:
@@ -314,6 +306,18 @@ export const en = {
       resolutionHigh: 'high (4×)',
       unitPt: 'pt',
       unitPx: 'px',
+    },
+    touch: {
+      nav: 'Touch screen',
+      touchPanOnEmptyCanvas: 'One-finger pan on empty canvas',
+      touchPanOnEmptyCanvasHint:
+        'With the Select tool, dragging one finger on empty canvas pans the view instead of drawing a selection box. Off by default: pan with two fingers or the Hand tool, pinch to zoom, two-finger tap to undo, three-finger tap to redo.',
+      touchLoupe: 'Magnifier while drawing',
+      touchLoupeHint:
+        'Shows a 2× loupe above the fingertip while dragging a bond, ring or chain or resting on an atom, so the finger does not hide what it is pointing at.',
+      pointerDebugHud: 'Pointer debug overlay',
+      pointerDebugHudHint:
+        "Developer aid for checking pens and touch screens: shows the last pointer's type, pressure, tilt, buttons, contact size and gesture state on the canvas.",
     },
     style: {
       nav: 'Style',

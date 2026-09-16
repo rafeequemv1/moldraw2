@@ -68,7 +68,7 @@
   --app-element-rail-width: 52px;
   --app-tool-bottom-height: 38px;
 
-  /* Shared left dock (style / settings / objects / generator params). */
+  /* Shared left dock (style / objects / generator params). */
   --app-left-dock-top: calc(
     var(--app-top-bar-height, 96px) + var(--app-tool-island-inset, 6px)
   );
@@ -81,6 +81,8 @@
       var(--app-page-footer-stack, 0px) + 4px
   );
   --app-left-dock-width: 212px;
+  /* Centered settings dialog: Ketcher-like two-column (~480–560px, floor 420px). */
+  --app-settings-modal-width: 520px;
   --app-left-dock-max-height: calc(
     100dvh - var(--app-left-dock-top) - var(--app-left-dock-bottom-gap)
   );

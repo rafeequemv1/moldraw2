@@ -75,6 +75,11 @@ export interface GeneralSettings {
   /** Show the canvas background grid. Default true. */
   showGrid: boolean;
   /**
+   * Settings panel: when true, show help text under each option.
+   * Default false — titles and controls only.
+   */
+  showSettingsDescriptions?: boolean;
+  /**
    * Touch screens: one finger on empty canvas with the Select tool pans the
    * view instead of drawing a selection box. Default false (two-finger pan).
    */

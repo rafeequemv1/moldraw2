@@ -1,7 +1,8 @@
 /*
- * Shared geometry for every desktop left dock (style, settings, objects,
+ * Shared geometry for every desktop left dock (style, objects,
  * graphene/COF params). Same top as the Color & style panel; height follows
  * content up to the leftover viewport. Compact sheets are unchanged.
+ * Settings is a centered modal (see account-modals.css), not a left dock.
  */
 html:has(.canvas-document-tabs) {
   --canvas-tab-stack-height: 32px;
@@ -39,5 +40,122 @@ html:not(.app-mobile-compact) .objects-panel:not(.objects-panel--sheet) {
   max-height: var(--app-left-dock-max-height) !important;
   height: auto;
   z-index: 12;
+}
+
+.app-settings-sheet-head {
+  flex-shrink: 0;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-elevated);
+}
+
+.app-settings-sheet-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.app-settings-sheet-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  min-width: 0;
+}
+
+.app-settings-sheet-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.app-settings-reset-btn {
+  font-size: 11px !important;
+  font-weight: 600;
+  padding: 4px 8px !important;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  color: var(--text-main);
+  background: var(--chrome-bg);
+  border: 1px solid var(--chrome-border-strong);
+}
+
+.app-settings-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.app-settings-modal__close:hover {
+  background: var(--chrome-hover);
+  color: var(--text-main);
+}
+
+.app-settings-desc-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--chrome-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.app-settings-sheet-intro {
+  flex-shrink: 0;
+  padding: 6px 10px 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--chrome-border);
+}
+
+.app-settings-field-title {
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.app-settings-modal .theme-picker {
+  gap: 4px;
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.app-settings-modal .theme-picker__btn {
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+/* Last in this file so leftover dock `left:` rules cannot pin Settings. */
+html:not(.app-mobile-compact) .app-settings-modal.app-settings-modal--overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  max-height: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 28000 !important;
 }
 

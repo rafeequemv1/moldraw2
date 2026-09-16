@@ -3,6 +3,7 @@ import type { LocaleMessages } from './en';
 import { jaToolOverrides } from './toolOverrides.ja';
 
 /** Japanese UI strings — mirror every key from `en.ts`. Non-settings strings may remain English until translated. */
+/** Settings include a Touch screen section (`settings.touch`). */
 export const ja: LocaleMessages = {
   search: {
     placeholder: '分子名を検索（例：アスピリン、カフェイン…）',
@@ -255,6 +256,7 @@ export const ja: LocaleMessages = {
     title: '描画設定',
     intro:
       'このブラウザに保存されます。書体、エクスポート、結合の外観は変更するまで保持されます。スタイルプリセットはジャーナルレイアウトを比較 — 各サムネイルはそのプリセットでアスピリンを表示します。',
+    showDescriptions: '説明を表示',
     resetDefaults: '既定にリセット',
     sections: 'セクション',
     closeAria: '閉じる',
@@ -297,15 +299,6 @@ export const ja: LocaleMessages = {
         '分子や反応矢印をドラッグするとき、背景グリッドに中心をスナップ。Shiftで自由移動。整列ガイドは他分子の境界にスナップ。',
       showGrid: 'グリッドを表示',
       showGridHint: '2Dキャンバスに薄い背景グリッドを描画（既定オン）。',
-      touchPanOnEmptyCanvas: 'タッチ：空キャンバスで1本指パン',
-      touchPanOnEmptyCanvasHint:
-        '選択ツールで空キャンバスを1本指ドラッグすると選択ボックスの代わりにパン。既定オフ：2本指またはハンドツールでパン、ピンチでズーム、2本指タップで元に戻す、3本指タップでやり直し。',
-      touchLoupe: 'タッチ：描画中の拡大鏡',
-      touchLoupeHint:
-        '結合、環、鎖のドラッグ中または原子上で、指先の上に2×ルーペを表示し指が指し示す位置を隠さない。',
-      pointerDebugHud: 'ポインターデバッグオーバーレイ',
-      pointerDebugHudHint:
-        'ペンとタッチスクリーン確認用の開発者支援：キャンバス上で最後のポインターの種類、圧力、傾き、ボタン、接触サイズ、ジェスチャー状態を表示。',
       reactionComponentMargin: '反応コンポーネント余白サイズ',
       imageResolution: '画像解像度',
       imageResolutionHint:
@@ -316,6 +309,18 @@ export const ja: LocaleMessages = {
       resolutionHigh: '高 (4×)',
       unitPt: 'pt',
       unitPx: 'px',
+    },
+    touch: {
+      nav: 'タッチスクリーン',
+      touchPanOnEmptyCanvas: '空キャンバスで1本指パン',
+      touchPanOnEmptyCanvasHint:
+        '選択ツールで空キャンバスを1本指ドラッグすると選択ボックスの代わりにパン。既定オフ：2本指またはハンドツールでパン、ピンチでズーム、2本指タップで元に戻す、3本指タップでやり直し。',
+      touchLoupe: '描画中の拡大鏡',
+      touchLoupeHint:
+        '結合、環、鎖のドラッグ中または原子上で、指先の上に2×ルーペを表示し指が指し示す位置を隠さない。',
+      pointerDebugHud: 'ポインターデバッグオーバーレイ',
+      pointerDebugHudHint:
+        'ペンとタッチスクリーン確認用の開発者支援：キャンバス上で最後のポインターの種類、圧力、傾き、ボタン、接触サイズ、ジェスチャー状態を表示。',
     },
     style: {
       nav: 'スタイル',
