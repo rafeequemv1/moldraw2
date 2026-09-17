@@ -1,4 +1,5 @@
 import { getMaxValencyForElement } from '@moldraw/domain';
+import { bestSproutAngle } from '../geometry';
 import {
   getAtomValency,
   pickAtomCenterAt,
@@ -175,30 +176,16 @@ export const ringToolMouseUp = (ctx: InteractionContext): boolean => {
     const dist = Math.hypot(dx, dy);
     let dragAngle = Math.atan2(dy, dx);
 
-    // Short click (no meaningful drag): auto-orient away from existing bonds,
-    // still attach via a single bond in that direction.
+    // Short click (no meaningful drag): auto-orient into the best free
+    // direction (same rule as a clicked bond sprout) and attach via a single
+    // bond that way; a lone atom grows its ring upward.
     if (dist <= ATOM_ATTACH_DRAG_PX * ctx.hit.zoomScale) {
-      const existingBonds = molecule.bonds.filter(
+      const hasBonds = molecule.bonds.some(
         b => b.fromAtomId === rootAtomId || b.toAtomId === rootAtomId,
       );
-      if (existingBonds.length > 0) {
-        let sx = 0;
-        let sy = 0;
-        existingBonds.forEach(b => {
-          const neighborId = b.fromAtomId === rootAtomId ? b.toAtomId : b.fromAtomId;
-          const n = molecule.atoms.find(a => a.id === neighborId);
-          if (!n) return;
-          const ndx = n.x - startAtom.x;
-          const ndy = n.y - startAtom.y;
-          const nl = Math.hypot(ndx, ndy) || 1;
-          sx += ndx / nl;
-          sy += ndy / nl;
-        });
-        dragAngle =
-          Math.hypot(sx, sy) > 1e-3 ? Math.atan2(-sy, -sx) : -Math.PI / 2;
-      } else {
-        dragAngle = -Math.PI / 2;
-      }
+      dragAngle = hasBonds
+        ? bestSproutAngle(startAtom, molecule, ctx.bondAngleSnapRad)
+        : -Math.PI / 2;
     }
 
     const snap = ctx.bondAngleSnapRad > 1e-9 ? ctx.bondAngleSnapRad : Math.PI / 6;

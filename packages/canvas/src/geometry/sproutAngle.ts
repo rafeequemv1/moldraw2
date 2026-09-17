@@ -1,0 +1,76 @@
+/**
+ * Direction for a bond / ring sprouted from an atom by a plain click (no
+ * drag). Mirrors what ChemDraw / Ketcher do:
+ *   - lone atom → to the right,
+ *   - one neighbour → 120° off the existing bond, continuing the zig-zag,
+ *   - two or more → bisector of the largest free angular gap.
+ */
+import type { Atom, Molecule } from '@moldraw/domain';
+
+const TWO_PI = Math.PI * 2;
+const norm = (a: number): number => ((a % TWO_PI) + TWO_PI) % TWO_PI;
+
+export const bestSproutAngle = (
+  atom: Pick<Atom, 'id' | 'x' | 'y'>,
+  molecule: Pick<Molecule, 'atoms' | 'bonds'>,
+  snapRad = 0,
+): number => {
+  const byId = new Map(molecule.atoms.map(a => [a.id, a]));
+  const dirs: number[] = [];
+  for (const b of molecule.bonds) {
+    const otherId =
+      b.fromAtomId === atom.id ? b.toAtomId : b.toAtomId === atom.id ? b.fromAtomId : null;
+    if (!otherId) continue;
+    const o = byId.get(otherId);
+    if (!o) continue;
+    const dx = o.x - atom.x;
+    const dy = o.y - atom.y;
+    if (Math.hypot(dx, dy) < 1e-6) continue;
+    dirs.push(norm(Math.atan2(dy, dx)));
+  }
+
+  let angle: number;
+  if (dirs.length === 0) {
+    angle = 0;
+  } else if (dirs.length === 1) {
+    const a = dirs[0]!;
+    const away = a + Math.PI;
+    const c1 = a + (2 * Math.PI) / 3;
+    const c2 = a - (2 * Math.PI) / 3;
+    const horiz = Math.cos(away);
+    // Keep the chain marching the way it already goes; for a vertical bond
+    // prefer the candidate that points up the screen.
+    const score = (c: number): number =>
+      Math.abs(horiz) > 0.1 ? Math.cos(c) * Math.sign(horiz) : -Math.sin(c);
+    const s1 = score(c1);
+    const s2 = score(c2);
+    // Tie (horizontal bond): grow upward first, like ChemDraw.
+    angle = Math.abs(s1 - s2) < 1e-6 ? (Math.sin(c1) <= Math.sin(c2) ? c1 : c2) : s1 > s2 ? c1 : c2;
+  } else {
+    const sorted = dirs.slice().sort((p, q) => p - q);
+    let bestGap = -1;
+    let bestStart = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const start = sorted[i]!;
+      const end = i + 1 < sorted.length ? sorted[i + 1]! : sorted[0]! + TWO_PI;
+      const gap = end - start;
+      if (gap > bestGap) {
+        bestGap = gap;
+        bestStart = start;
+      }
+    }
+    angle = bestStart + bestGap / 2;
+  }
+
+  if (snapRad > 1e-9) {
+    const snapped = Math.round(angle / snapRad) * snapRad;
+    // Only accept the snapped direction when it does not collide with an
+    // existing bond (can happen for crowded atoms with odd bond angles).
+    const collides = dirs.some(d => {
+      const diff = Math.abs(norm(d - snapped));
+      return Math.min(diff, TWO_PI - diff) < snapRad / 2;
+    });
+    if (!collides) angle = snapped;
+  }
+  return norm(angle);
+};

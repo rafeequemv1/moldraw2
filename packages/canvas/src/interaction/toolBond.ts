@@ -1,6 +1,7 @@
 import type { Atom } from '@moldraw/domain';
 import { orientBondEndpointsForGroupAbbrevPair } from '@moldraw/domain';
 import { getMaxValencyForElement } from '@moldraw/domain';
+import { bestSproutAngle } from '../geometry';
 import {
   getAtomValency,
   pickAtomCenterAt,
@@ -58,10 +59,13 @@ const orderForTool = (tool: BondToolId): 1 | 2 | 3 => {
  * Pointer-move snaps the ghost end to the configured angle increment at fixed length.
  *
  * Pointer-up commit branches:
- *   - Tiny drag on existing atom in single-bond mode → relabel atom to
- *     `placementElement` (except H: that attaches an explicit bonded H —
- *     never rewrite a heavy atom to hydrogen).
- *   - Tiny drag on empty canvas → create a single placement atom.
+ *   - Click on existing atom in single-bond mode with a *different* placement
+ *     element → relabel the atom (except H: that attaches an explicit bonded
+ *     H — never rewrite a heavy atom to hydrogen).
+ *   - Click on existing atom otherwise → sprout a bond of the tool's
+ *     order/style into the best free direction (`bestSproutAngle`).
+ *   - Click on empty canvas → horizontal C–C bond (carbon placement) or a
+ *     single atom of the chosen element (heteroatom placement).
  *   - Real drag → create start/end atoms as needed and link with a bond,
  *     skipping if a bond already exists between the same endpoints.
  */
@@ -288,32 +292,111 @@ export const bondToolMouseUp = (ctx: InteractionContext): boolean => {
     }
   }
 
-  if (!ctx.drawingBond) {
-    // Tiny click on empty canvas with bond tool active → place a single atom.
-    if (
-      distance < CLICK_DRAG_THRESHOLD &&
-      e.button === 0 &&
-      !ctx.drawingRing &&
-      !ctx.drawingChain &&
-      !ctx.hoverBondId &&
-      !ctx.drawingStroke &&
-      !ctx.drawingReactionArrow &&
-      !ctx.drawingCanvasShape
-    ) {
-      const releaseAtom = pickAtomCenterAt(molecule, worldPos, ATOM_HIT_RADIUS);
-      if (!releaseAtom) {
-        ctx.setSelectedAtomIds?.([]);
-        ctx.setSelectedCanvasTextId?.(null);
-        ctx.setSelectedReactionArrowId?.(null);
-        ctx.onAddAtom?.({
+  if (!ctx.drawingBond) return true;
+
+  const tool = activeTool as BondToolId;
+  const style = bondPatchForStyleTool(tool);
+  const bondOrder = orderForTool(tool);
+  const isClick = distance < CLICK_DRAG_THRESHOLD && e.button === 0;
+
+  // ── Plain click (no drag) ────────────────────────────────────────────────
+  // ChemDraw / Ketcher behaviour: a click places a whole bond, not nothing.
+  //   - Existing atom → sprout a bond of the tool's order/style into the
+  //     best free direction (120° zig-zag continuation, largest gap, …).
+  //   - Empty canvas, carbon placement → horizontal C–C bond at the click.
+  //   - Empty canvas, other element   → a single atom of that element (so the
+  //     periodic-table palette + click still drops Na, Cl⁻, O… on their own).
+  if (isClick) {
+    const clickAtom = ctx.drawingBond.startAtomId
+      ? molecule.atoms.find(a => a.id === ctx.drawingBond!.startAtomId) ?? null
+      : pickAtomCenterAt(molecule, worldPos, ATOM_HIT_RADIUS);
+
+    if (clickAtom) {
+      const angle = bestSproutAngle(clickAtom, molecule, ctx.bondAngleSnapRad);
+      const end = {
+        x: clickAtom.x + Math.cos(angle) * ctx.bondLengthPx,
+        y: clickAtom.y + Math.sin(angle) * ctx.bondLengthPx,
+      };
+      // Snap onto an atom that already sits where the sprout would land.
+      const landing = pickAtomCenterAt(molecule, end, ctx.bondLengthPx * 0.3);
+      if (!skipsValencyTool(tool)) {
+        const v = getAtomValency(clickAtom.id, molecule);
+        if (v + bondOrder > getMaxValencyForElement(clickAtom.element, clickAtom.charge)) {
+          ctx.flashAtomError(clickAtom.id);
+        }
+      }
+      let endId: string;
+      if (landing && landing.id !== clickAtom.id) {
+        endId = landing.id;
+      } else {
+        const newAtom: Atom = {
           id: Math.random().toString(36).substr(2, 9),
           element: placementElement,
-          x: worldPos.x,
-          y: worldPos.y,
+          x: end.x,
+          y: end.y,
           charge: 0,
+        };
+        ctx.onAddAtom?.(newAtom);
+        endId = newAtom.id;
+      }
+      const exists = molecule.bonds.some(
+        b =>
+          (b.fromAtomId === clickAtom.id && b.toAtomId === endId) ||
+          (b.fromAtomId === endId && b.toAtomId === clickAtom.id),
+      );
+      if (!exists) {
+        ctx.onAddBond?.({
+          id: Math.random().toString(36).substr(2, 9),
+          fromAtomId: clickAtom.id,
+          toAtomId: endId,
+          order: bondOrder,
+          stereo: style.stereo,
+          dative: style.dative || undefined,
+          dotted: style.dotted || undefined,
+          aromatic: style.aromatic || undefined,
+          queryType: style.queryType,
+          bold: style.bold || undefined,
         });
       }
+      ctx.setDrawingBond(null);
+      return true;
     }
+
+    ctx.setSelectedAtomIds?.([]);
+    ctx.setSelectedCanvasTextId?.(null);
+    ctx.setSelectedReactionArrowId?.(null);
+    const start = ctx.drawingBond.startPos;
+    const a: Atom = {
+      id: Math.random().toString(36).substr(2, 9),
+      element: placementElement,
+      x: start.x,
+      y: start.y,
+      charge: 0,
+    };
+    ctx.onAddAtom?.(a);
+    if (placementElement === 'C') {
+      const b: Atom = {
+        id: Math.random().toString(36).substr(2, 9),
+        element: placementElement,
+        x: start.x + ctx.bondLengthPx,
+        y: start.y,
+        charge: 0,
+      };
+      ctx.onAddAtom?.(b);
+      ctx.onAddBond?.({
+        id: Math.random().toString(36).substr(2, 9),
+        fromAtomId: a.id,
+        toAtomId: b.id,
+        order: bondOrder,
+        stereo: style.stereo,
+        dative: style.dative || undefined,
+        dotted: style.dotted || undefined,
+        aromatic: style.aromatic || undefined,
+        queryType: style.queryType,
+        bold: style.bold || undefined,
+      });
+    }
+    ctx.setDrawingBond(null);
     return true;
   }
 
@@ -330,9 +413,6 @@ export const bondToolMouseUp = (ctx: InteractionContext): boolean => {
     pickAtomCenterAt(molecule, worldPos, releaseRadius);
   let startAtomId = ctx.drawingBond.startAtomId;
   let endAtomId = releaseAtom?.id;
-  const tool = activeTool as BondToolId;
-  const style = bondPatchForStyleTool(tool);
-  const bondOrder = orderForTool(tool);
   const startAtom = startAtomId ? molecule.atoms.find(a => a.id === startAtomId) : null;
   const startPos = startAtom ? { x: startAtom.x, y: startAtom.y } : ctx.drawingBond.startPos;
   const drawnLength = Math.hypot(startPos.x - tip.x, startPos.y - tip.y);
@@ -411,19 +491,6 @@ export const bondToolMouseUp = (ctx: InteractionContext): boolean => {
         bold: style.bold || undefined,
       });
     }
-  }
-
-  // Single-click on the same atom in single-bond mode → relabel (never to H).
-  if (
-    activeTool === 'single_bond' &&
-    releaseAtom &&
-    releaseAtom.id === ctx.drawingBond.startAtomId &&
-    distance < CLICK_DRAG_THRESHOLD &&
-    placementElement !== 'H' &&
-    ctx.onUpdateAtomElement &&
-    releaseAtom.element !== placementElement
-  ) {
-    ctx.onUpdateAtomElement(releaseAtom.id, placementElement);
   }
 
   ctx.setDrawingBond(null);

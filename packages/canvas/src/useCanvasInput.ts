@@ -276,6 +276,25 @@ export interface UseCanvasInputResult {
 const ERROR_FLASH_MS = 800;
 
 /**
+ * `useState` plus a ref that is updated synchronously by the setter. Pointer
+ * handlers read the ref so a pointerup that lands before React re-rendered
+ * (fast click) still sees what pointerdown just seeded.
+ */
+function useLiveState<T>(
+  initial: T,
+): [T, (next: React.SetStateAction<T>) => void, React.MutableRefObject<T>] {
+  const [state, setState] = useState<T>(initial);
+  const ref = useRef<T>(initial);
+  const set = useCallback((next: React.SetStateAction<T>) => {
+    const resolved =
+      typeof next === 'function' ? (next as (prev: T) => T)(ref.current) : next;
+    ref.current = resolved;
+    setState(resolved);
+  }, []);
+  return [state, set, ref];
+}
+
+/**
  * Owns all canvas interaction state (drawing previews, drag actions, hover,
  * error flash) and exposes high-level pointer handlers. Each handler builds a
  * frame-scoped `InteractionContext` and dispatches into a per-tool module
@@ -303,36 +322,30 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
     selectedBondIds = [],
   } = opts;
 
-  const [drawingBond, setDrawingBond] = useState<DrawingBondState | null>(null);
-  const [drawingChain, setDrawingChain] = useState<DrawingChainState | null>(null);
-  const [drawingRing, setDrawingRing] = useState<DrawingRingState | null>(null);
-  const [drawingStroke, setDrawingStroke] = useState<StrokeSample[] | null>(null);
-  const [drawingReactionArrow, setDrawingReactionArrow] =
-    useState<DrawingReactionArrowState | null>(null);
-  const [drawingCanvasShape, setDrawingCanvasShape] =
-    useState<DrawingCanvasShapeState | null>(null);
-  const [dragAction, setDragActionState] = useState<DragActionState | null>(null);
-  // Synchronous mirror of `dragAction`. A click (down + up in quick succession)
-  // can deliver pointerup before React has re-rendered with the drag seeded on
-  // pointerdown; reading the ref keeps commit/cancel from seeing a stale
-  // `null` and leaving a move/resize stuck on (text overlay hidden, label
-  // gliding with the hover pointer).
-  const dragActionRef = useRef<DragActionState | null>(null);
-  const setDragAction = useCallback(
-    (next: React.SetStateAction<DragActionState | null>) => {
-      const resolved =
-        typeof next === 'function' ? next(dragActionRef.current) : next;
-      dragActionRef.current = resolved;
-      setDragActionState(resolved);
-    },
-    [],
-  );
+  // In-flight gesture state lives in *both* React state (for rendering) and a
+  // synchronous ref (for the pointer handlers). A plain click delivers
+  // pointerdown and pointerup back to back — often before React has
+  // re-rendered with the state seeded on pointerdown — so the up handler
+  // must read the live ref or it sees a stale `null` / previous click's
+  // `mouseDownPos` and silently drops the commit (no bond / ring on click).
+  const [drawingBond, setDrawingBond, drawingBondRef] = useLiveState<DrawingBondState | null>(null);
+  const [drawingChain, setDrawingChain, drawingChainRef] =
+    useLiveState<DrawingChainState | null>(null);
+  const [drawingRing, setDrawingRing, drawingRingRef] = useLiveState<DrawingRingState | null>(null);
+  const [drawingStroke, setDrawingStroke, drawingStrokeRef] =
+    useLiveState<StrokeSample[] | null>(null);
+  const [drawingReactionArrow, setDrawingReactionArrow, drawingReactionArrowRef] =
+    useLiveState<DrawingReactionArrowState | null>(null);
+  const [drawingCanvasShape, setDrawingCanvasShape, drawingCanvasShapeRef] =
+    useLiveState<DrawingCanvasShapeState | null>(null);
+  const [dragAction, setDragAction, dragActionRef] = useLiveState<DragActionState | null>(null);
 
   const [hoveredAtomCircleId, setHoveredAtomCircleId] = useState<string | null>(null);
   const [hoveredBondHighlightId, setHoveredBondHighlightId] = useState<string | null>(null);
   const [hoveredComponentIds, setHoveredComponentIds] = useState<string[]>([]);
   const [hoverAtomId, setHoverAtomId] = useState<string | null>(null);
-  const [hoverBondId, setHoverBondId] = useState<string | null>(null);
+  // Ring tool seeds the fusion target on pointerdown and reads it on pointerup.
+  const [hoverBondId, setHoverBondId, hoverBondIdRef] = useLiveState<string | null>(null);
   const [hoverRingAtomIds, setHoverRingAtomIds] = useState<string[] | null>(null);
   const [mouseWorldPos, setMouseWorldPos] = useState<Point | null>(null);
   const placementDraggingRef = useRef(false);
@@ -366,7 +379,7 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
   }
 
   const [errorAtomId, setErrorAtomId] = useState<string | null>(null);
-  const [mouseDownPos, setMouseDownPos] = useState<Point>({ x: 0, y: 0 });
+  const [, setMouseDownPos, mouseDownPosRef] = useLiveState<Point>({ x: 0, y: 0 });
   const [touchPointerWorldPos, setTouchPointerWorldPos] = useState<Point | null>(null);
 
   /** Active single-pointer drawing id (for capture / ignore extras). */
@@ -574,7 +587,8 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
     ): InteractionContext => ({
       e,
       worldPos,
-      mouseDownPos,
+      // Live values (refs) — see `useLiveState`.
+      mouseDownPos: mouseDownPosRef.current,
       inputProfile: inputProfileOf(e.pointerType),
       hit: hitMetricsFor(inputProfileOf(e.pointerType), opts.viewportZoom ?? 1),
       coalescedWorldPositions,
@@ -605,15 +619,14 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       selectedCanvasTextId: opts.selectedCanvasTextId ?? null,
       selectedSruBracketId: opts.selectedSruBracketId ?? null,
       viewport: { zoom: opts.viewportZoom ?? 1 },
-      drawingBond,
-      drawingChain,
-      drawingRing,
-      drawingStroke,
-      drawingReactionArrow,
-      drawingCanvasShape,
-      // Live value — see `dragActionRef`.
+      drawingBond: drawingBondRef.current,
+      drawingChain: drawingChainRef.current,
+      drawingRing: drawingRingRef.current,
+      drawingStroke: drawingStrokeRef.current,
+      drawingReactionArrow: drawingReactionArrowRef.current,
+      drawingCanvasShape: drawingCanvasShapeRef.current,
       dragAction: dragActionRef.current,
-      hoverBondId,
+      hoverBondId: hoverBondIdRef.current,
       setDrawingBond,
       setDrawingChain,
       setDrawingRing,
@@ -703,7 +716,6 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       onCommitFragmentPlacement: opts.onCommitFragmentPlacement,
     }),
     [
-      mouseDownPos,
       activeTool,
       setPlacementDragging,
       setPlacementAnchorAtomId,
@@ -713,17 +725,18 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       molecule,
       selectedAtomIds,
       selectedBondIds,
-      drawingBond,
-      drawingChain,
-      drawingRing,
-      drawingStroke,
-      drawingReactionArrow,
-      drawingCanvasShape,
-      dragAction,
-      hoverBondId,
       flashAtomError,
       opts,
       canvasRef,
+      setDrawingBond,
+      setDrawingChain,
+      setDrawingRing,
+      setDrawingStroke,
+      setDrawingReactionArrow,
+      setDrawingCanvasShape,
+      setDragAction,
+      setMouseDownPos,
+      setHoverBondId,
     ],
   );
 
@@ -991,13 +1004,13 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
 
       // Coalesce high-frequency moves (esp. touch) unless a drag/draw is active.
       const drawingBusy =
-        drawingBond != null ||
-        drawingChain != null ||
-        drawingRing != null ||
-        drawingStroke != null ||
-        drawingReactionArrow != null ||
-        drawingCanvasShape != null ||
-        dragAction != null ||
+        drawingBondRef.current != null ||
+        drawingChainRef.current != null ||
+        drawingRingRef.current != null ||
+        drawingStrokeRef.current != null ||
+        drawingReactionArrowRef.current != null ||
+        drawingCanvasShapeRef.current != null ||
+        dragActionRef.current != null ||
         placementDraggingRef.current;
       if (!drawingBusy && !isPlaceFragmentTool(activeTool) && !shouldDispatchMove(e)) return;
 
@@ -1006,7 +1019,7 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       // Freehand strokes: fold in the browser's coalesced samples (pen/touch)
       // so fast strokes are not decimated to one point per frame.
       let coalesced: StrokeSample[] | undefined;
-      if (drawingStroke) {
+      if (drawingStrokeRef.current) {
         const native = e.nativeEvent as PointerEvent & {
           getCoalescedEvents?: () => PointerEvent[];
         };
@@ -1081,13 +1094,6 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       shouldDispatchMove,
       withEraserDedupe,
       noteDebugPointer,
-      drawingBond,
-      drawingChain,
-      drawingRing,
-      drawingStroke,
-      drawingReactionArrow,
-      drawingCanvasShape,
-      dragAction,
     ],
   );
 
@@ -1186,7 +1192,8 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       // Fall-through: tools that didn't consume the up event (erase,
       // atom_label, charge_*, lone_pair). Original behavior: a tiny
       // click on empty canvas clears all selections regardless of tool.
-      const distance = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
+      const down = ctx.mouseDownPos;
+      const distance = Math.hypot(e.clientX - down.x, e.clientY - down.y);
       if (
         distance < ctx.hit.clickDragThresholdPx &&
         e.button === 0 &&
@@ -1219,7 +1226,6 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       buildContext,
       endPan,
       getWorldPos,
-      mouseDownPos,
       molecule,
       opts,
       multiTouch,

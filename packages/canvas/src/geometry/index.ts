@@ -79,6 +79,7 @@ export {
   type CanvasTextBox,
   type CanvasTextResizeCorner,
 } from './canvasText';
+export { bestSproutAngle } from './sproutAngle';
 export {
   pickSruBracketAt,
   sruBracketLabelBounds,
