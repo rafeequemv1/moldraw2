@@ -603,6 +603,7 @@ function featureStatusMeta(status) {
     under_review: { symbol: '◐', label: 'Under review', className: 'feature-status-review' },
     under_progress: { symbol: '⟳', label: 'Under progress', className: 'feature-status-progress' },
     done: { symbol: '✓', label: 'Done', className: 'feature-status-done' },
+    already_implemented: { symbol: '✓', label: 'Already implemented', className: 'feature-status-already' },
   };
   return map[key] || { symbol: '○', label: key.replace(/_/g, ' '), className: 'feature-status-new' };
 }

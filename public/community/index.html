@@ -975,6 +975,16 @@
       background: #dbeafe;
       border: 1px solid #93c5fd;
     }
+    .feature-status-already {
+      color: #475569;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      font-weight: 700;
+    }
+    .feature-status-already .feature-status-symbol {
+      color: #64748b;
+      font-size: 13px;
+    }
     .card-title .status-select {
       margin-left: 0;
     }
@@ -2050,20 +2060,32 @@
       under_progress: 'Under progress',
       done: 'Done'
     };
+    const featureStatusLabels = {
+      ...statusLabels,
+      already_implemented: 'Already implemented'
+    };
     const statusSymbols = {
       new: { symbol: '○', className: 'feature-status-new' },
       under_review: { symbol: '◐', className: 'feature-status-review' },
       under_progress: { symbol: '⟳', className: 'feature-status-progress' },
-      done: { symbol: '✓', className: 'feature-status-done' }
+      done: { symbol: '✓', className: 'feature-status-done' },
+      already_implemented: { symbol: '✓', className: 'feature-status-already' }
     };
     function renderFeatureStatus(status) {
       const key = status || 'new';
       const meta = statusSymbols[key] || statusSymbols.new;
-      const label = statusLabels[key] || String(key).replace(/_/g, ' ');
+      const label = featureStatusLabels[key] || statusLabels[key] || String(key).replace(/_/g, ' ');
       return `<span class="feature-status ${meta.className}" title="${escapeHtml(label)}"><span class="feature-status-symbol" aria-hidden="true">${meta.symbol}</span><span class="feature-status-label">${escapeHtml(label)}</span></span>`;
     }
     function renderPostRequestStatus(status) {
       return status ? renderFeatureStatus(status) : '';
+    }
+    function renderFeatureStatusControl(request) {
+      if (!isAdmin()) return '';
+      const current = request?.status || 'new';
+      return `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="Change request status">
+        ${Object.keys(featureStatusLabels).map((key) => `<option value="${key}"${key === current ? ' selected' : ''}>${featureStatusLabels[key]}</option>`).join('')}
+      </select>`;
     }
     function renderPostStatusControl(post) {
       if (!isAdmin()) return '';
@@ -2310,7 +2332,7 @@
               <div class="author-meta">${isFeature ? 'Feature request' : escapeHtml(item.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(item.created_at))}</div>
             </div>
           </div>
-          <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}${isFeature ? renderFeatureStatus(item.status) : renderPostRequestStatus(item.request_status)}${isFeature ? '' : renderPostStatusControl(item)}</h1>
+          <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}${isFeature ? renderFeatureStatus(item.status) : renderPostRequestStatus(item.request_status)}${isFeature ? renderFeatureStatusControl(item) : renderPostStatusControl(item)}</h1>
           <p class="card-body">${isFeature ? escapeHtml(item.description) : renderCommentBody(item.body)}</p>
           ${renderImages(item.image_urls, isFeature ? 'Feature request attachment' : 'Community attachment')}
           <div class="comments visible" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
@@ -2340,6 +2362,12 @@
         select.addEventListener('change', (event) => {
           event.stopPropagation();
           updateDiscussionRequestStatus(select.getAttribute('data-post-request-status'), select.value);
+        });
+      });
+      threadPanelBody.querySelectorAll('[data-feature-status]').forEach((select) => {
+        select.addEventListener('change', (event) => {
+          event.stopPropagation();
+          updateFeatureStatus(select.getAttribute('data-feature-status'), select.value);
         });
       });
       threadPanelBody.querySelectorAll('a.comment-permalink, a.comment-time-link, a.more-thread').forEach((link) => {
@@ -4193,11 +4221,7 @@
         const comments = request.commentsPreview || [];
         const commentTotal = request.commentTotal ?? comments.length;
         const currentStatus = request.status || 'new';
-        const statusControl = isAdmin()
-          ? `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="Change request status">
-              ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === currentStatus ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
-            </select>`
-          : '';
+        const statusControl = renderFeatureStatusControl(request);
         const url = featureUrl(request);
         if (!featureCommentCache.has(request.id) && comments.length) featureCommentCache.set(request.id, comments);
         const commentsHtml = renderCommentThread(request.id, comments, commentTotal, {

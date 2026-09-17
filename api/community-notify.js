@@ -312,7 +312,15 @@ async function isAdminUser(userId) {
 }
 
 function statusLabel(value) {
-  return String(value || '').replace(/_/g, ' ') || 'updated';
+  const labels = {
+    new: 'New',
+    under_review: 'Under review',
+    under_progress: 'Under progress',
+    done: 'Done',
+    already_implemented: 'Already implemented',
+  };
+  const key = String(value || '');
+  return labels[key] || key.replace(/_/g, ' ') || 'updated';
 }
 
 async function notifyFeatureStatus(record, oldRecord, auth) {
@@ -335,12 +343,15 @@ async function notifyFeatureStatus(record, oldRecord, auth) {
   }
   const href = permalink('feature', current.id, current.title);
   const label = statusLabel(current.status);
+  const already = current.status === 'already_implemented';
   return deliver({
     userId: current.user_id,
     email: to,
     subject: `Your feature request is now “${label}”`,
     heading: `Your request is now “${label}”`,
-    preview: current.title || 'A MolDraw feature request you submitted has a new status.',
+    preview: already
+      ? `${current.title || 'This request'} is already available in MolDraw.`
+      : (current.title || 'A MolDraw feature request you submitted has a new status.'),
     href,
     cta: 'Open the request',
     eventKey: `feature-status/${current.id}/${current.status || 'updated'}`,
