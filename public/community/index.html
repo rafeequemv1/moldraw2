@@ -741,12 +741,12 @@
     .author-name {
       display: inline-flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 6px;
       font-size: 12px;
       font-weight: 900;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;
     }
     .admin-badge {
       display: inline-flex;
@@ -775,6 +775,147 @@
       font-size: 10px;
       font-weight: 900;
       vertical-align: middle;
+    }
+    .implemented-crown {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      height: 18px;
+      margin: 0;
+      padding: 0 5px 0 3px;
+      border: 1px solid #ead7a2;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fffaf0, #f8efd6);
+      color: #8a6a12;
+      font: inherit;
+      line-height: 1;
+      cursor: pointer;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .implemented-crown-icon {
+      width: 12px;
+      height: 12px;
+      display: block;
+    }
+    .implemented-crown-count {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .implemented-crown-tip {
+      display: none;
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 7px);
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: 240px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.35;
+      letter-spacing: 0;
+      white-space: normal;
+      z-index: 80;
+      pointer-events: none;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+    }
+    .implemented-crown-tip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border: 5px solid transparent;
+      border-top-color: #0f172a;
+    }
+    .implemented-crown:hover .implemented-crown-tip,
+    .implemented-crown:focus-visible .implemented-crown-tip {
+      display: block;
+    }
+    .implemented-panel-root {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 5600;
+    }
+    .implemented-panel-root.is-open {
+      display: block;
+    }
+    .implemented-panel-scrim {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.12);
+      cursor: pointer;
+    }
+    .implemented-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: min(360px, 100vw);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-left: 1px solid #c9d3dc;
+      box-shadow: -10px 0 28px rgba(15, 23, 42, 0.12);
+    }
+    .implemented-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid #e8eef3;
+    }
+    .implemented-panel-head h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -0.03em;
+    }
+    .implemented-panel-sub {
+      margin: 4px 0 0;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .implemented-panel-list {
+      overflow: auto;
+      flex: 1;
+      padding: 8px 6px 16px;
+    }
+    .implemented-panel-item {
+      display: block;
+      padding: 10px 10px;
+      border-radius: 10px;
+      color: inherit;
+      text-decoration: none;
+    }
+    .implemented-panel-item:hover {
+      background: #f8fafc;
+    }
+    .implemented-panel-item-title {
+      display: block;
+      color: #0f172a;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+    .implemented-panel-empty {
+      margin: 18px 16px;
+      color: #64748b;
+      font-size: 13px;
     }
     .author-meta,
     .card-meta {
@@ -969,6 +1110,10 @@
       font-size: 11px;
     }
     .comment strong {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
       color: #0f172a;
       font-size: 12px;
     }
@@ -1523,6 +1668,9 @@
         overflow: visible;
         text-overflow: clip;
       }
+      .implemented-panel {
+        width: min(100vw, 360px);
+      }
       .admin-badge,
       .karma-badge {
         margin-top: 2px;
@@ -1842,6 +1990,20 @@
     <img id="image-lightbox-img" alt="Community attachment">
   </div>
 
+  <div id="implemented-panel-root" class="implemented-panel-root" hidden>
+    <button type="button" class="implemented-panel-scrim" id="implemented-panel-scrim" aria-label="Close implemented features"></button>
+    <aside id="implemented-panel" class="implemented-panel" role="dialog" aria-modal="true" aria-labelledby="implemented-panel-title">
+      <div class="implemented-panel-head">
+        <div>
+          <h2 id="implemented-panel-title">Implemented features</h2>
+          <p id="implemented-panel-subtitle" class="implemented-panel-sub">Features they requested that are now done</p>
+        </div>
+        <button type="button" id="implemented-panel-close" class="thread-close" aria-label="Close implemented features">×</button>
+      </div>
+      <div id="implemented-panel-list" class="implemented-panel-list"></div>
+    </aside>
+  </div>
+
   <script src="/js/site-topbar.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -1901,11 +2063,11 @@
     }
     const COMMUNITY_PAGE_SIZE = 20;
     const FEED_COMMENT_PREVIEW = 3;
-    const FEED_CACHE_VERSION = 2;
+    const FEED_CACHE_VERSION = 3;
     const FEED_CACHE_PREFIX = 'moldraw.community.feed.v2';
     const DISCUSSION_LIST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at';
     const DISCUSSION_HEAD_SELECT = 'id,created_at,comment_count,upvote_count';
-    const FEATURE_LIST_SELECT = 'id,name,title,description,image_urls,status,upvote_count,created_at';
+    const FEATURE_LIST_SELECT = 'id,user_id,name,title,description,image_urls,status,upvote_count,created_at';
     const FEATURE_HEAD_SELECT = 'id,created_at,upvote_count,status';
     const COMMENT_PREVIEW_SELECT = 'id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
     const FEATURE_COMMENT_PREVIEW_SELECT = 'id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
@@ -2132,7 +2294,7 @@
           <div class="author" style="margin-bottom:8px;">
             <span class="avatar ${isFeature ? '' : escapeHtml(safeAvatarKey(item.author_avatar_key))}">${escapeHtml(initials(isFeature ? item.name : item.author_name))}</span>
             <div>
-              <div class="author-name">${escapeHtml((isFeature ? item.name : item.author_name) || 'Community member')}</div>
+              <div class="author-name">${escapeHtml((isFeature ? item.name : item.author_name) || 'Community member')} ${isFeature ? '' : `${adminBadge(item.author_is_admin)} ${karmaBadge(item.author_karma_score)}`} ${implementedCrown(item.user_id, isFeature ? item.name : item.author_name)}</div>
               <div class="author-meta">${isFeature ? 'Feature request' : escapeHtml(item.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(item.created_at))}</div>
             </div>
           </div>
@@ -2195,6 +2357,7 @@
         comments = data || [];
         commentCache.set(post.id, comments);
       }
+      await loadDoneFeatureIndex();
       renderThreadPanel('post', post, comments, highlightId);
     }
     async function openFeatureThread(request, { url, highlightId, replace = false } = {}) {
@@ -2220,6 +2383,7 @@
           featureCommentCache.set(request.id, comments);
         } else comments = [];
       }
+      await loadDoneFeatureIndex();
       renderThreadPanel('feature', request, comments || [], highlightId);
     }
     function bindFeedOpeners(kind, items) {
@@ -2249,6 +2413,93 @@
     const isAdmin = () => Boolean(profile && (profile.is_admin || profile.role === 'admin'));
     const adminBadge = (value) => value ? '<span class="admin-badge">Admin</span>' : '';
     const karmaBadge = (value) => `<span class="karma-badge">${Math.max(0, Number(value) || 0)} karma</span>`;
+    const CROWN_ICON = '<svg class="implemented-crown-icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="#c9a227" d="M8 2.2 10.15 7.05 15 5.4 12.85 13.1H3.15L1 5.4l4.85 1.65L8 2.2Z"/><path fill="#e8c85a" d="M8 3.45 9.7 7.35l.35.8.88-.3 3.15-1.07-1.65 5.72H3.57L1.92 6.78l3.15 1.07.88.3.35-.8L8 3.45Z"/><rect x="3.05" y="12.85" width="9.9" height="1.25" rx="0.4" fill="#b8860b"/></svg>';
+    let doneFeatureIndex = null;
+    let doneFeatureIndexPromise = null;
+    const implementedPanelRoot = document.getElementById('implemented-panel-root');
+    const implementedPanelList = document.getElementById('implemented-panel-list');
+    const implementedPanelTitle = document.getElementById('implemented-panel-title');
+    const implementedPanelSubtitle = document.getElementById('implemented-panel-subtitle');
+
+    function doneFeaturesFor(userId, name) {
+      if (!doneFeatureIndex) return [];
+      if (userId && doneFeatureIndex.byUser.has(userId)) return doneFeatureIndex.byUser.get(userId);
+      if (!userId && name && doneFeatureIndex.byName.has(name)) return doneFeatureIndex.byName.get(name);
+      return [];
+    }
+    function doneFeatureCount(userId, name) {
+      return doneFeaturesFor(userId, name).length;
+    }
+    function implementedCrown(userId, name) {
+      const count = doneFeatureCount(userId, name);
+      if (count < 1) return '';
+      const label = count === 1 ? '1 feature implemented' : `${count} features implemented`;
+      const tip = `${label}. Features they requested that are now done.`;
+      return `<button type="button" class="implemented-crown" data-done-features data-done-user="${escapeHtml(userId || '')}" data-done-name="${escapeHtml(name || '')}" aria-label="${escapeHtml(label)}" title="${escapeHtml(tip)}">${CROWN_ICON}<span class="implemented-crown-count">${count}</span><span class="implemented-crown-tip">${escapeHtml(tip)}</span></button>`;
+    }
+    function resetDoneFeatureIndex() {
+      doneFeatureIndex = null;
+      doneFeatureIndexPromise = null;
+    }
+    async function loadDoneFeatureIndex() {
+      if (doneFeatureIndex) return doneFeatureIndex;
+      if (doneFeatureIndexPromise) return doneFeatureIndexPromise;
+      doneFeatureIndexPromise = (async () => {
+        const { data, error } = await client
+          .from('community_feature_requests')
+          .select('id,user_id,name,title,created_at')
+          .eq('status', 'done')
+          .order('created_at', { ascending: false })
+          .limit(1000);
+        const byUser = new Map();
+        const byName = new Map();
+        if (!error) {
+          (data || []).forEach((row) => {
+            if (row.user_id) {
+              if (!byUser.has(row.user_id)) byUser.set(row.user_id, []);
+              byUser.get(row.user_id).push(row);
+            } else if (row.name) {
+              if (!byName.has(row.name)) byName.set(row.name, []);
+              byName.get(row.name).push(row);
+            }
+          });
+        }
+        doneFeatureIndex = { byUser, byName };
+        return doneFeatureIndex;
+      })();
+      try {
+        return await doneFeatureIndexPromise;
+      } catch {
+        doneFeatureIndexPromise = null;
+        doneFeatureIndex = { byUser: new Map(), byName: new Map() };
+        return doneFeatureIndex;
+      }
+    }
+    function closeImplementedPanel() {
+      if (!implementedPanelRoot) return;
+      implementedPanelRoot.hidden = true;
+      implementedPanelRoot.classList.remove('is-open');
+    }
+    async function openImplementedPanel(userId, name) {
+      await loadDoneFeatureIndex();
+      const rows = doneFeaturesFor(userId, name);
+      const count = rows.length;
+      if (!count || !implementedPanelRoot || !implementedPanelList) return;
+      const label = count === 1 ? '1 feature implemented' : `${count} features implemented`;
+      if (implementedPanelTitle) implementedPanelTitle.textContent = name ? `${name}` : 'Implemented features';
+      if (implementedPanelSubtitle) {
+        implementedPanelSubtitle.textContent = `${label}. Features they requested that are now done.`;
+      }
+      implementedPanelList.innerHTML = rows.map((row) => `
+        <a class="implemented-panel-item" href="${escapeHtml(featureUrl(row))}">
+          <span class="implemented-panel-item-title">${escapeHtml(row.title || 'Feature request')}</span>
+          <span class="author-meta">${escapeHtml(timeText(row.created_at))}</span>
+        </a>
+      `).join('');
+      implementedPanelRoot.hidden = false;
+      implementedPanelRoot.classList.add('is-open');
+      document.getElementById('implemented-panel-close')?.focus();
+    }
     const displayNameFromEmail = (email) => {
       const local = String(email || '').split('@')[0] || 'Community member';
       return local.replace(/[._-]+/g, ' ').replace(/\s+/g, ' ').trim()
@@ -3437,7 +3688,7 @@
           <div class="author">
             <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
             <div>
-              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)}</strong>
+              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}</strong>
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · ${timeHtml}</div>
             </div>
           </div>
@@ -3824,7 +4075,7 @@
               <div class="author">
                 <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
                 <div>
-                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)}</div>
+                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)} ${implementedCrown(post.user_id, post.author_name)}</div>
                   <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(post.created_at))}</div>
                 </div>
               </div>
@@ -3915,7 +4166,7 @@
               <div class="author">
                 <span class="avatar">${escapeHtml(initials(request.name))}</span>
                 <div>
-                  <div class="author-name">${escapeHtml(request.name || 'MolDraw user')}</div>
+                  <div class="author-name">${escapeHtml(request.name || 'MolDraw user')} ${implementedCrown(request.user_id, request.name)}</div>
                   <div class="author-meta">Feature request · ${escapeHtml(timeText(request.created_at))}</div>
                 </div>
               </div>
@@ -4013,6 +4264,7 @@
       const page = route.view === 'list' ? (route.page || 1) : 1;
       const cached = readFeedCache('discussions', page);
       if (cached?.items?.length && !hasSsr) {
+        await loadDoneFeatureIndex();
         lastDiscussionItems = cached.items;
         paintDiscussionCards(cached.items, new Set(), selectedPostId);
       }
@@ -4055,6 +4307,7 @@
         posts.filter((post) => fetchedIds.has(post.id) || post.id !== selectedPostId).slice(0, COMMUNITY_PAGE_SIZE),
         count || posts.length
       );
+      await loadDoneFeatureIndex();
       paintDiscussionCards(posts, myVotes, selectedPostId);
       renderPaginationNav('discussions', page, count || 0);
       const selectedPost = posts.find((post) => post.id === selectedPostId);
@@ -4103,6 +4356,7 @@
         record: { id: featureRequestId, status },
         old_record: { status: previous?.status }
       });
+      resetDoneFeatureIndex();
       await loadFeatureRequests();
     }
 
@@ -4173,6 +4427,7 @@
       const page = route.view === 'features' ? (route.page || 1) : 1;
       const cached = readFeedCache('features', page);
       if (cached?.items?.length && !hasSsr) {
+        await loadDoneFeatureIndex();
         lastFeatureItems = cached.items;
         paintFeatureCards(cached.items, new Set(), selectedRequestId);
       }
@@ -4211,6 +4466,7 @@
         requests.filter((request) => fetchedIds.has(request.id) || request.id !== selectedRequestId).slice(0, COMMUNITY_PAGE_SIZE),
         count || requests.length
       );
+      await loadDoneFeatureIndex();
       paintFeatureCards(requests, myVotes, selectedRequestId);
       renderPaginationNav('features', page, count || 0);
       const selectedRequest = requests.find((request) => request.id === selectedRequestId);
@@ -4255,6 +4511,23 @@
     });
     document.getElementById('image-lightbox')?.addEventListener('click', closeImageLightbox);
     document.addEventListener('click', (event) => {
+      const crown = event.target.closest('[data-done-features]');
+      if (!crown) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openImplementedPanel(crown.getAttribute('data-done-user') || '', crown.getAttribute('data-done-name') || '');
+    }, true);
+    implementedPanelList?.addEventListener('click', (event) => {
+      const link = event.target.closest('a.implemented-panel-item');
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      closeImplementedPanel();
+      window.history.pushState({ community: true }, '', link.getAttribute('href'));
+      loadActiveTab();
+    });
+    document.getElementById('implemented-panel-close')?.addEventListener('click', closeImplementedPanel);
+    document.getElementById('implemented-panel-scrim')?.addEventListener('click', closeImplementedPanel);
+    document.addEventListener('click', (event) => {
       const link = event.target.closest('.card-images a');
       if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const href = link.getAttribute('href');
@@ -4291,7 +4564,9 @@
     document.getElementById('auth-cancel').addEventListener('click', closeAuthModal);
     authModal.addEventListener('click', (event) => { if (event.target === authModal) closeAuthModal(); });
     window.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && document.getElementById('image-lightbox')?.classList.contains('is-open')) closeImageLightbox();
+      if (event.key !== 'Escape') return;
+      if (implementedPanelRoot?.classList.contains('is-open')) closeImplementedPanel();
+      else if (document.getElementById('image-lightbox')?.classList.contains('is-open')) closeImageLightbox();
       else if (event.key === 'Escape' && authModal.classList.contains('visible')) closeAuthModal();
       else if (event.key === 'Escape' && postModal.classList.contains('visible')) closePostModal();
       else if (event.key === 'Escape' && featureRequestModal.classList.contains('visible')) closeFeatureRequestModal();

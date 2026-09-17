@@ -23,7 +23,7 @@ const SUPABASE_KEY =
 
 const POST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at';
 const COMMENT_SELECT = 'id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
-const FEATURE_SELECT = 'id,name,title,description,image_urls,status,upvote_count,created_at';
+const FEATURE_SELECT = 'id,user_id,name,title,description,image_urls,status,upvote_count,created_at';
 const FEATURE_COMMENT_SELECT = 'id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
 
 let templateCache = null;
@@ -114,6 +114,50 @@ function adminBadge(value) {
 
 function karmaBadge(value) {
   return `<span class="karma-badge">${Math.max(0, Number(value) || 0)} karma</span>`;
+}
+
+const CROWN_ICON = '<svg class="implemented-crown-icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="#c9a227" d="M8 2.2 10.15 7.05 15 5.4 12.85 13.1H3.15L1 5.4l4.85 1.65L8 2.2Z"/><path fill="#e8c85a" d="M8 3.45 9.7 7.35l.35.8.88-.3 3.15-1.07-1.65 5.72H3.57L1.92 6.78l3.15 1.07.88.3.35-.8L8 3.45Z"/><rect x="3.05" y="12.85" width="9.9" height="1.25" rx="0.4" fill="#b8860b"/></svg>';
+
+let doneFeatureIndex = { byUser: new Map(), byName: new Map() };
+
+function doneFeaturesFor(userId, name) {
+  if (userId && doneFeatureIndex.byUser.has(userId)) return doneFeatureIndex.byUser.get(userId);
+  if (!userId && name && doneFeatureIndex.byName.has(name)) return doneFeatureIndex.byName.get(name);
+  return [];
+}
+
+function implementedCrown(userId, name) {
+  const rows = doneFeaturesFor(userId, name);
+  const count = rows.length;
+  if (count < 1) return '';
+  const label = count === 1 ? '1 feature implemented' : `${count} features implemented`;
+  const tip = `${label}. Features they requested that are now done.`;
+  return `<button type="button" class="implemented-crown" data-done-features data-done-user="${escapeHtml(userId || '')}" data-done-name="${escapeHtml(name || '')}" aria-label="${escapeHtml(label)}" title="${escapeHtml(tip)}">${CROWN_ICON}<span class="implemented-crown-count">${count}</span><span class="implemented-crown-tip">${escapeHtml(tip)}</span></button>`;
+}
+
+async function loadDoneFeatureIndex() {
+  const byUser = new Map();
+  const byName = new Map();
+  try {
+    const { data } = await supabaseQuery(
+      'community_feature_requests',
+      'select=id,user_id,name,title,created_at&status=eq.done&order=created_at.desc',
+      { range: { from: 0, to: 999 } },
+    );
+    (data || []).forEach((row) => {
+      if (row.user_id) {
+        if (!byUser.has(row.user_id)) byUser.set(row.user_id, []);
+        byUser.get(row.user_id).push(row);
+      } else if (row.name) {
+        if (!byName.has(row.name)) byName.set(row.name, []);
+        byName.get(row.name).push(row);
+      }
+    });
+  } catch {
+    // Crowns are optional; the public feed still renders without them.
+  }
+  doneFeatureIndex = { byUser, byName };
+  return doneFeatureIndex;
 }
 
 function discussionPath(post) {
@@ -456,7 +500,7 @@ function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllRe
           <div class="author">
             <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
             <div>
-              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)}</strong>
+              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}</strong>
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · <a class="comment-time-link" href="${escapeHtml(permalink)}"><time datetime="${escapeHtml(isoDate(comment.created_at) || '')}">${escapeHtml(timeText(comment.created_at))}</time></a></div>
             </div>
           </div>
@@ -519,7 +563,7 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
               <div class="author">
                 <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
                 <div>
-                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)}</div>
+                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)} ${implementedCrown(post.user_id, post.author_name)}</div>
                   <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · <time datetime="${escapeHtml(isoDate(post.created_at) || '')}">${escapeHtml(timeText(post.created_at))}</time></div>
                 </div>
               </div>
@@ -571,7 +615,7 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
               <div class="author">
                 <span class="avatar">${escapeHtml(initials(request.name))}</span>
                 <div>
-                  <div class="author-name">${escapeHtml(request.name || 'MolDraw user')}</div>
+                  <div class="author-name">${escapeHtml(request.name || 'MolDraw user')} ${implementedCrown(request.user_id, request.name)}</div>
                   <div class="author-meta">Feature request · <time datetime="${escapeHtml(isoDate(request.created_at) || '')}">${escapeHtml(timeText(request.created_at))}</time></div>
                 </div>
               </div>
@@ -1167,6 +1211,7 @@ function notFoundPage(message, { accept } = {}) {
 async function renderCommunityPage(pathname, options = {}) {
   const route = parseCommunityPath(pathname);
   if (!route) return notFoundPage('Unknown community URL.', options);
+  await loadDoneFeatureIndex();
 
   if (route.view === 'list') return renderListPage(route, options);
 
