@@ -44,14 +44,16 @@ const orderForTool = (tool: BondToolId): 1 | 2 | 3 => {
  * Pointer-down branches:
  *   - Empty canvas: arm a bond drag from `worldPos`; clear selection.
  *   - Existing bond:
- *       * First click — set its order/stereo to the tool's pair (valency-checked).
+ *       * First click — set its order/stereo to the tool's pair.
  *       * Re-tap on a bond already matching the tool — ChemDraw-style cycle:
- *           - Order tool (single/double/triple): cycle order 1 → 2 → 3 → 1
- *             (skipping the flip if the next step would exceed valency).
+ *           - Order tool (single/double/triple): bounce order 1 → 2 → 3 → 2 → 1.
  *           - Wedge / dash tool: swap endpoints to flip narrow→wide direction.
  *           - Wavy tool (symmetric): toggle the stereo flag off.
  *         This eliminates the tool-switching ritual users hate.
- *   - Existing atom: arm a bond drag rooted at the atom, after a valency check.
+ *       Valency is *not* a blocker: over-filled atoms get a brief flash and a
+ *       persistent octet marker (see `overValentAtomIds`), so a user can turn
+ *       a Kekulé ring into whatever intermediate they need bond by bond.
+ *   - Existing atom: arm a bond drag rooted at the atom.
  *
  * Pointer-move snaps the ghost end to the configured angle increment at fixed length.
  *
@@ -146,9 +148,14 @@ export const bondToolMouseDown = (ctx: InteractionContext): boolean => {
       return true;
     }
 
+    // A tool of a *different* order converts the bond outright (double tool on
+    // a single bond → double, triple tool → triple, single tool → single).
+    // Re-tapping with the tool that already matches bounces through the cycle.
     const ramp = bond.orderCycleRamp ?? 'up';
     let cycled: 1 | 2 | 3;
-    if (bond.order === 1) {
+    if (bond.order !== toolOrder) {
+      cycled = toolOrder;
+    } else if (bond.order === 1) {
       cycled = 2;
     } else if (bond.order === 3) {
       cycled = 2;
@@ -156,16 +163,17 @@ export const bondToolMouseDown = (ctx: InteractionContext): boolean => {
       cycled = ramp === 'up' ? 3 : 1;
     }
 
+    // Over-filled atoms are *allowed* (the user may be mid-way through
+    // converting a ring bond by bond); flash the atom as a heads-up and let
+    // the persistent octet marker take over once the edit lands.
     if (from && to && cycled > bond.order) {
       const delta = cycled - bond.order;
       const fromV = getAtomValency(from.id, molecule);
       const toV = getAtomValency(to.id, molecule);
       const fromMax = getMaxValencyForElement(from.element, from.charge);
       const toMax = getMaxValencyForElement(to.element, to.charge);
-      if (fromV + delta > fromMax || toV + delta > toMax) {
-        ctx.flashAtomError(fromV + delta > fromMax ? from.id : to.id);
-        return true;
-      }
+      if (fromV + delta > fromMax) ctx.flashAtomError(from.id);
+      else if (toV + delta > toMax) ctx.flashAtomError(to.id);
     }
 
     let orderCycleRamp: 'up' | 'down' | undefined;
@@ -191,16 +199,8 @@ export const bondToolMouseDown = (ctx: InteractionContext): boolean => {
   }
 
   if (atom) {
-    const tool = activeTool as BondToolId;
-    const bondOrder = orderForTool(tool);
-    if (!skipsValencyTool(tool)) {
-      const currentValency = getAtomValency(atom.id, molecule);
-      const maxValency = getMaxValencyForElement(atom.element, atom.charge);
-      if (currentValency + bondOrder > maxValency) {
-        ctx.flashAtomError(atom.id);
-        return true;
-      }
-    }
+    // Drawing from a saturated atom is allowed (sketcher-liberal); the octet
+    // marker flags the atom once the extra bond exists. No pre-emptive block.
     ctx.setDrawingBond({
       startAtomId: atom.id,
       startPos: { x: atom.x, y: atom.y },
@@ -343,14 +343,12 @@ export const bondToolMouseUp = (ctx: InteractionContext): boolean => {
     molecule.atoms.find(a => a.id === id) ?? atomsCreatedThisStroke.find(a => a.id === id);
 
   if (releaseAtom) {
-    if (!skipsValencyTool(tool)) {
+    // Heads-up flash when the landing atom will be over-filled; the bond is
+    // still created and the persistent octet marker shows the overflow.
+    if (!skipsValencyTool(tool) && releaseAtom.id !== startAtomId) {
       const currentValency = getAtomValency(releaseAtom.id, molecule);
       const maxValency = getMaxValencyForElement(releaseAtom.element, releaseAtom.charge);
-      if (currentValency + bondOrder > maxValency && releaseAtom.id !== startAtomId) {
-        ctx.flashAtomError(releaseAtom.id);
-        ctx.setDrawingBond(null);
-        return true;
-      }
+      if (currentValency + bondOrder > maxValency) ctx.flashAtomError(releaseAtom.id);
     }
     if (!startAtomId && drawnLength > minBondDragPx) {
       const newAtom: Atom = {

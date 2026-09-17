@@ -642,6 +642,46 @@ export const reflectAtoms = (
 
 // ─── Bonds ────────────────────────────────────────────────────────────────
 
+/**
+ * How strictly bond edits are policed.
+ *
+ * - `relaxed` (sketcher default): only *structural* problems are refused —
+ *   self-bonds, duplicate edges, unknown atoms. Valency overflow, cumulated
+ *   ring double bonds and ring triple bonds are allowed; the canvas flags the
+ *   affected atoms with an octet warning so the user can finish the edit they
+ *   are in the middle of (e.g. converting a Kekulé ring bond by bond).
+ * - `strict`: legacy behaviour — chemically undefined results are refused.
+ *   Used where the result must be well-defined (agents / API with
+ *   `strict: true`, fragment auto-attach, explicit-H placement).
+ */
+export type BondChemistryMode = 'relaxed' | 'strict';
+
+export interface BondEditOptions {
+  /** Refuse chemically undefined results instead of allowing them (default: allow). */
+  strict?: boolean;
+}
+
+/** Structural problems only (never allowed, in any mode). */
+export const explainBondStructuralRejection = (
+  prev: Molecule,
+  bond: Pick<Bond, 'fromAtomId' | 'toAtomId'>,
+): string | null => {
+  if (bond.fromAtomId === bond.toAtomId) return 'a bond cannot connect an atom to itself';
+  const duplicate = prev.bonds.find(
+    b =>
+      (b.fromAtomId === bond.fromAtomId && b.toAtomId === bond.toAtomId) ||
+      (b.fromAtomId === bond.toAtomId && b.toAtomId === bond.fromAtomId),
+  );
+  if (duplicate) {
+    return `atoms are already bonded (bond "${duplicate.id}", order ${duplicate.order}); use molecule.updateBond to change its order`;
+  }
+  const fromAtom = prev.atoms.find(a => a.id === bond.fromAtomId);
+  const toAtom = prev.atoms.find(a => a.id === bond.toAtomId);
+  if (!fromAtom) return `unknown atom id "${bond.fromAtomId}"`;
+  if (!toAtom) return `unknown atom id "${bond.toAtomId}"`;
+  return null;
+};
+
 /** Whether `bond` may be added to `prev` (valency, duplicates, ring rules). */
 export const canAddBond = (
   prev: Molecule,
@@ -650,17 +690,13 @@ export const canAddBond = (
     dotted?: boolean;
     queryType?: Bond['queryType'];
   },
+  opts: BondEditOptions = { strict: true },
 ): boolean => {
-  const duplicate = prev.bonds.some(
-    b =>
-      (b.fromAtomId === bond.fromAtomId && b.toAtomId === bond.toAtomId) ||
-      (b.fromAtomId === bond.toAtomId && b.toAtomId === bond.fromAtomId),
-  );
-  if (duplicate) return false;
+  if (explainBondStructuralRejection(prev, bond)) return false;
+  if (!opts.strict) return true;
 
-  const fromAtom = prev.atoms.find(a => a.id === bond.fromAtomId);
-  const toAtom = prev.atoms.find(a => a.id === bond.toAtomId);
-  if (!fromAtom || !toAtom) return false;
+  const fromAtom = prev.atoms.find(a => a.id === bond.fromAtomId)!;
+  const toAtom = prev.atoms.find(a => a.id === bond.toAtomId)!;
   if (bond.order === 3 && wouldCloseRing(prev, bond.fromAtomId, bond.toAtomId)) return false;
 
   // Dative / dotted (H-bond) / query: allow without covalent valency checks.
@@ -703,20 +739,13 @@ export const explainBondRejection = (
     dotted?: boolean;
     queryType?: Bond['queryType'];
   },
+  opts: BondEditOptions = { strict: true },
 ): string | null => {
-  if (bond.fromAtomId === bond.toAtomId) return 'a bond cannot connect an atom to itself';
-  const duplicate = prev.bonds.find(
-    b =>
-      (b.fromAtomId === bond.fromAtomId && b.toAtomId === bond.toAtomId) ||
-      (b.fromAtomId === bond.toAtomId && b.toAtomId === bond.fromAtomId),
-  );
-  if (duplicate) {
-    return `atoms are already bonded (bond "${duplicate.id}", order ${duplicate.order}); use molecule.updateBond to change its order`;
-  }
-  const fromAtom = prev.atoms.find(a => a.id === bond.fromAtomId);
-  const toAtom = prev.atoms.find(a => a.id === bond.toAtomId);
-  if (!fromAtom) return `unknown atom id "${bond.fromAtomId}"`;
-  if (!toAtom) return `unknown atom id "${bond.toAtomId}"`;
+  const structural = explainBondStructuralRejection(prev, bond);
+  if (structural) return structural;
+  if (!opts.strict) return null;
+  const fromAtom = prev.atoms.find(a => a.id === bond.fromAtomId)!;
+  const toAtom = prev.atoms.find(a => a.id === bond.toAtomId)!;
   if (bond.order === 3 && wouldCloseRing(prev, bond.fromAtomId, bond.toAtomId)) {
     return 'a triple bond cannot close a ring';
   }
@@ -751,8 +780,12 @@ export const explainBondRejection = (
  * Add a bond, but drop the edit if it would duplicate an existing edge,
  * exceed atomic valency, force two adjacent ring double bonds, etc.
  */
-export const addBondSafe = (prev: Molecule, bond: Bond): Molecule => {
-  if (!canAddBond(prev, bond)) return prev;
+export const addBondSafe = (
+  prev: Molecule,
+  bond: Bond,
+  opts: BondEditOptions = { strict: true },
+): Molecule => {
+  if (!canAddBond(prev, bond, opts)) return prev;
   return { ...prev, bonds: [...prev.bonds, bond] };
 };
 
@@ -868,16 +901,85 @@ export const clearAtomMaps = (prev: Molecule): Molecule => {
   return changed ? { ...prev, atoms } : prev;
 };
 
-/** Update bond order/stereo/query flags, dropping the edit if it would violate valency. */
+export type BondUpdatePatch = Partial<
+  Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted' | 'aromatic' | 'queryType' | 'bold'>
+>;
+
+/**
+ * Chemistry reason a bond update would be refused in `strict` mode, or `null`
+ * when the result is well-defined. Structural problems (unknown bond / atoms)
+ * are reported in every mode.
+ */
+export const explainBondUpdateRejection = (
+  prev: Molecule,
+  bondId: string,
+  patch: BondUpdatePatch,
+  opts: BondEditOptions = { strict: true },
+): string | null => {
+  const existing = prev.bonds.find(b => b.id === bondId);
+  if (!existing) return `unknown bond id "${bondId}"`;
+  const fromAtom = prev.atoms.find(a => a.id === existing.fromAtomId);
+  const toAtom = prev.atoms.find(a => a.id === existing.toAtomId);
+  if (!fromAtom || !toAtom) return `bond "${bondId}" references a missing atom`;
+  if (!opts.strict) return null;
+
+  const nextOrder = patch.order ?? existing.order;
+  const nextDative = 'dative' in patch ? patch.dative : existing.dative;
+  const nextDotted = 'dotted' in patch ? patch.dotted : existing.dotted;
+  const nextQuery = 'queryType' in patch ? patch.queryType : existing.queryType;
+  // Dative / dotted (H-bond) / query: no covalent valency / ring double rules.
+  if (bondSkipsCovalentValence({ dative: nextDative, dotted: nextDotted, queryType: nextQuery })) return null;
+
+  if (nextOrder === 3 && isBondInRing(prev, existing)) return 'a ring bond cannot be a triple bond';
+
+  const ringAtomIds = new Set(uniqueRingPaths(prev).flat());
+  if (nextOrder === 2) {
+    const doublesExcl = (atomId: string) =>
+      prev.bonds.filter(
+        b => b.id !== existing.id && (b.fromAtomId === atomId || b.toAtomId === atomId) && b.order === 2,
+      ).length;
+    if (ringAtomIds.has(fromAtom.id) && doublesExcl(fromAtom.id) + 1 > 1) {
+      return `ring atom "${fromAtom.id}" already has a double bond (cumulated ring double bonds are not allowed)`;
+    }
+    if (ringAtomIds.has(toAtom.id) && doublesExcl(toAtom.id) + 1 > 1) {
+      return `ring atom "${toAtom.id}" already has a double bond (cumulated ring double bonds are not allowed)`;
+    }
+  }
+
+  const describe = (atom: Atom): string | null => {
+    const currentExcl = prev.bonds
+      .filter(b => b.id !== existing.id && (b.fromAtomId === atom.id || b.toAtomId === atom.id))
+      .reduce((sum, b) => sum + covalentBondOrderContribution(b), 0);
+    const max = getMaxValencyForElement(atom.element, atom.charge);
+    if (currentExcl + nextOrder > max) {
+      return `atom "${atom.id}" (${atom.element}${atom.charge ? `, charge ${atom.charge}` : ''}) would exceed its maximum valency ${max} (other bonds ${currentExcl} + ${nextOrder})`;
+    }
+    const maxLP = getMaxLonePairsForAtom(atom.element, atom.charge, currentExcl + nextOrder);
+    if ((atom.lonePairs ?? 0) > maxLP) {
+      return `atom "${atom.id}" has ${atom.lonePairs} explicit lone pairs but only ${maxLP} fit after this change`;
+    }
+    return null;
+  };
+  return describe(fromAtom) ?? describe(toAtom);
+};
+
+/**
+ * Update bond order/stereo/query flags.
+ *
+ * Relaxed by default: the patch is applied even when the result over-fills an
+ * atom or puts two double bonds on one ring atom — the sketcher shows an octet
+ * warning instead of refusing, so a user can convert a ring bond by bond.
+ * With `{ strict: true }` a chemically undefined result leaves `prev` unchanged.
+ */
 export const updateBondSafe = (
   prev: Molecule,
   bondId: string,
-  patch: Partial<
-    Pick<Bond, 'order' | 'stereo' | 'orderCycleRamp' | 'dative' | 'dotted' | 'aromatic' | 'queryType' | 'bold'>
-  >,
+  patch: BondUpdatePatch,
+  opts: BondEditOptions = {},
 ): Molecule => {
   const existing = prev.bonds.find(b => b.id === bondId);
   if (!existing) return prev;
+  if (explainBondUpdateRejection(prev, bondId, patch, opts)) return prev;
   const nextOrder = patch.order ?? existing.order;
   const nextStereo = 'stereo' in patch ? patch.stereo : existing.stereo;
   const nextRamp = 'orderCycleRamp' in patch ? patch.orderCycleRamp : existing.orderCycleRamp;
@@ -886,10 +988,6 @@ export const updateBondSafe = (
   const nextAromatic = 'aromatic' in patch ? patch.aromatic : existing.aromatic;
   const nextQuery = 'queryType' in patch ? patch.queryType : existing.queryType;
   const nextBold = 'bold' in patch ? patch.bold : existing.bold;
-
-  const fromAtom = prev.atoms.find(a => a.id === existing.fromAtomId);
-  const toAtom = prev.atoms.find(a => a.id === existing.toAtomId);
-  if (!fromAtom || !toAtom) return prev;
 
   const applyFlags = (b: Bond): Bond => ({
     ...b,
@@ -920,38 +1018,14 @@ export const updateBondSafe = (
     };
   }
 
-  if (nextOrder === 3 && isBondInRing(prev, existing)) return prev;
-
-  const ringAtomIds = new Set(uniqueRingPaths(prev).flat());
-  if (nextOrder === 2) {
-    const fromDoublesExcl = prev.bonds.filter(
-      b => b.id !== existing.id && (b.fromAtomId === fromAtom.id || b.toAtomId === fromAtom.id) && b.order === 2,
-    ).length;
-    const toDoublesExcl = prev.bonds.filter(
-      b => b.id !== existing.id && (b.fromAtomId === toAtom.id || b.toAtomId === toAtom.id) && b.order === 2,
-    ).length;
-    if (ringAtomIds.has(fromAtom.id) && fromDoublesExcl + 1 > 1) return prev;
-    if (ringAtomIds.has(toAtom.id) && toDoublesExcl + 1 > 1) return prev;
-  }
-
-  const currentFromExcl = prev.bonds
-    .filter(b => b.id !== existing.id && (b.fromAtomId === fromAtom.id || b.toAtomId === fromAtom.id))
-    .reduce((sum, b) => sum + covalentBondOrderContribution(b), 0);
-  const currentToExcl = prev.bonds
-    .filter(b => b.id !== existing.id && (b.fromAtomId === toAtom.id || b.toAtomId === toAtom.id))
-    .reduce((sum, b) => sum + covalentBondOrderContribution(b), 0);
-  const maxFromValency = getMaxValencyForElement(fromAtom.element, fromAtom.charge);
-  const maxToValency = getMaxValencyForElement(toAtom.element, toAtom.charge);
-  if (currentFromExcl + nextOrder > maxFromValency) return prev;
-  if (currentToExcl + nextOrder > maxToValency) return prev;
-  const maxFromLP = getMaxLonePairsForAtom(fromAtom.element, fromAtom.charge, currentFromExcl + nextOrder);
-  const maxToLP = getMaxLonePairsForAtom(toAtom.element, toAtom.charge, currentToExcl + nextOrder);
-  if ((fromAtom.lonePairs ?? 0) > maxFromLP) return prev;
-  if ((toAtom.lonePairs ?? 0) > maxToLP) return prev;
+  // Straighten sp-carbon neighbours for a new triple bond — but never for a
+  // ring bond (relaxed mode lets one through): pulling ring atoms onto a line
+  // would wreck the ring geometry the user is editing.
+  const linearize = nextOrder === 3 && !isBondInRing(prev, existing);
 
   return {
     ...prev,
-    atoms: nextOrder === 3 ? linearlyAdjustedTripleBondAtoms(prev, existing) : prev.atoms,
+    atoms: linearize ? linearlyAdjustedTripleBondAtoms(prev, existing) : prev.atoms,
     bonds: prev.bonds.map(b => (b.id === bondId ? applyFlags(b) : b)),
   };
 };

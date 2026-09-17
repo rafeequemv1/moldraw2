@@ -438,6 +438,11 @@ export interface RenderContext {
   errorAtomId: string | null;
   /** Atoms with stereochemistry warnings (ambiguous center or wedge/hash conflict). */
   stereoWarningAtomIds: ReadonlySet<string>;
+  /**
+   * Octet / valence warnings: atom id → bond-order surplus over max valency.
+   * Soft marker only — drawing never blocks on valency.
+   */
+  overValentAtoms?: ReadonlyMap<string, number>;
 
   /** Indigo CIP R/S labels keyed by atom id (when showCipLabels). */
   cipAtomLabels: ReadonlyMap<string, string> | null;

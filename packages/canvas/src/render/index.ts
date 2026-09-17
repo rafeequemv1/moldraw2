@@ -23,6 +23,7 @@ export {
   drawSelectionAndHoverHighlights,
   drawErrorAtomMarker,
   drawStereoWarningMarkers,
+  drawOverValentMarkers,
 } from './drawHighlights';
 export { drawRingFills, drawRingHoverFill } from './drawRingFills';
 export { drawBonds } from './drawBonds';

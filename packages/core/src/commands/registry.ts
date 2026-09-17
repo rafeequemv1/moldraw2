@@ -769,18 +769,19 @@ const duplicateAtomsCmd: MoleculeCommand<
 const addBondCmd: MoleculeCommand<z.infer<typeof schemas.addBond>, NewIdsExtra> = {
   id: CMD.AddBond,
   description:
-    'Add a bond between two existing atoms. Fails with a reason if the atoms are already bonded or the bond would exceed valency. Omit bond.id to auto-generate (returned in extra.newBondIds).',
+    'Add a bond between two existing atoms. Fails with a reason if the atoms are already bonded; with strict=true also if the bond would exceed valency or break ring double-bond rules. Omit bond.id to auto-generate (returned in extra.newBondIds).',
   inputSchema: schemas.addBond,
   tags: ['bonds'],
-  apply: (prev, { bond }) => {
-    const reason = Mut.explainBondRejection(prev, bond);
+  apply: (prev, { bond, strict }) => {
+    const opts = { strict: strict === true };
+    const reason = Mut.explainBondRejection(prev, bond, opts);
     if (reason) throw new Error(`Cannot add bond: ${reason}.`);
     let id = bond.id ?? newId();
     if (prev.bonds.some(b => b.id === id)) {
       if (bond.id) throw new Error(`Bond id "${id}" already exists; omit id to auto-generate.`);
       id = newId();
     }
-    const next = growDendrimerSeed(Mut.addBondSafe(prev, { ...bond, id } as Bond), [
+    const next = growDendrimerSeed(Mut.addBondSafe(prev, { ...bond, id } as Bond, opts), [
       bond.fromAtomId,
       bond.toAtomId,
     ]);
@@ -791,7 +792,7 @@ const addBondCmd: MoleculeCommand<z.infer<typeof schemas.addBond>, NewIdsExtra> 
 const updateBondCmd: MoleculeCommand<z.infer<typeof schemas.updateBond>> = {
   id: CMD.UpdateBond,
   description:
-    'Update bond order, stereo, aromatic, query type, dative, dotted (H-bond), and/or bold. Valency-checked (except dative/dotted/query).',
+    'Update bond order, stereo, aromatic, query type, dative, dotted (H-bond), and/or bold. Applied even if valency is exceeded (the sketcher shows an octet warning) unless strict=true, which fails with a reason instead.',
   inputSchema: schemas.updateBond,
   apply: (prev, input) => {
     const patch: Partial<
@@ -806,7 +807,12 @@ const updateBondCmd: MoleculeCommand<z.infer<typeof schemas.updateBond>> = {
     if ('aromatic' in input) patch.aromatic = input.aromatic;
     if ('queryType' in input) patch.queryType = input.queryType ?? undefined;
     if ('bold' in input) patch.bold = input.bold;
-    return { next: Mut.updateBondSafe(prev, input.bondId, patch) };
+    const opts = { strict: input.strict === true };
+    if (opts.strict) {
+      const reason = Mut.explainBondUpdateRejection(prev, input.bondId, patch, opts);
+      if (reason) throw new Error(`Cannot update bond: ${reason}.`);
+    }
+    return { next: Mut.updateBondSafe(prev, input.bondId, patch, opts) };
   },
 };
 

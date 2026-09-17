@@ -6,6 +6,7 @@
  * Whole-molecule or whole-fragment selection must not rewrite every bond.
  */
 import type { Molecule } from '@moldraw/domain';
+import { covalentBondOrderContribution, getMaxValencyForElement } from '@moldraw/domain';
 import { connectedComponents } from '@moldraw/engine/graph';
 import {
   BOND_TOOLS,
@@ -91,4 +92,24 @@ export function bondIdsTargetedBySelection(
 /** Patch sent to `molecule.updateBond` (`null` clears stereo / ramp / query). */
 export function bondPatchForStyleTool(toolId: BondStyleToolId) {
   return bondCommandPatchForStyleTool(toolId);
+}
+
+/**
+ * Atoms whose covalent bond-order sum exceeds the element's maximum valency.
+ * Bond edits are never blocked on valency; this drives the octet hint text.
+ */
+export function overValentAtomIds(molecule: Molecule): string[] {
+  const sum = new Map<string, number>();
+  for (const b of molecule.bonds) {
+    const c = covalentBondOrderContribution(b);
+    if (!c) continue;
+    sum.set(b.fromAtomId, (sum.get(b.fromAtomId) ?? 0) + c);
+    sum.set(b.toAtomId, (sum.get(b.toAtomId) ?? 0) + c);
+  }
+  const out: string[] = [];
+  for (const a of molecule.atoms) {
+    const s = sum.get(a.id) ?? 0;
+    if (s > getMaxValencyForElement(a.element, a.charge ?? 0)) out.push(a.id);
+  }
+  return out;
 }

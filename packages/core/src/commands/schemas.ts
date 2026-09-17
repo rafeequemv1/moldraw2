@@ -674,9 +674,23 @@ export const schemas = {
   }),
 
   // ─── Bonds ─────────────────────────────────────────────────────────────
-  addBond: z.object({ bond: newBond }),
+  addBond: z.object({
+    bond: newBond,
+    strict: z
+      .boolean()
+      .optional()
+      .describe(
+        'True refuses chemically undefined results (valency overflow, cumulated ring doubles, ring triples). Default false: apply and let the sketcher show an octet warning.',
+      ),
+  }),
   updateBond: z.object({
     bondId: bondIdRef,
+    strict: z
+      .boolean()
+      .optional()
+      .describe(
+        'True refuses chemically undefined results (valency overflow, cumulated ring doubles, ring triples). Default false: apply and let the sketcher show an octet warning.',
+      ),
     order: z.number().int().min(1).max(3).describe('New bond order: 1 single, 2 double, 3 triple; omit to keep.').optional(),
     /** Pass `null` to clear stereo (Zod strips `undefined`, so null is required to remove wedges). */
     stereo: z

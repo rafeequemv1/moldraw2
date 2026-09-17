@@ -105,7 +105,10 @@ export const drawAtomTool: RegisteredAiTool = {
     if (input.attachToAtomId) {
       steps.push({
         id: CMD.AddBond,
-        input: { bond: { id: bondId, fromAtomId: input.attachToAtomId, toAtomId: atomId, order: input.bondOrder } },
+        input: {
+          bond: { id: bondId, fromAtomId: input.attachToAtomId, toAtomId: atomId, order: input.bondOrder },
+          strict: true,
+        },
       });
     }
     const r = runAtomic(ctx, steps);
@@ -146,6 +149,7 @@ export const drawBondTool: RegisteredAiTool = {
     const id = newId();
     const r = dispatchCommand(ctx, CMD.AddBond, {
       bond: { id, fromAtomId: input.fromAtomId, toAtomId: input.toAtomId, order: input.order, stereo: input.stereo },
+      strict: true,
     });
     if (!r.ok) return r;
     return toolOk({ newAtomIds: [], newBondIds: extraOf(r)?.newBondIds ?? [id] });
@@ -482,7 +486,9 @@ export const editBondTool: RegisteredAiTool = {
     const input = raw as z.infer<typeof editBondInput>;
     const steps: CommandStep[] = [];
     if (input.order !== undefined || input.stereo !== undefined) {
-      const patch: Record<string, unknown> = { bondId: input.bondId };
+      // Agents get a hard refusal (with reason) for undefined chemistry; only
+      // the human sketcher path is relaxed.
+      const patch: Record<string, unknown> = { bondId: input.bondId, strict: true };
       if (input.order !== undefined) patch.order = input.order;
       if (input.stereo !== undefined) patch.stereo = input.stereo === 'none' ? null : input.stereo;
       steps.push({ id: CMD.UpdateBond, input: patch });

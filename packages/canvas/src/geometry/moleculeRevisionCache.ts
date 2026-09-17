@@ -3,7 +3,7 @@
  * Store updates always produce a new `Molecule` reference, so identity is enough.
  */
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
-import { analyzeStereoIssues } from '@moldraw/domain';
+import { analyzeStereoIssues, getMaxValencyForElement } from '@moldraw/domain';
 import { documentFragmentBoxes, type FragmentBox } from '@moldraw/core';
 import { parseInstanceBondId } from '@moldraw/core';
 import type { Point } from './polygons';
@@ -15,6 +15,12 @@ export type MoleculeRevisionCache = {
   bondById: Map<string, Bond>;
   valencyMap: Map<string, number>;
   stereoWarningAtomIds: ReadonlySet<string>;
+  /**
+   * Octet / valence warning: atom id → bond-order surplus over the element's
+   * maximum valency (e.g. C with five bonds → 1). Drawing never blocks on
+   * valency, so this is how the user sees what still needs fixing.
+   */
+  overValentAtoms: ReadonlyMap<string, number>;
   /** Bond id → smallest-ring centroid (doubles/aromatics that need it). */
   ringCenterByBondId: Map<string, Point>;
   /** Bond id → atom ids of the smallest cycle (for in-plane double offsets in 3D). */
@@ -39,6 +45,14 @@ export const getMoleculeRevisionCache = (mol: Molecule): MoleculeRevisionCache =
     if (b.dative || b.dotted || b.queryType) continue;
     valencyMap.set(b.fromAtomId, (valencyMap.get(b.fromAtomId) || 0) + (b.aromatic ? 1 : b.order));
     valencyMap.set(b.toAtomId, (valencyMap.get(b.toAtomId) || 0) + (b.aromatic ? 1 : b.order));
+  }
+
+  const overValentAtoms = new Map<string, number>();
+  for (const [atomId, sum] of valencyMap) {
+    const atom = atomById.get(atomId);
+    if (!atom) continue;
+    const surplus = sum - getMaxValencyForElement(atom.element, atom.charge ?? 0);
+    if (surplus > 0) overValentAtoms.set(atomId, surplus);
   }
 
   const ringCenterByBondId = new Map<string, Point>();
@@ -91,6 +105,7 @@ export const getMoleculeRevisionCache = (mol: Molecule): MoleculeRevisionCache =
     bondById,
     valencyMap,
     stereoWarningAtomIds: analyzeStereoIssues(mol),
+    overValentAtoms,
     ringCenterByBondId,
     ringAtomIdsByBondId,
     fragmentBoxes,

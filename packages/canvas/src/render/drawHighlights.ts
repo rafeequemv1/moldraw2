@@ -13,6 +13,7 @@ import {
 } from '../geometry';
 import { PLACE_FRAGMENT_TOOL_ID } from '@moldraw/core';
 import {
+  ballStickAtomRadius,
   ballStickSelectionAtomRadius,
   ballStickSelectionBondWidth,
 } from '../themes/ballStick/draw';
@@ -458,6 +459,58 @@ export const drawErrorAtomMarker = (
   ctx.arc(errorAtom.x, errorAtom.y, 16, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+};
+
+/**
+ * Octet / valence warning. Drawing never blocks on valency, so an over-filled
+ * atom (C with five bonds, N with four neutral bonds, …) gets a soft red-orange
+ * ring plus a small "+n" badge for the bond-order surplus. Purely visual — the
+ * structure is left exactly as the user drew it (no auto-fix, no kekulize).
+ */
+export const drawOverValentMarkers = (
+  ctx: CanvasRenderingContext2D,
+  R: RenderContext,
+): void => {
+  const over = R.overValentAtoms;
+  if (!over || over.size === 0) return;
+  const z = R.viewport.zoom || 1;
+  const ballStick = (R.structureDrawMode ?? 'skeletal') === 'ball-stick';
+  // Constant on-screen size so the ring reads the same at any zoom; in
+  // ball-and-stick sit just outside the sphere so the sphere can't hide it.
+  const lw = 1.75 / z;
+  const badgeR = 8 / z;
+  ctx.save();
+  for (const [id, surplus] of over) {
+    if (id === R.errorAtomId) continue;
+    const at = R.renderedMolecule.atoms.find(a => a.id === id);
+    if (!at) continue;
+    const radius = ballStick
+      ? Math.max(15 / z, ballStickAtomRadius(R, at.element) * 1.25 + 3 / z)
+      : 15 / z;
+    ctx.beginPath();
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.14)';
+    ctx.strokeStyle = 'rgba(234, 88, 12, 0.9)';
+    ctx.lineWidth = lw;
+    ctx.setLineDash([3 / z, 2.5 / z]);
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // "+n" badge at the upper-right of the ring.
+    const bx = at.x + radius * 0.85;
+    const by = at.y - radius * 0.85;
+    ctx.beginPath();
+    ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
+    ctx.fillStyle = '#ea580c';
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 ${10 / z}px system-ui, -apple-system, Segoe UI, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`+${surplus}`, bx, by + 0.3 / z);
+  }
+  ctx.restore();
 };
 
 /** Amber indicator for stereochemistry warnings (does not hide structures). */

@@ -29,6 +29,7 @@ import {
   bondIdsTargetedBySelection,
   bondPatchForStyleTool,
   isBondStyleToolId,
+  overValentAtomIds,
 } from './app/bondToolSelection';
 import { useMoleculeEditor } from './app/hooks/useMoleculeEditor';
 import { useDrawingToolState } from './app/hooks/useDrawingToolState';
@@ -1288,15 +1289,15 @@ function App() {
             }
           }
           if (changed === 0 && blocked > 0) {
-            setSmilesBarHint(
-              'Could not change bond — would break valency or ring double-bond rules.',
-            );
-          } else if (blocked > 0 && changed > 0) {
-            setSmilesBarHint(
-              `Updated ${changed} bond(s); ${blocked} blocked by chemistry rules.`,
-            );
+            setSmilesBarHint('Could not change bond.');
           } else if (changed > 0) {
-            setSmilesBarHint('');
+            // Chemistry never blocks the edit; surface an octet heads-up instead.
+            const over = overValentAtomIds(editorStore.getMolecule()).length;
+            setSmilesBarHint(
+              over > 0
+                ? `${over} atom${over === 1 ? '' : 's'} exceed${over === 1 ? 's' : ''} normal valence — marked in orange. Adjust bonds or charges to fix.`
+                : '',
+            );
             // Clear selection so the next toolbar click switches tools normally.
             editorStore.setSelection({ atomIds: [], bondIds: [] });
           }

@@ -48,6 +48,7 @@ import {
   drawCanvasShapeGhost,
   drawErrorAtomMarker,
   drawStereoWarningMarkers,
+  drawOverValentMarkers,
   drawGrid,
   drawMarquee,
   drawPencilGhost,
@@ -505,6 +506,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
     let ringCenterByBondId = topologyCache.ringCenterByBondId;
     let ringAtomIdsByBondId = topologyCache.ringAtomIdsByBondId;
     let stereoWarningAtomIds = topologyCache.stereoWarningAtomIds;
+    let overValentAtoms = topologyCache.overValentAtoms;
     let valencyMap = topologyCache.valencyMap;
     if (translating) {
       atomById = new Map(renderedAtoms.map(a => [a.id, a]));
@@ -523,6 +525,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       ringCenterByBondId = renderedCache.ringCenterByBondId;
       ringAtomIdsByBondId = renderedCache.ringAtomIdsByBondId;
       stereoWarningAtomIds = renderedCache.stereoWarningAtomIds;
+      overValentAtoms = renderedCache.overValentAtoms;
       valencyMap = renderedCache.valencyMap;
     } else {
       atomById = new Map(
@@ -628,6 +631,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       touchPointerWorldPos: o.touchPointerWorldPos ?? null,
       errorAtomId: o.errorAtomId,
       stereoWarningAtomIds,
+      overValentAtoms,
       cipAtomLabels: o.cipAtomLabels ?? null,
       cipBondLabels: o.cipBondLabels ?? null,
       showCipLabels: o.showCipLabels ?? false,
@@ -686,6 +690,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
     drawFragmentPlacementGhost(ctx, R);
     drawErrorAtomMarker(ctx, R);
     drawStereoWarningMarkers(ctx, R);
+    drawOverValentMarkers(ctx, R);
     drawSelectionTransformHandle(ctx, R);
     drawPencilGhost(ctx, R);
     drawCanvasShapeGhost(ctx, R);
