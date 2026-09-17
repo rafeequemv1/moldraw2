@@ -1239,9 +1239,10 @@ export const addChairRing = (
   bondLengthPx: number,
   rootAtomId?: string,
   attachedViaBond?: boolean,
+  rotationRad = 0,
 ): Molecule => {
   const display = displayCoordsMolecule(prev);
-  const pts = chairRingVertices(center, bondLengthPx);
+  const pts = chairRingVertices(center, bondLengthPx, rotationRad);
   // Only merge when nearly coincident — 28px was stealing nearby crowded atoms.
   const OVERLAP_RADIUS = Math.min(10, bondLengthPx * 0.22);
   const ids: string[] = [];
@@ -1311,9 +1312,10 @@ export const addBoatRing = (
   bondLengthPx: number = 40,
   rootAtomId?: string,
   attachedViaBond?: boolean,
+  rotationRad = 0,
 ): Molecule => {
   const display = displayCoordsMolecule(prev);
-  const pts = boatRingVertices(center, bondLengthPx);
+  const pts = boatRingVertices(center, bondLengthPx, rotationRad);
   const OVERLAP_RADIUS = Math.min(10, bondLengthPx * 0.22);
   const ids: string[] = [];
   const newAtoms: Atom[] = [];

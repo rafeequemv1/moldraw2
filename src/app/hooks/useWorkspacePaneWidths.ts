@@ -4,11 +4,15 @@ const STORAGE_CHAT = 'moldraw.workspace.chatWidth';
 const STORAGE_VIEWER3D = 'moldraw.workspace.viewer3dWidth';
 
 const CHAT_DEFAULT = 340;
-const VIEWER3D_DEFAULT = 420;
+/** Previous factory pixel width — treat as unset so the 50% default applies. */
+const VIEWER3D_LEGACY_DEFAULT_PX = 420;
+/** Default 3D pane share of the editor (2D + 3D, excluding chat). */
+const VIEWER3D_DEFAULT_RATIO = 0.5;
 const CHAT_MIN = 260;
 const CHAT_MAX = 560;
 const VIEWER3D_MIN = 280;
-const VIEWER3D_MAX = 900;
+/** High enough that a 50% default is not clipped on typical/wide monitors. */
+const VIEWER3D_MAX = 2400;
 const PANE2D_MIN = 200;
 
 function readStored(key: string, fallback: number): number {
@@ -22,6 +26,29 @@ function readStored(key: string, fallback: number): number {
   }
 }
 
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
+
+function fallbackViewer3DWidth(): number {
+  const w = typeof window === 'undefined' ? 1200 : window.innerWidth;
+  return clamp(Math.round(w * VIEWER3D_DEFAULT_RATIO), VIEWER3D_MIN, VIEWER3D_MAX);
+}
+
+/** Custom saved widths are kept; missing or old factory 420px uses half the editor. */
+function readStoredViewer3DWidth(): number {
+  try {
+    const raw = localStorage.getItem(STORAGE_VIEWER3D);
+    if (!raw) return fallbackViewer3DWidth();
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) return fallbackViewer3DWidth();
+    if (n === VIEWER3D_LEGACY_DEFAULT_PX) return fallbackViewer3DWidth();
+    return n;
+  } catch {
+    return fallbackViewer3DWidth();
+  }
+}
+
 function writeStored(key: string, value: number): void {
   try {
     localStorage.setItem(key, String(Math.round(value)));
@@ -30,15 +57,9 @@ function writeStored(key: string, value: number): void {
   }
 }
 
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
-}
-
 export function useWorkspacePaneWidths(showChatPanel: boolean, show3DViewer: boolean) {
   const [chatWidth, setChatWidth] = useState(() => readStored(STORAGE_CHAT, CHAT_DEFAULT));
-  const [viewer3DWidth, setViewer3DWidth] = useState(() =>
-    readStored(STORAGE_VIEWER3D, VIEWER3D_DEFAULT),
-  );
+  const [viewer3DWidth, setViewer3DWidth] = useState(readStoredViewer3DWidth);
   const bodyRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {

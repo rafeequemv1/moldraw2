@@ -864,10 +864,17 @@ const addBoatRingCmd: MoleculeCommand<
   id: CMD.AddBoatRing,
   description: 'Add a boat-conformer cyclohexane ring at `center`.',
   inputSchema: schemas.addBoatRing,
-  apply: (prev, { center, bondLengthPx, rootAtomId, attachedViaBond }) =>
+  apply: (prev, { center, bondLengthPx, rootAtomId, attachedViaBond, rotationRad }) =>
     withNewAtomIds(
       prev,
-      Mut.addBoatRing(prev, center, bondLengthPx ?? 40, rootAtomId, attachedViaBond),
+      Mut.addBoatRing(
+        prev,
+        center,
+        bondLengthPx ?? 40,
+        rootAtomId,
+        attachedViaBond,
+        rotationRad,
+      ),
     ),
 };
 
@@ -878,10 +885,10 @@ const addChairRingCmd: MoleculeCommand<
   id: CMD.AddChairRing,
   description: 'Add a chair-conformer cyclohexane ring at `center`.',
   inputSchema: schemas.addChairRing,
-  apply: (prev, { center, bondLengthPx, rootAtomId, attachedViaBond }) =>
+  apply: (prev, { center, bondLengthPx, rootAtomId, attachedViaBond, rotationRad }) =>
     withNewAtomIds(
       prev,
-      Mut.addChairRing(prev, center, bondLengthPx, rootAtomId, attachedViaBond),
+      Mut.addChairRing(prev, center, bondLengthPx, rootAtomId, attachedViaBond, rotationRad),
     ),
 };
 

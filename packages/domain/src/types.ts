@@ -600,8 +600,15 @@ export interface ReactionArrow {
   reagentAbove?: string;
   /** Reagents / conditions drawn below the arrow shaft (multi-line: newline). */
   reagentBelow?: string;
-  /** Canvas px for reagent lines (default applied in renderer if omitted). */
+  /**
+   * Shared canvas px for both reagent lines when per-slot sizes are omitted.
+   * Default applied in renderer if omitted (`DEFAULT_REAGENT_FONT_SIZE`).
+   */
   reagentFontSize?: number;
+  /** Canvas px for text above the shaft; falls back to `reagentFontSize` then default. */
+  reagentAboveFontSize?: number;
+  /** Canvas px for text below the shaft; falls back to `reagentFontSize` then default. */
+  reagentBelowFontSize?: number;
   /** Fill color for reagent text (hex). */
   reagentColor?: string;
   reagentFontWeight?: 'normal' | 'bold';

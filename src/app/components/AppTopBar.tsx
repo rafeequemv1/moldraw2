@@ -534,7 +534,7 @@ export function AppTopBar(props: AppTopBarProps) {
               aria-label={t('topBar.home')}
               aria-pressed={ribbonMode === 'home'}
             >
-              <Home size={15} strokeWidth={2} aria-hidden />
+              <Home size={14} strokeWidth={2} aria-hidden />
               {t('topBar.home')}
             </button>
           ) : null}
@@ -547,7 +547,7 @@ export function AppTopBar(props: AppTopBarProps) {
               aria-label={drawToolsOpen ? t('topBar.hideDraw') : t('topBar.draw')}
               aria-pressed={drawToolsOpen}
             >
-              <Pencil size={15} strokeWidth={2} aria-hidden />
+              <Pencil size={14} strokeWidth={2} aria-hidden />
               {t('topBar.draw')}
               {drawToolsOpen ? <X size={11} strokeWidth={2.4} aria-hidden /> : null}
             </button>

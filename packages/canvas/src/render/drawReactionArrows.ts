@@ -2,7 +2,7 @@
  * Reaction arrows, endpoint handles when selected, reagent labels, and draw ghost.
  */
 import type { ReactionArrow } from '@moldraw/domain';
-import { reactionArrowSupportsReagentLabels } from '@moldraw/domain';
+import { reactionArrowSupportsReagentLabels, resolveReagentFontSize } from '@moldraw/domain';
 import {
   formatReagentLineForCanvas,
   getLonePairPlacements,
@@ -71,19 +71,18 @@ const drawEditHandles = (
 const drawReagentLabels = (ctx: CanvasRenderingContext2D, a: ReactionArrow, R: RenderContext): void => {
   if (!a.reagentAbove?.trim() && !a.reagentBelow?.trim()) return;
   const { mx, my, nx, ny, angle: labelAngle } = reactionArrowReagentLabelAnchor(a);
-  const fs = a.reagentFontSize ?? 14;
-  const lineGap = fs * 1.18;
-  const baseOff = 18 + fs * 0.45;
   const weight = a.reagentFontWeight === 'bold' ? 700 : 500;
 
   ctx.save();
   ctx.fillStyle = a.reagentColor ?? R.structureTheme.ink;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `${weight} ${fs}px system-ui, sans-serif`;
 
   const fmt = a.reagentFormat;
-  const drawStack = (lines: string[], sign: 1 | -1) => {
+  const drawStack = (lines: string[], sign: 1 | -1, fs: number) => {
+    const lineGap = fs * 1.18;
+    const baseOff = 18 + fs * 0.45;
+    ctx.font = `${weight} ${fs}px system-ui, sans-serif`;
     lines.forEach((line, li) => {
       const display = formatReagentLineForCanvas(line, fmt);
       const off = baseOff + li * lineGap;
@@ -101,12 +100,14 @@ const drawReagentLabels = (ctx: CanvasRenderingContext2D, a: ReactionArrow, R: R
     drawStack(
       a.reagentAbove.split('\n').map(s => s.trim()).filter(Boolean),
       1,
+      resolveReagentFontSize(a, 'above'),
     );
   }
   if (a.reagentBelow?.trim()) {
     drawStack(
       a.reagentBelow.split('\n').map(s => s.trim()).filter(Boolean),
       -1,
+      resolveReagentFontSize(a, 'below'),
     );
   }
   ctx.restore();

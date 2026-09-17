@@ -9,8 +9,19 @@
  */
 import { boatRingVertices } from '@moldraw/core';
 import { chairRingVertices } from '@moldraw/core';
-import { computeAutoExtendAngle, getChainPoints, chainVertexLabelOffset, type Point } from '../geometry';
-import { computeRingFusionGeometry } from '../interaction/toolRing';
+import {
+  bestRingAttachGrowAngle,
+  computeAutoExtendAngle,
+  getChainPoints,
+  chainVertexLabelOffset,
+  type Point,
+} from '../geometry';
+import {
+  atomRootedRingGeometry,
+  computeRingFusionGeometry,
+  isAtomRingAttachDrag,
+  type AtomRootedRingKind,
+} from '../interaction/toolRing';
 import type { RenderContext } from './types';
 
 const BOND_TOOL_NAMES = new Set([
@@ -272,6 +283,7 @@ export const drawRingGhost = (ctx: CanvasRenderingContext2D, R: RenderContext): 
   let angleOffset = -Math.PI / 2;
   let activeAngleStep = (Math.PI * 2) / numSides;
   let activeRadius = FIXED_BOND / (2 * Math.sin(Math.PI / numSides));
+  let templateRotation = 0;
 
   if (R.hoverBondId && !R.drawingRing) {
     const bond = R.renderedMolecule.bonds.find(b => b.id === R.hoverBondId);
@@ -293,49 +305,72 @@ export const drawRingGhost = (ctx: CanvasRenderingContext2D, R: RenderContext): 
     if (startAtom) {
       const dx = R.drawingRing.currentPos.x - startAtom.x;
       const dy = R.drawingRing.currentPos.y - startAtom.y;
-      if (Math.hypot(dx, dy) > 10) {
+      const dist = Math.hypot(dx, dy);
+      const kind: AtomRootedRingKind = R.isBoatTool ? 'boat' : R.isChairTool ? 'chair' : 'regular';
+      const attachedViaBond = isAtomRingAttachDrag(dist, FIXED_BOND);
+      let growAngle: number;
+      if (attachedViaBond) {
         const snapAngle =
           R.displayPrefs.bondAngleSnapRad > 1e-9 ? R.displayPrefs.bondAngleSnapRad : Math.PI / 6;
-        let dragAngle = Math.atan2(dy, dx);
-        dragAngle = Math.round(dragAngle / snapAngle) * snapAngle;
-        const endX = startAtom.x + Math.cos(dragAngle) * FIXED_BOND;
-        const endY = startAtom.y + Math.sin(dragAngle) * FIXED_BOND;
-
+        growAngle = Math.round(Math.atan2(dy, dx) / snapAngle) * snapAngle;
+      } else {
+        growAngle = bestRingAttachGrowAngle(startAtom, R.renderedMolecule);
+      }
+      const geom = atomRootedRingGeometry({
+        startAtom,
+        growAngle,
+        numSides,
+        bondLengthPx: FIXED_BOND,
+        attachedViaBond,
+        kind,
+      });
+      if (geom.linkEnd) {
         ctx.beginPath();
         ctx.moveTo(startAtom.x, startAtom.y);
-        ctx.lineTo(endX, endY);
+        ctx.lineTo(geom.linkEnd.x, geom.linkEnd.y);
         ctx.setLineDash([5, 5]);
         ctx.stroke();
         ctx.setLineDash([]);
-
-        center = {
-          x: endX + activeRadius * Math.cos(dragAngle),
-          y: endY + activeRadius * Math.sin(dragAngle),
-        };
-        angleOffset = dragAngle + Math.PI;
-      } else {
-        center = { x: startAtom.x, y: startAtom.y + activeRadius };
       }
+      center = geom.center;
+      angleOffset = geom.angleOffset;
+      activeRadius = geom.radius;
+      if (kind !== 'regular' && !attachedViaBond) templateRotation = geom.angleOffset;
     } else {
       center = R.drawingRing.currentPos;
     }
   } else if (R.hoverAtomId) {
     const hoverAtom = R.renderedMolecule.atoms.find(a => a.id === R.hoverAtomId);
-    if (hoverAtom) center = { x: hoverAtom.x, y: hoverAtom.y + activeRadius };
+    if (hoverAtom) {
+      const kind: AtomRootedRingKind = R.isBoatTool ? 'boat' : R.isChairTool ? 'chair' : 'regular';
+      const growAngle = bestRingAttachGrowAngle(hoverAtom, R.renderedMolecule);
+      const geom = atomRootedRingGeometry({
+        startAtom: hoverAtom,
+        growAngle,
+        numSides,
+        bondLengthPx: FIXED_BOND,
+        attachedViaBond: false,
+        kind,
+      });
+      center = geom.center;
+      angleOffset = geom.angleOffset;
+      activeRadius = geom.radius;
+      if (kind !== 'regular') templateRotation = geom.angleOffset;
+    }
   }
 
   if (!center) return;
 
   ctx.beginPath();
   if (R.isChairTool) {
-    const verts = chairRingVertices(center, FIXED_BOND);
+    const verts = chairRingVertices(center, FIXED_BOND, templateRotation);
     verts.forEach((v, i) => {
       if (i === 0) ctx.moveTo(v.x, v.y);
       else ctx.lineTo(v.x, v.y);
     });
     ctx.closePath();
   } else if (R.isBoatTool) {
-    const verts = boatRingVertices(center, FIXED_BOND);
+    const verts = boatRingVertices(center, FIXED_BOND, templateRotation);
     verts.forEach((v, i) => {
       if (i === 0) ctx.moveTo(v.x, v.y);
       else ctx.lineTo(v.x, v.y);

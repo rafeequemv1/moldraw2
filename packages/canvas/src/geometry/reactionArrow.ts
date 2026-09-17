@@ -2,7 +2,7 @@
  * Reaction-arrow drawing, sampling for hit-tests, and chord-based helpers.
  */
 import type { Molecule, ReactionArrow, ReactionArrowKind } from '@moldraw/domain';
-import { resolveArrowHeadKind } from '@moldraw/domain';
+import { resolveArrowHeadKind, resolveReagentFontSize } from '@moldraw/domain';
 import { resolveReactionArrowGeometry } from '@moldraw/core';
 import { pointSegDist } from './angles';
 
@@ -610,11 +610,11 @@ export const reactionArrowReagentSlotPositions = (
   a: ReactionArrow,
 ): Record<ReactionArrowReagentSlot, { x: number; y: number }> => {
   const { mx, my, nx, ny } = reactionArrowReagentLabelAnchor(a);
-  const fs = a.reagentFontSize ?? 14;
-  const baseOff = 18 + fs * 0.45;
+  const aboveOff = 18 + resolveReagentFontSize(a, 'above') * 0.45;
+  const belowOff = 18 + resolveReagentFontSize(a, 'below') * 0.45;
   return {
-    above: { x: mx + nx * baseOff, y: my + ny * baseOff },
-    below: { x: mx - nx * baseOff, y: my - ny * baseOff },
+    above: { x: mx + nx * aboveOff, y: my + ny * aboveOff },
+    below: { x: mx - nx * belowOff, y: my - ny * belowOff },
   };
 };
 

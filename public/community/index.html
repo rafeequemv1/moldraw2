@@ -620,6 +620,10 @@
     .inline-image-preview-grid.visible {
       display: grid;
     }
+    .comment-form .inline-image-preview-grid,
+    .feature-request-form .inline-image-preview-grid {
+      grid-column: 1 / -1;
+    }
     .inline-image-preview-card {
       position: relative;
       min-height: 74px;
@@ -979,6 +983,14 @@
     .mention-composer {
       position: relative;
       min-width: 0;
+      width: 100%;
+    }
+    .comment-form .mention-composer textarea {
+      width: 100%;
+    }
+    .post-modal-body .mention-menu {
+      bottom: auto;
+      top: calc(100% + 4px);
     }
     .mention-menu {
       position: absolute;
@@ -1747,7 +1759,10 @@
           </div>
         </div>
         <input id="post-title" type="text" maxlength="160" placeholder="Add a short title">
-        <textarea id="post-body" maxlength="4000" placeholder="Write something useful for chemists..."></textarea>
+        <div class="mention-composer">
+          <textarea id="post-body" maxlength="4000" placeholder="Write something useful for chemists..."></textarea>
+          <div class="mention-menu" hidden role="listbox" aria-label="Mention people"></div>
+        </div>
         <div class="post-add-box">
           <span>Add to your post</span>
           <span class="post-add-icons" aria-hidden="true">Image People Idea</span>
@@ -1783,6 +1798,7 @@
             Optional images
             <input id="feature-request-images" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
           </label>
+          <div id="feature-request-image-preview" class="inline-image-preview-grid" aria-live="polite"></div>
           <button class="post-modal-submit" type="submit">Send request</button>
         </form>
       </div>
@@ -1854,6 +1870,8 @@
     let reportTarget = null;
     let selectedPostFiles = [];
     let postPreviewUrls = [];
+    let selectedFeatureFiles = [];
+    let featurePreviewUrls = [];
     const expandedCommentThreads = new Set();
     const expandedReplyThreads = new Set();
     const commentCache = new Map();
@@ -2119,7 +2137,7 @@
             </div>
           </div>
           <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}${isFeature ? renderFeatureStatus(item.status) : ''}</h1>
-          <p class="card-body">${escapeHtml(isFeature ? item.description : item.body)}</p>
+          <p class="card-body">${isFeature ? escapeHtml(item.description) : renderCommentBody(item.body)}</p>
           ${renderImages(item.image_urls, isFeature ? 'Feature request attachment' : 'Community attachment')}
           <div class="comments visible" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
           <section class="thread-reply-composer card-reply-composer" aria-label="Write a reply">
@@ -2133,6 +2151,7 @@
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
               </label>
               <button class="btn btn-primary" type="button">Reply</button>
+              <div class="inline-image-preview-grid" data-composer-preview></div>
             </div>
           </section>
         </article>
@@ -2292,18 +2311,42 @@
       return escapeHtml(body).replace(/@([A-Za-z0-9_]{2,40})/g, '<span class="comment-mention">@$1</span>');
     }
 
-    function mentionsInBody(input, body) {
+    function mentionHandlesInText(body) {
+      const handles = [];
+      const seen = new Set();
+      for (const match of String(body || '').matchAll(/@([A-Za-z0-9_]{2,40})/g)) {
+        const handle = String(match[1] || '').toLowerCase();
+        if (!handle || seen.has(handle)) continue;
+        seen.add(handle);
+        handles.push(handle);
+      }
+      return handles;
+    }
+
+    async function resolveMentions(input, body) {
       const selected = mentionState.get(input)?.selected || [];
       const text = String(body || '');
       const unique = [];
       const seen = new Set();
+      const selfId = session?.user?.id;
       selected.forEach((user) => {
-        if (!user?.id || seen.has(user.id) || user.id === session?.user?.id) return;
+        if (!user?.id || seen.has(user.id) || user.id === selfId) return;
         const handle = mentionHandle(user);
         if (!new RegExp(`@${handle}\\b`, 'i').test(text) && !text.includes(`@${user.name || ''}`)) return;
         seen.add(user.id);
         unique.push({ id: user.id, handle, name: user.name });
       });
+      const missing = mentionHandlesInText(text).filter((handle) => (
+        !unique.some((user) => String(user.handle || '').toLowerCase() === handle)
+      ));
+      if (missing.length) {
+        const { data } = await client.rpc('resolve_community_mention_handles', { handles: missing });
+        (data || []).forEach((user) => {
+          if (!user?.id || seen.has(user.id) || user.id === selfId) return;
+          seen.add(user.id);
+          unique.push({ id: user.id, handle: mentionHandle(user), name: user.name });
+        });
+      }
       return unique;
     }
 
@@ -2412,11 +2455,16 @@
         const cursor = input.selectionStart || 0;
         const before = input.value.slice(0, cursor);
         const match = before.match(/@([A-Za-z0-9_]*)$/);
-        if (!match) {
+        if (!match || !session?.user) {
+          window.clearTimeout(timer);
           hideMentionMenu(input);
           return;
         }
         window.clearTimeout(timer);
+        if (!match[1]) {
+          timer = window.setTimeout(() => hideMentionMenu(input), 160);
+          return;
+        }
         timer = window.setTimeout(() => searchMentions(input, match[1]), 120);
       };
       input.addEventListener('input', onQuery);
@@ -2460,6 +2508,7 @@
       if (!form) return;
       const input = form.querySelector('textarea');
       const imageChip = form.querySelector('.comment-image-chip, .inline-image-chip');
+      const imageInput = form.querySelector('input[type="file"]');
       const button = form.querySelector('.btn, .btn-primary');
       const submit = () => {
         if (!requireAuth()) return;
@@ -2470,6 +2519,19 @@
         event.preventDefault();
         openAuthModal('Sign in to continue');
       });
+      if (form.dataset.imagePasteBound !== '1') {
+        form.dataset.imagePasteBound = '1';
+        form.addEventListener('paste', (event) => {
+          handleImagePasteEvent(event, (files) => addComposerImages(form, files));
+        });
+        imageInput?.addEventListener('change', (event) => {
+          const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'));
+          event.target.value = '';
+          if (!files.length) return;
+          if (!requireAuth()) return;
+          addComposerImages(form, files);
+        });
+      }
       if (button) button.addEventListener('click', submit);
       bindMentionComposer(input);
       bindEnterToSubmit(input, submit);
@@ -2488,6 +2550,7 @@
               <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
             </label>
             <button class="btn btn-primary" type="button">Reply</button>
+            <div class="inline-image-preview-grid" data-composer-preview></div>
           </div>
         </section>`;
     }
@@ -2522,6 +2585,7 @@
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
               </label>
               <button class="btn btn-primary" type="button">Reply</button>
+              <div class="inline-image-preview-grid" data-composer-preview></div>
             </div>`;
     }
 
@@ -2816,6 +2880,7 @@
     function closeFeatureRequestModal() {
       featureRequestModal.classList.remove('visible');
       featureRequestModal.setAttribute('aria-hidden', 'true');
+      clearFeatureImagePreviews();
     }
 
     function openReportModal(targetType, targetId, label) {
@@ -2873,9 +2938,170 @@
 
     function handlePostImageSelection(event) {
       const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'));
-      selectedPostFiles = selectedPostFiles.concat(files).slice(0, 6);
       event.target.value = '';
+      addPostImages(files);
+    }
+
+    function namedPastedImage(file) {
+      const type = file.type || 'image/png';
+      if (file.name && file.type) return file;
+      const subtype = type.split('/')[1] || 'png';
+      const ext = subtype === 'jpeg' ? 'jpg' : subtype;
+      return new File([file], file.name || `pasted-image.${ext}`, {
+        type,
+        lastModified: file.lastModified || Date.now()
+      });
+    }
+
+    function imageFilesFromClipboard(clipboard) {
+      if (!clipboard) return [];
+      const seen = new Set();
+      const files = [];
+      const add = (file) => {
+        if (!file || !String(file.type || '').startsWith('image/')) return;
+        const key = `${file.name}|${file.size}|${file.type}|${file.lastModified}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        files.push(namedPastedImage(file));
+      };
+      for (const item of Array.from(clipboard.items || [])) {
+        if (item.kind === 'file') add(item.getAsFile());
+      }
+      if (!files.length) {
+        for (const file of Array.from(clipboard.files || [])) add(file);
+      }
+      return files;
+    }
+
+    function handleImagePasteEvent(event, onFiles) {
+      const files = imageFilesFromClipboard(event.clipboardData);
+      if (!files.length) return;
+      event.preventDefault();
+      if (!requireAuth()) return;
+      onFiles(files);
+    }
+
+    function addPostImages(files) {
+      if (!files?.length) return;
+      selectedPostFiles = selectedPostFiles.concat(files).slice(0, 6);
       renderPostImagePreviews();
+    }
+
+    function handlePostImagePaste(event) {
+      handleImagePasteEvent(event, (files) => {
+        if (editingPostId) return;
+        addPostImages(files);
+      });
+    }
+
+    function composerPendingFiles(form) {
+      return form?._pendingImageFiles || [];
+    }
+
+    function clearComposerImages(form) {
+      if (!form) return;
+      (form._previewUrls || []).forEach((url) => URL.revokeObjectURL(url));
+      form._pendingImageFiles = [];
+      form._previewUrls = [];
+      const preview = form.querySelector('[data-composer-preview]');
+      if (preview) {
+        preview.classList.remove('visible');
+        preview.innerHTML = '';
+      }
+      const input = form.querySelector('input[type="file"]');
+      if (input) input.value = '';
+    }
+
+    function renderComposerImagePreviews(form) {
+      if (!form) return;
+      const preview = form.querySelector('[data-composer-preview]');
+      const files = composerPendingFiles(form);
+      (form._previewUrls || []).forEach((url) => URL.revokeObjectURL(url));
+      form._previewUrls = files.map((file) => URL.createObjectURL(file));
+      if (!preview) return;
+      preview.classList.toggle('visible', files.length > 0);
+      preview.innerHTML = files.map((file, index) => `
+        <div class="inline-image-preview-card">
+          <img src="${form._previewUrls[index]}" alt="${escapeHtml(file.name || 'Selected image')}">
+          <button class="inline-image-remove" type="button" data-remove-composer-image="${index}" aria-label="Remove selected image">×</button>
+        </div>
+      `).join('');
+      preview.querySelectorAll('[data-remove-composer-image]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const index = Number(button.getAttribute('data-remove-composer-image'));
+          form._pendingImageFiles.splice(index, 1);
+          renderComposerImagePreviews(form);
+        });
+      });
+    }
+
+    function addComposerImages(form, files, maxCount = 6) {
+      if (!form || !files?.length) return;
+      form._pendingImageFiles = composerPendingFiles(form).concat(files).slice(0, maxCount);
+      renderComposerImagePreviews(form);
+    }
+
+    function filesForCommentSubmit(form, imageInput) {
+      const pending = composerPendingFiles(form);
+      if (pending.length) return pending;
+      return imageInput?.files ? Array.from(imageInput.files) : [];
+    }
+
+    function renderFeatureImagePreviews() {
+      const preview = document.getElementById('feature-request-image-preview');
+      if (!preview) return;
+      featurePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+      featurePreviewUrls = selectedFeatureFiles.map((file) => URL.createObjectURL(file));
+      preview.classList.toggle('visible', selectedFeatureFiles.length > 0);
+      preview.innerHTML = selectedFeatureFiles.map((file, index) => `
+        <div class="inline-image-preview-card">
+          <img src="${featurePreviewUrls[index]}" alt="${escapeHtml(file.name || 'Selected image')}">
+          <button class="inline-image-remove" type="button" data-remove-feature-image="${index}" aria-label="Remove selected image">×</button>
+        </div>
+      `).join('');
+      preview.querySelectorAll('[data-remove-feature-image]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const index = Number(button.getAttribute('data-remove-feature-image'));
+          selectedFeatureFiles.splice(index, 1);
+          renderFeatureImagePreviews();
+        });
+      });
+    }
+
+    function addFeatureImages(files) {
+      if (!files?.length) return;
+      selectedFeatureFiles = selectedFeatureFiles.concat(files).slice(0, 5);
+      renderFeatureImagePreviews();
+    }
+
+    function clearFeatureImagePreviews() {
+      featurePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+      featurePreviewUrls = [];
+      selectedFeatureFiles = [];
+      const input = document.getElementById('feature-request-images');
+      const preview = document.getElementById('feature-request-image-preview');
+      if (input) input.value = '';
+      if (preview) {
+        preview.classList.remove('visible');
+        preview.innerHTML = '';
+      }
+    }
+
+    function handleFeatureImageSelection(event) {
+      const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'));
+      event.target.value = '';
+      addFeatureImages(files);
+    }
+
+    function handleFeatureImagePaste(event) {
+      handleImagePasteEvent(event, addFeatureImages);
+    }
+
+    function handleLauncherImagePaste(event) {
+      handleImagePasteEvent(event, (files) => {
+        openPostModal();
+        addPostImages(files);
+      });
     }
 
     async function refreshSession() {
@@ -2968,12 +3194,17 @@
           error = result.error;
         } else {
           const imageUrls = await uploadImages(selectedPostFiles);
+          const mentioned = await resolveMentions(document.getElementById('post-body'), body);
           const result = await client.from('community_posts').insert({
             title,
             body,
             image_urls: imageUrls
-          });
+          }).select('id').single();
           error = result.error;
+          if (!error && result.data?.id) {
+            await saveMentions('community_posts', result.data.id, mentioned);
+            await pingCommunityNotify({ table: 'community_posts', type: 'INSERT', record: { id: result.data.id } });
+          }
         }
         if (error) throw error;
         document.getElementById('post-title').value = '';
@@ -3078,7 +3309,8 @@
       if (!requireAuth()) return;
       const body = input.value.trim();
       if (!body) return;
-      const pendingFiles = imageInput?.files ? Array.from(imageInput.files) : [];
+      const form = input.closest('.comment-form');
+      const pendingFiles = filesForCommentSubmit(form, imageInput);
       const localUrls = pendingFiles.map((file) => URL.createObjectURL(file));
       const pendingId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const optimistic = {
@@ -3098,11 +3330,11 @@
       expandedCommentThreads.add(postId);
       if (parentCommentId) expandedReplyThreads.add(parentCommentId);
       input.value = '';
-      if (imageInput) imageInput.value = '';
+      clearComposerImages(form);
       syncDiscussionCommentViews(postId);
       try {
+        const mentioned = await resolveMentions(input, body);
         const imageUrls = await uploadImages(pendingFiles);
-        const mentioned = mentionsInBody(input, body);
         const { data, error } = await client.from('community_comments').insert({
           post_id: postId,
           parent_comment_id: parentCommentId,
@@ -3390,7 +3622,8 @@
       if (!requireAuth()) return;
       const body = input.value.trim();
       if (!body) return;
-      const pendingFiles = imageInput?.files ? Array.from(imageInput.files) : [];
+      const form = input.closest('.comment-form');
+      const pendingFiles = filesForCommentSubmit(form, imageInput);
       const localUrls = pendingFiles.map((file) => URL.createObjectURL(file));
       const pendingId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const optimistic = {
@@ -3410,11 +3643,11 @@
       expandedFeatureCommentThreads.add(requestId);
       if (parentCommentId) expandedFeatureReplyThreads.add(parentCommentId);
       input.value = '';
-      if (imageInput) imageInput.value = '';
+      clearComposerImages(form);
       syncFeatureCommentViews(requestId);
       try {
+        const mentioned = await resolveMentions(input, body);
         const imageUrls = await uploadImages(pendingFiles);
-        const mentioned = mentionsInBody(input, body);
         const { data, error } = await client.from('feature_request_comments').insert({
           feature_request_id: requestId,
           parent_comment_id: parentCommentId,
@@ -3597,7 +3830,7 @@
               </div>
             </div>
             <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a></h2>
-            <p class="card-body">${escapeHtml(post.body)}</p>
+            <p class="card-body">${renderCommentBody(post.body)}</p>
             ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
               <button class="pill ${voted ? 'active' : ''}" type="button" data-vote-post="${escapeHtml(post.id)}" data-voted="${voted ? '1' : '0'}">▲ ${post.upvote_count || 0}</button>
@@ -3888,7 +4121,10 @@
       statusEl.textContent = 'Sending feature request...';
       try {
         const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const imageUrls = await uploadFeatureRequestImages(imageInput.files, requestId);
+        const imageUrls = await uploadFeatureRequestImages(
+          selectedFeatureFiles.length ? selectedFeatureFiles : Array.from(imageInput?.files || []),
+          requestId
+        );
         const { error } = await client.from('feature_requests').insert({
           title,
           description,
@@ -3897,7 +4133,7 @@
         if (error) throw error;
         titleInput.value = '';
         descriptionInput.value = '';
-        imageInput.value = '';
+        clearFeatureImagePreviews();
         closeFeatureRequestModal();
         await loadFeatureRequests();
       } catch (error) {
@@ -4002,12 +4238,17 @@
 
     document.getElementById('open-post-modal').addEventListener('click', () => openPostModal());
     document.getElementById('post-images').addEventListener('change', handlePostImageSelection);
+    document.getElementById('composer')?.addEventListener('paste', handleLauncherImagePaste);
+    document.querySelector('#post-modal .post-modal-body')?.addEventListener('paste', handlePostImagePaste);
+    document.getElementById('feature-request-images')?.addEventListener('change', handleFeatureImageSelection);
+    document.getElementById('community-feature-request-form')?.addEventListener('paste', handleFeatureImagePaste);
     document.querySelectorAll('[data-open-post-option]').forEach((button) => {
       button.addEventListener('click', () => openPostModal(button.getAttribute('data-open-post-option')));
     });
     document.getElementById('post-modal-close').addEventListener('click', closePostModal);
     postModal.addEventListener('click', (event) => { if (event.target === postModal) closePostModal(); });
     document.getElementById('submit-post').addEventListener('click', submitPost);
+    bindMentionComposer(document.getElementById('post-body'));
     bindEnterToSubmit(document.getElementById('post-body'), () => {
       if (!requireAuth()) return;
       submitPost();

@@ -92,8 +92,18 @@ export interface InfiniteCanvasProps {
     angleStep?: number,
     radius?: number,
   ) => void;
-  onAddBoatRing?: (center: Point, rootAtomId?: string, attachedViaBond?: boolean) => void;
-  onAddChairRing?: (center: Point, rootAtomId?: string, attachedViaBond?: boolean) => void;
+  onAddBoatRing?: (
+    center: Point,
+    rootAtomId?: string,
+    attachedViaBond?: boolean,
+    rotationRad?: number,
+  ) => void;
+  onAddChairRing?: (
+    center: Point,
+    rootAtomId?: string,
+    attachedViaBond?: boolean,
+    rotationRad?: number,
+  ) => void;
   onAddChain?: (points: Point[], startAtomId?: string) => void;
   onUpdateAtomCharge?: (atomId: string, delta: number) => void;
   onSetAtomCharge?: (atomId: string, charge: number, markStyle?: 'plain' | 'circled') => void;

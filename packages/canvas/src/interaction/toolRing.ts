@@ -1,16 +1,116 @@
+import { boatRingVertices, chairRingVertices } from '@moldraw/core';
 import { getMaxValencyForElement } from '@moldraw/domain';
-import { bestSproutAngle } from '../geometry';
+import { bestRingAttachGrowAngle } from '../geometry';
 import {
   getAtomValency,
   pickAtomCenterAt,
   pickAtomOrBondForRingTool,
 } from './hitTest';
-
-const RING_ATTACH_OPTS = { includeLabels: false } as const;
 import type { InteractionContext } from './types';
 
-/** Drag past this (world px) from a root atom → attach via single bond. */
-const ATOM_ATTACH_DRAG_PX = 10;
+const RING_ATTACH_OPTS = { includeLabels: false } as const;
+
+/**
+ * Screen-px pointer travel before an atom-rooted ring press counts as a drag.
+ * Must stay well above a jittery click (generic click threshold is 5px mouse)
+ * so clicking an atom never takes the via-bond path.
+ */
+export const ATOM_RING_DRAG_SCREEN_PX = 18;
+
+/**
+ * World-px from the root atom before the ghost (and world-space fallback)
+ * treats the gesture as via-bond attach. Larger than the atom hit disk so an
+ * off-centre click is still a click.
+ */
+export const ATOM_ATTACH_DRAG_WORLD_PX = 32;
+
+export const isRingAtomClick = (
+  screenTravelPx: number,
+  clickDragThresholdPx: number,
+): boolean => screenTravelPx <= Math.max(clickDragThresholdPx, ATOM_RING_DRAG_SCREEN_PX);
+
+export const isAtomRingAttachDrag = (distWorld: number, bondLengthPx: number): boolean =>
+  distWorld > Math.max(ATOM_ATTACH_DRAG_WORLD_PX, bondLengthPx * 0.5);
+
+export type AtomRootedRingKind = 'regular' | 'chair' | 'boat';
+
+/** Geometry for growing a ring from an existing atom (click = share vertex, drag = linker).
+ *
+ * Click (attachedViaBond=false): the shared atom is vertex 0. `growAngle` is
+ * atom → ring centre. `angleOffset = growAngle + π` puts vertex 0 on the atom
+ * so an existing substituent along −growAngle is a radial spoke (toluene).
+ */
+export function atomRootedRingGeometry(opts: {
+  startAtom: { x: number; y: number };
+  growAngle: number;
+  numSides: number;
+  bondLengthPx: number;
+  attachedViaBond: boolean;
+  kind?: AtomRootedRingKind;
+}): {
+  center: { x: number; y: number };
+  angleOffset: number;
+  radius: number;
+  linkEnd: { x: number; y: number } | null;
+} {
+  const {
+    startAtom,
+    growAngle,
+    numSides,
+    bondLengthPx,
+    attachedViaBond,
+    kind = 'regular',
+  } = opts;
+  const radius = bondLengthPx / (2 * Math.sin(Math.PI / numSides));
+  const cos = Math.cos(growAngle);
+  const sin = Math.sin(growAngle);
+
+  if (attachedViaBond) {
+    const linkEnd = {
+      x: startAtom.x + cos * bondLengthPx,
+      y: startAtom.y + sin * bondLengthPx,
+    };
+    return {
+      center: { x: linkEnd.x + radius * cos, y: linkEnd.y + radius * sin },
+      angleOffset: growAngle + Math.PI,
+      radius,
+      linkEnd,
+    };
+  }
+
+  if (kind === 'chair' || kind === 'boat') {
+    const template =
+      kind === 'chair'
+        ? chairRingVertices({ x: 0, y: 0 }, bondLengthPx)
+        : boatRingVertices({ x: 0, y: 0 }, bondLengthPx);
+    const v0 = template[0] ?? { x: 0, y: 0 };
+    const v0Len = Math.hypot(v0.x, v0.y);
+    // Rotate so centroid → vertex 0 points at the atom (growAngle + π),
+    // i.e. the existing substituent is collinear with that spoke.
+    const rotation =
+      v0Len < 1e-6 ? 0 : growAngle + Math.PI - Math.atan2(v0.y, v0.x);
+    const c = Math.cos(rotation);
+    const s = Math.sin(rotation);
+    const rv0x = v0.x * c - v0.y * s;
+    const rv0y = v0.x * s + v0.y * c;
+    return {
+      center: { x: startAtom.x - rv0x, y: startAtom.y - rv0y },
+      angleOffset: rotation,
+      radius,
+      linkEnd: null,
+    };
+  }
+
+  return {
+    center: {
+      x: startAtom.x + radius * cos,
+      y: startAtom.y + radius * sin,
+    },
+    angleOffset: growAngle + Math.PI,
+    radius,
+    linkEnd: null,
+  };
+}
 
 const RING_TOOLS = [
   'benzene',
@@ -104,9 +204,10 @@ export const computeRingFusionGeometry = (
 /**
  * Ring tools (cyclo*, benzene, boat-cyclohexane).
  *
- * Pointer-down on an atom seeds a ring drag rooted at that atom (single-bond
- * attach on drag). Pointer-down on empty canvas / a bond is handled at
- * pointer-up via `hoverBondId` for side-to-side fusion.
+ * Pointer-down on an atom seeds a ring rooted at that atom. A short click
+ * shares the atom as a ring vertex; a real drag attaches via a single bond.
+ * Pointer-down on empty canvas / a bond is handled at pointer-up via
+ * `hoverBondId` for side-to-side fusion.
  */
 export const ringToolMouseDown = (ctx: InteractionContext): boolean => {
   const { e, worldPos, molecule } = ctx;
@@ -140,7 +241,8 @@ export const ringToolMouseMove = (ctx: InteractionContext): boolean => {
 
 /**
  * Pointer-up commit. Priority:
- *   1. Atom-rooted drag → attach via single bond (ChemDraw-style).
+ *   1. Atom-rooted click → share the atom as a ring vertex (no connector).
+ *      Atom-rooted drag → attach via a single bond (ChemDraw-style).
  *   2. Hovered / mid-shaft bond → side-to-side fusion.
  *   3. Free ring on empty canvas.
  */
@@ -154,7 +256,7 @@ export const ringToolMouseUp = (ctx: InteractionContext): boolean => {
   const isChair = isChairTool(activeTool);
   const distance = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
 
-  // ── 1. Atom-rooted: click or drag from an atom ───────────────────────────
+  // ── 1. Atom-rooted: click shares the vertex; drag attaches via a bond ────
   if (ctx.drawingRing?.startAtomId) {
     const rootAtomId = ctx.drawingRing.startAtomId;
     const startAtom = molecule.atoms.find(a => a.id === rootAtomId);
@@ -163,61 +265,66 @@ export const ringToolMouseUp = (ctx: InteractionContext): boolean => {
       return true;
     }
 
+    const isClick = isRingAtomClick(distance, ctx.hit.clickDragThresholdPx);
+    const attachedViaBond = !isClick;
+    const kind: AtomRootedRingKind = isBoat ? 'boat' : isChair ? 'chair' : 'regular';
+
     const currentValency = getAtomValency(startAtom.id, molecule);
     const maxValency = getMaxValencyForElement(startAtom.element, startAtom.charge);
-    if (currentValency + 1 > maxValency) {
+    // Click adds two ring bonds to the shared vertex; drag adds one linker.
+    const extraValence = attachedViaBond ? 1 : 2;
+    if (currentValency + extraValence > maxValency) {
       ctx.flashAtomError(startAtom.id);
       ctx.setDrawingRing(null);
       return true;
     }
 
-    const dx = worldPos.x - startAtom.x;
-    const dy = worldPos.y - startAtom.y;
-    const dist = Math.hypot(dx, dy);
-    let dragAngle = Math.atan2(dy, dx);
-
-    // Short click (no meaningful drag): auto-orient into the best free
-    // direction (same rule as a clicked bond sprout) and attach via a single
-    // bond that way; a lone atom grows its ring upward.
-    if (dist <= ATOM_ATTACH_DRAG_PX * ctx.hit.zoomScale) {
-      const hasBonds = molecule.bonds.some(
-        b => b.fromAtomId === rootAtomId || b.toAtomId === rootAtomId,
-      );
-      dragAngle = hasBonds
-        ? bestSproutAngle(startAtom, molecule, ctx.bondAngleSnapRad)
-        : -Math.PI / 2;
+    let growAngle: number;
+    if (isClick) {
+      // Vertex-fuse: existing bond is a radial substituent, not a 120° sprout.
+      growAngle = bestRingAttachGrowAngle(startAtom, molecule);
+    } else {
+      const dx = worldPos.x - startAtom.x;
+      const dy = worldPos.y - startAtom.y;
+      growAngle = Math.atan2(dy, dx);
+      const snap = ctx.bondAngleSnapRad > 1e-9 ? ctx.bondAngleSnapRad : Math.PI / 6;
+      growAngle = Math.round(growAngle / snap) * snap;
     }
 
-    const snap = ctx.bondAngleSnapRad > 1e-9 ? ctx.bondAngleSnapRad : Math.PI / 6;
-    dragAngle = Math.round(dragAngle / snap) * snap;
-
-    const activeRadius = ctx.bondLengthPx / (2 * Math.sin(Math.PI / numSides));
-    // Attachment atom of the new ring sits one bondLength away; ring center
-    // continues along the same ray so the connector is a clean single bond.
-    const endX = startAtom.x + Math.cos(dragAngle) * ctx.bondLengthPx;
-    const endY = startAtom.y + Math.sin(dragAngle) * ctx.bondLengthPx;
-    const center = {
-      x: endX + activeRadius * Math.cos(dragAngle),
-      y: endY + activeRadius * Math.sin(dragAngle),
-    };
-    const angleOffset = dragAngle + Math.PI;
-    const attachedViaBond = true;
+    const geom = atomRootedRingGeometry({
+      startAtom,
+      growAngle,
+      numSides,
+      bondLengthPx: ctx.bondLengthPx,
+      attachedViaBond,
+      kind,
+    });
 
     if (isBoat) {
-      ctx.onAddBoatRing?.(center, rootAtomId, attachedViaBond);
+      ctx.onAddBoatRing?.(
+        geom.center,
+        rootAtomId,
+        attachedViaBond,
+        attachedViaBond ? 0 : geom.angleOffset,
+      );
     } else if (isChair) {
-      ctx.onAddChairRing?.(center, rootAtomId, attachedViaBond);
+      ctx.onAddChairRing?.(
+        geom.center,
+        rootAtomId,
+        attachedViaBond,
+        attachedViaBond ? 0 : geom.angleOffset,
+      );
     } else {
       ctx.onAddRing?.(
-        center,
+        geom.center,
         numSides,
         isBenzene,
-        angleOffset,
+        geom.angleOffset,
         rootAtomId,
         attachedViaBond,
         undefined,
         undefined,
-        activeRadius,
+        geom.radius,
       );
     }
     ctx.setDrawingRing(null);

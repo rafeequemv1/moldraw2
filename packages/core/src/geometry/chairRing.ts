@@ -26,11 +26,18 @@ export function molChairCoordToCanvas(
 export function chairRingVertices(
   center: { x: number; y: number },
   bondLengthPx: number,
+  rotationRad = 0,
 ): Array<{ x: number; y: number }> {
   const canvas = HEX_MOL_CHAIR_ATOMS.map(a => molChairCoordToCanvas(a.x, a.y, bondLengthPx));
   const cx = canvas.reduce((s, p) => s + p.x, 0) / canvas.length;
   const cy = canvas.reduce((s, p) => s + p.y, 0) / canvas.length;
-  return canvas.map(p => ({ x: p.x - cx + center.x, y: p.y - cy + center.y }));
+  const c = Math.cos(rotationRad);
+  const s = Math.sin(rotationRad);
+  return canvas.map(p => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    return { x: dx * c - dy * s + center.x, y: dx * s + dy * c + center.y };
+  });
 }
 
 /** SVG points for toolbar icon (viewBox 0 0 20 20). */

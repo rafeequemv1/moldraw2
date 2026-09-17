@@ -103,6 +103,43 @@ async function supabaseQuery(table, search) {
   return data;
 }
 
+async function supabaseRpc(fn, args) {
+  const { ok, data } = await supabaseRequest('POST', `rpc/${fn}`, { body: args });
+  if (!ok || !data) return [];
+  return Array.isArray(data) ? data : [];
+}
+
+function parseMentionHandles(body) {
+  const handles = [];
+  const seen = new Set();
+  for (const match of String(body || '').matchAll(/@([A-Za-z0-9_]{2,40})/g)) {
+    const handle = String(match[1] || '').toLowerCase();
+    if (!handle || seen.has(handle)) continue;
+    seen.add(handle);
+    handles.push(handle);
+  }
+  return handles;
+}
+
+async function collectMentionedUserIds(source, targetId, body, actorId) {
+  const ids = new Set();
+  const rows = await supabaseQuery(
+    'community_comment_mentions',
+    `select=mentioned_user_id&source=eq.${encodeURIComponent(source)}&comment_id=eq.${encodeURIComponent(targetId)}`,
+  );
+  for (const row of rows) {
+    if (row.mentioned_user_id && row.mentioned_user_id !== actorId) ids.add(row.mentioned_user_id);
+  }
+  const handles = parseMentionHandles(body);
+  if (handles.length) {
+    const resolved = await supabaseRpc('resolve_community_mention_handles', { handles });
+    for (const user of resolved) {
+      if (user?.id && user.id !== actorId) ids.add(user.id);
+    }
+  }
+  return ids;
+}
+
 function newToken() {
   return crypto.randomBytes(24).toString('hex');
 }
@@ -339,16 +376,64 @@ async function notifyComment(source, record, auth) {
     ? permalink('feature-comment', comment.id, comment.body)
     : permalink('comment', comment.id, comment.body);
   const recipients = new Map();
+  const mentionedIds = await collectMentionedUserIds(source, commentId, comment.body, actorId);
+
+  let parentOwnerId = '';
+  let threadOwnerId = '';
+  let threadTitle = '';
+  let threadHref = href;
+  let threadEmail = '';
 
   if (comment.parent_comment_id) {
     const parent = await supabaseGet(
       source,
       `select=id,user_id&id=eq.${encodeURIComponent(comment.parent_comment_id)}`,
     );
-    if (parent?.user_id && parent.user_id !== actorId) {
+    parentOwnerId = parent?.user_id || '';
+  }
+
+  if (source === 'community_comments') {
+    const post = await supabaseGet(
+      'community_posts',
+      `select=id,user_id,title&id=eq.${encodeURIComponent(comment.post_id)}`,
+    );
+    threadOwnerId = post?.user_id || '';
+    threadTitle = post?.title || 'your post';
+    if (post?.id) threadHref = permalink('post', post.id, post.title);
+  } else {
+    const request = await supabaseGet(
+      'feature_requests',
+      `select=id,user_id,email,title&id=eq.${encodeURIComponent(comment.feature_request_id)}`,
+    );
+    threadOwnerId = request?.user_id || '';
+    threadTitle = request?.title || 'your request';
+    threadEmail = String(request?.email || '').trim().toLowerCase();
+    if (request?.id) threadHref = permalink('feature', request.id, request.title);
+  }
+
+  for (const userId of mentionedIds) {
+    const combined = userId === threadOwnerId || userId === parentOwnerId;
+    addRecipient(recipients, {
+      userId,
+      email: await emailForUser(userId),
+      kind: 'mention',
+      subject: combined
+        ? `${actorName} mentioned you in a comment on “${threadTitle}”`
+        : 'Someone mentioned you on MolDraw Community',
+      heading: combined
+        ? `${actorName} mentioned you in a comment`
+        : `${actorName} mentioned you`,
+      preview,
+      href: userId === threadOwnerId ? threadHref : href,
+      cta: 'View the comment',
+    });
+  }
+
+  if (comment.parent_comment_id) {
+    if (parentOwnerId && parentOwnerId !== actorId) {
       addRecipient(recipients, {
-        userId: parent.user_id,
-        email: await emailForUser(parent.user_id),
+        userId: parentOwnerId,
+        email: await emailForUser(parentOwnerId),
         kind: 'reply',
         subject: `${actorName} replied to your comment`,
         heading: `${actorName} replied to your comment`,
@@ -358,60 +443,32 @@ async function notifyComment(source, record, auth) {
       });
     }
   } else if (source === 'community_comments') {
-    const post = await supabaseGet(
-      'community_posts',
-      `select=id,user_id,title&id=eq.${encodeURIComponent(comment.post_id)}`,
-    );
-    if (post?.user_id && post.user_id !== actorId) {
+    if (threadOwnerId && threadOwnerId !== actorId) {
       addRecipient(recipients, {
-        userId: post.user_id,
-        email: await emailForUser(post.user_id),
+        userId: threadOwnerId,
+        email: await emailForUser(threadOwnerId),
         kind: 'post_comment',
-        subject: `New comment on “${post.title || 'your post'}”`,
-        heading: `New comment on “${post.title || 'your post'}”`,
+        subject: `New comment on “${threadTitle}”`,
+        heading: `New comment on “${threadTitle}”`,
         preview,
-        href: permalink('post', post.id, post.title),
+        href: threadHref,
         cta: 'View the discussion',
       });
     }
   } else {
-    const request = await supabaseGet(
-      'feature_requests',
-      `select=id,user_id,email,title&id=eq.${encodeURIComponent(comment.feature_request_id)}`,
-    );
-    const requestEmail = String(request?.email || '').trim().toLowerCase();
     const actorEmail = await emailForUser(actorId);
-    if (request && request.user_id !== actorId && (!requestEmail || requestEmail !== actorEmail)) {
+    if (threadOwnerId !== actorId && (!threadEmail || threadEmail !== actorEmail)) {
       addRecipient(recipients, {
-        userId: request.user_id,
-        email: requestEmail || await emailForUser(request.user_id),
+        userId: threadOwnerId,
+        email: threadEmail || await emailForUser(threadOwnerId),
         kind: 'feature_comment',
-        subject: `New comment on “${request.title || 'your request'}”`,
-        heading: `New comment on “${request.title || 'your request'}”`,
+        subject: `New comment on “${threadTitle}”`,
+        heading: `New comment on “${threadTitle}”`,
         preview,
-        href: permalink('feature', request.id, request.title),
+        href: threadHref,
         cta: 'Open the request',
       });
     }
-  }
-
-  const mentions = await supabaseQuery(
-    'community_comment_mentions',
-    `select=mentioned_user_id&source=eq.${encodeURIComponent(source)}&comment_id=eq.${encodeURIComponent(commentId)}`,
-  );
-  for (const mention of mentions) {
-    if (!mention.mentioned_user_id || mention.mentioned_user_id === actorId) continue;
-    const email = await emailForUser(mention.mentioned_user_id);
-    addRecipient(recipients, {
-      userId: mention.mentioned_user_id,
-      email,
-      kind: 'mention',
-      subject: `${actorName} mentioned you in a comment`,
-      heading: `${actorName} mentioned you`,
-      preview,
-      href,
-      cta: 'View the comment',
-    });
   }
 
   const results = [];
@@ -420,6 +477,49 @@ async function notifyComment(source, record, auth) {
     results.push(await deliver({
       ...recipient,
       eventKey: `community-comment/${commentId}/${recipient.userId || recipient.email}`,
+    }));
+  }
+  return { sent: results.length, results };
+}
+
+async function notifyPost(record, auth) {
+  const postId = uuidParam(record?.id);
+  if (!postId) return { skipped: 'no_post' };
+  const post = await supabaseGet(
+    'community_posts',
+    `select=id,user_id,title,body,author_name,status&id=eq.${encodeURIComponent(postId)}`,
+  );
+  if (!post || post.status === 'hidden') return { skipped: 'missing_row' };
+  if (auth?.via === 'jwt' && auth.user.id !== post.user_id && !(await isAdminUser(auth.user.id))) {
+    return { skipped: 'not_actor' };
+  }
+
+  const actorId = post.user_id;
+  const actorName = post.author_name || 'Someone';
+  const preview = String(post.body || '').replace(/\s+/g, ' ').trim().slice(0, 180)
+    || 'You were mentioned on MolDraw Community.';
+  const href = permalink('post', post.id, post.title);
+  const mentionedIds = await collectMentionedUserIds('community_posts', postId, post.body, actorId);
+  const recipients = new Map();
+  for (const userId of mentionedIds) {
+    addRecipient(recipients, {
+      userId,
+      email: await emailForUser(userId),
+      kind: 'mention',
+      subject: 'Someone mentioned you on MolDraw Community',
+      heading: `${actorName} mentioned you`,
+      preview,
+      href,
+      cta: 'View the post',
+    });
+  }
+
+  const results = [];
+  for (const recipient of recipients.values()) {
+    if (recipient.userId && recipient.userId === actorId) continue;
+    results.push(await deliver({
+      ...recipient,
+      eventKey: `community-post/${postId}/${recipient.userId || recipient.email}`,
     }));
   }
   return { sent: results.length, results };
@@ -473,6 +573,9 @@ module.exports = async function handler(req, res) {
     }
     if (table === 'feature_request_comments' && type === 'INSERT') {
       return json(res, 200, await notifyComment('feature_request_comments', record, auth));
+    }
+    if (table === 'community_posts' && type === 'INSERT') {
+      return json(res, 200, await notifyPost(record, auth));
     }
     if (table === 'community_comment_mentions' && type === 'INSERT') {
       return json(res, 200, await notifyMention(record, auth));

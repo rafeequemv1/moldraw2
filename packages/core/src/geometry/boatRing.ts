@@ -24,12 +24,19 @@ const BOAT_TEMPLATE_EDGE =
 export function boatRingVertices(
   center: { x: number; y: number },
   bondLengthPx: number,
+  rotationRad = 0,
 ): Array<{ x: number; y: number }> {
   const scale = bondLengthPx / BOAT_TEMPLATE_EDGE;
-  return BOAT_OFFSETS.map(o => ({
-    x: center.x + o.x * scale,
-    y: center.y + o.y * scale,
-  }));
+  const c = Math.cos(rotationRad);
+  const s = Math.sin(rotationRad);
+  return BOAT_OFFSETS.map(o => {
+    const dx = o.x * scale;
+    const dy = o.y * scale;
+    return {
+      x: center.x + dx * c - dy * s,
+      y: center.y + dx * s + dy * c,
+    };
+  });
 }
 
 export function boatRingIconPoints(): string {

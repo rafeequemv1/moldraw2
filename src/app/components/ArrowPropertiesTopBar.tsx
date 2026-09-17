@@ -3,7 +3,8 @@
  */
 import { useEffect, useRef } from 'react';
 import type { ReactionArrow, ReactionArrowKind, ReactionArrowUpdatePatch } from '@moldraw/domain';
-import { REACTION_ARROW_KIND_ORDER, reactionArrowSupportsReagentLabels } from '@moldraw/domain';
+import { REACTION_ARROW_KIND_ORDER, reactionArrowSupportsReagentLabels, resolveReagentFontSize } from '@moldraw/domain';
+import { ReagentFontSizeStepper } from './ReagentFontSizeStepper';
 
 const KIND_LABELS: Record<ReactionArrowKind, string> = {
   straight: 'Straight',
@@ -111,6 +112,12 @@ export function ArrowPropertiesTopBar({ arrow, onUpdate, focusSlot }: ArrowPrope
             aria-label="Reagent above arrow"
             onChange={e => onUpdate(arrow.id, { reagentAbove: e.target.value })}
           />
+          <ReagentFontSizeStepper
+            compact
+            value={resolveReagentFontSize(arrow, 'above')}
+            ariaLabel="Above text size"
+            onChange={n => onUpdate(arrow.id, { reagentAboveFontSize: n })}
+          />
           <input
             ref={belowRef}
             type="text"
@@ -120,6 +127,12 @@ export function ArrowPropertiesTopBar({ arrow, onUpdate, focusSlot }: ArrowPrope
             value={arrow.reagentBelow ?? ''}
             aria-label="Reagent below arrow"
             onChange={e => onUpdate(arrow.id, { reagentBelow: e.target.value })}
+          />
+          <ReagentFontSizeStepper
+            compact
+            value={resolveReagentFontSize(arrow, 'below')}
+            ariaLabel="Below text size"
+            onChange={n => onUpdate(arrow.id, { reagentBelowFontSize: n })}
           />
         </>
       ) : null}

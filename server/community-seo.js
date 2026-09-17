@@ -438,6 +438,10 @@ function renderImages(imageUrls, altText) {
   return `<div class="card-images">${images.map((url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" loading="lazy" alt="${escapeHtml(altText)}"></a>`).join('')}</div>`;
 }
 
+function renderMentionedText(body) {
+  return escapeHtml(body).replace(/@([A-Za-z0-9_]{2,40})/g, '<span class="comment-mention">@$1</span>');
+}
+
 function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllReplies = true, highlightId = '', useDomId = false }) {
   const replies = showAllReplies ? (comment.replies || []) : (comment.replies || []).slice(0, 2);
   const hiddenReplies = Math.max((comment.replies || []).length - replies.length, 0);
@@ -456,7 +460,7 @@ function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllRe
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · <a class="comment-time-link" href="${escapeHtml(permalink)}"><time datetime="${escapeHtml(isoDate(comment.created_at) || '')}">${escapeHtml(timeText(comment.created_at))}</time></a></div>
             </div>
           </div>
-          <p class="comment-body">${escapeHtml(comment.body)}</p>
+          <p class="comment-body">${renderMentionedText(comment.body)}</p>
           ${images}
           <p class="comment-tools">
             <button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(comment.id)}">Reply</button>
@@ -471,7 +475,10 @@ function renderCardReplyComposer() {
   return `
         <section class="card-reply-composer" aria-label="Write a reply">
           <div class="comment-form" data-comment-form="main">
-            <textarea placeholder="Write a reply…" aria-label="Write a reply"></textarea>
+            <div class="mention-composer">
+              <textarea placeholder="Write a reply…" aria-label="Write a reply"></textarea>
+              <div class="mention-menu" hidden role="listbox" aria-label="Mention people"></div>
+            </div>
             <label class="comment-image-chip">Image<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple></label>
             <button class="btn btn-primary" type="button">Reply</button>
           </div>
@@ -518,7 +525,7 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
               </div>
             </div>
             <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a></${titleTag}>
-            <p class="card-body">${escapeHtml(post.body)}</p>
+            <p class="card-body">${renderMentionedText(post.body)}</p>
             ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
               <span class="pill">▲ ${escapeHtml(post.upvote_count || 0)}</span>

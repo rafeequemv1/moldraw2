@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type ClipboardEvent, type FormEvent } from 'react';
 import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
 import { useChromeOverlay } from '../chromeDismiss';
 
@@ -12,6 +12,32 @@ function displayNameFromEmail(email: string): string {
   return email.split('@')[0]?.replace(/[._-]+/g, ' ') || 'Chemist';
 }
 
+function imageFilesFromClipboard(clipboard: DataTransfer | null): File[] {
+  if (!clipboard) return [];
+  const seen = new Set<string>();
+  const files: File[] = [];
+  const add = (file: File | null) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const key = `${file.name}|${file.size}|${file.type}|${file.lastModified}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    files.push(file);
+  };
+  for (const item of Array.from(clipboard.items || [])) {
+    if (item.kind === 'file') add(item.getAsFile());
+  }
+  if (!files.length) {
+    for (const file of Array.from(clipboard.files || [])) add(file);
+  }
+  return files.map(file => {
+    if (file.name && file.type) return file;
+    const type = file.type || 'image/png';
+    const subtype = type.split('/')[1] || 'png';
+    const ext = subtype === 'jpeg' ? 'jpg' : subtype;
+    return new File([file], file.name || `pasted-image.${ext}`, { type, lastModified: file.lastModified || Date.now() });
+  });
+}
+
 export function FeatureRequestModal({ open, defaultEmail, onClose }: FeatureRequestModalProps) {
   useChromeOverlay(open, onClose, 'modal');
   const [email, setEmail] = useState(defaultEmail);
@@ -23,6 +49,19 @@ export function FeatureRequestModal({ open, defaultEmail, onClose }: FeatureRequ
   const [submitting, setSubmitting] = useState(false);
 
   if (!open) return null;
+
+  const addImageFiles = (incoming: File[]) => {
+    const next = incoming.filter(file => file.type.startsWith('image/'));
+    if (!next.length) return;
+    setFiles(prev => prev.concat(next).slice(0, 5));
+  };
+
+  const onPasteImages = (event: ClipboardEvent<HTMLFormElement>) => {
+    const next = imageFilesFromClipboard(event.clipboardData);
+    if (!next.length) return;
+    event.preventDefault();
+    addImageFiles(next);
+  };
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -75,7 +114,7 @@ export function FeatureRequestModal({ open, defaultEmail, onClose }: FeatureRequ
 
   return (
     <div className="feature-request-backdrop">
-      <form className="feature-request-modal" onSubmit={onSubmit}>
+      <form className="feature-request-modal" onSubmit={onSubmit} onPaste={onPasteImages}>
         <div className="feature-request-header">
           <div>
             <div className="feature-request-title">Request a feature</div>
@@ -141,8 +180,8 @@ export function FeatureRequestModal({ open, defaultEmail, onClose }: FeatureRequ
             accept="image/png,image/jpeg,image/webp,image/gif"
             multiple
             onChange={e => {
-              const next = Array.from(e.target.files || []).filter(file => file.type.startsWith('image/'));
-              setFiles(next.slice(0, 5));
+              addImageFiles(Array.from(e.target.files || []));
+              e.target.value = '';
             }}
           />
           {files.length > 0 ? (

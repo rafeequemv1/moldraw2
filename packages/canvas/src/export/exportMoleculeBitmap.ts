@@ -12,6 +12,7 @@ import {
   type ResolvedCanvasPreferences,
 } from '@moldraw/core';
 import type { Molecule } from '@moldraw/domain';
+import { resolveReagentFontSize } from '@moldraw/domain';
 import {
   getMoleculeRevisionCache,
   LONE_PAIR_DIST_PX,
@@ -227,16 +228,14 @@ export function computeExportBounds(mol: Molecule): ExportBounds | null {
       .split('\n')
       .map(s => s.trim())
       .filter(Boolean).length;
-    const fs = arrow.reagentFontSize ?? 14;
-    const lineGap = fs * 1.18;
-    const baseOff = 18 + fs * 0.45;
+    const aboveFs = resolveReagentFontSize(arrow, 'above');
+    const belowFs = resolveReagentFontSize(arrow, 'below');
+    const stackExtent = (lines: number, fs: number) =>
+      lines > 0 ? 18 + fs * 0.45 + lines * fs * 1.18 + fs : 0;
     // Cover multi-line reagents above/below (plus horizontal extent of long lines).
     const textPadY =
       aboveLines || belowLines
-        ? Math.max(
-            28,
-            baseOff + Math.max(aboveLines, belowLines) * lineGap + fs,
-          )
+        ? Math.max(28, stackExtent(aboveLines, aboveFs), stackExtent(belowLines, belowFs))
         : 0;
     const longestReagent = Math.max(
       0,
@@ -247,6 +246,7 @@ export function computeExportBounds(mol: Molecule): ExportBounds | null {
         .split('\n')
         .map(s => s.trim().length),
     );
+    const fs = Math.max(aboveFs, belowFs);
     const textPadX = longestReagent > 0 ? Math.max(28, longestReagent * fs * 0.35) : 0;
     const padX = Math.max(headPad, textPadX);
     const padY = Math.max(headPad, textPadY);

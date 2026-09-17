@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { Molecule, ReactionArrowUpdatePatch } from '@moldraw/domain';
-import { reactionArrowSupportsReagentLabels } from '@moldraw/domain';
+import { reactionArrowSupportsReagentLabels, resolveReagentFontSize } from '@moldraw/domain';
 import { reactionArrowReagentSlotPositions } from '@moldraw/canvas/geometry';
 import type { InfiniteCanvasHandle } from '@moldraw/canvas/InfiniteCanvas';
 
@@ -78,7 +78,9 @@ export function useArrowReagentEditor({
   const layoutKey = editing
     ? (() => {
         const a = molecule.reactionArrows?.find(x => x.id === editing.arrowId);
-        return a ? `${editing.arrowId}:${a.x1}:${a.y1}:${a.x2}:${a.y2}:${editing.slot}` : editing.arrowId;
+        return a
+          ? `${editing.arrowId}:${a.x1}:${a.y1}:${a.x2}:${a.y2}:${editing.slot}:${resolveReagentFontSize(a, editing.slot)}`
+          : editing.arrowId;
       })()
     : '';
 
@@ -104,11 +106,19 @@ export function useArrowReagentEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- layout reads molecule; key drives updates
   }, [editing, layoutKey, viewportInfo, molecule.reactionArrows, canvasRef]);
 
+  const editingArrow = editing
+    ? molecule.reactionArrows?.find(a => a.id === editing.arrowId)
+    : undefined;
+  const editingFontSize = editingArrow
+    ? resolveReagentFontSize(editingArrow, editing.slot)
+    : undefined;
+
   return {
     editingArrowReagent: editing,
     arrowReagentDraft: draft,
     setArrowReagentDraft: setDraft,
     inlineArrowReagentPos: inlinePos,
+    arrowReagentFontSize: editingFontSize,
     topBarReagentFocusSlot: topBarFocusSlot,
     handleRequestArrowReagentEdit,
     commitReagentEdit,

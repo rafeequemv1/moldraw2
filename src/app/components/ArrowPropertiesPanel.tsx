@@ -15,9 +15,11 @@ import {
   REACTION_ARROW_KIND_ORDER,
   reactionArrowSupportsReagentLabels,
   resolveArrowHeadKind,
+  resolveReagentFontSize,
 } from '@moldraw/domain';
 import { LeftParamsPanel } from './LeftParamsPanel';
 import { MobileBottomSheet } from './MobileBottomSheet';
+import { ReagentFontSizeStepper } from './ReagentFontSizeStepper';
 import { useCompactViewport } from '../hooks/useCompactViewport';
 
 const KIND_LABELS: Record<ReactionArrowKind, string> = {
@@ -219,7 +221,7 @@ export function ArrowPropertiesPanel({
               <option value="latex">LaTeX</option>
             </select>
           </label>
-          <label className="arrow-params__field">
+          <div className="arrow-params__field arrow-params__field--reagent">
             <span>Above</span>
             <input
               ref={aboveRef}
@@ -230,8 +232,13 @@ export function ArrowPropertiesPanel({
               aria-label="Reagent above arrow"
               onChange={e => patch({ reagentAbove: e.target.value })}
             />
-          </label>
-          <label className="arrow-params__field">
+            <ReagentFontSizeStepper
+              value={resolveReagentFontSize(arrow, 'above')}
+              ariaLabel="Above text size"
+              onChange={n => patch({ reagentAboveFontSize: n })}
+            />
+          </div>
+          <div className="arrow-params__field arrow-params__field--reagent">
             <span>Below</span>
             <input
               ref={belowRef}
@@ -242,7 +249,12 @@ export function ArrowPropertiesPanel({
               aria-label="Reagent below arrow"
               onChange={e => patch({ reagentBelow: e.target.value })}
             />
-          </label>
+            <ReagentFontSizeStepper
+              value={resolveReagentFontSize(arrow, 'below')}
+              ariaLabel="Below text size"
+              onChange={n => patch({ reagentBelowFontSize: n })}
+            />
+          </div>
         </>
       ) : null}
     </>

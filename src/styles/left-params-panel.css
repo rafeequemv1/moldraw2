@@ -243,6 +243,10 @@ html.format-left-panel-open .left-params-dock .left-params-panel {
   grid-template-columns: 4.4rem 1fr 2.2rem;
 }
 
+.arrow-params__field--reagent {
+  grid-template-columns: 4.4rem 1fr auto;
+}
+
 .arrow-params__field select,
 .arrow-params__field input[type='text'] {
   width: 100%;
@@ -266,4 +270,54 @@ html.format-left-panel-open .left-params-dock .left-params-panel {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   text-align: right;
+}
+
+.arrow-params__size {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  border: 1px solid var(--chrome-border, #cbd5e1);
+  border-radius: 4px;
+  background: var(--chrome-bg, #fff);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.arrow-params__size-btn {
+  width: 20px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.arrow-params__size-btn:hover {
+  background: var(--chrome-hover, #f1f5f9);
+}
+
+.arrow-params__size-input {
+  width: 2rem;
+  height: 100%;
+  border: 0;
+  border-left: 1px solid var(--chrome-border, #cbd5e1);
+  border-right: 1px solid var(--chrome-border, #cbd5e1);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+
+.arrow-params__size-input::-webkit-outer-spin-button,
+.arrow-params__size-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

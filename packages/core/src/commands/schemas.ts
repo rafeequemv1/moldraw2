@@ -268,7 +268,9 @@ const reactionArrow = z.object({
   headScale: z.number().positive().describe('Arrowhead size multiplier (1 = default).').optional(),
   reagentAbove: z.string().describe('Reagent/condition text drawn above the shaft (newline for multi-line).').optional(),
   reagentBelow: z.string().describe('Reagent/condition text drawn below the shaft (newline for multi-line).').optional(),
-  reagentFontSize: z.number().positive().describe('Reagent text font size in canvas px.').optional(),
+  reagentFontSize: z.number().positive().describe('Shared reagent text font size in canvas px (fallback for both slots).').optional(),
+  reagentAboveFontSize: z.number().positive().describe('Font size in canvas px for text above the shaft.').optional(),
+  reagentBelowFontSize: z.number().positive().describe('Font size in canvas px for text below the shaft.').optional(),
   reagentColor: cssColor.describe('CSS colour for the reagent text.').optional(),
   reagentFontWeight: z.enum(['normal', 'bold']).describe('Reagent text weight: normal or bold.').optional(),
   reagentFormat: z
@@ -757,6 +759,10 @@ export const schemas = {
       .boolean()
       .describe('True links the ring to rootAtomId by a new single bond instead of sharing that atom as a vertex.')
       .optional(),
+    rotationRad: z
+      .number()
+      .describe('Rotation of the boat template in radians (0 = stock orientation).')
+      .optional(),
   }),
   addChairRing: z.object({
     center: point.describe('Ring centre in canvas px.'),
@@ -767,6 +773,10 @@ export const schemas = {
     attachedViaBond: z
       .boolean()
       .describe('True links the ring to rootAtomId by a new single bond instead of sharing that atom as a vertex.')
+      .optional(),
+    rotationRad: z
+      .number()
+      .describe('Rotation of the chair template in radians (0 = stock orientation).')
       .optional(),
   }),
   addChain: z.object({
@@ -841,7 +851,9 @@ export const schemas = {
     headScale: z.number().positive().describe('Arrowhead size multiplier (1 = default).').optional(),
     reagentAbove: z.string().describe('Reagent/condition text above the shaft (newline for multi-line).').optional(),
     reagentBelow: z.string().describe('Reagent/condition text below the shaft (newline for multi-line).').optional(),
-    reagentFontSize: z.number().positive().describe('Reagent text font size in canvas px.').optional(),
+    reagentFontSize: z.number().positive().describe('Shared reagent text font size in canvas px (fallback for both slots).').optional(),
+    reagentAboveFontSize: z.number().positive().describe('Font size in canvas px for text above the shaft.').optional(),
+    reagentBelowFontSize: z.number().positive().describe('Font size in canvas px for text below the shaft.').optional(),
     reagentColor: cssColor.describe('CSS colour for the reagent text.').optional(),
     reagentFontWeight: z.enum(['normal', 'bold']).describe('Reagent text weight: normal or bold.').optional(),
     reagentFormat: z

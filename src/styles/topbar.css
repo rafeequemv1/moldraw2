@@ -119,7 +119,7 @@
 .app-top-bar__site-row .app-top-bar__select-trigger {
   height: 26px;
   padding: 0 8px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -856,6 +856,56 @@
   border-color: var(--chrome-border-strong);
 }
 
+.arrow-topbar__size {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--radius-control);
+  background: var(--chrome-input-bg, var(--chrome-bg-elevated));
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.arrow-topbar__size-btn {
+  width: 18px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.arrow-topbar__size-btn:hover {
+  background: var(--chrome-hover);
+}
+
+.arrow-topbar__size-input {
+  width: 1.7rem;
+  height: 100%;
+  border: 0;
+  border-left: 1px solid var(--chrome-border);
+  border-right: 1px solid var(--chrome-border);
+  background: transparent;
+  color: var(--text-main);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+
+.arrow-topbar__size-input::-webkit-outer-spin-button,
+.arrow-topbar__size-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .pencil-topbar {
   display: flex;
   align-items: center;
@@ -1568,7 +1618,7 @@ html.app-top-rows-3 {
   border-radius: var(--radius-control, 4px);
   background: var(--chrome-input-bg, #ffffff);
   color: var(--text-main, #0f172a);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
@@ -2343,7 +2393,7 @@ html.app-top-rows-3 {
   align-items: center;
   gap: 5px;
   padding: 4px 8px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-main, #334155);
   background: transparent;
@@ -2377,7 +2427,7 @@ html.app-top-rows-3 {
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-main, #334155);
   background: transparent;

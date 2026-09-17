@@ -137,24 +137,26 @@ export function useDefaultCanvasCommands({
   );
 
   const onAddBoatRing = useCallback(
-    (center: Point, rootAtomId?: string, attachedViaBond?: boolean) => {
+    (center: Point, rootAtomId?: string, attachedViaBond?: boolean, rotationRad?: number) => {
       applyCommand(CMD.AddBoatRing, {
         center,
         bondLengthPx,
         rootAtomId,
         attachedViaBond,
+        rotationRad,
       });
     },
     [applyCommand, bondLengthPx],
   );
 
   const onAddChairRing = useCallback(
-    (center: Point, rootAtomId?: string, attachedViaBond?: boolean) => {
+    (center: Point, rootAtomId?: string, attachedViaBond?: boolean, rotationRad?: number) => {
       applyCommand(CMD.AddChairRing, {
         center,
         bondLengthPx,
         rootAtomId,
         attachedViaBond,
+        rotationRad,
       });
     },
     [applyCommand, bondLengthPx],

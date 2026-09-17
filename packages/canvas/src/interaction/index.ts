@@ -72,6 +72,9 @@ export {
   isAromaticRing,
   ringSidesForTool,
   computeRingFusionGeometry,
+  atomRootedRingGeometry,
+  isAtomRingAttachDrag,
+  isRingAtomClick,
 } from './toolRing';
 export {
   selectToolMouseDown,

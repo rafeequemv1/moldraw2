@@ -196,8 +196,18 @@ export interface InteractionContext {
     angleStep?: number,
     radius?: number,
   ) => void;
-  onAddBoatRing?: (center: Point, rootAtomId?: string, attachedViaBond?: boolean) => void;
-  onAddChairRing?: (center: Point, rootAtomId?: string, attachedViaBond?: boolean) => void;
+  onAddBoatRing?: (
+    center: Point,
+    rootAtomId?: string,
+    attachedViaBond?: boolean,
+    rotationRad?: number,
+  ) => void;
+  onAddChairRing?: (
+    center: Point,
+    rootAtomId?: string,
+    attachedViaBond?: boolean,
+    rotationRad?: number,
+  ) => void;
   onAddChain?: (points: Point[], startAtomId?: string) => void;
   onUpdateAtomCharge?: (atomId: string, delta: number) => void;
   /** Set absolute formal charge (±1 circled ⊕/⊖ or clear). */

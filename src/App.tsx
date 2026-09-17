@@ -1599,6 +1599,7 @@ function App() {
     arrowReagentDraft,
     setArrowReagentDraft,
     inlineArrowReagentPos,
+    arrowReagentFontSize,
     topBarReagentFocusSlot,
     handleRequestArrowReagentEdit,
     commitReagentEdit,
@@ -2678,6 +2679,7 @@ function App() {
           position={inlineArrowReagentPos}
           slot={editingArrowReagent.slot}
           draft={arrowReagentDraft}
+          fontSize={arrowReagentFontSize}
           onDraftChange={setArrowReagentDraft}
           onCommit={commitReagentEdit}
           onCancel={cancelReagentEdit}
