@@ -4,8 +4,13 @@ import {
   moleculeCentroid,
 } from '@moldraw/core';
 import type { ArrowAnchor, ArrowHeadStyle, ArrowTailStyle } from '@moldraw/domain';
-import { ELECTRON_FLOW_DEFAULT_HEAD_SCALE } from '@moldraw/domain';
-import { buildReactionArrowFromDrag, snapSegmentEndpointToAngleStep } from '../geometry';
+import { ELECTRON_FLOW_DEFAULT_HEAD_SCALE, reactionArrowSupportsReagentLabels } from '@moldraw/domain';
+import {
+  buildReactionArrowFromDrag,
+  pickReactionArrowReagentSlot,
+  reagentSlotChipHitTolWorld,
+  snapSegmentEndpointToAngleStep,
+} from '../geometry';
 import type { DrawingReactionArrowState } from '../render/types';
 import type { InteractionContext } from './types';
 
@@ -23,7 +28,14 @@ const CLICK_PLACE_SLOP = 6;
 const DRAW_ARROW_ANGLE_SNAP_STEP_DEG = 15;
 
 const isClickPlaceKind = (kind: string | undefined): boolean =>
-  kind === 'electron_flow' || kind === 'curved' || kind === 's_curve' || kind === 'cycle_arc';
+  kind === 'electron_flow' ||
+  kind === 'curved' ||
+  kind === 's_curve' ||
+  kind === 'cycle_arc' ||
+  kind === 'straight' ||
+  kind === 'retrosynthetic' ||
+  kind === 'path' ||
+  kind === 'row_wrap';
 
 const electronFlowHeadStyle = (ctx: InteractionContext): ArrowHeadStyle =>
   ctx.reactionArrowHeadStyle ?? 'pair';
@@ -98,6 +110,30 @@ const seedElectronFlow = (
 export const reactionArrowToolMouseDown = (ctx: InteractionContext): boolean => {
   const { e, worldPos } = ctx;
   if (e.button !== 0) return false;
+
+  if (ctx.selectedReactionArrowId && ctx.onRequestArrowReagentEdit && !ctx.drawingReactionArrow) {
+    const selArrow = ctx.molecule.reactionArrows?.find(a => a.id === ctx.selectedReactionArrowId);
+    if (selArrow && reactionArrowSupportsReagentLabels(selArrow.kind)) {
+      const zoom = ctx.viewport?.zoom ?? 1;
+      const slotHit = pickReactionArrowReagentSlot(
+        selArrow,
+        worldPos.x,
+        worldPos.y,
+        reagentSlotChipHitTolWorld(zoom),
+      );
+      if (slotHit) {
+        ctx.setSelectedReactionArrowId?.(selArrow.id);
+        ctx.setSelectedCanvasTextId?.(null);
+        ctx.setColorEditCanvasShapeId?.(null);
+        ctx.setSelectedCanvasImageId?.(null);
+        ctx.setSelectedSruBracketId?.(null);
+        ctx.setSelectedAtomIds?.([]);
+        ctx.setSelectedBondIds?.([]);
+        ctx.onRequestArrowReagentEdit(slotHit.arrowId, slotHit.slot);
+        return true;
+      }
+    }
+  }
 
   const pending = ctx.drawingReactionArrow;
   // Second click: finish the parked start → end chord.
@@ -226,7 +262,8 @@ const commitDrawnArrow = (
   }
 
   ctx.onAddReactionArrow(built);
-  // Select so the three edit handles (tail / curve / head) are immediately usable.
+  // Select so the edit handles are immediately usable. Reagent text is opt-in
+  // via the on-canvas + chips — do not auto-open an editor.
   ctx.setSelectedReactionArrowId?.(built.id);
   ctx.setSelectedAtomIds?.([]);
   ctx.setSelectedBondIds?.([]);

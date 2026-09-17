@@ -58,6 +58,7 @@ import {
   selectToolMouseDown,
   selectToolHasTargetAt,
   trySelectAnnotationAt,
+  isSelectTool,
   resetRingPickCycle,
   placeFragmentToolMouseDown,
   placeFragmentToolMouseMove,
@@ -101,7 +102,7 @@ import {
 } from './touch';
 
 /** Tools whose long-press opens the context menu on touch (never drawing tools). */
-const LONG_PRESS_TOOLS = new Set(['select', 'lasso_select']);
+const LONG_PRESS_TOOLS = new Set(['select', 'lasso_select', 'fragment_select']);
 
 export interface UseCanvasInputOptions {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -166,6 +167,7 @@ export interface UseCanvasInputOptions {
   onSetAtomRadical?: InteractionContext['onSetAtomRadical'];
   onSetAtomRadicalIon?: InteractionContext['onSetAtomRadicalIon'];
   onAddExplicitHydrogen?: InteractionContext['onAddExplicitHydrogen'];
+  onSetAtomsShowElementLabel?: InteractionContext['onSetAtomsShowElementLabel'];
   onUpdateAtomElement?: InteractionContext['onUpdateAtomElement'];
   onAddStroke?: InteractionContext['onAddStroke'];
   onSmartDrawStroke?: InteractionContext['onSmartDrawStroke'];
@@ -681,6 +683,7 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       onSetAtomRadical: opts.onSetAtomRadical,
       onSetAtomRadicalIon: opts.onSetAtomRadicalIon,
       onAddExplicitHydrogen: opts.onAddExplicitHydrogen,
+      onSetAtomsShowElementLabel: opts.onSetAtomsShowElementLabel,
       onUpdateAtomElement: opts.onUpdateAtomElement,
       onAddStroke: opts.onAddStroke,
       onSmartDrawStroke: opts.onSmartDrawStroke,
@@ -794,15 +797,10 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       }
 
       // Canvas preventDefault() suppresses document `mousedown`, so header
-      // click-outside listeners never see this press. Dismiss chrome here.
-      // Primary button: first click closes overlays and does not also place
-      // an atom / start a bond. Right-click may still open the context menu.
-      if (onDismissChromeOverlaysRef.current?.()) {
-        if (!isSecondaryButton(e) && !isMiddleButton(e)) {
-          e.preventDefault();
-          return;
-        }
-      }
+      // click-outside listeners never see this press. Dismiss chrome here,
+      // but keep this pointerdown so the first click-drag (reaction arrow,
+      // bond, ring, …) still starts. Overlay close must not eat the gesture.
+      onDismissChromeOverlaysRef.current?.();
 
       // Always seed `mouseDownPos` so the click-vs-drag distance check in
       // `handlePointerUp` is based on the *current* down event, not a stale one.
@@ -855,7 +853,10 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
         longPress.notePointerDown(e);
       }
 
-      if (trySelectAnnotationAt(ctx)) return;
+      // Pencil / Smart Draw: never steal the down-gesture to select a stroke.
+      if (activeTool !== 'pencil' && !isSmartDrawTool(activeTool) && trySelectAnnotationAt(ctx)) {
+        return;
+      }
 
       if (isPlaceFragmentTool(activeTool)) {
         placeFragmentToolMouseDown(ctx);
@@ -873,7 +874,7 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       if (activeTool === 'shape' || activeTool === 'glassware') return void shapeToolMouseDown(ctx);
       if (activeTool === 'sru_bracket') return void sruBracketToolMouseDown(ctx);
       if (activeTool === 'text') return void textToolMouseDown(ctx);
-      if (activeTool === 'select' || activeTool === 'lasso_select') {
+      if (isSelectTool(activeTool)) {
         if (
           (e.altKey || e.getModifierState?.('Alt')) &&
           ctx.molecule.perspective3D &&
@@ -917,7 +918,8 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
         activeTool === 'free_radical' ||
         activeTool === 'delta_plus' ||
         activeTool === 'delta_minus' ||
-        activeTool === 'add_explicit_h'
+        activeTool === 'add_explicit_h' ||
+        activeTool === 'add_explicit_c'
       ) {
         return void chargeToolMouseDown(ctx);
       }
@@ -1067,7 +1069,7 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       // hover so idle mouse moves stay cheap on plain structures.
       if (
         !isTouchPointer(e) &&
-        (activeTool === 'text' || activeTool === 'select' || activeTool === 'lasso_select') &&
+        (activeTool === 'text' || isSelectTool(activeTool)) &&
         (ctx.molecule.canvasTexts?.length ?? 0) > 0
       ) {
         setMouseWorldPos(worldPos);
@@ -1202,7 +1204,7 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
         const releaseAtom = pickAtomAt(molecule, worldPos, ctx.hit.atomHitRadius);
         if (
           releaseAtom &&
-          (activeTool === 'select' || activeTool === 'lasso_select') &&
+          isSelectTool(activeTool) &&
           !e.shiftKey &&
           opts.onRequestAtomAliasEdit &&
           displayGroupLabelForAtom(releaseAtom, molecule)
@@ -1317,7 +1319,7 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
         return;
       }
 
-      if (activeTool !== 'select' && activeTool !== 'lasso_select') return;
+      if (!isSelectTool(activeTool)) return;
 
       const hitAtom = pickAtomAt(molecule, worldPos, hit.atomHitRadius);
       const hitBond = hitAtom ? null : pickBondAt(molecule, worldPos, hit.bondHitTolerance);

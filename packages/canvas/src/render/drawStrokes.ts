@@ -68,7 +68,7 @@ export const drawCommittedStrokes = (ctx: CanvasRenderingContext2D, R: RenderCon
   list.forEach(stroke => {
     if (stroke.points.length < 2) return;
     const selected = strokeSelected(R, stroke.id);
-    const color = selected ? '#2563eb' : stroke.color;
+    const color = selected ? (R.structureTheme.transformAccent ?? '#2dd4bf') : stroke.color;
     const pressures = stroke.pressures;
     if (pressures && pressures.length === stroke.points.length) {
       strokePressurePolyline(

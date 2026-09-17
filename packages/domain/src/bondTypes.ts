@@ -89,7 +89,7 @@ export function parseMolfileBondStereo(
   order: number,
   aromatic?: boolean,
 ): BondStereo | undefined {
-  if (aromatic) return undefined;
+  void aromatic;
   if (stereoCode === 1) return 'wedge';
   if (stereoCode === 6) return 'dash';
   if (stereoCode === 3) return order === 2 ? 'cis_trans' : 'wavy';

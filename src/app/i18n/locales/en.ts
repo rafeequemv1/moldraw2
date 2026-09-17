@@ -56,6 +56,8 @@ export const en = {
     exit3dTitle: 'Exit 3D — drop the pose and show the original 2D drawing',
     addExplicitHFullTitle:
       'Add explicit H to selected atom(s) — one bonded H per atom (isolated CN becomes H–CN)',
+    addExplicitC: 'Show explicit C on selection',
+    addExplicitCFullTitle: 'Show the C label on selected skeletal carbons (teaching / explicit carbon)',
     depthTaperTitle: 'Depth taper — near bonds normal width; farther ends get pointier (display-only)',
     toolbarDrawTools: 'Draw tools',
     toolbarHomeExtras: 'Cleanup and drawing extras',
@@ -306,6 +308,9 @@ export const en = {
         'When dragging molecules or reaction arrows, snap centers to the background grid. Hold Shift to move freely. Alignment guides still snap to other molecule bounds.',
       showGrid: 'Show grid',
       showGridHint: 'Draw the light background grid on the 2D canvas (off by default).',
+      showAlignmentGuides: 'Canvas assistance guidelines',
+      showAlignmentGuidesHint:
+        'Show alignment lines when dragging objects, and snap ticks while drawing bonds. Turn off for a clean canvas.',
       reactionComponentMargin: 'Reaction component margin size',
       imageResolution: 'Image resolution',
       imageResolutionHint:
@@ -464,12 +469,11 @@ export const en = {
     menuWavy: 'Wavy / either',
     menuDative: 'Dative / coordinate',
     menuBondTypes: 'Bond type',
+    menuSelectTools: 'Selection tools',
     bondMenuMain: 'Bonds',
     bondMenuMore: 'Query / stereo',
     bondMenuAdvanced: 'Advanced',
     menuReactionArrow: 'Reaction arrow style',
-    electronFlowHint:
-      'Electron flow: drag from a lone pair or bond to an atom. Empty space draws freely. Shift disables snap.',
     menuGlassware: 'Glassware',
     menuC6Conformation: 'Cyclohexane conformation',
     menuStereoBond: 'Stereo / specialty bond type',

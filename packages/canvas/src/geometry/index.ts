@@ -186,6 +186,7 @@ export {
   listReactionArrowEditHandles,
   arrowsForHitTest,
   arrowHandleHitTolWorld,
+  reagentSlotChipHitTolWorld,
   reactionArrowCurveHandlePatch,
   reactionArrowEndpointResizePatch,
   isQuadraticCurvedArrowKind,

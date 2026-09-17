@@ -4,6 +4,7 @@
  * linear (CH₂, H₂C).
  */
 import type { Atom, Molecule } from '@moldraw/domain';
+import { isIsolatedWaterOxygen } from '@moldraw/domain';
 import { angle0To2Pi } from './angles';
 import type { Point } from './polygons';
 
@@ -123,6 +124,10 @@ export const getHydrogenStubDirections = (
   }
 
   if (neighborAngles.length === 0) {
+    // Isolated water: textbook V (≈120°), not a linear H–O–H / H₂O formula.
+    if (atom.element === 'O' && count === 2) {
+      return [unit(Math.PI / 6), unit((5 * Math.PI) / 6)];
+    }
     return Array.from({ length: count }, (_, i) => {
       const a = -Math.PI / 2 + (i * 2 * Math.PI) / count;
       return unit(a);
@@ -131,6 +136,11 @@ export const getHydrogenStubDirections = (
 
   if (neighborAngles.length === 1) {
     const axis = neighborAngles[0];
+    if (atom.element === 'O' && count === 1 && isIsolatedWaterOxygen(atom, mol)) {
+      const c1 = axis + (2 * Math.PI) / 3;
+      const c2 = axis - (2 * Math.PI) / 3;
+      return [unit(Math.sin(c1) >= Math.sin(c2) ? c1 : c2)];
+    }
     const pA = axis + Math.PI / 2;
     const pB = axis - Math.PI / 2;
     const perps = [pA, pB].sort(moreVerticalFirst);

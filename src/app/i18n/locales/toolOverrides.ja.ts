@@ -13,6 +13,10 @@ export const jaToolOverrides: Record<
       '選択（スペースバーで一時切替）。Shift+空キャンバスドラッグ：ラッソ；Shiftなしドラッグ：矩形。',
   },
   lasso_select: { label: 'ラッソ', title: 'ラッソ選択' },
+  fragment_select: {
+    label: 'フラグメント',
+    title: 'フラグメント選択 — 原子または結合をクリックして連結分子全体を選択',
+  },
   erase: { label: '消去', title: '消去' },
   single_bond: { label: '単', title: '単結合' },
   double_bond: { label: '二重', title: '二重結合' },
@@ -138,6 +142,11 @@ export const jaToolOverrides: Record<
     title:
       '明示的Hを追加：原子を選択してクリック、または有効化して原子をクリック（例：カルボニルCのアルデヒドH）',
     shortLabel: 'H+',
+  },
+  add_explicit_c: {
+    label: '明示的C',
+    title: '炭素ラベルを表示：炭素を選択してクリック、または有効化して骨格炭素をクリック',
+    shortLabel: 'C+',
   },
   cyclopropane: { label: 'シクロプロパン', title: 'シクロプロパン', shortLabel: 'C3' },
   cyclobutane: { label: 'シクロブタン', title: 'シクロブタン', shortLabel: 'C4' },

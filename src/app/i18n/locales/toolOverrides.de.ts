@@ -13,6 +13,10 @@ export const deToolOverrides: Record<
       'Auswahl (Leertaste temporär). Umschalt+Ziehen auf leerer Leinwand: Lasso; Ziehen ohne Umschalt: Rechteck.',
   },
   lasso_select: { label: 'Lasso', title: 'Lasso-Auswahl' },
+  fragment_select: {
+    label: 'Fragment',
+    title: 'Fragmentauswahl — Klick auf Atom oder Bindung wählt das ganze verbundene Molekül',
+  },
   erase: { label: 'Radieren', title: 'Radieren' },
   single_bond: { label: 'Einfach', title: 'Einfachbindung' },
   double_bond: { label: 'Doppel', title: 'Doppelbindung' },
@@ -144,6 +148,12 @@ export const deToolOverrides: Record<
     title:
       'Explizites H hinzufügen: Atom(e) auswählen und klicken, oder aktivieren und Atom anklicken (z. B. Aldehyd-H am Carbonyl-C)',
     shortLabel: 'H+',
+  },
+  add_explicit_c: {
+    label: 'Explizites C',
+    title:
+      'Kohlenstofflabel zeigen: C-Atom(e) auswählen und klicken, oder aktivieren und ein Skelett-C anklicken',
+    shortLabel: 'C+',
   },
   cyclopropane: { label: 'Cyclopropan', title: 'Cyclopropan', shortLabel: 'C3' },
   cyclobutane: { label: 'Cyclobutan', title: 'Cyclobutan', shortLabel: 'C4' },

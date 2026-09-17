@@ -52,7 +52,7 @@
   /* App chrome geometry */
   --app-top-bar-site-row: 32px;
   --app-top-bar-main-height: 32px;
-  --app-top-bar-tools-row: 32px;
+  --app-top-bar-tools-row: 38px;
   --app-top-bar-context-row: 40px;
   --app-top-bar-height: calc(
     var(--app-top-bar-site-row) + var(--app-top-bar-main-height) + var(--app-top-bar-tools-row)

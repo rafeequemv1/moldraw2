@@ -125,6 +125,60 @@ export function ArrowPropertiesPanel({
   const title = isElectronFlow ? 'Electron flow' : 'Arrow';
   const fields = (
     <>
+      {showReagents && arrow ? (
+        <>
+          <div className="arrow-params__field arrow-params__field--reagent">
+            <span>Above</span>
+            <input
+              ref={aboveRef}
+              type="text"
+              spellCheck={false}
+              placeholder="H2SO4"
+              value={arrow.reagentAbove ?? ''}
+              aria-label="Reagent above arrow"
+              title="Click above the arrow or type here"
+              onChange={e => patch({ reagentAbove: e.target.value })}
+            />
+            <ReagentFontSizeStepper
+              value={resolveReagentFontSize(arrow, 'above')}
+              ariaLabel="Above text size"
+              onChange={n => patch({ reagentAboveFontSize: n })}
+            />
+          </div>
+          <div className="arrow-params__field arrow-params__field--reagent">
+            <span>Below</span>
+            <input
+              ref={belowRef}
+              type="text"
+              spellCheck={false}
+              placeholder="Conditions"
+              value={arrow.reagentBelow ?? ''}
+              aria-label="Reagent below arrow"
+              onChange={e => patch({ reagentBelow: e.target.value })}
+            />
+            <ReagentFontSizeStepper
+              value={resolveReagentFontSize(arrow, 'below')}
+              ariaLabel="Below text size"
+              onChange={n => patch({ reagentBelowFontSize: n })}
+            />
+          </div>
+          <label className="arrow-params__field">
+            <span>Format</span>
+            <select
+              value={arrow.reagentFormat ?? 'auto'}
+              aria-label="Reagent format"
+              onChange={e =>
+                patch({ reagentFormat: e.target.value as 'plain' | 'auto' | 'latex' })
+              }
+            >
+              <option value="plain">Plain</option>
+              <option value="auto">Auto</option>
+              <option value="latex">LaTeX</option>
+            </select>
+          </label>
+        </>
+      ) : null}
+
       {arrow ? (
         <label className="arrow-params__field">
           <span>Type</span>
@@ -140,9 +194,7 @@ export function ArrowPropertiesPanel({
             ))}
           </select>
         </label>
-      ) : (
-        <p className="arrow-params__hint">Drag from a lone pair to an atom. Empty space draws freely.</p>
-      )}
+      ) : null}
 
       <label className="arrow-params__field">
         <span>Head</span>
@@ -203,59 +255,6 @@ export function ArrowPropertiesPanel({
             onChange={e => patch({ strokeWidth: Number(e.target.value) })}
           />
         </label>
-      ) : null}
-
-      {showReagents && arrow ? (
-        <>
-          <label className="arrow-params__field">
-            <span>Format</span>
-            <select
-              value={arrow.reagentFormat ?? 'auto'}
-              aria-label="Reagent format"
-              onChange={e =>
-                patch({ reagentFormat: e.target.value as 'plain' | 'auto' | 'latex' })
-              }
-            >
-              <option value="plain">Plain</option>
-              <option value="auto">Auto</option>
-              <option value="latex">LaTeX</option>
-            </select>
-          </label>
-          <div className="arrow-params__field arrow-params__field--reagent">
-            <span>Above</span>
-            <input
-              ref={aboveRef}
-              type="text"
-              spellCheck={false}
-              placeholder="Reagent"
-              value={arrow.reagentAbove ?? ''}
-              aria-label="Reagent above arrow"
-              onChange={e => patch({ reagentAbove: e.target.value })}
-            />
-            <ReagentFontSizeStepper
-              value={resolveReagentFontSize(arrow, 'above')}
-              ariaLabel="Above text size"
-              onChange={n => patch({ reagentAboveFontSize: n })}
-            />
-          </div>
-          <div className="arrow-params__field arrow-params__field--reagent">
-            <span>Below</span>
-            <input
-              ref={belowRef}
-              type="text"
-              spellCheck={false}
-              placeholder="Conditions"
-              value={arrow.reagentBelow ?? ''}
-              aria-label="Reagent below arrow"
-              onChange={e => patch({ reagentBelow: e.target.value })}
-            />
-            <ReagentFontSizeStepper
-              value={resolveReagentFontSize(arrow, 'below')}
-              ariaLabel="Below text size"
-              onChange={n => patch({ reagentBelowFontSize: n })}
-            />
-          </div>
-        </>
       ) : null}
     </>
   );

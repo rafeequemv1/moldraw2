@@ -39,14 +39,10 @@ import {
 import { registerAuthLeavePersist } from '../auth/authLeavePersist';
 import type { DocumentTab, ProjectFolder, SavedProject, SavedProjectMeta } from './types';
 
+import { urlHasEditorSeedQuery } from '../editorSeedQuery';
+
 /** Debounced canvas → IndexedDB write. Short enough that a refresh keeps work. */
 const AUTOSAVE_DEBOUNCE_MS = 800;
-
-function urlHasEditorSeedQuery(): boolean {
-  if (typeof window === 'undefined') return false;
-  const params = new URLSearchParams(window.location.search);
-  return Boolean(params.get('reaction')?.trim() || params.get('smiles')?.trim());
-}
 
 export function useProjectPersistence(editorStore: MoleculeEditor) {
   const snapshot = readWorkingDocumentSnapshot();

@@ -231,6 +231,8 @@ export interface InteractionContext {
    * room (caller may flash the atom).
    */
   onAddExplicitHydrogen?: (atomId: string) => boolean;
+  /** Show or hide forced element labels (explicit C on skeletal carbons). */
+  onSetAtomsShowElementLabel?: (atomIds: string[], show: boolean) => boolean;
   onAddStroke?: (stroke: Stroke) => void;
   /** Finished Smart Draw stroke (world space). Host session buffers these. */
   onSmartDrawStroke?: (points: Point[]) => void;

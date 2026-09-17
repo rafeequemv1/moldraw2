@@ -79,6 +79,11 @@ export interface GeneralSettings {
   /** Show the canvas background grid. Default true. */
   showGrid: boolean;
   /**
+   * Alignment lines when dragging objects, and snap ticks while drawing bonds.
+   * Default true.
+   */
+  showAlignmentGuides: boolean;
+  /**
    * Settings panel: when true, show help text under each option.
    * Default false — titles and controls only.
    */

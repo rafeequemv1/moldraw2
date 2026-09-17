@@ -24,7 +24,10 @@ import {
 } from '../geometry';
 import type { RenderContext } from './types';
 
-const ENDPOINT_HANDLE_R = 7.5;
+const ENDPOINT_HANDLE_R = 11;
+
+const highlightAccent = (R: RenderContext): string =>
+  R.structureTheme.transformAccent ?? '#2dd4bf';
 
 const arrowWithDragPreview = (arr: ReactionArrow, R: RenderContext): ReactionArrow => {
   const d = R.dragAction;
@@ -60,7 +63,7 @@ const drawEditHandles = (
     ctx.beginPath();
     ctx.arc(h.x, h.y, r, 0, Math.PI * 2);
     ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#2563eb';
+    ctx.strokeStyle = highlightAccent(R);
     ctx.lineWidth = lw;
     ctx.fill();
     ctx.stroke();
@@ -121,35 +124,34 @@ const drawReagentSlotChips = (
   if (!reactionArrowSupportsReagentLabels(a.kind)) return;
   const slots = reactionArrowReagentSlotPositions(a);
   const vz = R.viewport.zoom;
-  const r = 7 / vz;
-  const lw = 1.25 / vz;
-  const fs = 8 / vz;
+  const r = 13 / vz;
+  const lw = 1.75 / vz;
+  const accent = highlightAccent(R);
 
   ctx.save();
   ctx.setLineDash([]);
+  ctx.lineCap = 'round';
   for (const slot of ['above', 'below'] as const) {
     const { x, y } = slots[slot];
     const hasText =
       slot === 'above' ? Boolean(a.reagentAbove?.trim()) : Boolean(a.reagentBelow?.trim());
+    if (hasText) continue;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    if (hasText) {
-      ctx.fillStyle = 'rgba(37, 99, 235, 0.12)';
-      ctx.strokeStyle = 'rgba(37, 99, 235, 0.45)';
-    } else {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-      ctx.strokeStyle = 'rgba(37, 99, 235, 0.55)';
-    }
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+    ctx.strokeStyle = accent;
     ctx.lineWidth = lw;
     ctx.fill();
     ctx.stroke();
-    if (!hasText) {
-      ctx.fillStyle = '#2563eb';
-      ctx.font = `600 ${fs}px system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('+', x, y + 0.5 / vz);
-    }
+    const arm = r * 0.42;
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2.4 / vz;
+    ctx.beginPath();
+    ctx.moveTo(x - arm, y);
+    ctx.lineTo(x + arm, y);
+    ctx.moveTo(x, y - arm);
+    ctx.lineTo(x, y + arm);
+    ctx.stroke();
   }
   ctx.restore();
 };
@@ -166,7 +168,7 @@ export const drawReactionArrows = (ctx: CanvasRenderingContext2D, R: RenderConte
     const isSelected =
       (R.selectedReactionArrowIds?.includes(arr.id) ?? false) ||
       R.selectedReactionArrowId === arr.id;
-    const col = isSelected ? '#2563eb' : R.structureTheme.ink;
+    const col = isSelected ? highlightAccent(R) : R.structureTheme.ink;
     const lw = isSelected ? 2.25 : 2;
     drawReactionArrowShape(ctx, drawn, { color: col, lineWidth: drawn.strokeWidth ?? lw });
     if (drawn.reagentAbove?.trim() || drawn.reagentBelow?.trim()) {
@@ -256,7 +258,7 @@ export const drawReactionArrowGhost = (
     ctx.beginPath();
     ctx.arc(d.x1, d.y1, r, 0, Math.PI * 2);
     ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#2563eb';
+    ctx.strokeStyle = highlightAccent(R);
     ctx.lineWidth = 1.5 / vz;
     ctx.fill();
     ctx.stroke();

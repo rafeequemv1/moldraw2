@@ -17,7 +17,7 @@ import {
 } from '@moldraw/domain';
 import { getEffectiveValencyForImplicitHydrogen } from '@moldraw/domain';
 import { buildAliasDisplayRuns } from '@moldraw/domain';
-import { condensedGroupLabelForAtom } from '@moldraw/domain';
+import { condensedGroupLabelForAtom, isIsolatedWaterOxygen } from '@moldraw/domain';
 import {
   carbonLabelHGoesLeft,
   hGoesLeft,
@@ -62,15 +62,33 @@ const getDisplayElement = (element: string, isotope?: number): string => {
 const getIsotopeString = (element: string, isotope?: number): string =>
   element === 'H' && (isotope === 2 || isotope === 3) ? '' : isotope ? String(isotope) : '';
 
+const formulaImplicitHydrogenCount = (
+  atom: Atom,
+  mol: Molecule,
+  bondOrderSum: number,
+  showHydrogens: boolean,
+): number => {
+  if (isIsolatedWaterOxygen(atom, mol, bondOrderSum)) return 0;
+  const isCarbon = atom.element === 'C';
+  const forceElementLabel = Boolean(atom.showElementLabel);
+  const maxForImplicitH = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
+  const implicitH = Math.max(0, maxForImplicitH - bondOrderSum);
+  return isCarbon && showHydrogens && !forceElementLabel
+    ? 0
+    : !isCarbon || showHydrogens || forceElementLabel
+      ? implicitH
+      : 0;
+};
+
 /**
  * Display-only C–H bonds + "H" labels. Geometry and glyph size match explicit H
  * atoms (right-click Add explicit H) so Settings is not a tiny stub overlay.
+ * Isolated water always shows two bent H stubs (even when implicit-H display is off).
  */
 export const drawImplicitHydrogenStubs = (
   ctx: CanvasRenderingContext2D,
   R: RenderContext,
 ): void => {
-  if (!R.showHydrogens) return;
   const P = R.displayPrefs;
   ctx.lineWidth = P.bondThicknessPx;
   ctx.lineJoin = 'round';
@@ -79,13 +97,17 @@ export const drawImplicitHydrogenStubs = (
 
   R.renderedMolecule.atoms.forEach(atom => {
     if (R.visibleAtomIds && !R.visibleAtomIds.has(atom.id)) return;
-    // Explicit-C labels use CHₙ on the glyph; skip stubs to avoid double H.
-    if (atom.element !== 'C' || atom.alias?.trim() || atom.showElementLabel) return;
     const v = R.valencyMap.get(atom.id) || 0;
+    const water = isIsolatedWaterOxygen(atom, R.renderedMolecule, v);
+    if (!water) {
+      if (!R.showHydrogens) return;
+      if (atom.element !== 'C' || atom.alias?.trim() || atom.showElementLabel) return;
+    }
     const maxValency = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
     const implicitH = Math.max(0, maxValency - v);
     if (implicitH <= 0) return;
     if (
+      !water &&
       R.condensedGroupLabels &&
       condensedGroupLabelForAtom(atom, R.renderedMolecule, v)
     ) {
@@ -231,12 +253,13 @@ export const drawAtomLabels = (ctx: CanvasRenderingContext2D, R: RenderContext):
     }
 
     // Forced "C" draws like a heteroatom: C plus bonded H as linear CHₙ / HₙC.
-    const numH =
-      isCarbon && R.showHydrogens && !forceElementLabel
-        ? 0
-        : !isCarbon || R.showHydrogens || forceElementLabel
-          ? implicitH
-          : 0;
+    // Isolated water keeps angular H stubs instead of H₂O / H–OH.
+    const numH = formulaImplicitHydrogenCount(
+      atom,
+      R.renderedMolecule,
+      currentValency,
+      R.showHydrogens,
+    );
 
     const needsLabel =
       !isCarbon ||
@@ -378,16 +401,7 @@ export function measureDeltaLabelExtents(
     }
   }
 
-  const isCarbon = atom.element === 'C';
-  const forceElementLabel = Boolean(atom.showElementLabel);
-  const maxForImplicitH = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
-  const implicitH = Math.max(0, maxForImplicitH - bondSum);
-  const numH =
-    isCarbon && R.showHydrogens && !forceElementLabel
-      ? 0
-      : !isCarbon || R.showHydrogens || forceElementLabel
-        ? implicitH
-        : 0;
+  const numH = formulaImplicitHydrogenCount(atom, mol, bondSum, R.showHydrogens);
   const displayElement = getDisplayElement(atom.element, atom.isotope);
   const isotopeStr = getIsotopeString(atom.element, atom.isotope);
 
@@ -474,8 +488,8 @@ export const drawSelectedChargeMarks = (ctx: CanvasRenderingContext2D, R: Render
     R.applyLabelUpright(atom.id, () => {
       for (const box of boxes) {
         ctx.save();
-        ctx.strokeStyle = '#2563eb';
-        ctx.fillStyle = 'rgba(37, 99, 235, 0.12)';
+        ctx.strokeStyle = R.structureTheme.transformAccent ?? '#2dd4bf';
+        ctx.fillStyle = 'rgba(45, 212, 191, 0.14)';
         ctx.lineWidth = 1.5;
         const pad = 3;
         ctx.beginPath();
@@ -609,14 +623,7 @@ function measureElementLabelBox(
 ): LonePairLabelLayout {
   const isCarbon = atom.element === 'C';
   const forceElementLabel = Boolean(atom.showElementLabel);
-  const maxForImplicitH = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
-  const implicitH = Math.max(0, maxForImplicitH - bondOrderSum);
-  const numH =
-    isCarbon && showHydrogens && !forceElementLabel
-      ? 0
-      : !isCarbon || showHydrogens || forceElementLabel
-        ? implicitH
-        : 0;
+  const numH = formulaImplicitHydrogenCount(atom, mol, bondOrderSum, showHydrogens);
   const displayElement = getDisplayElement(atom.element, atom.isotope);
   const isotopeStr = getIsotopeString(atom.element, atom.isotope);
   const hasCharge = (atom.charge ?? 0) !== 0;

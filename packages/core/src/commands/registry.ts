@@ -81,12 +81,10 @@ import { addExplicitHydrogensToAtoms } from '../molecule/addExplicitHydrogen';
 import { upsertRingFillsForRings } from '@moldraw/domain';
 import {
   autocapitalizeAtomAliasDraft,
-  looksLikeExpandableFormulaLabel,
   validateAtomAliasForMolecule,
 } from '@moldraw/domain';
 import { getMaxLonePairsForAtom } from '@moldraw/domain';
 import { expandAliasesFor3D } from '../expand/aliasesFor3D';
-import { condensedToSmiles } from '../expand/condensedFormulaExpand';
 import {
   resolveCleanupBondLength,
   spliceLocalCleanup,
@@ -1536,20 +1534,13 @@ const commitFragmentPlacementCmd: MoleculeCommand<
 const commitAtomAliasCmd: MoleculeCommand<z.infer<typeof schemas.commitAtomAlias>> = {
   id: CMD.CommitAtomAlias,
   description:
-    'Commit a validated atom alias (may update element/charge and clamp lone pairs). Trailing +/− set formal charge. BH4 → B−; NaBH4 → Na⁺ plus BH4− with no covalent Na–B bond. COONa stays a condensed alias (expand via show explicit).',
+    'Commit a validated atom alias (may update element/charge and clamp lone pairs). Trailing +/− set formal charge. BH4 → B−. NaBH4 and COONa stay condensed aliases (expand via show explicit). Any other text is kept as a display label.',
   inputSchema: schemas.commitAtomAlias,
   apply: (prev, { atomId, alias }) => {
     const formatted = autocapitalizeAtomAliasDraft(alias);
     const v = validateAtomAliasForMolecule(prev, atomId, formatted);
     if (!v.ok) throw new Error(v.reason);
     const draft = v.body.trim() ? v.body.trim() : '';
-    const labelBody = v.body.trim();
-    if (labelBody && looksLikeExpandableFormulaLabel(labelBody)) {
-      const hasSymbolicRepeat = /\)[nm](?![A-Za-z0-9])/i.test(labelBody);
-      if (!hasSymbolicRepeat && !condensedToSmiles(labelBody)) {
-        throw new Error('Could not parse condensed formula label');
-      }
-    }
     let next: Molecule = {
       ...prev,
       atoms: prev.atoms.map(a => {

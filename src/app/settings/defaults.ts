@@ -26,6 +26,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     preferIndigo2d: true,
     snapToGrid: false,
     showGrid: false,
+    showAlignmentGuides: true,
     showSettingsDescriptions: false,
     showSettingsExamples: false,
     touchPanOnEmptyCanvas: false,

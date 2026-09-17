@@ -41,7 +41,7 @@ function beginPlaceChargeMarkDrag(
  *
  *   charge_plus / charge_minus → ±1 per click (stack within valency); drag to place
  *   delta_plus / delta_minus → set δ± (toggle off if same); drag to place
- *   lone_pair / free_radical / add_explicit_h → click only
+ *   lone_pair / free_radical / add_explicit_h / add_explicit_c → click only
  */
 export const chargeToolMouseDown = (ctx: InteractionContext): boolean => {
   const { e, worldPos, activeTool, molecule } = ctx;
@@ -115,6 +115,17 @@ export const chargeToolMouseDown = (ctx: InteractionContext): boolean => {
   }
   if (activeTool === 'add_explicit_h' && ctx.onAddExplicitHydrogen) {
     if (atom.element === 'H' || !ctx.onAddExplicitHydrogen(atom.id)) {
+      ctx.flashAtomError(atom.id);
+    }
+    return true;
+  }
+  if (activeTool === 'add_explicit_c' && ctx.onSetAtomsShowElementLabel) {
+    if (atom.element !== 'C' || atom.alias?.trim()) {
+      ctx.flashAtomError(atom.id);
+      return true;
+    }
+    const show = !atom.showElementLabel;
+    if (!ctx.onSetAtomsShowElementLabel([atom.id], show)) {
       ctx.flashAtomError(atom.id);
     }
     return true;

@@ -23,11 +23,13 @@ import {
 import {
   C6_RING_TOOL_IDS,
   CHARGE_MENU_TOOL_IDS,
+  CHARGE_PRIMARY_TOOL_IDS,
   LONE_PAIR_TOOL_IDS,
   ORBITAL_TOOL_IDS,
   MOBILE_CATEGORY_TOOL_IDS,
   MOBILE_TOOL_CATEGORIES,
   BOND_MENU_TOOL_IDS,
+  SELECT_MENU_TOOL_IDS,
   TOOL_DEFS,
   TOOL_GROUPS_LEFT_STRUCTURE,
   TOOL_IDS_BOTTOM_RINGS,
@@ -87,9 +89,12 @@ const categoryForTool = (toolId: string): MobileToolCategory | null => {
     if (MOBILE_CATEGORY_TOOL_IDS[cat.id].includes(toolId)) return cat.id;
   }
   // Split-menu siblings map to their primary category
+  if ((CHARGE_PRIMARY_TOOL_IDS as readonly string[]).includes(toolId)) return 'draw';
+  if (toolId === 'add_explicit_h' || toolId === 'add_explicit_c') return 'draw';
   if ((CHARGE_MENU_TOOL_IDS as readonly string[]).includes(toolId)) return 'draw';
   if ((LONE_PAIR_TOOL_IDS as readonly string[]).includes(toolId)) return 'draw';
   if (toolId === 'erase') return 'draw';
+  if ((SELECT_MENU_TOOL_IDS as readonly string[]).includes(toolId)) return 'select';
   if ((BOND_MENU_TOOL_IDS as readonly string[]).includes(toolId)) return 'draw';
   if ((C6_RING_TOOL_IDS as readonly string[]).includes(toolId)) return 'rings';
   if ((ORBITAL_TOOL_IDS as readonly string[]).includes(toolId)) return 'annotate';
@@ -159,15 +164,15 @@ const renderToolOrArrowRow = (
 ) => {
   tool = props.i18n.localizeTool(tool);
   if ((CHARGE_MENU_TOOL_IDS as readonly string[]).includes(tool.id)) {
-    if (tool.id !== 'charge_plus') return null;
+    if (tool.id !== 'oplus') return null;
     const chargeActive = (CHARGE_MENU_TOOL_IDS as readonly string[]).includes(props.activeTool);
-    const chargeToolId = chargeActive ? props.activeTool : 'charge_plus';
+    const chargeToolId = chargeActive ? props.activeTool : 'oplus';
     const chargeTool = props.i18n.localizeTool(TOOL_DEFS.find(t => t.id === chargeToolId) ?? tool);
     return (
       <ToolbarSplitTool
-        key="charge"
+        key="charge-more"
         toolId={chargeToolId}
-        toolLabel={chargeTool.label}
+        toolLabel={chargeTool.shortLabel ?? chargeTool.label}
         toolTitle={`${chargeTool.title}${tooltipShortcutSuffix(chargeToolId)}`}
         isActive={chargeActive}
         value={chargeToolId}
@@ -247,6 +252,27 @@ const renderToolOrArrowRow = (
       />
     );
   }
+  if ((SELECT_MENU_TOOL_IDS as readonly string[]).includes(tool.id)) {
+    if (tool.id !== 'select') return null;
+    const selectActive = (SELECT_MENU_TOOL_IDS as readonly string[]).includes(props.activeTool);
+    const selectToolId = selectActive ? props.activeTool : 'select';
+    const selectTool = props.i18n.localizeTool(TOOL_DEFS.find(t => t.id === selectToolId) ?? tool);
+    return (
+      <ToolbarSplitTool
+        key="select-tools"
+        toolId={selectToolId}
+        toolLabel={selectTool.shortLabel ?? selectTool.label}
+        toolTitle={`${selectTool.title}${tooltipShortcutSuffix(selectToolId)}`}
+        isActive={selectActive}
+        value={selectToolId}
+        options={props.i18n.selectMenuOptions}
+        onSelectTool={() => props.onSelect(selectToolId)}
+        onChangeValue={v => props.onSelect(v)}
+        menuAriaLabel={props.i18n.t('toolbar.menuSelectTools')}
+        renderPreview={id => renderToolIcon(id)}
+      />
+    );
+  }
   if ((BOND_MENU_TOOL_IDS as readonly string[]).includes(tool.id)) {
     if (tool.id !== 'single_bond') return null;
     const bondActive = (BOND_MENU_TOOL_IDS as readonly string[]).includes(props.activeTool);
@@ -309,7 +335,6 @@ const renderToolOrArrowRow = (
           props.onSelect(tool.id);
         }}
         menuAriaLabel={props.i18n.t('toolbar.menuReactionArrow')}
-        menuHint={props.i18n.t('toolbar.electronFlowHint')}
         renderPreview={v => {
           const parsed = fromReactionArrowMenuValue(v);
           return (

@@ -20,6 +20,11 @@ export interface ResolveCanvasPreferencesInput {
     snapToGrid?: boolean;
     /** Draw the background grid. Default true when omitted. */
     showGrid?: boolean;
+    /**
+     * Alignment lines when dragging, and snap ticks while drawing bonds.
+     * Default true when omitted.
+     */
+    showAlignmentGuides?: boolean;
   };
   bonds: {
     bondLengthPx: number;
@@ -44,6 +49,8 @@ export interface ResolvedCanvasPreferences {
   snapToGrid: boolean;
   /** Draw the background grid. */
   showGrid: boolean;
+  /** Alignment lines / snap ticks (canvas assistance guidelines). */
+  showAlignmentGuides: boolean;
   /** Background / snap grid spacing in world units. */
   gridSizePx: number;
   labelFontFamily: string;
@@ -153,6 +160,7 @@ export function resolveCanvasPreferences(s: ResolveCanvasPreferencesInput): Reso
     bondAngleSnapRad,
     snapToGrid: g.snapToGrid === true,
     showGrid: g.showGrid === true,
+    showAlignmentGuides: g.showAlignmentGuides !== false,
     gridSizePx: 50,
     labelFontFamily: family,
     elementFontCss: `${weight}${fontPx}px ${family}`,

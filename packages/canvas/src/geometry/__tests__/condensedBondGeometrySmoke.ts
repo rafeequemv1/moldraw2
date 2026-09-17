@@ -23,6 +23,7 @@ const prefs: ResolvedCanvasPreferences = {
   bondAngleSnapRad: Math.PI / 6,
   snapToGrid: false,
   showGrid: false,
+  showAlignmentGuides: true,
   gridSizePx: 50,
   labelFontFamily: 'Arial',
   elementFontCss: '14px Arial',

@@ -366,6 +366,7 @@ export function computeNextExplicitHydrogenAngle(
 
   const rays = neighborRays(mol, atomId);
   const heavy = rays.filter(r => r.element !== 'H');
+  const hydrogens = rays.filter(r => r.element === 'H');
   const heavyAngles = heavy.map(r => r.angle);
   const occupied = rays.map(r => r.angle);
 
@@ -377,6 +378,21 @@ export function computeNextExplicitHydrogenAngle(
     if (blocked(ang)) ang = raw;
     return blocked(ang) ? null : ang;
   };
+
+  // Isolated water: bent V (~120°), not vertical H–O–H / H–OH.
+  if (atom.element === 'O' && heavy.length === 0) {
+    if (hydrogens.length === 0) {
+      const first = (5 * Math.PI) / 6;
+      return tryAngle(first) ?? first;
+    }
+    if (hydrogens.length === 1) {
+      const axis = hydrogens[0]!.angle;
+      const c1 = normAngle(axis + (2 * Math.PI) / 3);
+      const c2 = normAngle(axis - (2 * Math.PI) / 3);
+      const preferred = Math.sin(c1) >= Math.sin(c2) ? c1 : c2;
+      return tryAngle(preferred) ?? preferred;
+    }
+  }
 
   const candidates: number[] = [];
   if (heavyAngles.length === 0) {

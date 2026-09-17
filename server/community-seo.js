@@ -560,6 +560,15 @@ function renderCommentList(comments, { permalinkHref, pageUrl, showAll = false, 
           ${!showAll && hidden > 0 ? `<a class="more-thread" data-open-thread href="${escapeHtml(pageUrl)}">View more comments</a>` : ''}`;
 }
 
+function postOverflowMenuHtml(url) {
+  return `<div class="post-overflow">
+              <button type="button" class="post-overflow-btn" data-post-menu aria-haspopup="menu" aria-expanded="false" aria-label="Post actions">⋯</button>
+              <div class="post-overflow-menu" hidden role="menu">
+                <button type="button" class="post-overflow-item" role="menuitem" data-copy-post-link="${escapeHtml(url)}">Copy link</button>
+              </div>
+            </div>`;
+}
+
 function renderPostCard(post, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '', commentTotal } = {}) {
   const url = discussionPath(post);
   const titleTag = heading;
@@ -583,6 +592,7 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
                   <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · <time datetime="${escapeHtml(isoDate(post.created_at) || '')}">${escapeHtml(timeText(post.created_at))}</time></div>
                 </div>
               </div>
+              ${postOverflowMenuHtml(url)}
             </div>
             <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${post.request_status ? renderFeatureStatus(post.request_status) : ''}</${titleTag}>
             <p class="card-body">${renderMentionedText(post.body)}</p>
@@ -636,6 +646,7 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
                   <div class="author-meta">Feature request · <time datetime="${escapeHtml(isoDate(request.created_at) || '')}">${escapeHtml(timeText(request.created_at))}</time></div>
                 </div>
               </div>
+              ${postOverflowMenuHtml(url)}
             </div>
             <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(request.status)}</${titleTag}>
             <p class="card-body">${escapeHtml(request.description)}</p>

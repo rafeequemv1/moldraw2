@@ -32,8 +32,15 @@ export interface ToolDef {
 
 export const TOOL_DEFS: ToolDef[] = [
   { id: 'hand', label: 'Hand', title: 'Pan canvas — drag to move the view', category: 'edit', group: 'select_edit' },
-  { id: 'select', label: 'Select', title: 'Select (Spacebar temporarily). Shift+drag on empty canvas: lasso; drag without Shift: rectangle.', category: 'edit', group: 'select_edit' },
-  { id: 'lasso_select', label: 'Lasso', title: 'Lasso Select', category: 'edit', group: 'select_edit' },
+  { id: 'select', label: 'Select', title: 'Select (Spacebar temporarily). Shift+drag on empty canvas: lasso; drag without Shift: rectangle. Click again for Lasso and Fragment.', category: 'edit', group: 'select_edit' },
+  { id: 'lasso_select', label: 'Lasso', title: 'Lasso Select — drag a freehand outline', category: 'edit', group: 'select_edit' },
+  {
+    id: 'fragment_select',
+    label: 'Fragment',
+    title: 'Fragment select — click an atom or bond to select the entire connected molecule',
+    category: 'edit',
+    group: 'select_edit',
+  },
   { id: 'erase', label: 'Erase', title: 'Erase', category: 'edit', group: 'select_edit' },
   { id: 'single_bond', label: 'Single', title: 'Single Bond', category: 'bonds', group: 'bond_types' },
   { id: 'double_bond', label: 'Double', title: 'Double Bond', category: 'bonds', group: 'bond_types' },
@@ -257,6 +264,15 @@ export const TOOL_DEFS: ToolDef[] = [
     category: 'edit',
     group: 'select_edit',
   },
+  {
+    id: 'add_explicit_c',
+    label: 'Explicit C',
+    shortLabel: 'C+',
+    title:
+      'Show explicit carbon: select carbon(s) then click, or activate and click a skeletal carbon to draw the C label',
+    category: 'edit',
+    group: 'select_edit',
+  },
   { id: 'cyclopropane', label: 'Cyclopropane', shortLabel: 'C3', title: 'Cyclopropane', category: 'rings', group: 'rings' },
   { id: 'cyclobutane', label: 'Cyclobutane', shortLabel: 'C4', title: 'Cyclobutane', category: 'rings', group: 'rings' },
   { id: 'cyclopentane', label: 'Cyclopentane', shortLabel: 'C5', title: 'Cyclopentane', category: 'rings', group: 'rings' },
@@ -292,7 +308,7 @@ export const TOOL_DEFS: ToolDef[] = [
   },
   { id: 'text', label: 'Text', title: 'Click empty canvas and start typing. Drag the frame to move, corners to resize, knob to rotate; Esc to finish.', category: 'edit', group: 'annotate' },
   { id: 'atom_label', label: 'Atom Label', shortLabel: 'Label', title: 'Atom label (A): click an atom — type R, Me, Ph, CH3, COOH, etc. R/R1/R2 are generic substituents on C or heteroatoms.', category: 'edit', group: 'annotate' },
-  { id: 'reaction_arrow', label: 'Reaction Arrow', shortLabel: 'Arrow', title: 'Drag tail→head on canvas. Use the menu beside the tool to pick arrow type (Electron flow / Mechanism snaps to lone pairs, bonds, and atoms). SMILES react>>prod uses the first arrow that is not equilibrium / half-equilibrium / resonance.', category: 'edit', group: 'annotate' },
+  { id: 'reaction_arrow', label: 'Reaction Arrow', shortLabel: 'Arrow', title: 'Click start then end, or drag tail→head. After placing, type a reagent above (H2SO4). Use the menu beside the tool to pick arrow type. SMILES react>>prod uses the first arrow that is not equilibrium / half-equilibrium / resonance.', category: 'edit', group: 'annotate' },
   { id: 'shape', label: 'Shape', title: 'Click and drag to draw an annotation shape. Use the menu beside the tool for rectangle, line, circle, triangle, or star.', category: 'edit', group: 'annotate' },
   {
     id: 'glassware',
@@ -342,17 +358,21 @@ export const TOOL_DEFS: ToolDef[] = [
 /** Groups in the order they appear in the desktop toolbar. */
 export const TOOL_GROUP_ORDER: ToolGroup[] = ['select_edit', 'bond_types', 'rings', 'stereo', 'annotate', 'templates'];
 
-/** Left rail: pointer tools, ending at erase (divider sits below). */
+/** Left rail: pointer tools, ending at erase (divider sits below). Lasso / fragment live in the Select split menu. */
 export const TOOL_IDS_LEFT_SELECT: readonly string[] = [
   'hand',
   'select',
-  'lasso_select',
   'erase',
 ];
 
-/** Left rail: charge / lone pair, after the erase divider. */
+/** Select split menu (Ketcher two-click: first click Select, second click opens). */
+export const SELECT_MENU_TOOL_IDS = ['select', 'lasso_select', 'fragment_select'] as const;
+
+/** Left rail: charge / overflow / lone pair, after the erase divider. H+ / C+ live on the top bar after Clear. */
 export const TOOL_IDS_LEFT_MARKS: readonly string[] = [
   'charge_plus',
+  'charge_minus',
+  'oplus',
   'lone_pair',
 ];
 
@@ -413,12 +433,13 @@ export const MOBILE_TOOL_CATEGORIES: {
 
 /** Tool ids shown in the active strip for each mobile category. */
 export const MOBILE_CATEGORY_TOOL_IDS: Record<MobileToolCategory, readonly string[]> = {
-  select: ['hand', 'select', 'lasso_select'],
+  select: ['hand', 'select'],
   draw: [
     'erase',
     'pencil',
     'smart_draw',
     'charge_plus',
+    'charge_minus',
     'lone_pair',
     'single_bond',
     'chain',
@@ -429,10 +450,11 @@ export const MOBILE_CATEGORY_TOOL_IDS: Record<MobileToolCategory, readonly strin
   more: [],
 };
 
-/** Charge / δ / radical-ion tools collapsed into one left-rail dropdown (primary: +). */
-export const CHARGE_TOOL_IDS = [
-  'charge_plus',
-  'charge_minus',
+/** One-click + / − on the left rail (Ketcher-style; not behind a dropdown). */
+export const CHARGE_PRIMARY_TOOL_IDS = ['charge_plus', 'charge_minus'] as const;
+
+/** Circled / radical / δ extras — overflow flyout (primary: ⊕). */
+export const CHARGE_OVERFLOW_TOOL_IDS = [
   'oplus',
   'ominus',
   'radical_cation',
@@ -441,7 +463,13 @@ export const CHARGE_TOOL_IDS = [
   'delta_minus',
 ] as const;
 
-/** Canvas stamp symbols (Δ, ν, ‡, …) in the charge dropdown Symbols group. */
+/** @deprecated Use CHARGE_PRIMARY_TOOL_IDS + CHARGE_OVERFLOW_TOOL_IDS. */
+export const CHARGE_TOOL_IDS = [
+  ...CHARGE_PRIMARY_TOOL_IDS,
+  ...CHARGE_OVERFLOW_TOOL_IDS,
+] as const;
+
+/** Canvas stamp symbols (Δ, ν, ‡, …) in the charge overflow Symbols group. */
 export const CHARGE_SYMBOL_TOOL_IDS = [
   'stamp_delta',
   'stamp_delta_tri',
@@ -450,9 +478,9 @@ export const CHARGE_SYMBOL_TOOL_IDS = [
   'stamp_celsius',
 ] as const;
 
-/** All tools selectable from the charge dropdown menu. */
+/** Overflow flyout tools (not the one-click + / − strip buttons). */
 export const CHARGE_MENU_TOOL_IDS = [
-  ...CHARGE_TOOL_IDS,
+  ...CHARGE_OVERFLOW_TOOL_IDS,
   ...CHARGE_SYMBOL_TOOL_IDS,
 ] as const;
 

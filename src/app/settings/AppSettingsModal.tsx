@@ -742,6 +742,21 @@ export function AppSettingsModal({
                 </div>
                 <SettingExampleSlot kind="showGrid" />
                 <div style={rowStyle}>
+                  <SettingsFieldLabel
+                    labelKey="settings.general.showAlignmentGuides"
+                    hintKey="settings.general.showAlignmentGuidesHint"
+                  />
+                  <div style={{ ...controlStyle, paddingTop: 2 }}>
+                    <BoolSwitch
+                      checked={g.showAlignmentGuides !== false}
+                      onToggle={() =>
+                        updateGeneral({ showAlignmentGuides: g.showAlignmentGuides === false })
+                      }
+                      ariaLabel={t('settings.general.showAlignmentGuides')}
+                    />
+                  </div>
+                </div>
+                <div style={rowStyle}>
                   <SettingsFieldLabel labelKey="settings.general.reactionComponentMargin" />
                   <div style={controlStyle}>
                     <input

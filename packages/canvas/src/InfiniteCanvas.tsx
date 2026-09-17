@@ -18,6 +18,7 @@ import type {
 import {
   createSmartDrawSession,
   isRingTool as isRingToolName,
+  isSelectTool,
   isSmartDrawTool,
   ringSidesForTool,
   type SmartDrawSessionResult,
@@ -114,6 +115,7 @@ export interface InfiniteCanvasProps {
   onSetAtomRadical?: (atomId: string, radical: number) => void;
   onSetAtomRadicalIon?: (atomId: string, charge: number, radical: number) => void;
   onAddExplicitHydrogen?: (atomId: string) => boolean;
+  onSetAtomsShowElementLabel?: (atomIds: string[], show: boolean) => boolean;
   onUpdateAtomElement?: (atomId: string, element: string) => void;
   activeColor?: string;
   activeThickness?: number;
@@ -339,6 +341,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       onSetAtomRadical,
       onSetAtomRadicalIon,
       onAddExplicitHydrogen,
+      onSetAtomsShowElementLabel,
       onUpdateAtomElement,
       activeColor = '#0f172a',
       activeThickness = 4,
@@ -537,6 +540,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       onSetAtomRadical,
       onSetAtomRadicalIon,
       onAddExplicitHydrogen,
+      onSetAtomsShowElementLabel,
       onUpdateAtomElement,
       onAddStroke,
       onSmartDrawStroke: handleSmartDrawStroke,
@@ -776,7 +780,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       }
       if (drag) return null;
       const textish = activeTool === 'text';
-      if (!textish && activeTool !== 'select' && activeTool !== 'lasso_select') return null;
+      if (!textish && !isSelectTool(activeTool)) return null;
       const mp = input.mouseWorldPos;
       if (!mp) return textish ? 'text' : null;
       const ctx = getCursorMeasureCtx();
@@ -806,7 +810,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
           ? 'grab'
           : activeTool === PLACE_FRAGMENT_TOOL_ID
             ? 'copy'
-            : activeTool === 'select' || activeTool === 'lasso_select'
+            : isSelectTool(activeTool)
               ? 'pointer'
               : activeTool === 'erase'
                 ? 'cell'

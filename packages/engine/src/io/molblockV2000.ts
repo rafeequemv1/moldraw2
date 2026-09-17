@@ -16,7 +16,7 @@ import {
   parseMolfileBondStereo,
   parseMolfileBondType,
 } from '@moldraw/domain';
-import { findMolfileCountsLineIndex } from '@moldraw/core';
+import { findMolfileCountsLineIndex, parseV2000AtomLineFields } from '@moldraw/core';
 import { makeIdFactory } from '../ids';
 import { MOLBLOCK_SCALE } from '../types';
 import { normalizeElementSymbol } from '../data/periodicTable';
@@ -97,18 +97,12 @@ export const parseMolblockV2000 = (molblock: string): Molecule => {
     let x: number;
     let y: number;
     let element: string;
-    let mdlStereoCare: number | undefined;
-
     const parts = line.trim().split(/\s+/);
-    if (parts.length >= 4 && /^[A-Za-z*]{1,3}$/.test(parts[3])) {
-      // Whitespace-tokenized (PubChem/OEChem)
+    const tokenized = parts.length >= 4 && /^[A-Za-z*]{1,3}$/.test(parts[3]);
+    if (tokenized) {
       x = parseFloat(parts[0]) * MOLBLOCK_SCALE;
       y = -parseFloat(parts[1]) * MOLBLOCK_SCALE;
       element = parts[3];
-      if (parts.length > 6) {
-        const sc = parseInt(parts[6], 10);
-        if (Number.isFinite(sc) && sc >= 0 && sc <= 3) mdlStereoCare = sc;
-      }
     } else {
       x = parseFloat(line.substring(0, 10).trim()) * MOLBLOCK_SCALE;
       y = -parseFloat(line.substring(10, 20).trim()) * MOLBLOCK_SCALE;
@@ -116,6 +110,11 @@ export const parseMolblockV2000 = (molblock: string): Molecule => {
     }
     if (!Number.isFinite(x)) x = 0;
     if (!Number.isFinite(y)) y = 0;
+    const extras = parseV2000AtomLineFields(
+      line,
+      normalizeElementSymbol(element) || 'C',
+      tokenized ? parts : undefined,
+    );
 
     const id = ids.atom(i + 1);
     atomIds.push(id);
@@ -124,8 +123,10 @@ export const parseMolblockV2000 = (molblock: string): Molecule => {
       element: normalizeElementSymbol(element) || 'C',
       x,
       y,
-      charge: 0,
-      ...(mdlStereoCare !== undefined ? { mdlStereoCare } : {}),
+      charge: extras.charge,
+      ...(extras.radical ? { radical: extras.radical } : {}),
+      ...(extras.isotope != null ? { isotope: extras.isotope } : {}),
+      ...(extras.mdlStereoCare !== undefined ? { mdlStereoCare: extras.mdlStereoCare } : {}),
     });
   }
 
@@ -149,7 +150,7 @@ export const parseMolblockV2000 = (molblock: string): Molecule => {
       ...(parsedType.aromatic ? { aromatic: true } : {}),
       ...(parsedType.dative ? { dative: true } : {}),
       ...(parsedType.queryType ? { queryType: parsedType.queryType } : {}),
-      stereo,
+      ...(stereo ? { stereo } : {}),
     });
   }
 

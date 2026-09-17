@@ -644,7 +644,7 @@ export function useEngineMessageRouter(opts: UseEngineMessageRouterOptions): voi
           console.warn('placement-prep failed:', err);
         }
       } else if (
-        msg.type === 'SMILES_TO_MOLBLOCK_SUCCESS' &&
+        (msg.type === 'SMILES_TO_MOLBLOCK_SUCCESS' || msg.type === 'TEXT_TO_MOLBLOCK_SUCCESS') &&
         (msg.id === 'paste_smiles' || msg.id === 'import_smiles')
       ) {
         const pastedMol = stripExplicitHydrogens(parseMolblock(msg.payload.molBlock));
@@ -708,8 +708,17 @@ export function useEngineMessageRouter(opts: UseEngineMessageRouterOptions): voi
         const newIds = pastedMol.atoms.map(a => a.id);
         setActiveTool('select');
         setSelectedAtomIds(newIds);
-        // Tidy imported structures (including startup seed) with native cleanup.
-        if (newIds.length > 0 && runLocalCleanupRef) {
+        const hasStereoBonds = pastedMol.bonds.some(
+          b =>
+            b.stereo === 'wedge' ||
+            b.stereo === 'dash' ||
+            b.stereo === 'wavy' ||
+            b.stereo === 'either' ||
+            b.stereo === 'cis_trans',
+        );
+        // Molfile/CDXML stereo coordinates must not be re-laid — cleanup would
+        // keep flags but scramble the scanned wedge geometry.
+        if (newIds.length > 0 && runLocalCleanupRef && !hasStereoBonds) {
           if (msg.id === 'import_smiles' && startupSeedCleanupRef) {
             startupSeedCleanupRef.current = true;
           }

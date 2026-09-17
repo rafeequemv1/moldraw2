@@ -738,8 +738,10 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
         threshold,
       );
     }
-      const { w, h } = canvasCssSize(canvas);
-      drawAlignmentGuides(ctx, w, h, R.viewport, effectiveZoom, alignmentGuides);
+      if (R.displayPrefs.showAlignmentGuides !== false) {
+        const { w, h } = canvasCssSize(canvas);
+        drawAlignmentGuides(ctx, w, h, R.viewport, effectiveZoom, alignmentGuides);
+      }
     drawMarquee(ctx, R);
     },
     [],

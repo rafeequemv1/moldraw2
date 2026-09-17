@@ -176,7 +176,7 @@ const COMMON_GROUP_ABBREVIATIONS = new Set<string>([
   'ME', 'ET', 'NPR', 'IPR', 'NBU', 'TBU',
   'PH', 'BN', 'AC', 'CHO', 'CF3',
   'OH', 'OME', 'OET', 'NH2', 'NME2', 'NO2', 'CN', 'HCN',
-  'COOH', 'COONA', 'CO2NA', 'CO2ME', 'CO2ET', 'SO3H', 'SO2ME',
+  'COOH', 'COONA', 'CO2NA', 'NABH4', 'CO2ME', 'CO2ET', 'SO3H', 'SO2ME',
   'CH2OH', 'HOCH2', 'CH2OME', 'CH2NH2', 'CH2CL', 'CH2BR', 'CH2F', 'CH2CN',
   'BOC', 'CBZ', 'FMOC', 'TS', 'MS',
 ]);
@@ -310,10 +310,9 @@ function isIupacTwoLetterCasing(typed: string): boolean {
 export type NearbyIonSpec = { element: string; charge: number };
 
 /**
- * Typed ion / salt formulas that expand to real chemistry (not a display alias).
+ * Typed ion formulas that expand to real chemistry (not a display alias).
  * `BH4` / `BH4-` → B with charge −1 (tetrahedral borohydride).
- * `NaBH4` → BH4− plus a nearby Na⁺ (no covalent Na–B bond).
- * `COONa` stays a condensed alias (like COOH); expand only via show-explicit.
+ * `NaBH4` stays a condensed alias (like COONa); expand only via show-explicit.
  */
 export type TypedIonFormula =
   | {
@@ -330,7 +329,7 @@ export type TypedIonFormula =
       nearbyIon: NearbyIonSpec;
     };
 
-/** ChemDraw-like: `bh4`, `BH4-`, `nabh4` → borohydride / sodium borohydride. */
+/** ChemDraw-like: `bh4` / `BH4-` → borohydride. `NaBH4` is a display alias. */
 export function parseTypedIonFormula(raw: string): TypedIonFormula | null {
   const trimmed = normalizeAliasLabelCharacters(raw);
   if (!trimmed) return null;
@@ -340,15 +339,6 @@ export function parseTypedIonFormula(raw: string): TypedIonFormula | null {
     // Explicit BH4+ is not borohydride; BH4 / BH4- default to B−.
     if (charge != null && charge !== -1) return null;
     return { kind: 'single', element: 'B', charge: -1, labelHCount: 4 };
-  }
-  if (key === 'NABH4') {
-    return {
-      kind: 'salt-pair',
-      element: 'B',
-      charge: -1,
-      labelHCount: 4,
-      nearbyIon: { element: 'Na', charge: 1 },
-    };
   }
   return null;
 }
@@ -677,7 +667,7 @@ export type ValidateAliasResult =
       labelHCount: number | null;
       charge: number | null;
       body: string;
-      /** Unbonded counterion to place near the labeled atom (`NaBH4` → Na⁺). */
+/** Unbonded counterion to place near the labeled atom on expand (`COONa` → Na⁺). */
       nearbyIon?: NearbyIonSpec;
     }
   | { ok: false; reason: string };
@@ -693,8 +683,9 @@ function atomHasHeavyNeighbor(mol: Molecule, atomId: string): boolean {
 }
 
 /**
- * Strict: `E`, `EH`, `EHn` — implicit H from geometry must match (element from label sets valency).
- * Loose: multi-letter groups (COOH, NH2, SO3H, …) — leading symbol must match atom element; bond order ≤ max valency.
+ * Atom Label tool: apply any text as a display alias.
+ * Chemistry-aware updates (element / BH4 / charge) still happen when they fit;
+ * mismatches never block — the typed string stays on the current atom.
  * Trailing charges (`+`, `-`, `2+`, …) are parsed and applied as formal charge.
  */
 export function validateAtomAliasForMolecule(
@@ -713,26 +704,30 @@ export function validateAtomAliasForMolecule(
   const bondSum = bondOrderSum(mol, atomId);
   const q = parsedCharge ?? atom.charge ?? 0;
   const upper = body.trim().toUpperCase();
+  const labelBody = (body || trimmed).trim();
 
-  const chargeOk = (el: string): ValidateAliasResult | null => {
+  /** Never block the label tool: keep the typed text on the current atom. */
+  const verbatimAlias = (): ValidateAliasResult => ({
+    ok: true,
+    element: atom.element,
+    labelHCount: null,
+    charge: parsedCharge,
+    body: labelBody,
+  });
+
+  const chargeOk = (el: string): boolean => {
     if (parsedCharge != null && Math.abs(parsedCharge) > getMaxFormalChargeMagnitude(el)) {
-      return { ok: false, reason: 'Formal charge exceeds allowed magnitude for this element' };
+      return false;
     }
-    return null;
+    return true;
   };
 
-  // BH4 / NaBH4 → real B− chemistry (implicit BH4), not a carbon alias string.
+  // BH4 → real B− chemistry (implicit BH4), not a carbon alias string.
   const ion = parseTypedIonFormula(trimmed);
   if (ion) {
-    const bad = chargeOk(ion.element);
-    if (bad) return bad;
+    if (!chargeOk(ion.element)) return verbatimAlias();
     const maxDraw = getMaxValencyForElement(ion.element, ion.charge);
-    if (bondSum > maxDraw) {
-      return { ok: false, reason: 'Bond order exceeds valency for this element' };
-    }
-    if (atomHasHeavyNeighbor(mol, atomId)) {
-      return { ok: false, reason: 'BH4 requires an isolated atom (no heavy-atom bonds)' };
-    }
+    if (bondSum > maxDraw || atomHasHeavyNeighbor(mol, atomId)) return verbatimAlias();
     return {
       ok: true,
       element: ion.element,
@@ -744,14 +739,11 @@ export function validateAtomAliasForMolecule(
     };
   }
 
-  // Generic substituent / group abbreviations (R, Me, Ph, …) — display-only on current atom.
+  // Generic substituent / group abbreviations (R, Me, Ph, NaBH4, COONa, …).
   if (COMMON_GROUP_ABBREVIATIONS.has(upper)) {
-    const bad = chargeOk(atom.element);
-    if (bad) return bad;
+    if (!chargeOk(atom.element)) return verbatimAlias();
     const maxV = getMaxValencyForElement(atom.element, q);
-    if (bondSum > maxV) {
-      return { ok: false, reason: 'Bond order exceeds valency for this element' };
-    }
+    if (bondSum > maxV) return verbatimAlias();
     return {
       ok: true,
       element: atom.element,
@@ -763,14 +755,10 @@ export function validateAtomAliasForMolecule(
 
   // Condensed / molecular formulas: (CH2)3CH3, C6H13, C18H37, -(CH2)n-
   if (looksLikeExpandableFormulaLabel(body.trim())) {
-    const syntaxErr = validateCondensedFormulaLabelSyntax(body.trim());
-    if (syntaxErr) return { ok: false, reason: syntaxErr };
-    const bad = chargeOk(atom.element);
-    if (bad) return bad;
+    if (validateCondensedFormulaLabelSyntax(body.trim())) return verbatimAlias();
+    if (!chargeOk(atom.element)) return verbatimAlias();
     const maxV = getMaxValencyForElement(atom.element, q);
-    if (bondSum > maxV) {
-      return { ok: false, reason: 'Bond order exceeds valency for this element' };
-    }
+    if (bondSum > maxV) return verbatimAlias();
     return {
       ok: true,
       element: atom.element,
@@ -782,41 +770,20 @@ export function validateAtomAliasForMolecule(
 
   const c = classifyAlias(body || trimmed);
   if (c.kind === 'error') {
-    // Unknown token: keep as a display alias on the current atom (R-groups, typos)
-    // rather than blocking the label editor.
-    if (c.reason.startsWith('Unknown element') && /^[A-Za-z]/.test(body.trim())) {
-      const bad = chargeOk(atom.element);
-      if (bad) return bad;
-      const maxV = getMaxValencyForElement(atom.element, q);
-      if (bondSum > maxV) {
-        return { ok: false, reason: 'Bond order exceeds valency for this element' };
-      }
-      return {
-        ok: true,
-        element: atom.element,
-        labelHCount: null,
-        charge: parsedCharge,
-        body: body.trim(),
-      };
-    }
-    return { ok: false, reason: c.reason };
+    // Unknown token, symbols, free text: display alias on the current atom.
+    return verbatimAlias();
   }
 
   if (c.kind === 'strict') {
-    const bad = chargeOk(c.element);
-    if (bad) return bad;
+    if (!chargeOk(c.element)) return verbatimAlias();
     // Drawing max uses the NEW element (Na may keep a ligand bond; He may not).
     const maxDraw = getMaxValencyForElement(c.element, q);
-    if (bondSum > maxDraw) {
-      return { ok: false, reason: 'Bond order exceeds valency for this element' };
-    }
+    if (bondSum > maxDraw) return verbatimAlias();
     const maxImplicit = getEffectiveValencyForImplicitHydrogen(c.element, q);
     const implicitH = Math.max(0, maxImplicit - bondSum);
     if (c.labelHCount !== null && c.labelHCount !== implicitH) {
-      return {
-        ok: false,
-        reason: `Label implies ${c.labelHCount} H but geometry has ${implicitH} implicit H`,
-      };
+      // CH3 / NH2 / … as a condensed alias when geometry does not match.
+      return verbatimAlias();
     }
     return {
       ok: true,
@@ -827,19 +794,11 @@ export function validateAtomAliasForMolecule(
     };
   }
 
-  // loose
-  if (c.leadingElement.toUpperCase() !== atom.element.toUpperCase()) {
-    return {
-      ok: false,
-      reason: `Label starts with ${c.leadingElement} but atom is ${atom.element}`,
-    };
-  }
-  const bad = chargeOk(atom.element);
-  if (bad) return bad;
+  // loose formulas / groups: keep as alias on the current atom (do not require
+  // the leading element to match — H2SO4 on C, CH3OH on C+, NaBH4 on C, …).
+  if (!chargeOk(atom.element)) return verbatimAlias();
   const maxV = getMaxValencyForElement(atom.element, q);
-  if (bondSum > maxV) {
-    return { ok: false, reason: 'Bond order exceeds valency for this element' };
-  }
+  if (bondSum > maxV) return verbatimAlias();
   return {
     ok: true,
     element: atom.element,

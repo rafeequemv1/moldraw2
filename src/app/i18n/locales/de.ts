@@ -58,6 +58,8 @@ export const de: LocaleMessages = {
     exit3dTitle: '3D beenden — Pose verwerfen und ursprüngliche 2D-Zeichnung anzeigen',
     addExplicitHFullTitle:
       'Explizites H zu ausgewählten Atomen — ein gebundenes H pro Atom (isoliertes CN wird H–CN)',
+    addExplicitC: 'Explizites C auf Auswahl zeigen',
+    addExplicitCFullTitle: 'C-Label auf ausgewählten Skelettkohlenstoffen zeigen',
     depthTaperTitle: 'Tiefenverjüngung — nahe Bindungen normal; entfernte Enden spitzer (nur Anzeige)',
     toolbarDrawTools: 'Zeichenwerkzeuge',
     toolbarHomeExtras: 'Bereinigung und Zeichenwerkzeuge',
@@ -308,6 +310,9 @@ export const de: LocaleMessages = {
         'Beim Ziehen von Molekülen oder Reaktionspfeilen Zentren am Hintergrundraster ausrichten. Umschalttaste für freie Bewegung. Ausrichtungshilfen rasten weiterhin an Molekülgrenzen ein.',
       showGrid: 'Raster anzeigen',
       showGridHint: 'Das helle Hintergrundraster auf der 2D-Leinwand zeichnen (standardmäßig an).',
+      showAlignmentGuides: 'Canvas-Hilfslinien',
+      showAlignmentGuidesHint:
+        'Ausrichtungslinien beim Ziehen und Schnappmarken beim Zeichnen von Bindungen. Aus: saubere Leinwand.',
       reactionComponentMargin: 'Reaktionskomponenten-Randgröße',
       imageResolution: 'Bildauflösung',
       imageResolutionHint:
@@ -466,6 +471,7 @@ export const de: LocaleMessages = {
     menuWavy: 'Wellig / entweder',
     menuDative: 'Dativ / Koordination',
     menuBondTypes: 'Bindungstyp',
+    menuSelectTools: 'Auswahlwerkzeuge',
     bondMenuMain: 'Bindungen',
     bondMenuMore: 'Query / Stereo',
     bondMenuAdvanced: 'Erweitert',

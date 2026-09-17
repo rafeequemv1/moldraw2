@@ -129,6 +129,9 @@ import { hasUnreadMolDrawUpdates, markMolDrawUpdatesSeen } from './app/component
 import { CanvasWithResolvedTheme } from './app/components/StructureThemeControls';
 import { dismissChromeOverlays } from './app/chromeDismiss';
 import { nativeSmilesTo2DMolblock } from '@moldraw/core/io/smilesToMolblock';
+import { moleculeToMolblock } from '@moldraw/core/io/molblock';
+import { cdxmlToMolblock, cdxmlToMolecule } from '@moldraw/core/io/cdxmlToMolblock';
+import { parseEditorSeedFromLocation, editorSeedHasStructure } from './app/editorSeedQuery';
 import { STARTUP_PUBCHEM_CID } from './app/data/selectionSmi';
 import { pubchemMolblockFromCid } from './app/advanced/batchExport';
 import { importReactionSchemeFromSmiles } from './app/importExport/importReactionSmiles';
@@ -479,14 +482,8 @@ function App() {
   const moleculeRef = useRef(molecule);
   const appliedBondLenRef = useRef(resolvedCanvasPreferences.bondLengthPx);
   const bondScaleTimerRef = useRef(0);
-  /** SEO deep-links: `/?smiles=` (molecule pages) and `/?reaction=` (reaction guides). */
-  const initialQueryRef = useRef(() => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      smiles: params.get('smiles')?.trim() || null,
-      reaction: params.get('reaction')?.trim() || null,
-    };
-  });
+  /** SEO / plugin deep-links: smiles, reaction, mol, cdxml, inchi (query or hash). */
+  const initialQueryRef = useRef(parseEditorSeedFromLocation);
 
   const scaleMoleculeToBondLength = useCallback(
     (nextPx: number) => {
@@ -698,6 +695,46 @@ function App() {
           queueMicrotask(() => importReactionQuery(query.reaction!));
           return;
         }
+
+        const importSeedMolblock = (molBlock: string) => {
+          if (selectionSmiLoadedRef.current || moleculeRef.current.atoms.length > 0) return;
+          selectionSmiLoadedRef.current = true;
+          queueMicrotask(() => {
+            engineMsgRef.current({
+              type: 'SMILES_TO_MOLBLOCK_SUCCESS',
+              id: 'import_smiles',
+              payload: { molBlock },
+            });
+          });
+        };
+
+        if (query.mol) {
+          importSeedMolblock(query.mol);
+          return;
+        }
+        if (query.cdxml) {
+          const fromCdxml =
+            cdxmlToMolblock(query.cdxml) ||
+            (() => {
+              const mol = cdxmlToMolecule(query.cdxml!, { bondLengthPx: bondLengthPxRef.current });
+              return mol && mol.atoms.length > 0 ? moleculeToMolblock(mol) : null;
+            })();
+          if (fromCdxml?.trim()) {
+            importSeedMolblock(fromCdxml);
+            return;
+          }
+        }
+        if (query.inchi) {
+          if (selectionSmiLoadedRef.current || moleculeRef.current.atoms.length > 0) return;
+          selectionSmiLoadedRef.current = true;
+          client.post({
+            type: 'TEXT_TO_MOLBLOCK',
+            payload: { text: query.inchi },
+            id: 'import_smiles',
+          });
+          return;
+        }
+
         if (!query.smiles) return;
         if (selectionSmiLoadedRef.current || moleculeRef.current.atoms.length > 0) return;
         selectionSmiLoadedRef.current = true;
@@ -983,7 +1020,7 @@ function App() {
   useEffect(() => {
     if (!initialHydrationDone || docRoute.kind !== 'editor') return;
     const query = initialQueryRef.current();
-    if (query.smiles || query.reaction) return;
+    if (editorSeedHasStructure(query)) return;
     if (moleculeRef.current.atoms.length > 0) {
       selectionSmiLoadedRef.current = true;
       return;
@@ -1194,6 +1231,31 @@ function App() {
           return;
         }
         setSmilesBarHint('Add explicit H: click a heavy atom (e.g. aldehyde carbonyl carbon).');
+        handleToolbarSelect(toolId);
+        return;
+      }
+
+      if (toolId === 'add_explicit_c') {
+        const carbons = editorStore.getSelection().atomIds.filter(id => {
+          const a = editorStore.getMolecule().atoms.find(x => x.id === id);
+          return a?.element === 'C' && !a.alias?.trim();
+        });
+        if (carbons.length > 0) {
+          const mol = editorStore.getMolecule();
+          const show = carbons.some(id => !mol.atoms.find(a => a.id === id)?.showElementLabel);
+          const before = mol;
+          const result = editorStore.applyCommand(CMD.SetAtomsShowElementLabel, {
+            atomIds: carbons,
+            show,
+          });
+          if (!result.ok || editorStore.getMolecule() === before) {
+            setSmilesBarHint('Could not change carbon labels on the selection.');
+          } else {
+            setSmilesBarHint(show ? 'Showing explicit C on selection.' : 'Hid explicit C on selection.');
+          }
+          return;
+        }
+        setSmilesBarHint('Explicit C: click a skeletal carbon to show its C label.');
         handleToolbarSelect(toolId);
         return;
       }
@@ -2231,6 +2293,7 @@ function App() {
             onToggleLandscapeView={appLayout.toggleLandscape}
             onClearAll={handleClearAll}
             onAddExplicitHydrogen={() => handleToolbarSelectWithPerspective('add_explicit_h')}
+            onAddExplicitCarbon={() => handleToolbarSelectWithPerspective('add_explicit_c')}
             indigoLayoutReady={indigoLayoutReady}
             preferIndigo2d={appSettings.general.preferIndigo2d === true}
             onCleanupStructure={handleCleanupStructureSmart}

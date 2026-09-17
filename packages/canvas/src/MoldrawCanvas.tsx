@@ -88,6 +88,7 @@ export const MoldrawCanvas = forwardRef<InfiniteCanvasHandle, MoldrawCanvasProps
       onSetAtomRadical: onSetAtomRadicalOverride,
       onSetAtomRadicalIon: onSetAtomRadicalIonOverride,
       onAddExplicitHydrogen: onAddExplicitHydrogenOverride,
+      onSetAtomsShowElementLabel: onSetAtomsShowElementLabelOverride,
       onUpdateAtomElement: onUpdateAtomElementOverride,
       onApplyRingFill: onApplyRingFillOverride,
       onAddStroke: onAddStrokeOverride,
@@ -262,6 +263,9 @@ export const MoldrawCanvas = forwardRef<InfiniteCanvasHandle, MoldrawCanvasProps
         }
         onAddExplicitHydrogen={
           onAddExplicitHydrogenOverride ?? defaults.onAddExplicitHydrogen
+        }
+        onSetAtomsShowElementLabel={
+          onSetAtomsShowElementLabelOverride ?? defaults.onSetAtomsShowElementLabel
         }
         onUpdateAtomElement={onUpdateAtomElementOverride ?? defaults.onUpdateAtomElement}
         onApplyRingFill={onApplyRingFillOverride ?? defaults.onApplyRingFill}

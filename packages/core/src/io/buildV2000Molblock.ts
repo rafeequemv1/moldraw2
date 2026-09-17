@@ -3,7 +3,14 @@
  */
 import { molfileBondOrder, molfileBondStereoCode } from '@moldraw/domain';
 
-export type MolblockAtomRow = { element: string; x: number; y: number; z?: number };
+export type MolblockAtomRow = {
+  element: string;
+  x: number;
+  y: number;
+  z?: number;
+  charge?: number;
+  isotope?: number;
+};
 export type MolblockBondRow = {
   from: number;
   to: number;
@@ -33,6 +40,16 @@ export function buildV2000Molblock(atoms: MolblockAtomRow[], bonds: MolblockBond
     const stereo = String(molfileBondStereoCode(b)).padStart(3, ' ');
     out += `${from}${to}${order}${stereo}  0  0  0\n`;
   }
+  atoms.forEach((a, i) => {
+    if (a.charge && a.charge !== 0) {
+      out += `M  CHG  1 ${String(i + 1).padStart(3, ' ')} ${String(a.charge).padStart(3, ' ')}\n`;
+    }
+  });
+  atoms.forEach((a, i) => {
+    if (a.isotope && a.isotope > 0) {
+      out += `M  ISO  1 ${String(i + 1).padStart(3, ' ')} ${String(Math.trunc(a.isotope)).padStart(3, ' ')}\n`;
+    }
+  });
   out += 'M  END\n';
   return out;
 }

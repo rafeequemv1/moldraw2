@@ -717,6 +717,77 @@
       gap: 12px;
       margin-bottom: 8px;
     }
+    .post-overflow {
+      position: relative;
+      flex: 0 0 auto;
+      margin-left: auto;
+      z-index: 4;
+    }
+    .post-overflow.is-open {
+      z-index: 40;
+    }
+    .community-card:has(.post-overflow.is-open) {
+      position: relative;
+      z-index: 6;
+    }
+    .post-overflow-btn {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #64748b;
+      font: inherit;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .post-overflow-btn:hover,
+    .post-overflow-btn:focus-visible,
+    .post-overflow.is-open .post-overflow-btn {
+      background: #f1f5f9;
+      color: #334155;
+    }
+    .post-overflow-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 148px;
+      padding: 4px;
+      background: #fff;
+      border: 1px solid #dbe4ea;
+      border-radius: 10px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+      z-index: 20;
+    }
+    .post-overflow-menu[hidden] {
+      display: none;
+    }
+    .post-overflow-item {
+      display: block;
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #1e293b;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: left;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    .post-overflow-item:hover,
+    .post-overflow-item:focus-visible {
+      background: #eefafa;
+      color: #1a5a5b;
+    }
     .author {
       display: flex;
       gap: 9px;
@@ -1669,8 +1740,8 @@
         font-size: 12px;
       }
       .card-top {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: flex-start;
         gap: 8px;
       }
       .author-name,
@@ -1879,7 +1950,7 @@
       <div class="thread-modal-head">
         <button type="button" id="thread-panel-close" class="thread-close" aria-label="Close post">×</button>
         <a id="thread-panel-back" href="/community/">Back</a>
-        <button type="button" id="thread-copy-link" class="thread-copy">Copy link</button>
+        <button type="button" id="thread-copy-link" class="thread-copy" data-copy-post-link>Copy link</button>
       </div>
       <div id="thread-panel-body" class="thread-modal-body"></div>
     </div>
@@ -2289,6 +2360,7 @@
     }
     function hideThreadPanel() {
       activeThread = null;
+      closePostMenus();
       setThreadOpen(false);
       if (threadPanelBody) threadPanelBody.innerHTML = '';
       feed.querySelectorAll('.community-card.is-selected').forEach((card) => card.classList.remove('is-selected'));
@@ -2323,14 +2395,22 @@
       };
       const commentsHtml = renderCommentThread(item.id, comments, isFeature ? comments.length : (item.comment_count || comments.length), threadOptions);
       if (threadPanelBack) threadPanelBack.href = listUrlFor(kind);
+      const threadCopy = document.getElementById('thread-copy-link');
+      if (threadCopy) {
+        threadCopy.setAttribute('data-copy-post-link', url);
+        threadCopy.textContent = 'Copy link';
+      }
       threadPanelBody.innerHTML = `
         <article class="community-card thread-post">
-          <div class="author" style="margin-bottom:8px;">
-            <span class="avatar ${isFeature ? '' : escapeHtml(safeAvatarKey(item.author_avatar_key))}">${escapeHtml(initials(isFeature ? item.name : item.author_name))}</span>
-            <div>
-              <div class="author-name">${escapeHtml((isFeature ? item.name : item.author_name) || 'Community member')} ${isFeature ? '' : `${adminBadge(item.author_is_admin)} ${karmaBadge(item.author_karma_score)}`} ${implementedCrown(item.user_id, isFeature ? item.name : item.author_name)}</div>
-              <div class="author-meta">${isFeature ? 'Feature request' : escapeHtml(item.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(item.created_at))}</div>
+          <div class="card-top">
+            <div class="author">
+              <span class="avatar ${isFeature ? '' : escapeHtml(safeAvatarKey(item.author_avatar_key))}">${escapeHtml(initials(isFeature ? item.name : item.author_name))}</span>
+              <div>
+                <div class="author-name">${escapeHtml((isFeature ? item.name : item.author_name) || 'Community member')} ${isFeature ? '' : `${adminBadge(item.author_is_admin)} ${karmaBadge(item.author_karma_score)}`} ${implementedCrown(item.user_id, isFeature ? item.name : item.author_name)}</div>
+                <div class="author-meta">${isFeature ? 'Feature request' : escapeHtml(item.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(item.created_at))}</div>
+              </div>
             </div>
+            ${postOverflowMenuHtml(url)}
           </div>
           <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}${isFeature ? renderFeatureStatus(item.status) : renderPostRequestStatus(item.request_status)}${isFeature ? renderFeatureStatusControl(item) : renderPostStatusControl(item)}</h1>
           <p class="card-body">${isFeature ? escapeHtml(item.description) : renderCommentBody(item.body)}</p>
@@ -2452,6 +2532,67 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+    function postOverflowMenuHtml(url) {
+      return `<div class="post-overflow">
+        <button type="button" class="post-overflow-btn" data-post-menu aria-haspopup="menu" aria-expanded="false" aria-label="Post actions">⋯</button>
+        <div class="post-overflow-menu" hidden role="menu">
+          <button type="button" class="post-overflow-item" role="menuitem" data-copy-post-link="${escapeHtml(url)}">Copy link</button>
+        </div>
+      </div>`;
+    }
+    function absoluteCommunityUrl(path) {
+      const raw = String(path || '').trim();
+      if (!raw) return window.location.href.split('#')[0];
+      try {
+        return new URL(raw, window.location.origin).href;
+      } catch {
+        return raw;
+      }
+    }
+    async function copyTextToClipboard(text) {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+      } catch {
+        // Fall through to execCommand for browsers that expose clipboard but block it.
+      }
+      const field = document.createElement('textarea');
+      field.value = text;
+      field.setAttribute('readonly', '');
+      field.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;padding:0;border:0;opacity:0;';
+      document.body.appendChild(field);
+      field.focus();
+      field.select();
+      field.setSelectionRange(0, field.value.length);
+      const ok = document.execCommand('copy');
+      field.remove();
+      if (!ok) throw new Error('copy failed');
+    }
+    function closePostMenus() {
+      document.querySelectorAll('.post-overflow.is-open').forEach((wrap) => {
+        wrap.classList.remove('is-open');
+        wrap.querySelector('[data-post-menu]')?.setAttribute('aria-expanded', 'false');
+        wrap.querySelector('.post-overflow-menu')?.setAttribute('hidden', '');
+      });
+    }
+    function flashCopied(button) {
+      if (!button) return;
+      const original = button.getAttribute('data-copy-label') || button.textContent || 'Copy link';
+      button.setAttribute('data-copy-label', original);
+      button.textContent = 'Copied';
+      window.setTimeout(() => {
+        if (button.isConnected) button.textContent = original;
+      }, 1200);
+    }
+    async function copyPostPermalink(button) {
+      const path = button?.getAttribute('data-copy-post-link') || '';
+      const href = absoluteCommunityUrl(path);
+      await copyTextToClipboard(href);
+      flashCopied(button);
+      window.setTimeout(closePostMenus, 1200);
+    }
 
     const timeText = (value) => value ? new Date(value).toLocaleString() : '';
     const initials = (name) => String(name || 'M').trim().slice(0, 1).toUpperCase() || 'M';
@@ -4152,6 +4293,7 @@
                   <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(post.created_at))}</div>
                 </div>
               </div>
+              ${postOverflowMenuHtml(url)}
             </div>
             <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${renderPostRequestStatus(post.request_status)}${renderPostStatusControl(post)}</h2>
             <p class="card-body">${renderCommentBody(post.body)}</p>
@@ -4245,6 +4387,7 @@
                   <div class="author-meta">Feature request · ${escapeHtml(timeText(request.created_at))}</div>
                 </div>
               </div>
+              ${postOverflowMenuHtml(url)}
             </div>
             <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(currentStatus)}${statusControl}</h2>
             <p class="card-body">${escapeHtml(request.description)}</p>
@@ -4605,6 +4748,34 @@
     });
     document.getElementById('image-lightbox')?.addEventListener('click', closeImageLightbox);
     document.addEventListener('click', (event) => {
+      const menuToggle = event.target.closest('[data-post-menu]');
+      const copyBtn = event.target.closest('[data-copy-post-link]');
+      const menuRoot = event.target.closest('.post-overflow');
+      if (menuToggle || copyBtn || menuRoot) {
+        event.stopPropagation();
+      }
+      if (menuToggle) {
+        event.preventDefault();
+        const wrap = menuToggle.closest('.post-overflow');
+        const willOpen = wrap && !wrap.classList.contains('is-open');
+        closePostMenus();
+        if (willOpen) {
+          wrap.classList.add('is-open');
+          menuToggle.setAttribute('aria-expanded', 'true');
+          wrap.querySelector('.post-overflow-menu')?.removeAttribute('hidden');
+        }
+        return;
+      }
+      if (copyBtn) {
+        event.preventDefault();
+        copyPostPermalink(copyBtn).catch(() => {
+          copyBtn.textContent = 'Copy failed';
+        });
+        return;
+      }
+      closePostMenus();
+    }, true);
+    document.addEventListener('click', (event) => {
       const crown = event.target.closest('[data-done-features]');
       if (!crown) return;
       event.preventDefault();
@@ -4642,15 +4813,6 @@
       event.preventDefault();
       closeThreadToList();
     });
-    document.getElementById('thread-copy-link')?.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        document.getElementById('thread-copy-link').textContent = 'Copied';
-        setTimeout(() => { document.getElementById('thread-copy-link').textContent = 'Copy link'; }, 1200);
-      } catch {
-        document.getElementById('thread-copy-link').textContent = 'Copy failed';
-      }
-    });
     window.addEventListener('popstate', () => {
       loadActiveTab();
     });
@@ -4659,6 +4821,10 @@
     authModal.addEventListener('click', (event) => { if (event.target === authModal) closeAuthModal(); });
     window.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
+      if (document.querySelector('.post-overflow.is-open')) {
+        closePostMenus();
+        return;
+      }
       if (implementedPanelRoot?.classList.contains('is-open')) closeImplementedPanel();
       else if (document.getElementById('image-lightbox')?.classList.contains('is-open')) closeImageLightbox();
       else if (event.key === 'Escape' && authModal.classList.contains('visible')) closeAuthModal();

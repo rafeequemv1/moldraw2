@@ -37,7 +37,7 @@ function drawOneBracket(
   const hook = Math.min(BRACKET_HOOK, (b.y2 - b.y1) * 0.25);
 
   ctx.save();
-  ctx.strokeStyle = selected ? '#2563eb' : color;
+  ctx.strokeStyle = selected ? '#2dd4bf' : color;
   ctx.lineWidth = selected ? lw * 1.35 : lw;
   ctx.lineCap = 'square';
   ctx.lineJoin = 'miter';
@@ -60,7 +60,7 @@ function drawOneBracket(
   ctx.stroke();
 
   if (selected) {
-    ctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
+    ctx.strokeStyle = 'rgba(45, 212, 191, 0.4)';
     ctx.lineWidth = 1 / zoom;
     ctx.setLineDash([4 / zoom, 3 / zoom]);
     ctx.strokeRect(b.x1, b.y1, b.x2 - b.x1, b.y2 - b.y1);
@@ -70,7 +70,7 @@ function drawOneBracket(
   const label = b.subscript || 'n';
   const fontSize = 14;
   const box = sruBracketLabelBounds(b);
-  ctx.fillStyle = selected ? '#2563eb' : color;
+  ctx.fillStyle = selected ? '#0d9488' : color;
   const subSize = Math.round(fontSize * 0.72);
   const runs = buildAliasDisplayRuns(label);
   let x = box.x + 4;

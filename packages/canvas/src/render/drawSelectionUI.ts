@@ -15,6 +15,7 @@ import {
 } from '../geometry';
 import type { RenderContext } from './types';
 import { drawTransformHandleDisc, transformChrome } from './transformChrome';
+import { isSelectTool } from '../interaction/selectTools';
 
 /** 1 CSS-pixel stroke in world space. */
 const screenLw = (invZ: number, px = 1) => px * invZ;
@@ -225,7 +226,7 @@ export const drawSelectionTransformHandle = (
   ctx: CanvasRenderingContext2D,
   R: RenderContext,
 ): void => {
-  if (R.activeTool !== 'select') return;
+  if (!isSelectTool(R.activeTool)) return;
   const transformIds = atomIdsForSelectionTransform(
     R.renderedMolecule,
     R.selectedAtomIds,

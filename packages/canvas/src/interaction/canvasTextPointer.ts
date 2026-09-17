@@ -11,6 +11,7 @@ import {
   pickCanvasTextRotateHandle,
 } from '../geometry';
 import type { InteractionContext } from './types';
+import { isSelectTool } from './selectTools';
 
 function beginTextTransform(ctx: InteractionContext): void {
   // Hide the HTML overlay so canvas drag-preview letters move smoothly.
@@ -80,8 +81,8 @@ export function handleCanvasTextPointerDown(
 
   const zoom = ctx.viewport?.zoom ?? 1;
   const isTextTool = ctx.activeTool === 'text';
-  const isSelectTool = ctx.activeTool === 'select' || ctx.activeTool === 'lasso_select';
-  if (!isTextTool && !isSelectTool && !opts?.allowMoveWithoutSelectTool) return false;
+  const isSelectToolActive = isSelectTool(ctx.activeTool);
+  if (!isTextTool && !isSelectToolActive && !opts?.allowMoveWithoutSelectTool) return false;
 
   const selectedId = ctx.selectedCanvasTextId;
   if (selectedId) {

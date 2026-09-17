@@ -150,7 +150,7 @@ const drawTouchSnapTicks = (
     ctx.beginPath();
     ctx.moveTo(start.x + ux * (len - half), start.y + uy * (len - half));
     ctx.lineTo(start.x + ux * (len + half), start.y + uy * (len + half));
-    ctx.strokeStyle = isActive ? 'rgba(37, 99, 235, 0.95)' : 'rgba(100, 116, 139, 0.45)';
+    ctx.strokeStyle = isActive ? 'rgba(45, 212, 191, 0.95)' : 'rgba(100, 116, 139, 0.45)';
     ctx.lineWidth = (isActive ? 2.5 : 1.25) / zoom;
     ctx.stroke();
   }
@@ -171,7 +171,7 @@ export const drawBondGhost = (ctx: CanvasRenderingContext2D, R: RenderContext): 
     ? R.renderedMolecule.atoms.find(a => a.id === R.drawingBond!.startAtomId)
     : null;
   const start = startAtom ? { x: startAtom.x, y: startAtom.y } : R.drawingBond.startPos;
-  if (R.touchPointerWorldPos) {
+  if (R.touchPointerWorldPos && R.displayPrefs.showAlignmentGuides !== false) {
     drawTouchSnapTicks(ctx, R, start, R.drawingBond.startAtomId, R.drawingBond.currentPos);
   }
   ctx.beginPath();

@@ -657,6 +657,7 @@ export function HeaderInlineSearch({
   searchAriaLabel?: string;
   autoFocus?: boolean;
 }) {
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -666,11 +667,8 @@ export function HeaderInlineSearch({
   }, [autoFocus]);
 
   return (
-
     <div className="header-inline-search">
-
       <div className={`header-inline-search__field${quickSearchError ? ' header-inline-search__field--error' : ''}`}>
-
         <button
           type="button"
           className={`header-inline-search__icon-btn${quickSearchLoading ? ' header-inline-search__icon-btn--spin' : ''}`}
@@ -680,41 +678,28 @@ export function HeaderInlineSearch({
         >
           <Search size={13} color="#64748b" aria-hidden />
         </button>
-
+        {!quickSearch.trim() ? (
+          <span className="header-inline-search__source" title={searchAriaLabel}>
+            {t('topBar.pubchem')}
+          </span>
+        ) : null}
         <input
-
           ref={inputRef}
-
           className="header-inline-search__input"
-
           value={quickSearch}
-
           onChange={e => {
-
             setQuickSearch(e.target.value);
-
             setQuickSearchError('');
-
           }}
-
           onKeyDown={e => {
-
             if (e.key === 'Enter') onQuickSearch();
-
           }}
-
           placeholder={searchPlaceholder}
-
           aria-label={searchAriaLabel}
-
           autoFocus={autoFocus}
-
         />
-
       </div>
-
     </div>
-
   );
 
 }

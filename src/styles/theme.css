@@ -1269,7 +1269,13 @@ body,
     color: var(--text-main) !important;
   }
 
-  .arrow-reagent-inline__input,
+  .arrow-reagent-inline__input {
+    background: transparent !important;
+    color: var(--text-main) !important;
+    border-color: transparent !important;
+    caret-color: #5eead4;
+  }
+
   .alias-inline-editor__input {
     background: var(--chrome-input-bg) !important;
     color: var(--text-main) !important;

@@ -2,7 +2,11 @@
  * Reaction-arrow drawing, sampling for hit-tests, and chord-based helpers.
  */
 import type { Molecule, ReactionArrow, ReactionArrowKind } from '@moldraw/domain';
-import { resolveArrowHeadKind, resolveReagentFontSize } from '@moldraw/domain';
+import {
+  resolveArrowHeadKind,
+  resolveReagentFontSize,
+  reactionArrowSupportsReagentLabels,
+} from '@moldraw/domain';
 import { resolveReactionArrowGeometry } from '@moldraw/core';
 import { pointSegDist } from './angles';
 
@@ -618,24 +622,24 @@ export const reactionArrowReagentSlotPositions = (
   };
 };
 
-const REAGENT_SLOT_HIT_R = 12;
+const REAGENT_SLOT_HIT_R = 18;
 
-/** Hit-test reagent slot chips for the selected arrow (world coords). */
+/** Hit-test reagent “+” chips for the selected arrow (world coords). */
 export const pickReactionArrowReagentSlot = (
   arrow: ReactionArrow | null | undefined,
   wx: number,
   wy: number,
   tol = REAGENT_SLOT_HIT_R,
 ): { arrowId: string; slot: ReactionArrowReagentSlot } | null => {
-  if (!arrow) return null;
+  if (!arrow || !reactionArrowSupportsReagentLabels(arrow.kind)) return null;
   const slots = reactionArrowReagentSlotPositions(arrow);
+  let best: { slot: ReactionArrowReagentSlot; d: number } | null = null;
   for (const slot of ['above', 'below'] as const) {
     const p = slots[slot];
-    if (Math.hypot(wx - p.x, wy - p.y) <= tol) {
-      return { arrowId: arrow.id, slot };
-    }
+    const d = Math.hypot(wx - p.x, wy - p.y);
+    if (d <= tol && (!best || d < best.d)) best = { slot, d };
   }
-  return null;
+  return best ? { arrowId: arrow.id, slot: best.slot } : null;
 };
 
 const drawHeadFilled = (
@@ -1317,7 +1321,11 @@ export const arrowsForHitTest = (mol: Molecule): ReactionArrow[] =>
   (mol.reactionArrows ?? []).map(a => resolveReactionArrowGeometry(mol, a));
 
 /** Convert a screen-pixel handle radius into world units. */
-export const arrowHandleHitTolWorld = (zoom = 1, screenPx = 22): number =>
+export const arrowHandleHitTolWorld = (zoom = 1, screenPx = 32): number =>
+  screenPx / Math.max(0.12, zoom);
+
+/** Hit radius for the on-canvas reagent “+” chips (screen pixels → world). */
+export const reagentSlotChipHitTolWorld = (zoom = 1, screenPx = 22): number =>
   screenPx / Math.max(0.12, zoom);
 
 /** Top-most arrow whose geometry is within `tol` world units of (wx, wy). */

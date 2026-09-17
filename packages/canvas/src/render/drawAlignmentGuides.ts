@@ -4,7 +4,7 @@
 import type { AlignmentGuides } from '../geometry/alignmentGuides';
 import type { Viewport } from '../geometry';
 
-const GUIDE_COLOR = 'rgba(37, 99, 235, 0.38)';
+const GUIDE_COLOR = 'rgba(45, 212, 191, 0.55)';
 
 const visibleWorldBounds = (
   width: number,

@@ -1,4 +1,4 @@
-import { engine, certifyLayout } from '@moldraw/engine';
+import { engine, certifyLayout, applyModelStereoToDepiction } from '@moldraw/engine';
 import { looksLikeCompoundName } from './pubchemSmiles';
 
 /**
@@ -17,7 +17,7 @@ export async function indigoSmilesTo2DMolblock(
     const mol = engine.parseSmiles(trimmed);
     if (mol.atoms.length === 0) return null;
     const { molecule } = await e2d.layoutMoleculeIndigo(mol, { bondLengthPx });
-    return engine.toMolblock(molecule);
+    return engine.toMolblock(applyModelStereoToDepiction(molecule));
   } catch {
     return null;
   }
@@ -35,7 +35,7 @@ export function nativeSmilesTo2DMolblock(smiles: string, bondLengthPx = 45): str
     const seed = engine.generate2D(mol, { bondLengthPx, skipEnergyRefine: true });
     const certified = certifyLayout(seed, { bondLengthPx, maxRestarts: 2, repairRounds: 3 });
     if (certified.molecule.atoms.length === 0) return null;
-    return engine.toMolblock(certified.molecule);
+    return engine.toMolblock(applyModelStereoToDepiction(certified.molecule));
   } catch (err) {
     console.warn('[nativeSmilesTo2DMolblock] failed', err);
     return null;

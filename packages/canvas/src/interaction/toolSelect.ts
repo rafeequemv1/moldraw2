@@ -27,6 +27,7 @@ import {
   pickReactionArrowEndpoint,
   pickReactionArrowCurveHandle,
   pickReactionArrowReagentSlot,
+  reagentSlotChipHitTolWorld,
   reactionArrowEndpointResizePatch,
   shortestAngleDiff,
   pickSruBracketAt,
@@ -53,6 +54,7 @@ import {
 import { pickAtomIdsInRect, pickAtomOrBondForBondTool, pickChargeMarkAt } from './hitTest';
 import { PERSPECTIVE_RAD_PER_PX } from './toolPerspective';
 import type { InteractionContext } from './types';
+import { isSelectTool } from './selectTools';
 
 /** Expand to Pattern/Group collections so arrayed molecules move as one unit. */
 const expandForGroupedMove = (molecule: InteractionContext['molecule'], atomIds: string[]) =>
@@ -67,7 +69,11 @@ const applyMarqueeSelection = (
   ann: MarqueeAnnotationSet,
   shift: boolean,
 ): void => {
-  const groupedAtoms = expandForGroupedMove(ctx.molecule, atomIds);
+  const fragmentAtoms =
+    ctx.activeTool === 'fragment_select'
+      ? expandAtomIdsToConnectedFragments(ctx.molecule, atomIds)
+      : atomIds;
+  const groupedAtoms = expandForGroupedMove(ctx.molecule, fragmentAtoms);
   const groupedBonds =
     groupedAtoms.length > atomIds.length
       ? bondsFullyInAtomSet(ctx.molecule, groupedAtoms)
@@ -181,26 +187,9 @@ const handleReactionArrowPointerDown = (
   const { worldPos, molecule } = ctx;
   if (!ctx.setSelectedReactionArrowId || !ctx.onUpdateReactionArrow) return false;
 
-  if (ctx.selectedReactionArrowId && ctx.onRequestArrowReagentEdit) {
-    const selArrow = molecule.reactionArrows?.find(a => a.id === ctx.selectedReactionArrowId);
-    if (selArrow && reactionArrowSupportsReagentLabels(selArrow.kind)) {
-      const slotHit = pickReactionArrowReagentSlot(selArrow, worldPos.x, worldPos.y);
-      if (slotHit) {
-        ctx.setSelectedReactionArrowId(selArrow.id);
-        ctx.setSelectedCanvasTextId?.(null);
-        ctx.setColorEditCanvasShapeId?.(null);
-        ctx.setSelectedCanvasImageId?.(null);
-        ctx.setSelectedSruBracketId?.(null);
-        ctx.setSelectedAtomIds?.([]);
-        ctx.setSelectedBondIds?.([]);
-        ctx.onRequestArrowReagentEdit(selArrow.id, slotHit.slot);
-        return true;
-      }
-    }
-  }
-
   const arrows = arrowsForHitTest(molecule);
-  const handleTol = arrowHandleHitTolWorld(ctx.viewport?.zoom ?? 1);
+  const zoom = ctx.viewport?.zoom ?? 1;
+  const handleTol = arrowHandleHitTolWorld(zoom);
 
   const epHit = pickReactionArrowEndpoint(arrows, worldPos.x, worldPos.y, handleTol);
   if (epHit) {
@@ -255,6 +244,29 @@ const handleReactionArrowPointerDown = (
 
   if (opts?.handlesOnly) return false;
 
+  if (ctx.selectedReactionArrowId && ctx.onRequestArrowReagentEdit) {
+    const selArrow = molecule.reactionArrows?.find(a => a.id === ctx.selectedReactionArrowId);
+    if (selArrow && reactionArrowSupportsReagentLabels(selArrow.kind)) {
+      const slotHit = pickReactionArrowReagentSlot(
+        selArrow,
+        worldPos.x,
+        worldPos.y,
+        reagentSlotChipHitTolWorld(zoom),
+      );
+      if (slotHit) {
+        ctx.setSelectedReactionArrowId(selArrow.id);
+        ctx.setSelectedCanvasTextId?.(null);
+        ctx.setColorEditCanvasShapeId?.(null);
+        ctx.setSelectedCanvasImageId?.(null);
+        ctx.setSelectedSruBracketId?.(null);
+        ctx.setSelectedAtomIds?.([]);
+        ctx.setSelectedBondIds?.([]);
+        ctx.onRequestArrowReagentEdit(selArrow.id, slotHit.slot);
+        return true;
+      }
+    }
+  }
+
   const hitArrow = pickReactionArrowAt(arrows, worldPos.x, worldPos.y, handleTol);
   if (hitArrow) {
     ctx.setSelectedReactionArrowId(hitArrow.id);
@@ -298,7 +310,7 @@ const handleReactionArrowPointerDown = (
 export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
   const { e, worldPos, molecule, activeTool, selectedAtomIds, selectedBondIds = [] } = ctx;
   if (e.button !== 0) return false;
-  if (activeTool !== 'select' && activeTool !== 'lasso_select') return false;
+  if (!isSelectTool(activeTool)) return false;
 
   const transformAtomIds = expandForGroupedMove(
     molecule,
@@ -495,14 +507,15 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
     ctx.setSelectedCanvasImageId?.(null);
     ctx.setSelectedSruBracketId?.(null);
     if (ctx.setSelectedAtomIds) {
-      // Ctrl/⌘+click: select the entire connected molecule.
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+      // Fragment tool or Ctrl/⌘+click: select the entire connected molecule.
+      if (activeTool === 'fragment_select' || ((e.ctrlKey || e.metaKey) && !e.shiftKey)) {
         const atomIds = expandForGroupedMove(
           molecule,
           expandAtomIdsToConnectedFragments(molecule, [clickedAtom.id]),
         );
-        ctx.setSelectedAtomIds(atomIds);
-        ctx.setSelectedBondIds?.(bondsFullyInAtomSet(molecule, atomIds));
+        const next = e.shiftKey ? mergeIdLists(selectedAtomIds, atomIds) : atomIds;
+        ctx.setSelectedAtomIds(next);
+        ctx.setSelectedBondIds?.(bondsFullyInAtomSet(molecule, next));
       } else if (e.shiftKey) {
         const merged = new Set(selectedAtomIds);
         if (merged.has(clickedAtom.id)) merged.delete(clickedAtom.id);
@@ -534,8 +547,8 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
     ctx.setColorEditCanvasShapeId?.(null);
     ctx.setSelectedReactionArrowId?.(null);
     ctx.setSelectedSruBracketId?.(null);
-    // Ctrl/⌘+click: select the entire connected molecule containing this bond.
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+    // Fragment tool or Ctrl/⌘+click: select the entire connected molecule containing this bond.
+    if (activeTool === 'fragment_select' || ((e.ctrlKey || e.metaKey) && !e.shiftKey)) {
       const atomIds = expandForGroupedMove(
         molecule,
         expandAtomIdsToConnectedFragments(molecule, [
@@ -543,8 +556,9 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
           clickedBond.toAtomId,
         ]),
       );
-      ctx.setSelectedAtomIds?.(atomIds);
-      ctx.setSelectedBondIds?.(bondsFullyInAtomSet(molecule, atomIds));
+      const next = e.shiftKey ? mergeIdLists(selectedAtomIds, atomIds) : atomIds;
+      ctx.setSelectedAtomIds?.(next);
+      ctx.setSelectedBondIds?.(bondsFullyInAtomSet(molecule, next));
     } else if (e.shiftKey) {
       const merged = new Set(selectedBondIds);
       if (merged.has(clickedBond.id)) merged.delete(clickedBond.id);
@@ -649,9 +663,16 @@ export function selectToolHasTargetAt(ctx: InteractionContext): boolean {
   }
   if (pickSruBracketAt(molecule.sruBrackets, worldPos.x, worldPos.y)) return true;
   const arrows = arrowsForHitTest(molecule);
-  const handleTol = arrowHandleHitTolWorld(ctx.viewport?.zoom ?? 1);
+  const zoom = ctx.viewport?.zoom ?? 1;
+  const handleTol = arrowHandleHitTolWorld(zoom);
   if (pickReactionArrowEndpoint(arrows, worldPos.x, worldPos.y, handleTol)) return true;
   if (pickReactionArrowCurveHandle(arrows, worldPos.x, worldPos.y, handleTol)) return true;
+  if (ctx.selectedReactionArrowId) {
+    const selArrow = molecule.reactionArrows?.find(a => a.id === ctx.selectedReactionArrowId);
+    if (pickReactionArrowReagentSlot(selArrow, worldPos.x, worldPos.y, reagentSlotChipHitTolWorld(zoom))) {
+      return true;
+    }
+  }
   if (pickReactionArrowAt(arrows, worldPos.x, worldPos.y, handleTol)) return true;
   if (pickStrokeAt(molecule, worldPos.x, worldPos.y)) return true;
   if (pickCanvasOrbitalAt(molecule, worldPos.x, worldPos.y)) return true;
@@ -1119,11 +1140,16 @@ export const commitDragAction = (ctx: InteractionContext): boolean => {
 
 /**
  * When a draw/annotate tool is active, click an existing arrow / line / text /
- * stroke / image to select it (ChemDraw-style) instead of starting a new draw.
+ * image to select it (ChemDraw-style) instead of starting a new draw.
+ * Pencil strokes are Select-tool only — never selected from a draw tool.
  */
 export const trySelectAnnotationAt = (ctx: InteractionContext): boolean => {
   const { activeTool, worldPos, molecule } = ctx;
-  if (activeTool === 'select' || activeTool === 'lasso_select' || activeTool === 'erase') {
+  if (isSelectTool(activeTool) || activeTool === 'erase') {
+    return false;
+  }
+  // Pencil / Smart Draw must keep the gesture for a new stroke.
+  if (activeTool === 'pencil' || activeTool === 'smart_draw') {
     return false;
   }
 
@@ -1134,7 +1160,6 @@ export const trySelectAnnotationAt = (ctx: InteractionContext): boolean => {
   if (handleCanvasTextPointerDown(selectCtx)) return true;
   if (handleCanvasImagePointerDown(selectCtx)) return true;
   if (handleCanvasShapePointerDown(selectCtx)) return true;
-  if (handleStrokePointerDown(selectCtx)) return true;
   if (handleCanvasOrbitalPointerDown(selectCtx)) return true;
 
   // Allow editing tail / curve / head while the arrow tool is still active.

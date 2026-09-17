@@ -112,6 +112,8 @@ export interface AppTopBarProps {
 
   /** Add one bonded H on the current atom selection (whole-molecule unfold is in the context menu). */
   onAddExplicitHydrogen?: () => void;
+  /** Show the C label on selected skeletal carbons. */
+  onAddExplicitCarbon?: () => void;
   onCleanupStructure: () => void;
   /** ChemDraw-style 3D Clean Up → canvas perspective pose. */
   on3DCleanUp?: () => void;
@@ -276,6 +278,7 @@ export function AppTopBar(props: AppTopBarProps) {
     expandTopRows: _expandTopRows = false,
     onClearAll,
     onAddExplicitHydrogen,
+    onAddExplicitCarbon,
     onCleanupStructure,
     on3DCleanUp,
     onFlatten3DPose,
@@ -383,6 +386,38 @@ export function AppTopBar(props: AppTopBarProps) {
     Boolean(ringPaintActive);
   const showExplicitH = selectedAtomCount > 0;
   const showFormatCluster = hasStyleSelection || showExplicitH || perspectiveActive;
+  const explicitAtomButtons = (
+    <>
+      {onAddExplicitHydrogen ? (
+        <button
+          type="button"
+          className={`action-btn icon-only${activeTool === 'add_explicit_h' ? ' active' : ''}`}
+          onClick={onAddExplicitHydrogen}
+          title={t('topBar.addExplicitHFullTitle')}
+          aria-label={t('topBar.addExplicitH')}
+          aria-pressed={activeTool === 'add_explicit_h'}
+        >
+          <span className="hydrogen-toggle-glyph" aria-hidden>
+            H+
+          </span>
+        </button>
+      ) : null}
+      {onAddExplicitCarbon ? (
+        <button
+          type="button"
+          className={`action-btn icon-only${activeTool === 'add_explicit_c' ? ' active' : ''}`}
+          onClick={onAddExplicitCarbon}
+          title={t('topBar.addExplicitCFullTitle')}
+          aria-label={t('topBar.addExplicitC')}
+          aria-pressed={activeTool === 'add_explicit_c'}
+        >
+          <span className="hydrogen-toggle-glyph" aria-hidden>
+            C+
+          </span>
+        </button>
+      ) : null}
+    </>
+  );
   const aromatizeDisabled = molecule.atoms.length === 0;
   const aromatizeButtons =
     onAromatize || onDearomatize ? (
@@ -553,15 +588,18 @@ export function AppTopBar(props: AppTopBarProps) {
             </button>
           ) : null}
           {isCompact ? (
-            <button
-              type="button"
-              className="app-top-bar__delete-btn"
-              onClick={onClearAll}
-              title={t('topBar.fullClearTitle')}
-              aria-label={t('topBar.clearCanvas')}
-            >
-              <Trash2 size={18} strokeWidth={2} aria-hidden />
-            </button>
+            <>
+              <button
+                type="button"
+                className="app-top-bar__delete-btn"
+                onClick={onClearAll}
+                title={t('topBar.fullClearTitle')}
+                aria-label={t('topBar.clearCanvas')}
+              >
+                <Trash2 size={18} strokeWidth={2} aria-hidden />
+              </button>
+              {explicitAtomButtons}
+            </>
           ) : null}
         </div>
         <div className="app-top-bar__fill" aria-hidden />
@@ -874,19 +912,6 @@ export function AppTopBar(props: AppTopBarProps) {
             documentStyleRestPanel={documentStyleRestPanel}
             isCompact={isCompact}
           />
-          {showExplicitH && onAddExplicitHydrogen ? (
-          <button
-            type="button"
-            className="action-btn icon-only"
-            onClick={onAddExplicitHydrogen}
-            title={t('topBar.addExplicitHFullTitle')}
-            aria-label={t('topBar.addExplicitH')}
-          >
-            <span className="hydrogen-toggle-glyph" aria-hidden>
-              H+
-            </span>
-          </button>
-          ) : null}
           {perspectiveActive && (
             <>
               <label className="app-top-bar__depth-fade" aria-label={t('topBar.depthFadeLabel')}>
@@ -956,6 +981,7 @@ export function AppTopBar(props: AppTopBarProps) {
             >
               <Trash2 size={16} strokeWidth={2} aria-hidden />
             </button>
+            {explicitAtomButtons}
           </ToolCluster>
         ) : null}
         {arrowRow ? <ToolCluster label={t('topBar.clusterArrow')}>{arrowRow}</ToolCluster> : null}
@@ -973,6 +999,7 @@ export function AppTopBar(props: AppTopBarProps) {
             >
               <Trash2 size={16} strokeWidth={2} aria-hidden />
             </button>
+            {explicitAtomButtons}
           </ToolCluster>
         ) : null}
         {!isCompact && ribbonMode === 'home' ? (

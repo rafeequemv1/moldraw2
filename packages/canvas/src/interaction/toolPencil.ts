@@ -41,6 +41,8 @@ export const strokePressures = (samples: StrokeSample[]): number[] | undefined =
 
 export const pencilToolMouseDown = (ctx: InteractionContext): boolean => {
   if (ctx.e.button !== 0) return false;
+  // Drawing must not inherit / show transform chrome on an existing stroke.
+  ctx.setColorEditStrokeId?.(null);
   ctx.setDrawingStroke([sampleFor(ctx)]);
   return true;
 };

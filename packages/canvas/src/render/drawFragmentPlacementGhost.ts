@@ -92,7 +92,7 @@ export const drawFragmentPlacementGhost = (ctx: CanvasRenderingContext2D, R: Ren
       };
       const T = bondEndPoints(snapAtom, conn, bondTrimCtx);
       ctx.save();
-      ctx.strokeStyle = canAttach ? '#2563eb' : '#ca8a04';
+      ctx.strokeStyle = canAttach ? '#2dd4bf' : '#ca8a04';
       ctx.lineWidth = Math.max(1.2, R.displayPrefs.bondThicknessPx * 1.1);
       ctx.setLineDash([6 / R.viewport.zoom, 4 / R.viewport.zoom]);
       ctx.beginPath();

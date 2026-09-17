@@ -5,7 +5,7 @@
  * bonds / labels do not stack into darker blobs. Ring interiors are filled in
  * selection mode so a whole molecule reads as one silhouette.
  */
-import { getEffectiveValencyForImplicitHydrogen } from '@moldraw/domain';
+import { getEffectiveValencyForImplicitHydrogen, isIsolatedWaterOxygen } from '@moldraw/domain';
 import {
   getHydrogenStubDirections,
   getSmallestCycleAtomIds,
@@ -108,6 +108,18 @@ const expandBounds = (
       for (const dir of getHydrogenStubDirections(atom, R.renderedMolecule, implicitH)) {
         grow(atom.x + dir.x * hDist, atom.y + dir.y * hDist, pad);
       }
+    }
+  }
+  for (const atom of R.renderedMolecule.atoms) {
+    if (!atomIds.has(atom.id)) continue;
+    const v = R.valencyMap.get(atom.id) || 0;
+    if (!isIsolatedWaterOxygen(atom, R.renderedMolecule, v)) continue;
+    const maxV = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
+    const implicitH = Math.max(0, maxV - v);
+    if (implicitH <= 0) continue;
+    const hDist = implicitHydrogenLabelDist(R.displayPrefs.bondLengthPx);
+    for (const dir of getHydrogenStubDirections(atom, R.renderedMolecule, implicitH)) {
+      grow(atom.x + dir.x * hDist, atom.y + dir.y * hDist, pad);
     }
   }
   if (!Number.isFinite(minX)) return null;
@@ -233,6 +245,21 @@ const paintSkeleton = (
         offCtx.lineTo(atom.x + dir.x * hDist, atom.y + dir.y * hDist);
         offCtx.stroke();
       }
+    }
+  }
+  for (const atom of R.renderedMolecule.atoms) {
+    if (!atomIds.has(atom.id)) continue;
+    const v = R.valencyMap.get(atom.id) || 0;
+    if (!isIsolatedWaterOxygen(atom, R.renderedMolecule, v)) continue;
+    const maxV = getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0);
+    const implicitH = Math.max(0, maxV - v);
+    if (implicitH <= 0) continue;
+    const hDist = implicitHydrogenLabelDist(R.displayPrefs.bondLengthPx);
+    for (const dir of getHydrogenStubDirections(atom, R.renderedMolecule, implicitH)) {
+      offCtx.beginPath();
+      offCtx.moveTo(atom.x, atom.y);
+      offCtx.lineTo(atom.x + dir.x * hDist, atom.y + dir.y * hDist);
+      offCtx.stroke();
     }
   }
 
@@ -411,7 +438,7 @@ export const drawHoverOutlineAndToolHints = (
       ctx.save();
       ctx.strokeStyle = placingFragment
         ? snapValid
-          ? 'rgba(37, 99, 235, 0.85)'
+          ? 'rgba(45, 212, 191, 0.9)'
           : 'rgba(202, 138, 4, 0.85)'
         : HOVER_OUTLINE;
       ctx.lineWidth = placingFragment ? 1.5 / highlightZoom(R) : HOVER_OUTLINE_CSS_PX / highlightZoom(R);
@@ -419,7 +446,7 @@ export const drawHoverOutlineAndToolHints = (
       ctx.arc(a.x, a.y, placingFragment ? 14 : 11, 0, Math.PI * 2);
       ctx.stroke();
       if (placingFragment) {
-        ctx.fillStyle = snapValid ? 'rgba(37, 99, 235, 0.12)' : 'rgba(234, 179, 8, 0.14)';
+        ctx.fillStyle = snapValid ? 'rgba(45, 212, 191, 0.14)' : 'rgba(234, 179, 8, 0.14)';
         ctx.fill();
       }
       ctx.restore();

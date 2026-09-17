@@ -124,9 +124,10 @@ export function MoleculeInfoPanel({
   onCopyText,
   asSheet = false,
 }: MoleculeInfoPanelProps) {
-  const [moreOpen, setMoreOpen] = useState(false);
-  useChromeOverlay(!asSheet, onClose, 'dock');
-  useChromeOverlay(moreOpen, () => setMoreOpen(false));
+  const [moreOpen, setMoreOpen] = useState(true);
+  const [inchiOpen, setInchiOpen] = useState(false);
+  // Same as other MolDraw dialogs: stay open on canvas / outside click; close via X or ⌬.
+  useChromeOverlay(!asSheet, onClose, 'modal');
 
   const displayName =
     selectionMatchesPubchemImport && pubchemImport
@@ -242,17 +243,31 @@ export function MoleculeInfoPanel({
 
               <div className="molecule-info-panel__section">
                 <div className="molecule-info-panel__label-row">
-                  <span className="molecule-info-panel__label">InChI</span>
+                  <button
+                    type="button"
+                    className="molecule-info-panel__expand-label"
+                    onClick={() => setInchiOpen(v => !v)}
+                    aria-expanded={inchiOpen}
+                  >
+                    {inchiOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    <span className="molecule-info-panel__label">InChI</span>
+                  </button>
                   {!data.inchiLoading && data.inchi ? (
                     <CopyIconButton text={data.inchi} label="InChI" onCopy={onCopyText} />
                   ) : null}
                 </div>
                 {data.inchiLoading ? (
                   <span className="molecule-info-panel__muted">Loading…</span>
-                ) : (
+                ) : inchiOpen ? (
                   <span className="molecule-info-panel__value molecule-info-panel__value--mono molecule-info-panel__value--block">
                     {data.inchi || '—'}
                   </span>
+                ) : data.inchi ? (
+                  <span className="molecule-info-panel__value molecule-info-panel__value--mono molecule-info-panel__value--clamp">
+                    {data.inchi}
+                  </span>
+                ) : (
+                  <span className="molecule-info-panel__muted">—</span>
                 )}
               </div>
 
@@ -270,14 +285,6 @@ export function MoleculeInfoPanel({
                           copyText={data.indigo.formula}
                           onCopy={onCopyText}
                           mono
-                        />
-                      ) : null}
-                      {data.indigo.mw != null ? (
-                        <ValueRow
-                          label="MW"
-                          display={data.indigo.mw.toFixed(4)}
-                          copyText={data.indigo.mw.toFixed(4)}
-                          onCopy={onCopyText}
                         />
                       ) : null}
                       {data.indigo.exactMass != null ? (
@@ -339,6 +346,7 @@ export function MoleculeInfoPanel({
         title="Molecule details"
         size="auto"
         className="mobile-sheet--info"
+        closeOnBackdrop={false}
       >
         <div className="molecule-info-panel molecule-info-panel--sheet">{body}</div>
       </MobileBottomSheet>

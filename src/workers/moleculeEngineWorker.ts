@@ -12,6 +12,7 @@ import {
   checkStructure,
   convertExplicitHydrogens,
   certifyLayout,
+  applyModelStereoToDepiction,
 } from '@moldraw/engine';
 import { resolveCleanupBondLength } from '@moldraw/core/io/localCleanup';
 import { withRingConformationsByAtomIndex } from '@moldraw/domain';
@@ -53,7 +54,7 @@ const smilesToLaidMolblock = async (
         console.warn('[SMILES_TO_MOLBLOCK] Indigo layout failed, using native', err);
       }
     }
-    return engine.toMolblock(laid);
+    return engine.toMolblock(applyModelStereoToDepiction(laid));
   } catch (err) {
     console.warn('[SMILES_TO_MOLBLOCK] failed', err);
     return null;

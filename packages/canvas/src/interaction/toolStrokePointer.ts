@@ -1,10 +1,10 @@
 import { pickStrokeAt } from '../geometry/strokes';
 import type { InteractionContext } from './types';
+import { isSelectTool } from './selectTools';
 
 /** Pointer-down on a pencil stroke (select tool): select + drag to move. */
 export function handleStrokePointerDown(ctx: InteractionContext): boolean {
-  const isSelectTool = ctx.activeTool === 'select' || ctx.activeTool === 'lasso_select';
-  if (!isSelectTool) return false;
+  if (!isSelectTool(ctx.activeTool)) return false;
 
   const hit = pickStrokeAt(ctx.molecule, ctx.worldPos.x, ctx.worldPos.y);
   if (!hit || !ctx.setColorEditStrokeId) return false;

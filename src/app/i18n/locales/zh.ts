@@ -57,6 +57,8 @@ export const zh: LocaleMessages = {
     flattenTitle: '压平 — 将 3D 构象写入 2D 图并退出 3D 模式',
     exit3dTitle: '退出 3D — 丢弃构象并显示原始 2D 图',
     addExplicitHFullTitle: '为所选原子添加显式 H — 每个原子一个成键 H（孤立 CN 变为 H–CN）',
+    addExplicitC: '为选区显示显式 C',
+    addExplicitCFullTitle: '在所选骨架碳上显示 C 标签',
     depthTaperTitle: '深度锥化 — 近端键正常宽度，远端更尖（仅显示）',
     toolbarDrawTools: '绘制工具',
     toolbarHomeExtras: '优化与绘制工具',
@@ -306,6 +308,9 @@ export const zh: LocaleMessages = {
         '拖动分子或反应箭头时，中心对齐背景网格。按住 Shift 可自由移动。对齐参考线仍可对齐其他分子边界。',
       showGrid: '显示网格',
       showGridHint: '在 2D 画布上绘制浅色背景网格（默认开启）。',
+      showAlignmentGuides: '画布辅助参考线',
+      showAlignmentGuidesHint:
+        '拖动对象时显示对齐线，绘制键时显示吸附刻度。关闭后画布更干净。',
       reactionComponentMargin: '反应组分间距',
       imageResolution: '图片分辨率',
       imageResolutionHint:
@@ -458,6 +463,7 @@ export const zh: LocaleMessages = {
     menuWavy: '波浪 / 未指定',
     menuDative: '配位',
     menuBondTypes: '键类型',
+    menuSelectTools: '选择工具',
     bondMenuMain: '键',
     bondMenuMore: '查询 / 立体',
     bondMenuAdvanced: '高级',

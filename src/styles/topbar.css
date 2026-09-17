@@ -458,9 +458,10 @@
   justify-content: flex-start;
   gap: 0;
   box-sizing: border-box;
-  height: var(--app-top-bar-tools-row, 32px);
-  min-height: var(--app-top-bar-tools-row, 32px);
+  height: var(--app-top-bar-tools-row, 38px);
+  min-height: var(--app-top-bar-tools-row, 38px);
   padding: 4px 6px;
+  background: var(--chrome-bg-elevated);
   border-bottom: 1px solid var(--chrome-border);
   /* Menus portal to body; keep overflow visible so any in-bar popups are not clipped. */
   overflow: visible;
@@ -557,8 +558,8 @@
 }
 
 .app-top-bar__tools-row .action-btn.icon-only {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   background: transparent;
   color: #0f172a;
@@ -1202,23 +1203,23 @@ html.app-top-rows-3 {
 .app-top-bar__tools-row .toolbar-shape-strip .tool-btn,
 .app-top-bar__tools-row .toolbar-top-strip .toolbar-split-tool {
   flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
   padding: 0;
 }
 
 .app-top-bar__tools-row .toolbar-top-strip .toolbar-split-tool__icon {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
 }
 
 .app-top-bar__tools-row .toolbar-top-strip .tool-btn svg,
 .app-top-bar__tools-row .toolbar-top-strip .toolbar-split-tool__icon svg,
 .app-top-bar__tools-row .toolbar-shape-strip .tool-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .app-top-bar__tools-cluster .app-top-bar__select-wrap {
@@ -1792,8 +1793,8 @@ html.app-top-rows-3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  height: 26px;
+  min-width: 28px;
+  height: 28px;
   padding: 0 6px !important;
   font-variant-numeric: tabular-nums;
   background: transparent !important;
@@ -1815,8 +1816,8 @@ html.app-top-rows-3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  height: 26px;
+  min-width: 28px;
+  height: 28px;
   padding: 0 6px !important;
   background: transparent !important;
   color: var(--text-main, #0f172a) !important;

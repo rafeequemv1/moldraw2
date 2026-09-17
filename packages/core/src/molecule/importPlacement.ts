@@ -19,14 +19,20 @@ const avgBondLen = (mol: Molecule, fallbackLen: number): number => {
   return sum / mol.bonds.length;
 };
 
+const isStereoBond = (b: Bond): boolean =>
+  b.stereo === 'wedge' ||
+  b.stereo === 'dash' ||
+  b.stereo === 'wavy' ||
+  b.stereo === 'either' ||
+  b.stereo === 'cis_trans';
+
 /**
  * Strip terminal explicit hydrogens so imports match ChemDraw-style drawing:
  * only functional-group H (NH, OH, …) appear as labels by default.
  *
- * Keep only chemically special H (charge, isotope, or non-terminal). Plain
- * skeletal H — including PubChem stereo-care / wedge H on carbon — are
- * dropped; heteroatom H counts still show via implicit labels. Any kept
- * carbon H is gated by the canvas H toggle.
+ * Keep chemically special H (charge, isotope, non-terminal) and stereochem H:
+ * wedge/hash/wavy bonds to H, and H on atoms with molfile stereo care. Dropping
+ * those would strip chirality from molfiles (PubChem, Mathpix, ChemDraw).
  */
 export const stripExplicitHydrogens = (raw: Molecule): Molecule => {
   const isPreservedHydrogen = (atomId: string): boolean => {
@@ -34,10 +40,15 @@ export const stripExplicitHydrogens = (raw: Molecule): Molecule => {
     if (!atom || atom.element !== 'H') return false;
     if ((atom.charge ?? 0) !== 0) return true;
     if (atom.isotope && atom.isotope > 0) return true;
+    if (atom.mdlStereoCare && atom.mdlStereoCare > 0) return true;
 
     const incident = raw.bonds.filter(b => b.fromAtomId === atomId || b.toAtomId === atomId);
     // Non-terminal / bridging H should stay.
     if (incident.length !== 1) return true;
+    if (incident.some(isStereoBond)) return true;
+    const heavyId = incident[0]!.fromAtomId === atomId ? incident[0]!.toAtomId : incident[0]!.fromAtomId;
+    const heavy = raw.atoms.find(a => a.id === heavyId);
+    if (heavy?.mdlStereoCare && heavy.mdlStereoCare > 0) return true;
     return false;
   };
 

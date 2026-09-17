@@ -129,7 +129,7 @@ function drawOne(
   if (selected) {
     ctx.beginPath();
     ctx.arc(cx, cy, orbital.size * 1.08, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(37, 99, 235, 0.85)';
+    ctx.strokeStyle = 'rgba(45, 212, 191, 0.9)';
     ctx.lineWidth = 1.4;
     ctx.setLineDash([4, 3]);
     ctx.stroke();
@@ -140,14 +140,14 @@ function drawOne(
       ctx.beginPath();
       ctx.moveTo(cx + Math.cos(orbital.rotationRad) * orbital.size, cy + Math.sin(orbital.rotationRad) * orbital.size);
       ctx.lineTo(h.x, h.y);
-      ctx.strokeStyle = 'rgba(37, 99, 235, 0.75)';
+      ctx.strokeStyle = 'rgba(45, 212, 191, 0.75)';
       ctx.lineWidth = 1.15;
       ctx.stroke();
       ctx.beginPath();
       ctx.arc(h.x, h.y, 5, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
-      ctx.strokeStyle = '#2563eb';
+      ctx.strokeStyle = '#2dd4bf';
       ctx.lineWidth = 1.4;
       ctx.stroke();
     }

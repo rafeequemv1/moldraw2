@@ -200,6 +200,22 @@ if (coona.bonds.some(b => {
   throw new Error('COONa Na⁺ must not be covalently bonded');
 }
 
+const nabh4 = expandAliasesFor3D(mol('NaBH4'));
+if (nabh4.atoms.find(a => a.id === 'a1')?.alias) throw new Error('NaBH4 alias not cleared');
+if (nabh4.atoms.find(a => a.id === 'a1')?.element !== 'B') throw new Error('NaBH4 labeled atom should become B');
+if ((nabh4.atoms.find(a => a.id === 'a1')?.charge ?? 0) !== -1) throw new Error('NaBH4 B should be −1');
+if (count(nabh4, 'Na') !== 1) throw new Error(`NaBH4 should place Na⁺, got ${count(nabh4, 'Na')}`);
+if (!nabh4.atoms.some(a => a.element === 'Na' && (a.charge ?? 0) === 1)) {
+  throw new Error('NaBH4 Na should be +1');
+}
+if (nabh4.bonds.some(b => {
+  const ends = [b.fromAtomId, b.toAtomId];
+  const na = nabh4.atoms.find(a => a.element === 'Na');
+  return na ? ends.includes(na.id) : false;
+})) {
+  throw new Error('NaBH4 Na⁺ must not be covalently bonded');
+}
+
 // Tokenizer must consume common linear strings fully
 for (const s of [
   'CH2CH2COOME',

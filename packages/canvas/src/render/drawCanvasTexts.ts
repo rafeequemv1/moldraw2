@@ -105,7 +105,7 @@ function drawTransformChrome(
   }
 }
 
-const TEXT_HOVER_TOOLS = new Set(['select', 'lasso_select', 'text']);
+const TEXT_HOVER_TOOLS = new Set(['select', 'lasso_select', 'fragment_select', 'text']);
 
 /** Top-most label under the pointer (for the Figma-style hover outline). */
 function hoveredTextId(ctx: CanvasRenderingContext2D, R: RenderContext): string | null {

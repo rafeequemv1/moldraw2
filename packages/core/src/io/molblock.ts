@@ -8,6 +8,7 @@ import {
 import { expandInstanceArrays } from '../molecule/instanceArrays';
 import { molfileCoordsAngstrom } from '../molecule/perspective3D';
 import { findMolfileCountsLineIndex } from './molblockHeader';
+import { parseV2000AtomLineFields, type V2000AtomLineFields } from './molfileAtomLine';
 
 /**
  * V2000 MOL block writer used for round-tripping molecules through the engine.
@@ -147,23 +148,17 @@ export const parseMolblock = (molblock: string): Molecule => {
     let x: number;
     let y: number;
     let element: string;
-    let mdlStereoCare: number | undefined;
-
     const trimmed = line.trim();
     const parts = trimmed.split(/\s+/);
     let atomMap: number | undefined;
+    let extras: V2000AtomLineFields = { charge: 0 };
     // PubChem / OEChem use spaced fields; token index 6 is atom stereo parity / care (0–3).
     // Atom-atom map is typically token 13 (after element + 9 ints).
     if (parts.length >= 4 && /^[A-Za-z*]{1,3}$/.test(parts[3])) {
       x = parseFloat(parts[0]) * scale;
       y = -parseFloat(parts[1]) * scale;
       element = parts[3];
-      if (parts.length > 6) {
-        const sc = parseInt(parts[6], 10);
-        if (Number.isFinite(sc) && sc >= 0 && sc <= 3) {
-          mdlStereoCare = sc;
-        }
-      }
+      extras = parseV2000AtomLineFields(line, element, parts);
       if (parts.length > 13) {
         const m = parseInt(parts[13], 10);
         if (Number.isFinite(m) && m > 0) atomMap = m;
@@ -172,6 +167,7 @@ export const parseMolblock = (molblock: string): Molecule => {
       x = parseFloat(line.substring(0, 10).trim()) * scale;
       y = -parseFloat(line.substring(10, 20).trim()) * scale;
       element = line.substring(31, 34).trim();
+      extras = parseV2000AtomLineFields(line, element);
       if (line.length >= 63) {
         const m = parseInt(line.substring(60, 63).trim() || '0', 10);
         if (Number.isFinite(m) && m > 0) atomMap = m;
@@ -185,8 +181,10 @@ export const parseMolblock = (molblock: string): Molecule => {
       element,
       x,
       y,
-      charge: 0,
-      ...(mdlStereoCare !== undefined ? { mdlStereoCare } : {}),
+      charge: extras.charge,
+      ...(extras.radical ? { radical: extras.radical } : {}),
+      ...(extras.isotope != null ? { isotope: extras.isotope } : {}),
+      ...(extras.mdlStereoCare !== undefined ? { mdlStereoCare: extras.mdlStereoCare } : {}),
       ...(atomMap !== undefined ? { atomMap } : {}),
     });
   }
@@ -208,7 +206,7 @@ export const parseMolblock = (molblock: string): Molecule => {
       ...(parsedType.aromatic ? { aromatic: true } : {}),
       ...(parsedType.dative ? { dative: true } : {}),
       ...(parsedType.queryType ? { queryType: parsedType.queryType } : {}),
-      stereo,
+      ...(stereo ? { stereo } : {}),
     });
   }
 

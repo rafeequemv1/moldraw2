@@ -8,6 +8,7 @@ import {
   pickCanvasShapeRotateHandle,
 } from '../geometry/canvasShapeTransform';
 import type { InteractionContext } from './types';
+import { isSelectTool } from './selectTools';
 
 /**
  * Pointer-down on canvas shape: rotate / resize / move (select tool).
@@ -20,8 +21,7 @@ export function handleCanvasShapePointerDown(
   const list = ctx.molecule.canvasShapes ?? [];
   if (!list.length) return false;
 
-  const isSelectTool = ctx.activeTool === 'select' || ctx.activeTool === 'lasso_select';
-  if (!isSelectTool) return false;
+  if (!isSelectTool(ctx.activeTool)) return false;
 
   const zoom = ctx.viewport?.zoom ?? 1;
   const selectedId = ctx.selectedCanvasShapeId ?? null;

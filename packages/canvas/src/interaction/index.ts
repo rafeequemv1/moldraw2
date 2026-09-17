@@ -76,6 +76,8 @@ export {
   isAtomRingAttachDrag,
   isRingAtomClick,
 } from './toolRing';
+export { isSelectTool, SELECT_TOOL_IDS } from './selectTools';
+export type { SelectFamilyToolId } from './selectTools';
 export {
   selectToolMouseDown,
   selectToolHasTargetAt,

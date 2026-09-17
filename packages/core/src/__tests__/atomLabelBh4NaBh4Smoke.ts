@@ -1,5 +1,5 @@
 /**
- * Atom Label → BH4 / NaBH4 expands to real chemistry, not alias strings.
+ * Atom Label → BH4 expands to B−; NaBH4 stays a condensed alias until show-explicit.
  * Run: npx tsx --tsconfig tsconfig.app.json packages/core/src/__tests__/atomLabelBh4NaBh4Smoke.ts
  */
 import type { Molecule } from '@moldraw/domain';
@@ -43,29 +43,13 @@ for (const typed of ['BH4', 'bh4', 'BH4-'] as const) {
 
 for (const typed of ['NaBH4', 'nabh4', 'naBH4'] as const) {
   const mol = commit(isolatedC(), typed);
-  eq(mol.atoms.length, 2, `${typed}: two atoms (Na⁺ and BH4−)`);
-  eq(mol.bonds.length, 0, `${typed}: no covalent Na–B bond`);
-  const boron = mol.atoms.find(a => a.element === 'B');
-  const sodium = mol.atoms.find(a => a.element === 'Na');
-  assert(boron, `${typed}: has B`);
-  assert(sodium, `${typed}: has Na`);
-  eq(boron!.id, 'a', `${typed}: B stays at the labeled atom`);
-  eq(boron!.charge, -1, `${typed}: B charge −1`);
-  eq(sodium!.charge, 1, `${typed}: Na charge +1`);
-  assert(!boron!.alias?.trim(), `${typed}: B has no alias string`);
-  assert(!sodium!.alias?.trim(), `${typed}: Na has no alias string`);
-  const naBBond = mol.bonds.some(
-    b =>
-      (b.fromAtomId === boron!.id && b.toAtomId === sodium!.id) ||
-      (b.fromAtomId === sodium!.id && b.toAtomId === boron!.id),
-  );
-  assert(!naBBond, `${typed}: Na and B are not bonded`);
-  const data = getMolecularData(mol);
-  eq(data.empirical.counts.Na, 1, `${typed}: formula Na`);
-  eq(data.empirical.counts.B, 1, `${typed}: formula B`);
-  eq(data.empirical.counts.H, 4, `${typed}: formula H4`);
-  const net = mol.atoms.reduce((s, a) => s + (a.charge || 0), 0);
-  eq(net, 0, `${typed}: net charge 0`);
+  eq(mol.atoms.length, 1, `${typed}: stays one atom`);
+  eq(mol.bonds.length, 0, `${typed}: no ionic split`);
+  const carbon = mol.atoms[0]!;
+  eq(carbon.element, 'C', `${typed}: carbon`);
+  eq(carbon.alias, 'NaBH4', `${typed}: condensed alias NaBH4`);
+  assert(!mol.atoms.some(a => a.element === 'Na'), `${typed}: no Na atom`);
+  assert(!mol.atoms.some(a => a.element === 'B'), `${typed}: no B atom`);
 }
 
 const organic = commit(isolatedC(), 'ch3oh');
@@ -105,5 +89,32 @@ if (!expanded.ok) fail(`expand COONa failed: ${expanded.error.message}`);
 eq(expanded.next.atoms.filter(a => a.element === 'O').length, 2, 'expand COONa adds two O');
 eq(expanded.next.atoms.filter(a => a.element === 'Na').length, 1, 'expand COONa places Na⁺');
 assert(!expanded.next.atoms.find(a => a.id === 'a')?.alias?.trim(), 'expand COONa clears alias');
+
+const nabh4 = commit(isolatedC(), 'NaBH4');
+const expandedSalt = runCommand(nabh4, CMD.ExpandAlias, { atomIds: ['a'] });
+if (!expandedSalt.ok) fail(`expand NaBH4 failed: ${expandedSalt.error.message}`);
+eq(expandedSalt.next.atoms.find(a => a.id === 'a')?.element, 'B', 'expand NaBH4 turns labeled atom into B');
+eq(expandedSalt.next.atoms.find(a => a.id === 'a')?.charge, -1, 'expand NaBH4 B is −1');
+eq(expandedSalt.next.atoms.filter(a => a.element === 'Na').length, 1, 'expand NaBH4 places Na⁺');
+assert(!expandedSalt.next.atoms.find(a => a.id === 'a')?.alias?.trim(), 'expand NaBH4 clears alias');
+const na = expandedSalt.next.atoms.find(a => a.element === 'Na');
+assert(na, 'expand NaBH4 has Na');
+eq(na!.charge, 1, 'expand NaBH4 Na is +1');
+const naBonded = expandedSalt.next.bonds.some(
+  b =>
+    (b.fromAtomId === 'a' && b.toAtomId === na!.id) ||
+    (b.fromAtomId === na!.id && b.toAtomId === 'a'),
+);
+assert(!naBonded, 'expand NaBH4 Na⁺ is not covalently bonded');
+
+const odd = commit(isolatedC(), '*');
+eq(odd.atoms[0]?.alias, '*', 'symbol label applies');
+const cPlusMol: Molecule = {
+  atoms: [{ id: 'a', element: 'C', x: 0, y: 0, charge: 1 }],
+  bonds: [],
+};
+const cPlusLabel = runCommand(cPlusMol, CMD.CommitAtomAlias, { atomId: 'a', alias: 'CH3OH' });
+if (!cPlusLabel.ok) fail(`C+ CH3OH failed: ${cPlusLabel.error.message}`);
+eq(cPlusLabel.next.atoms[0]?.alias?.toUpperCase(), 'CH3OH', 'CH3OH on C+ is an alias');
 
 console.log('atomLabelBh4NaBh4Smoke OK');

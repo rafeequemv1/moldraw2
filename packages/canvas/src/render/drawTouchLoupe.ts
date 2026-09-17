@@ -100,7 +100,7 @@ export const drawTouchLoupe = (
 
   // Crosshair at the sampled fingertip.
   const cross = 7 * s;
-  octx.strokeStyle = 'rgba(37, 99, 235, 0.9)';
+  octx.strokeStyle = 'rgba(45, 212, 191, 0.95)';
   octx.lineWidth = 1 * s;
   octx.beginPath();
   octx.moveTo(cx - cross, cy);

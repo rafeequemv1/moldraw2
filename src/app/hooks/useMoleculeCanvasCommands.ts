@@ -652,7 +652,8 @@ export function useMoleculeCanvasCommands({
       if (
         action !== 'deselect' &&
         tool !== 'select' &&
-        tool !== 'lasso_select'
+        tool !== 'lasso_select' &&
+        tool !== 'fragment_select'
       ) {
         handleToolbarSelect('select');
       }

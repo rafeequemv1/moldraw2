@@ -11,6 +11,7 @@ import { localizeTool } from '../i18n/localeTools';
 import {
   BOND_MENU_SECTIONS,
   CHARGE_SYMBOL_TOOL_IDS,
+  SELECT_MENU_TOOL_IDS,
   SRU_BRACKET_SUBSCRIPT_OPTIONS,
   TOOL_DEFS,
   type ShapeMenuValue,
@@ -130,8 +131,6 @@ export function useToolbarI18n() {
         id: 'charge',
         label: t('toolbar.menuCharge'),
         options: [
-          { value: 'charge_plus', label: t('toolbar.positiveCharge') },
-          { value: 'charge_minus', label: t('toolbar.negativeCharge') },
           { value: 'oplus', label: t('toolbar.carbocation') },
           { value: 'ominus', label: t('toolbar.carbanion') },
           { value: 'radical_cation', label: t('toolbar.radicalCation') },
@@ -194,6 +193,15 @@ export function useToolbarI18n() {
         { value: 'orbital_d', label: t('toolbar.menuOrbitalD') },
         { value: 'orbital_dz2', label: t('toolbar.menuOrbitalDz2') },
       ],
+      selectMenuOptions: SELECT_MENU_TOOL_IDS.map(id => {
+        const selTool = TOOL_DEFS.find(x => x.id === id);
+        const lt = selTool ? localizeTool(selTool, t) : null;
+        return {
+          value: id,
+          label: lt?.label ?? id,
+          keywords: lt?.title,
+        };
+      }),
       stereoBondOptions: [
         { value: 'wedge_bond', label: t('toolbar.menuWedge') },
         { value: 'dash_bond', label: t('toolbar.menuDashWedge') },

@@ -9,6 +9,10 @@ export const zhToolOverrides: Record<
     title: '选择（空格键临时切换）。Shift+在空白处拖动：套索；不按 Shift 拖动：矩形框选。',
   },
   lasso_select: { label: '套索', title: '套索选择' },
+  fragment_select: {
+    label: '片段',
+    title: '片段选择 — 点击原子或键即可选中整个连通分子',
+  },
   erase: { label: '橡皮擦', title: '擦除选中内容' },
   single_bond: { label: '单键', title: '单键' },
   double_bond: { label: '双键', title: '双键' },
@@ -92,6 +96,11 @@ export const zhToolOverrides: Record<
     label: '添加显式 H',
     title: '添加显式氢：选择原子后点击，或激活工具后点击原子（如羰基碳上的醛基 H）',
     shortLabel: 'H+',
+  },
+  add_explicit_c: {
+    label: '显式 C',
+    title: '显示碳标签：选择碳后点击，或激活后点击骨架碳以画出 C',
+    shortLabel: 'C+',
   },
   cyclopropane: { label: '环丙烷', title: '环丙烷', shortLabel: 'C3' },
   cyclobutane: { label: '环丁烷', title: '环丁烷', shortLabel: 'C4' },

@@ -184,6 +184,17 @@ export const renderToolIcon = (toolId: string) => {
       return <MousePointer2 size={18} strokeWidth={2} />;
     case 'lasso_select':
       return <LassoSelect size={18} strokeWidth={2} />;
+    case 'fragment_select':
+      return (
+        <IconSvg>
+          <circle cx="6" cy="13" r="2.2" fill="currentColor" />
+          <circle cx="14" cy="13" r="2.2" fill="currentColor" />
+          <circle cx="10" cy="6" r="2.2" fill="currentColor" />
+          <line x1="7.6" y1="11.4" x2="8.6" y2="7.8" {...stroke} strokeWidth={1.6} />
+          <line x1="12.4" y1="11.4" x2="11.4" y2="7.8" {...stroke} strokeWidth={1.6} />
+          <line x1="8.2" y1="13" x2="11.8" y2="13" {...stroke} strokeWidth={1.6} />
+        </IconSvg>
+      );
     case 'erase':
       return <Eraser size={18} strokeWidth={2} />;
     case 'single_bond':
@@ -440,32 +451,37 @@ export const renderToolIcon = (toolId: string) => {
         </IconSvg>
       );
     case 'add_explicit_h':
-      // Carbon + explicit H (teaching: aldehyde H, etc.)
       return (
         <IconSvg>
           <text
-            x="6.2"
-            y="13.2"
+            x="8.2"
+            y="13.6"
             textAnchor="middle"
-            fontSize="9.5"
-            fontWeight="700"
-            fontFamily="Arial, Helvetica, sans-serif"
-            fill="currentColor"
-          >
-            C
-          </text>
-          <line x1="9.2" y1="10" x2="13.2" y2="5.6" {...stroke} strokeWidth={1.45} />
-          <text
-            x="15.2"
-            y="6.2"
-            textAnchor="middle"
-            fontSize="8.5"
+            fontSize="10.5"
             fontWeight="700"
             fontFamily="Arial, Helvetica, sans-serif"
             fill="currentColor"
           >
             H
           </text>
+          <path d="M14.2 6.2 V11.4 M11.6 8.8 H16.8" {...stroke} strokeWidth={1.55} />
+        </IconSvg>
+      );
+    case 'add_explicit_c':
+      return (
+        <IconSvg>
+          <text
+            x="8.2"
+            y="13.6"
+            textAnchor="middle"
+            fontSize="10.5"
+            fontWeight="700"
+            fontFamily="Arial, Helvetica, sans-serif"
+            fill="currentColor"
+          >
+            C
+          </text>
+          <path d="M14.2 6.2 V11.4 M11.6 8.8 H16.8" {...stroke} strokeWidth={1.55} />
         </IconSvg>
       );
     case 'lone_pair':

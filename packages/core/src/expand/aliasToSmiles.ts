@@ -51,6 +51,7 @@ const ABBREV_TO_SMILES: Record<string, AliasSmilesSpec> = {
   CO2H: { smiles: 'C(=O)O', attach: 'merge-first' },
   COONA: { smiles: 'C(=O)[O-]', attach: 'merge-first', nearbyIon: { element: 'Na', charge: 1 } },
   CO2NA: { smiles: 'C(=O)[O-]', attach: 'merge-first', nearbyIon: { element: 'Na', charge: 1 } },
+  NABH4: { smiles: '[BH4-]', attach: 'merge-first', nearbyIon: { element: 'Na', charge: 1 } },
   COOME: { smiles: 'C(=O)OC', attach: 'merge-first' },
   CO2ME: { smiles: 'C(=O)OC', attach: 'merge-first' },
   COOCH3: { smiles: 'C(=O)OC', attach: 'merge-first' },

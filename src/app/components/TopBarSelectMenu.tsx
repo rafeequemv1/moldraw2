@@ -22,7 +22,7 @@ import {
 } from '../keyboard/shortcutBindings';
 import { useChromeOverlay } from '../chromeDismiss';
 
-export type SelectToolId = 'select' | 'lasso_select';
+export type SelectToolId = 'select' | 'lasso_select' | 'fragment_select';
 
 type ActionItem = {
   id: QuickSelectActionId;
@@ -53,6 +53,12 @@ const TOP_ROWS: MenuRow[] = [
     id: 'lasso_select',
     label: 'Lasso',
     hint: 'Freehand lasso selection',
+  },
+  {
+    kind: 'tool',
+    id: 'fragment_select',
+    label: 'Fragment',
+    hint: 'Click an atom or bond to select the whole connected molecule',
   },
   { kind: 'sep' },
   {
@@ -392,7 +398,8 @@ export function TopBarSelectMenu({
 
   const selectToolActive =
     activeTool === 'select' ||
-    activeTool === 'lasso_select';
+    activeTool === 'lasso_select' ||
+    activeTool === 'fragment_select';
 
   const runAction = (item: ActionItem) => {
     if (item.needsSelection && !hasSelection) return;

@@ -203,6 +203,8 @@ export {
   looksLikeCoordsTableText,
 } from './io/moleculeCoordsTable';
 export { findMolfileCountsLineIndex } from './io/molblockHeader';
+export { parseV2000AtomLineFields } from './io/molfileAtomLine';
+export type { V2000AtomLineFields } from './io/molfileAtomLine';
 export { xyzTextToMolblock } from './io/xyzToMolblock';
 export { perceiveBondsFromAtomRows } from './io/perceiveBondsFromCoords';
 

@@ -99,7 +99,9 @@ if (!naBonded.ok) fail(`bonded C → Na should be allowed: ${naBonded.reason}`);
 eq(naBonded.element, 'Na', 'bonded relabel Na');
 
 const heBonded = validateAtomAliasForMolecule(bonded, 'a', 'He');
-if (heBonded.ok) fail('bonded C → He should fail valency');
+if (!heBonded.ok) fail(`bonded C → He should apply as a label: ${heBonded.reason}`);
+eq(heBonded.element, 'C', 'bonded He stays on carbon');
+eq(heBonded.body, 'He', 'bonded He is a display alias');
 
 const bMinus: Molecule = {
   atoms: [{ id: 'b', element: 'B', x: 0, y: 0, charge: -1 }],
@@ -123,11 +125,9 @@ for (const typed of ['BH4', 'bh4', 'BH4-'] as const) {
 for (const typed of ['NaBH4', 'nabh4', 'naBH4'] as const) {
   const v = validateAtomAliasForMolecule(isolated, 'a', typed);
   if (!v.ok) fail(`${typed} should validate: ${v.reason}`);
-  eq(v.element, 'B', `${typed} boron`);
-  eq(v.charge, -1, `${typed} BH4 charge`);
-  eq(v.body, 'B', `${typed} does not keep NaBH4 as alias`);
-  eq(v.nearbyIon?.element, 'Na', `${typed} places Na`);
-  eq(v.nearbyIon?.charge, 1, `${typed} Na charge +1`);
+  eq(v.element, 'C', `${typed} stays on carbon`);
+  eq(v.body.toUpperCase(), 'NABH4', `${typed} keeps condensed alias`);
+  assert(!v.nearbyIon, `${typed} does not place a free Na⁺`);
 }
 
 for (const typed of ['COONa', 'cooNa', 'coona', 'CO2Na', 'CO2NA'] as const) {
@@ -155,5 +155,22 @@ eq(me.body.toUpperCase(), 'ME', 'me stays Me abbreviation');
 const junk = validateAtomAliasForMolecule(isolated, 'a', 'xyz');
 if (!junk.ok) fail(`unknown alias should be kept, got ${junk.reason}`);
 eq(junk.element, 'C', 'unknown alias stays on C');
+
+const cPlus: Molecule = {
+  atoms: [{ id: 'a', element: 'C', x: 0, y: 0, charge: 1 }],
+  bonds: [],
+};
+for (const typed of ['CH3OH', 'H2SO4', 'COOH', '*', 'Δ', 'C+', 'NaBH4'] as const) {
+  const v = validateAtomAliasForMolecule(cPlus, 'a', typed);
+  if (!v.ok) fail(`${typed} on C+ should apply as a label: ${v.reason}`);
+}
+
+const chargedEl: Molecule = {
+  atoms: [{ id: 'a', element: 'C+', x: 0, y: 0, charge: 1 }],
+  bonds: [],
+};
+const chargedElLabel = validateAtomAliasForMolecule(chargedEl, 'a', 'CH3OH');
+if (!chargedElLabel.ok) fail(`CH3OH on element C+ should apply: ${chargedElLabel.reason}`);
+eq(chargedElLabel.body.toUpperCase(), 'CH3OH', 'CH3OH body kept on C+');
 
 console.log('atomAliasKeyboardSmoke OK');

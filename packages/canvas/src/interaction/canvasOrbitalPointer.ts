@@ -7,6 +7,7 @@ import {
 } from '../geometry/orbitals';
 import { pickAtomAt } from './hitTest';
 import type { InteractionContext } from './types';
+import { isSelectTool } from './selectTools';
 
 const ATOM_REATTACH_R = 14;
 
@@ -65,8 +66,7 @@ export function handleCanvasOrbitalPointerDown(ctx: InteractionContext): boolean
   const list = ctx.molecule.orbitals ?? [];
   if (!list.length) return false;
 
-  const isSelectTool = ctx.activeTool === 'select' || ctx.activeTool === 'lasso_select';
-  if (!isSelectTool) return false;
+  if (!isSelectTool(ctx.activeTool)) return false;
 
   const zoom = ctx.viewport?.zoom ?? 1;
   const selectedId = ctx.selectedCanvasOrbitalIds?.[0] ?? null;

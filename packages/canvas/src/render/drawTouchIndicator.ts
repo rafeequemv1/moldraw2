@@ -27,14 +27,14 @@ export const drawTouchIndicator = (
 
   ctx.save();
   ctx.lineWidth = 1.5 / z;
-  ctx.strokeStyle = onTarget ? 'rgba(37, 99, 235, 0.85)' : 'rgba(15, 23, 42, 0.45)';
-  ctx.fillStyle = onTarget ? 'rgba(37, 99, 235, 0.10)' : 'rgba(15, 23, 42, 0.05)';
+  ctx.strokeStyle = onTarget ? 'rgba(45, 212, 191, 0.9)' : 'rgba(15, 23, 42, 0.45)';
+  ctx.fillStyle = onTarget ? 'rgba(45, 212, 191, 0.12)' : 'rgba(15, 23, 42, 0.05)';
   ctx.beginPath();
   ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = onTarget ? 'rgba(37, 99, 235, 0.9)' : 'rgba(15, 23, 42, 0.7)';
+  ctx.fillStyle = onTarget ? 'rgba(13, 148, 136, 0.95)' : 'rgba(15, 23, 42, 0.7)';
   ctx.beginPath();
   ctx.arc(p.x, p.y, dot, 0, Math.PI * 2);
   ctx.fill();

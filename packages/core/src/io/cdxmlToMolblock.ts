@@ -33,7 +33,7 @@ const readBondLengthPageUnits = (doc: Document): number => {
 };
 
 type ParsedCdxml = {
-  nodes: Array<{ element: string; x: number; y: number }>;
+  nodes: Array<{ element: string; x: number; y: number; charge?: number; isotope?: number }>;
   bonds: Array<{
     from: number;
     to: number;
@@ -80,7 +80,15 @@ const parseCdxmlGraph = (xml: string): ParsedCdxml | null => {
     }
 
     idToIndex.set(id, nodes.length);
-    nodes.push({ element, x: parts[0]!, y: parts[1]! });
+    const chargeRaw = parseInt(el.getAttribute('Charge') ?? el.getAttribute('charge') ?? '0', 10);
+    const isotopeRaw = parseInt(el.getAttribute('Isotope') ?? el.getAttribute('isotope') ?? '0', 10);
+    nodes.push({
+      element,
+      x: parts[0]!,
+      y: parts[1]!,
+      ...(Number.isFinite(chargeRaw) && chargeRaw !== 0 ? { charge: chargeRaw } : {}),
+      ...(Number.isFinite(isotopeRaw) && isotopeRaw > 0 ? { isotope: isotopeRaw } : {}),
+    });
   }
 
   if (nodes.length === 0) return null;
@@ -104,13 +112,15 @@ const parseCdxmlGraph = (xml: string): ParsedCdxml | null => {
 
     let stereo: 'wedge' | 'dash' | 'wavy' | undefined;
     const display = (el.getAttribute('Display') ?? el.getAttribute('display') ?? '').toLowerCase();
-    if (display.includes('wedge')) stereo = 'wedge';
-    else if (display.includes('hash') || display.includes('dash')) stereo = 'dash';
+    // Check hash/dash before wedge: "WedgedHashBegin" contains both.
+    if (display.includes('hash') || display.includes('dash')) stereo = 'dash';
+    else if (display.includes('wedge')) stereo = 'wedge';
     else if (display.includes('wavy') || display.includes('either')) stereo = 'wavy';
+    const reverseStereo = /end$/i.test(display) || display.includes('wedgeend') || display.includes('hashend');
 
     bonds.push({
-      from,
-      to,
+      from: reverseStereo ? to : from,
+      to: reverseStereo ? from : to,
       order: aromatic ? 1 : order,
       ...(aromatic ? { aromatic: true } : {}),
       ...(stereo ? { stereo } : {}),
@@ -150,7 +160,8 @@ export function cdxmlToMolecule(
     element: n.element,
     x: (n.x - cx) * pageToPx,
     y: -(n.y - cy) * pageToPx,
-    charge: 0,
+    charge: n.charge ?? 0,
+    ...(n.isotope ? { isotope: n.isotope } : {}),
   }));
 
   const bonds: Bond[] = parsed.bonds.map(b => ({
@@ -184,6 +195,8 @@ export function cdxmlToMolblock(xml: string): string | null {
     element: n.element,
     x: (n.x - cx) * pageToAngstrom,
     y: -(n.y - cy) * pageToAngstrom,
+    charge: n.charge,
+    isotope: n.isotope,
   }));
 
   const bonds: MolblockBondRow[] = parsed.bonds.map(b => ({

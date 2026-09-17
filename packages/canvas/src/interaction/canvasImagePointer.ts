@@ -7,6 +7,7 @@ import {
   pickCanvasImageRotateHandle,
 } from '../geometry/canvasImages';
 import type { InteractionContext } from './types';
+import { isSelectTool } from './selectTools';
 
 /**
  * Pointer-down on canvas image: rotate / resize / move (select tool).
@@ -19,8 +20,7 @@ export function handleCanvasImagePointerDown(
   const list = ctx.molecule.canvasImages ?? [];
   if (!list.length) return false;
 
-  const isSelectTool = ctx.activeTool === 'select' || ctx.activeTool === 'lasso_select';
-  if (!isSelectTool) return false;
+  if (!isSelectTool(ctx.activeTool)) return false;
 
   const zoom = ctx.viewport?.zoom ?? 1;
 

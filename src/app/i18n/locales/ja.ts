@@ -59,6 +59,8 @@ export const ja: LocaleMessages = {
     exit3dTitle: '3D終了 — ポーズを破棄し元の2D描画を表示',
     addExplicitHFullTitle:
       '選択原子に明示的Hを追加 — 原子あたり1つの結合H（孤立CNはH–CNに）',
+    addExplicitC: '選択に明示的Cを表示',
+    addExplicitCFullTitle: '選択した骨格炭素にCラベルを表示',
     depthTaperTitle: '深度テーパー — 近い結合は通常幅、遠い端は尖る（表示のみ）',
     toolbarDrawTools: '描画ツール',
     toolbarHomeExtras: '整理と描画オプション',
@@ -309,6 +311,9 @@ export const ja: LocaleMessages = {
         '分子や反応矢印をドラッグするとき、背景グリッドに中心をスナップ。Shiftで自由移動。整列ガイドは他分子の境界にスナップ。',
       showGrid: 'グリッドを表示',
       showGridHint: '2Dキャンバスに薄い背景グリッドを描画（既定オン）。',
+      showAlignmentGuides: 'キャンバス補助ガイド',
+      showAlignmentGuidesHint:
+        'ドラッグ時の整列線と、結合描画時のスナップ目盛り。オフにするとキャンバスがすっきりします。',
       reactionComponentMargin: '反応コンポーネント余白サイズ',
       imageResolution: '画像解像度',
       imageResolutionHint:
@@ -466,6 +471,7 @@ export const ja: LocaleMessages = {
     menuWavy: '波線 / 未指定',
     menuDative: '配位',
     menuBondTypes: '結合タイプ',
+    menuSelectTools: '選択ツール',
     bondMenuMain: '結合',
     bondMenuMore: 'クエリ / 立体',
     bondMenuAdvanced: '詳細',

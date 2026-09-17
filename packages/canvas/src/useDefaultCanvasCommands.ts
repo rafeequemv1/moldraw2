@@ -243,6 +243,16 @@ export function useDefaultCanvasCommands({
     [applyCommand, bondLengthPx, store],
   );
 
+  const onSetAtomsShowElementLabel = useCallback(
+    (atomIds: string[], show: boolean): boolean => {
+      const before = store.getMolecule();
+      const result = applyCommand(CMD.SetAtomsShowElementLabel, { atomIds, show });
+      if (!result.ok) return false;
+      return store.getMolecule() !== before;
+    },
+    [applyCommand, store],
+  );
+
   const onUpdateAtomElement = useCallback(
     (atomId: string, element: string) => {
       // Never rewrite a heavy atom into bare H via palette relabel — that
@@ -485,6 +495,7 @@ export function useDefaultCanvasCommands({
     onSetAtomRadical,
     onSetAtomRadicalIon,
     onAddExplicitHydrogen,
+    onSetAtomsShowElementLabel,
     onUpdateAtomElement,
     onApplyRingFill,
     onAddStroke,
