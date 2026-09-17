@@ -133,7 +133,8 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
           }}
           onKeyDown={e => {
             e.stopPropagation();
-            if (e.key === 'Escape') {
+            // Esc or Ctrl/Cmd+Enter finishes editing (Enter alone = new line).
+            if (e.key === 'Escape' || (e.key === 'Enter' && (e.ctrlKey || e.metaKey))) {
               e.preventDefault();
               (e.currentTarget as HTMLTextAreaElement).blur();
               onEscape?.();

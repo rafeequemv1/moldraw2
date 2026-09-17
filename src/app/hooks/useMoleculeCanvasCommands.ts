@@ -313,12 +313,54 @@ export function useMoleculeCanvasCommands({
     setSelectedCanvasImageId,
   ]);
 
+  /**
+   * Typing session: keystrokes into one label collapse into a single undo
+   * step (Figma / PowerPoint behaviour) instead of one entry per character.
+   * The pre-typing molecule is pushed to history once, on the first
+   * keystroke; later keystrokes replace `present` without new entries. The
+   * session ends when the label loses selection (see effect below).
+   */
+  const typingSessionTextId = useRef<string | null>(null);
+
   const handleUpdateCanvasText = useCallback(
     (id: string, patch: Partial<CanvasText>) => {
-      applyCommand(CMD.UpdateCanvasText, { id, patch });
+      const isTyping = 'text' in patch;
+      if (!isTyping) {
+        applyCommand(CMD.UpdateCanvasText, { id, patch });
+        return;
+      }
+      const baseline = moleculeEditor.getMolecule();
+      const exists = baseline.canvasTexts?.some(t => t.id === id);
+      if (!exists) return;
+      moleculeEditor.replacePresentWithoutHistory(prev => ({
+        ...prev,
+        canvasTexts: (prev.canvasTexts ?? []).map(t => (t.id === id ? { ...t, ...patch } : t)),
+      }));
+      if (typingSessionTextId.current !== id) {
+        typingSessionTextId.current = id;
+        moleculeEditor.commitUndoFromBaseline(baseline);
+      }
     },
-    [applyCommand],
+    [applyCommand, moleculeEditor],
   );
+
+  // Selection moved off a label: close its typing session and, Figma-style,
+  // discard the label if nothing was ever typed into it (no undo entry — the
+  // user never saw it as content).
+  const prevSelectedCanvasTextId = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevSelectedCanvasTextId.current;
+    prevSelectedCanvasTextId.current = selectedCanvasTextId;
+    if (!prev || prev === selectedCanvasTextId) return;
+    if (typingSessionTextId.current === prev) typingSessionTextId.current = null;
+    const t = moleculeEditor.getMolecule().canvasTexts?.find(x => x.id === prev);
+    if (t && t.text.trim() === '') {
+      moleculeEditor.replacePresentWithoutHistory(m => ({
+        ...m,
+        canvasTexts: (m.canvasTexts ?? []).filter(x => x.id !== prev),
+      }));
+    }
+  }, [selectedCanvasTextId, moleculeEditor]);
 
   /** Insert δ / arrows / etc. at the textarea caret (or append). */
   const handleInsertChemSymbol = useCallback(

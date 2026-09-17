@@ -45,7 +45,7 @@ export {
 } from './drawAtomDecorations';
 export { drawCipLabels } from './drawCipLabels';
 export { drawAtomMaps } from './drawAtomMaps';
-export { drawCanvasTexts } from './drawCanvasTexts';
+export { drawCanvasTexts, drawCanvasTextHover } from './drawCanvasTexts';
 export { drawSruBrackets } from './drawSruBrackets';
 export { drawAlignmentGuides } from './drawAlignmentGuides';
 export { drawDendrimerGuides } from './drawDendrimerGuides';

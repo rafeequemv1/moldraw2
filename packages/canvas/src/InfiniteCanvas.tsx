@@ -38,12 +38,23 @@ import type { StructureThemeColors } from './render/types';
 
 export type { Point, Viewport } from './geometry';
 import {
+  canvasTextCornerCursor,
+  canvasTextCursorAt,
   shortestAngleDiff,
   readDevicePixelRatio,
   syncCanvasBackingStore,
   type Point,
   type Viewport,
 } from './geometry';
+
+/** Shared 2D context for text-box hit tests that drive the cursor (measure only). */
+let cursorMeasureCtx: CanvasRenderingContext2D | null = null;
+const getCursorMeasureCtx = (): CanvasRenderingContext2D | null => {
+  if (cursorMeasureCtx) return cursorMeasureCtx;
+  if (typeof document === 'undefined') return null;
+  cursorMeasureCtx = document.createElement('canvas').getContext('2d');
+  return cursorMeasureCtx;
+};
 
 export interface InfiniteCanvasProps {
   onViewportChange?: (viewport: Viewport) => void;
@@ -742,9 +753,44 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Text labels get design-tool cursors: move over the frame, resize arrows
+    // on the corners, grab on the rotate knob, and an I-beam on empty canvas
+    // with the text tool (so "click to type" is obvious).
+    const textCursor = useMemo((): string | null => {
+      if (viewportApi.isPanning) return null;
+      const drag = input.dragAction;
+      if (drag?.type === 'move_canvas_text') return 'move';
+      if (drag?.type === 'rotate_canvas_text') return 'grabbing';
+      if (drag?.type === 'resize_canvas_text') {
+        return canvasTextCornerCursor(drag.corner, drag.origText.rotationRad ?? 0);
+      }
+      if (drag) return null;
+      const textish = activeTool === 'text';
+      if (!textish && activeTool !== 'select' && activeTool !== 'lasso_select') return null;
+      const mp = input.mouseWorldPos;
+      if (!mp) return textish ? 'text' : null;
+      const ctx = getCursorMeasureCtx();
+      const texts = displayMolecule.canvasTexts ?? [];
+      const hit = ctx
+        ? canvasTextCursorAt(ctx, texts, selectedCanvasTextId, mp.x, mp.y, viewportApi.viewport.zoom)
+        : null;
+      if (hit) return hit;
+      return textish ? 'text' : null;
+    }, [
+      activeTool,
+      displayMolecule.canvasTexts,
+      input.dragAction,
+      input.mouseWorldPos,
+      selectedCanvasTextId,
+      viewportApi.isPanning,
+      viewportApi.viewport.zoom,
+    ]);
+
     const cursor = viewportApi.isPanning
       ? 'grabbing'
-      : activeTool === 'hand'
+      : textCursor
+        ? textCursor
+        : activeTool === 'hand'
         ? 'grab'
         : activeTool === 'perspective'
           ? 'grab'

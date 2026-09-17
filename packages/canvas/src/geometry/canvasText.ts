@@ -399,6 +399,43 @@ export const canvasTextResizePatch = (
   };
 };
 
+/** CSS resize cursor for a corner handle, taking the box rotation into account. */
+export const canvasTextCornerCursor = (
+  corner: CanvasTextResizeCorner,
+  rotationRad: number,
+): string => {
+  // Direction of the corner from the centre, in screen space.
+  const base =
+    corner === 'nw' ? -135 : corner === 'ne' ? -45 : corner === 'se' ? 45 : 135;
+  const deg = (((base + (rotationRad * 180) / Math.PI) % 360) + 360) % 360;
+  // Snap to the nearest of 4 axes (each cursor covers ±22.5°, both directions).
+  const sector = Math.round(deg / 45) % 4;
+  return ['ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize'][sector]!;
+};
+
+/**
+ * Cursor to show for the pointer at world (wx, wy) with the text / select
+ * tool: rotate knob → grab, corner → resize arrows, inside a label → move,
+ * otherwise null (caller falls back to the tool cursor).
+ */
+export const canvasTextCursorAt = (
+  ctx: CanvasRenderingContext2D,
+  texts: CanvasText[],
+  selectedId: string | null,
+  wx: number,
+  wy: number,
+  zoom: number,
+): string | null => {
+  if (!texts.length) return null;
+  const selected = selectedId ? texts.find(t => t.id === selectedId) : undefined;
+  if (selected) {
+    if (pickCanvasTextRotateHandle(ctx, selected, wx, wy, zoom)) return 'grab';
+    const corner = pickCanvasTextResizeHandle(ctx, selected, wx, wy, zoom);
+    if (corner) return canvasTextCornerCursor(corner, selected.rotationRad ?? 0);
+  }
+  return pickCanvasTextAt(ctx, texts, wx, wy) ? 'move' : null;
+};
+
 export const canvasTextRotatePatch = (
   orig: CanvasText,
   startPointerAngle: number,

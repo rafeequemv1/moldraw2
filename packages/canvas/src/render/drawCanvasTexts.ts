@@ -12,6 +12,7 @@ import {
   getCanvasTextRotateHandleWorld,
   getCanvasTextTopMidWorld,
   measureCanvasTextBox,
+  pickCanvasTextAt,
   resolveCanvasTextInk,
   type CanvasTextResizeCorner,
 } from '../geometry';
@@ -103,6 +104,47 @@ function drawTransformChrome(
     ctx.restore();
   }
 }
+
+const TEXT_HOVER_TOOLS = new Set(['select', 'lasso_select', 'text']);
+
+/** Top-most label under the pointer (for the Figma-style hover outline). */
+function hoveredTextId(ctx: CanvasRenderingContext2D, R: RenderContext): string | null {
+  if (R.dragAction || !R.mouseWorldPos || !TEXT_HOVER_TOOLS.has(R.activeTool)) return null;
+  const list = R.renderedMolecule.canvasTexts ?? [];
+  const hit = pickCanvasTextAt(ctx, list, R.mouseWorldPos.x, R.mouseWorldPos.y);
+  return hit?.id ?? null;
+}
+
+function drawHoverOutline(
+  ctx: CanvasRenderingContext2D,
+  box: ReturnType<typeof getCanvasTextBox>,
+  zoom: number,
+  R: RenderContext,
+): void {
+  const chrome = transformChrome(R);
+  ctx.save();
+  ctx.translate(box.cx, box.cy);
+  ctx.rotate(box.rotationRad);
+  ctx.strokeStyle = chrome.accent;
+  ctx.globalAlpha = 0.75;
+  ctx.lineWidth = 1.25 / zoom;
+  ctx.setLineDash([]);
+  ctx.strokeRect(-box.width / 2, -box.height / 2, box.width, box.height);
+  ctx.restore();
+}
+
+/**
+ * Overlay pass: light accent outline on the unselected label under the
+ * pointer so labels read as grabbable objects (Figma-style hover). Lives on
+ * the overlay layer because the structure bitmap is cached between frames.
+ */
+export const drawCanvasTextHover = (ctx: CanvasRenderingContext2D, R: RenderContext): void => {
+  const id = hoveredTextId(ctx, R);
+  if (!id || id === R.selectedCanvasTextId || R.selectedCanvasTextIds?.includes(id)) return;
+  const t = (R.renderedMolecule.canvasTexts ?? []).find(x => x.id === id);
+  if (!t) return;
+  drawHoverOutline(ctx, getCanvasTextBox(ctx, t), R.viewport.zoom, R);
+};
 
 export const drawCanvasTexts = (ctx: CanvasRenderingContext2D, R: RenderContext): void => {
   const list = R.renderedMolecule.canvasTexts ?? [];

@@ -46,6 +46,7 @@ import {
   drawDendrimerGuides,
   drawChainGhost,
   drawCanvasShapeGhost,
+  drawCanvasTextHover,
   drawErrorAtomMarker,
   drawStereoWarningMarkers,
   drawOverValentMarkers,
@@ -681,6 +682,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
     ) => {
       drawDendrimerGuides(ctx, R);
     drawHoverOutlineAndToolHints(ctx, R);
+    drawCanvasTextHover(ctx, R);
     drawRingHoverFill(ctx, R);
     drawBondGhost(ctx, R);
     drawBondHoverHint(ctx, R);

@@ -4,6 +4,11 @@ import type { InteractionContext } from './types';
 
 /**
  * Text tool: pointer-down on existing text starts move/resize; empty canvas creates a label.
+ *
+ * Figma-style: the new label starts *empty* with the frame + caret showing
+ * immediately (the host focuses the inline editor on selection). A label
+ * that is still empty when it loses selection is discarded by the host, so
+ * stray clicks never litter the canvas with placeholder words.
  */
 export const textToolMouseDown = (ctx: InteractionContext): boolean => {
   const { e, worldPos, molecule } = ctx;
@@ -18,7 +23,7 @@ export const textToolMouseDown = (ctx: InteractionContext): boolean => {
       id,
       x: worldPos.x,
       y: worldPos.y,
-      text: 'Text',
+      text: '',
       fontSize: 22,
       color: '#0f172a',
       fontWeight: 'normal',

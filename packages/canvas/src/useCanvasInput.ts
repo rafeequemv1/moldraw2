@@ -1049,6 +1049,17 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       // the glow doubles as "what am I over" feedback under the fingertip.
       updateCanvasHover(ctx);
 
+      // Text labels: track the pointer for the hover outline + move / resize /
+      // rotate cursors (select + text tools) — only when there is a label to
+      // hover so idle mouse moves stay cheap on plain structures.
+      if (
+        !isTouchPointer(e) &&
+        (activeTool === 'text' || activeTool === 'select' || activeTool === 'lasso_select') &&
+        (ctx.molecule.canvasTexts?.length ?? 0) > 0
+      ) {
+        setMouseWorldPos(worldPos);
+      }
+
       if (isRingTool(activeTool)) {
         ringToolUpdateHover(ctx);
         ringToolMouseMove(ctx);
@@ -1167,8 +1178,13 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
         return;
       }
 
+      // Text tool: pointer-down already placed (and selected) a label or
+      // began a move; clearing the selection here would hide the fresh
+      // label's frame + caret the moment it appears.
+      if (activeTool === 'text') return;
+
       // Fall-through: tools that didn't consume the up event (erase,
-      // atom_label, charge_*, lone_pair, text). Original behavior: a tiny
+      // atom_label, charge_*, lone_pair). Original behavior: a tiny
       // click on empty canvas clears all selections regardless of tool.
       const distance = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
       if (

@@ -290,7 +290,7 @@ export const TOOL_DEFS: ToolDef[] = [
     category: 'edit',
     group: 'annotate',
   },
-  { id: 'text', label: 'Text', title: 'Text: click empty canvas to place and type; drag the frame to move, corners to resize, knob to rotate', category: 'edit', group: 'annotate' },
+  { id: 'text', label: 'Text', title: 'Click empty canvas and start typing. Drag the frame to move, corners to resize, knob to rotate; Esc to finish.', category: 'edit', group: 'annotate' },
   { id: 'atom_label', label: 'Atom Label', shortLabel: 'Label', title: 'Atom label (A): click an atom — type R, Me, Ph, CH3, COOH, etc. R/R1/R2 are generic substituents on C or heteroatoms.', category: 'edit', group: 'annotate' },
   { id: 'reaction_arrow', label: 'Reaction Arrow', shortLabel: 'Arrow', title: 'Drag tail→head on canvas. Use the menu beside the tool to pick arrow type (Electron flow / Mechanism snaps to lone pairs, bonds, and atoms). SMILES react>>prod uses the first arrow that is not equilibrium / half-equilibrium / resonance.', category: 'edit', group: 'annotate' },
   { id: 'shape', label: 'Shape', title: 'Click and drag to draw an annotation shape. Use the menu beside the tool for rectangle, line, circle, triangle, or star.', category: 'edit', group: 'annotate' },

@@ -67,6 +67,8 @@ export {
   pickCanvasTextRotateHandle,
   canvasTextResizePatch,
   canvasTextRotatePatch,
+  canvasTextCornerCursor,
+  canvasTextCursorAt,
   canvasTextBbox,
   pickTopCanvasTextInRect,
   getCanvasTextCornerWorld,
