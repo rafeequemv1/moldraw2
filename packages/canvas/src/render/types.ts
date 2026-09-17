@@ -118,6 +118,9 @@ export type DragActionState =
       currentY: number;
       origText: CanvasText;
       corner: 'nw' | 'ne' | 'sw' | 'se';
+      /** Content-fit floor so the box never shrinks below its text. */
+      minW?: number;
+      minH?: number;
     }
   | {
       type: 'rotate_canvas_text';

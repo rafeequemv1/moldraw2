@@ -5,6 +5,7 @@ import {
   canvasTextResizePatch,
   canvasTextRotatePatch,
   getCanvasTextBox,
+  measureCanvasTextContentSize,
   pickCanvasTextAt,
   pickCanvasTextResizeHandle,
   pickCanvasTextRotateHandle,
@@ -22,20 +23,27 @@ function beginTextTransform(ctx: InteractionContext): void {
 
 function beginResize(
   ctx: InteractionContext,
-  textId: string,
+  canvasCtx: CanvasRenderingContext2D,
   orig: import('@moldraw/domain').CanvasText,
   corner: 'nw' | 'ne' | 'sw' | 'se',
 ): void {
   beginTextTransform(ctx);
+  // Snapshot the *measured* box so auto-sized labels resize from their real
+  // extent (not the minimum box), and floor at the content size so text
+  // never spills outside its frame.
+  const box = getCanvasTextBox(canvasCtx, orig);
+  const content = measureCanvasTextContentSize(canvasCtx, orig);
   ctx.setDragAction({
     type: 'resize_canvas_text',
-    textId,
+    textId: orig.id,
     startX: ctx.worldPos.x,
     startY: ctx.worldPos.y,
     currentX: ctx.worldPos.x,
     currentY: ctx.worldPos.y,
-    origText: { ...orig },
+    origText: { ...orig, boxWidth: box.width, boxHeight: box.height },
     corner,
+    minW: content.width,
+    minH: content.height,
   });
 }
 
@@ -91,7 +99,7 @@ export function handleCanvasTextPointerDown(
         zoom,
       );
       if (corner) {
-        beginResize(ctx, selected.id, selected, corner);
+        beginResize(ctx, canvasCtx, selected, corner);
         return true;
       }
     }
@@ -120,7 +128,7 @@ export function handleCanvasTextPointerDown(
     zoom,
   );
   if (corner) {
-    beginResize(ctx, picked.id, picked, corner);
+    beginResize(ctx, canvasCtx, picked, corner);
     return true;
   }
 
@@ -156,6 +164,8 @@ export function commitCanvasTextResize(ctx: InteractionContext): void {
       dragAction.corner,
       dragAction.currentX,
       dragAction.currentY,
+      dragAction.minW,
+      dragAction.minH,
     );
     ctx.onUpdateCanvasText(dragAction.textId, patch);
     return;

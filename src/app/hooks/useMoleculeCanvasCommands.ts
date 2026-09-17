@@ -165,6 +165,28 @@ export function useMoleculeCanvasCommands({
   } | null>(null);
   const inlineTextareaRef = useRef<HTMLTextAreaElement>(null);
   const lastInlineFocusId = useRef<string | null>(null);
+  /** Label id that should receive the caret as soon as its editor is mounted. */
+  const pendingInlineFocusId = useRef<string | null>(null);
+
+  /**
+   * Give the inline editor the caret if a focus request is parked for it.
+   * Called from the selection effect and again from the editor's own mount
+   * effect (`onMount`) so the request survives the editor being unmounted
+   * while the canvas owns a move / resize / rotate.
+   */
+  const focusInlineEditorIfPending = useCallback(() => {
+    const id = pendingInlineFocusId.current;
+    const ta = inlineTextareaRef.current;
+    if (!id || !ta) return;
+    pendingInlineFocusId.current = null;
+    requestAnimationFrame(() => {
+      const el = inlineTextareaRef.current;
+      if (!el) return;
+      el.focus({ preventScroll: true });
+      // Fresh label: typing replaces the placeholder word.
+      if (el.value === 'Text') el.select();
+    });
+  }, []);
 
   const handleDelete = useCallback(() => {
     if (editingAtomAliasId) {
@@ -406,15 +428,22 @@ export function useMoleculeCanvasCommands({
     const canvas = canvasRef.current?.getCanvas();
     const vp = canvasRef.current?.getViewport();
     if (!canvas || !vp) return;
+    // World → client in CSS pixels. The camera is centred on the *layout*
+    // size of the canvas; `canvas.width` is the HiDPI backing store and would
+    // shift the overlay by half the DPR surplus.
     const rect = canvas.getBoundingClientRect();
-    const cx = t.x * vp.zoom + canvas.width / 2 + vp.x;
-    const cy = t.y * vp.zoom + canvas.height / 2 + vp.y;
+    const cssW = canvas.clientWidth || rect.width;
+    const cssH = canvas.clientHeight || rect.height;
+    const cx = t.x * vp.zoom + cssW / 2 + vp.x;
+    const cy = t.y * vp.zoom + cssH / 2 + vp.y;
     setInlineEditorPos({ left: rect.left + cx, top: rect.top + cy, zoom: vp.zoom });
     if (lastInlineFocusId.current !== selectedCanvasTextId) {
       lastInlineFocusId.current = selectedCanvasTextId;
-      requestAnimationFrame(() => {
-        inlineTextareaRef.current?.focus({ preventScroll: true });
-      });
+      // Newly selected label wants the caret. The editor may not be mounted
+      // yet (a click seeds a zero-length move that hides it until pointerup),
+      // so park the request and let the editor claim it on mount.
+      pendingInlineFocusId.current = selectedCanvasTextId;
+      focusInlineEditorIfPending();
     }
     /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps -- molecule read for layout; position driven by canvasTextLayoutKey
@@ -746,6 +775,7 @@ export function useMoleculeCanvasCommands({
     handleSelectPlacementElement,
 
     handleUpdateCanvasText,
+    handleInlineEditorMount: focusInlineEditorIfPending,
     handleInsertChemSymbol,
     handleUpdateCanvasShape,
     beginCanvasShapeLiquidScrub,

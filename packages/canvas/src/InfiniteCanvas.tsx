@@ -641,11 +641,23 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
         getSelectionDragPreview: () => {
           const drag = input.dragAction;
           if (!drag) return null;
-          if (drag.type === 'move_selection' || drag.type === 'move_canvas_shape') {
+          if (
+            drag.type === 'move_selection' ||
+            drag.type === 'move_canvas_shape' ||
+            drag.type === 'move_canvas_text'
+          ) {
             return {
               kind: 'move' as const,
               dx: drag.currentX - drag.startX,
               dy: drag.currentY - drag.startY,
+            };
+          }
+          if (drag.type === 'rotate_canvas_text') {
+            return {
+              kind: 'rotate' as const,
+              cx: drag.cx,
+              cy: drag.cy,
+              deltaRad: drag.currentPointerAngle - drag.startPointerAngle,
             };
           }
           if (drag.type === 'rotate_selection') {

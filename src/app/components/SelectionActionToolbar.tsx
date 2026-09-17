@@ -12,6 +12,8 @@ import type { InfiniteCanvasHandle, SelectionDragPreview } from '@moldraw/canvas
 import {
   ROTATE_HANDLE_R,
   atomIdsForSelectionTransform,
+  canvasTextBbox,
+  estimateCanvasTextAabb,
   getMarqueeSelectionTransformLayout,
   getSelectionAabb,
   getSelectionTransformLayout,
@@ -144,17 +146,21 @@ function worldToOverlay(
   host: HTMLElement,
   vp: Viewport,
 ): { left: number; top: number } {
+  // Camera math is in CSS pixels (layout size), not the HiDPI backing store.
   const crect = canvas.getBoundingClientRect();
   const hrect = host.getBoundingClientRect();
-  const scaleX = crect.width / Math.max(1, canvas.width);
-  const scaleY = crect.height / Math.max(1, canvas.height);
-  const sx = (worldX * vp.zoom + canvas.width / 2 + vp.x) * scaleX;
-  const sy = (worldY * vp.zoom + canvas.height / 2 + vp.y) * scaleY;
+  const cssW = canvas.clientWidth || crect.width;
+  const cssH = canvas.clientHeight || crect.height;
+  const sx = worldX * vp.zoom + cssW / 2 + vp.x;
+  const sy = worldY * vp.zoom + cssH / 2 + vp.y;
   return {
     left: crect.left - hrect.left + sx,
     top: crect.top - hrect.top + sy,
   };
 }
+
+/** Clearance above the text rotate knob (world units; knob sits 26 above the box). */
+const TEXT_CHIP_CLEARANCE = 26 + 14;
 
 function clampBarAnchor(
   anchorLeft: number,
@@ -176,6 +182,7 @@ function clampBarAnchor(
 function annotationAnchor(
   mol: Molecule,
   target: SelectionActionTarget,
+  measureCtx: CanvasRenderingContext2D | null,
 ): { x: number; y: number } | null {
   if (target.kind === 'atoms') return null;
   if (target.kind === 'shape') {
@@ -197,7 +204,11 @@ function annotationAnchor(
   if (target.kind === 'text') {
     const t = mol.canvasTexts?.find(x => x.id === target.id);
     if (!t) return null;
-    return { x: t.x, y: t.y - 16 };
+    // Sit clear of the frame *and* the rotate knob so the chips never cover
+    // the letters or the handles, whatever the box size / rotation.
+    const bb = measureCtx ? canvasTextBbox(measureCtx, t) : estimateCanvasTextAabb(t);
+    const top = 'top' in bb ? bb.top : bb.minY;
+    return { x: t.x, y: top - TEXT_CHIP_CLEARANCE };
   }
   if (target.kind === 'arrow') {
     const a = mol.reactionArrows?.find(x => x.id === target.id);
@@ -337,7 +348,7 @@ export function SelectionActionToolbar({
         worldX = groupLayout.handleX;
         worldY = groupLayout.handleY - ROTATE_HANDLE_R - 8;
       } else if (ann && ann.kind !== 'atoms') {
-        const anchor = annotationAnchor(mol, ann);
+        const anchor = annotationAnchor(mol, ann, canvas.getContext('2d'));
         if (!anchor) {
           el.style.display = 'none';
           raf = requestAnimationFrame(tick);

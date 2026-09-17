@@ -12,6 +12,7 @@ import {
   getCanvasTextRotateHandleWorld,
   getCanvasTextTopMidWorld,
   measureCanvasTextBox,
+  resolveCanvasTextInk,
   type CanvasTextResizeCorner,
 } from '../geometry';
 import type { CanvasText } from '@moldraw/domain';
@@ -33,7 +34,14 @@ function textWithDragPreview(t: CanvasText, R: RenderContext): CanvasText {
   if (drag.type === 'resize_canvas_text' && drag.textId === t.id) {
     return {
       ...t,
-      ...canvasTextResizePatch(drag.origText, drag.corner, drag.currentX, drag.currentY),
+      ...canvasTextResizePatch(
+        drag.origText,
+        drag.corner,
+        drag.currentX,
+        drag.currentY,
+        drag.minW,
+        drag.minH,
+      ),
     };
   }
   if (drag.type === 'rotate_canvas_text' && drag.textId === t.id) {
@@ -50,27 +58,21 @@ function drawTransformChrome(
   box: ReturnType<typeof getCanvasTextBox>,
   zoom: number,
   R: RenderContext,
+  editing: boolean,
 ): void {
   const chrome = transformChrome(R);
   const lw = 1.25 / zoom;
   const hs = Math.max(4.5, 5.5 / zoom);
 
+  // Frame: rotated with the text. While the inline editor is live the frame
+  // picks up the accent so it reads as "typing here".
   ctx.save();
   ctx.translate(box.cx, box.cy);
   ctx.rotate(box.rotationRad);
-  ctx.strokeStyle = chrome.boxStroke;
+  ctx.strokeStyle = editing ? chrome.accent : chrome.boxStroke;
   ctx.lineWidth = lw;
   ctx.setLineDash([]);
   ctx.strokeRect(-box.width / 2, -box.height / 2, box.width, box.height);
-
-  ctx.fillStyle = chrome.handleFill;
-  ctx.strokeStyle = chrome.handleStroke;
-  for (const c of CORNERS) {
-    const lx = c.includes('e') ? box.width / 2 : -box.width / 2;
-    const ly = c.includes('s') ? box.height / 2 : -box.height / 2;
-    ctx.fillRect(lx - hs, ly - hs, hs * 2, hs * 2);
-    ctx.strokeRect(lx - hs, ly - hs, hs * 2, hs * 2);
-  }
   ctx.restore();
 
   const topMid = getCanvasTextTopMidWorld(box);
@@ -115,9 +117,11 @@ export const drawCanvasTexts = (ctx: CanvasRenderingContext2D, R: RenderContext)
       R.selectedCanvasTextId === raw.id;
     const editing = raw.id === R.omitCanvasTextBodyId;
 
-    // PowerPoint-style transform boundary when selected (also while editing).
+    // PowerPoint-style transform boundary when selected — always, including
+    // while the HTML editor is live so the frame + handles stay visible
+    // during typing.
     if (selected) {
-      drawTransformChrome(ctx, box, R.viewport.zoom, R);
+      drawTransformChrome(ctx, box, R.viewport.zoom, R, editing);
     }
 
     if (editing) continue;
@@ -127,12 +131,13 @@ export const drawCanvasTexts = (ctx: CanvasRenderingContext2D, R: RenderContext)
     const scriptDy =
       script === 'super' ? -fs * 0.35 : script === 'sub' ? fs * 0.28 : 0;
 
+    const ink = resolveCanvasTextInk(t, R.structureTheme.ink);
     ctx.save();
     ctx.translate(box.cx, box.cy);
     ctx.rotate(box.rotationRad);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = t.color;
+    ctx.fillStyle = ink;
     ctx.font = buildCanvasTextFont(t);
     const und = t.textDecoration === 'underline';
     lines.forEach((line, li) => {
@@ -140,7 +145,7 @@ export const drawCanvasTexts = (ctx: CanvasRenderingContext2D, R: RenderContext)
       ctx.fillText(line, 0, ly);
       if (!und) return;
       const tw = ctx.measureText(line || ' ').width;
-      ctx.strokeStyle = t.color;
+      ctx.strokeStyle = ink;
       ctx.lineWidth = Math.max(1, fs * 0.07);
       ctx.lineCap = 'round';
       const uy = ly + fs * 0.38;

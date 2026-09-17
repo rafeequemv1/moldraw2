@@ -66,12 +66,15 @@ canvas:active {
   cursor: not-allowed;
 }
 
-/* Floating inline editor over canvas text (transform chrome is on canvas) */
+/* Floating inline editor over canvas text (transform chrome is on canvas).
+   The root is sized/rotated to the text box; the textarea sits inset so the
+   frame edge + corner handles remain canvas hit-targets while typing. */
 .canvas-inline-text-root {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  display: block;
+}
+
+.canvas-inline-text::placeholder {
+  color: rgba(100, 116, 139, 0.55);
 }
 
 .canvas-inline-text-toolbar {

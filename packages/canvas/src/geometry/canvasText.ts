@@ -3,6 +3,18 @@
  * (`CanvasText`) — PowerPoint-style box with rotation about center.
  */
 import type { CanvasText } from '@moldraw/domain';
+import { DEFAULT_ATOM_INK } from '@moldraw/domain';
+
+/**
+ * Colour a label is painted with. Labels created with the default ink follow
+ * the structure ink of the active theme (white on dark themes) exactly like
+ * skeletal carbons do; any explicit user colour is kept verbatim.
+ */
+export const resolveCanvasTextInk = (t: Pick<CanvasText, 'color'>, themeInk: string): string => {
+  const c = (t.color ?? '').trim().toLowerCase();
+  if (!c || c === DEFAULT_ATOM_INK.toLowerCase()) return themeInk;
+  return t.color;
+};
 
 const PAD_X = 10;
 const PAD_Y = 8;
@@ -295,18 +307,57 @@ const oppositeCorner = (c: CanvasTextResizeCorner): CanvasTextResizeCorner => {
 };
 
 /**
+ * Layout the HTML inline editor needs to sit pixel-exact over the canvas text:
+ * the (measured) box plus the vertical inset that centres the line block the
+ * same way `drawCanvasTexts` does (lines centred on `cy`).
+ */
+export const canvasTextEditorLayout = (
+  ctx: CanvasRenderingContext2D,
+  t: CanvasText,
+): {
+  box: CanvasTextBox;
+  lineHeight: number;
+  lineCount: number;
+  /** Distance from the box top to the top of the line block (world units). */
+  blockTop: number;
+  /** Baseline shift for super / subscript text (world units). */
+  scriptDy: number;
+} => {
+  const box = getCanvasTextBox(ctx, t);
+  const { lineHeight, lines } = measureCanvasTextBox(ctx, t);
+  const lineCount = Math.max(1, lines.length);
+  const blockH = lineCount * lineHeight;
+  const fs = canvasTextEffectiveFontSize(t);
+  const script = t.textScript ?? 'normal';
+  const scriptDy = script === 'super' ? -fs * 0.35 : script === 'sub' ? fs * 0.28 : 0;
+  return {
+    box,
+    lineHeight,
+    lineCount,
+    blockTop: Math.max(0, (box.height - blockH) / 2),
+    scriptDy,
+  };
+};
+
+/**
  * Resize from a corner; opposite corner stays fixed in world
- * (rotation-aware).
+ * (rotation-aware). `orig` should carry explicit `boxWidth` / `boxHeight`
+ * (callers snapshot the measured box at drag start) so auto-sized labels do
+ * not jump to the minimum box on the first pointer move. `minW` / `minH`
+ * keep the box from shrinking below its text content.
  */
 export const canvasTextResizePatch = (
   orig: CanvasText,
   corner: CanvasTextResizeCorner,
   pointerX: number,
   pointerY: number,
+  minW: number = MIN_BOX_W,
+  minH: number = MIN_BOX_H,
 ): Partial<CanvasText> => {
-  // Build a pseudo box from orig without needing a canvas measure for explicit sizes.
   const width0 = Math.max(MIN_BOX_W, orig.boxWidth ?? MIN_BOX_W);
   const height0 = Math.max(MIN_BOX_H, orig.boxHeight ?? MIN_BOX_H);
+  const floorW = Math.max(MIN_BOX_W, minW);
+  const floorH = Math.max(MIN_BOX_H, minH);
   const box0: CanvasTextBox = {
     width: width0,
     height: height0,
@@ -324,8 +375,8 @@ export const canvasTextResizePatch = (
   const { lx: plx, ly: ply } = worldToTextLocal(box0, pointerX, pointerY);
   const { lx: flx, ly: fly } = worldToTextLocal(box0, fixed.x, fixed.y);
 
-  const newW = Math.max(MIN_BOX_W, Math.abs(plx - flx));
-  const newH = Math.max(MIN_BOX_H, Math.abs(ply - fly));
+  const newW = Math.max(floorW, Math.abs(plx - flx));
+  const newH = Math.max(floorH, Math.abs(ply - fly));
 
   // New center = midpoint of fixed corner and dragged corner in local, then to world.
   const signX = corner.includes('e') ? 1 : -1;

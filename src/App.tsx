@@ -1420,7 +1420,6 @@ function App() {
   setShowInfoPanelRef.current = setShowInfoPanel;
 
   const {
-    inlineEditorFocused,
     setInlineEditorFocused,
     inlineEditorPos,
     inlineTextareaRef,
@@ -1433,6 +1432,7 @@ function App() {
     handlePasteSelection,
     handleSelectPlacementElement,
     handleUpdateCanvasText,
+    handleInlineEditorMount,
     handleInsertChemSymbol,
     handleUpdateCanvasShape,
     beginCanvasShapeLiquidScrub,
@@ -1939,13 +1939,13 @@ function App() {
         onRenameFolder={renameFolder}
         onDeleteFolder={deleteFolder}
         onMoveProjectsToFolder={moveProjectsToFolder}
-        onDownloadProject={id => {
+        onDownloadProject={async id => {
           if (!requireExportSignup()) return;
-          return downloadProjectMoldrawFile(id);
+          await downloadProjectMoldrawFile(id);
         }}
-        onDownloadAll={asZip => {
+        onDownloadAll={async asZip => {
           if (!requireExportSignup()) return;
-          return downloadAllProjectsMoldraw(asZip);
+          await downloadAllProjectsMoldraw({ asZip });
         }}
         onBackToEditor={handleBackToEditor}
       />
@@ -2047,13 +2047,13 @@ function App() {
         onRenameFolder={renameFolder}
         onDeleteFolder={deleteFolder}
         onMoveProjectsToFolder={moveProjectsToFolder}
-        onDownloadProject={id => {
+        onDownloadProject={async id => {
           if (!requireExportSignup()) return;
-          return downloadProjectMoldrawFile(id);
+          await downloadProjectMoldrawFile(id);
         }}
-        onDownloadAll={asZip => {
+        onDownloadAll={async asZip => {
           if (!requireExportSignup()) return;
-          return downloadAllProjectsMoldraw(asZip);
+          await downloadAllProjectsMoldraw({ asZip });
         }}
       />
 
@@ -2403,11 +2403,11 @@ function App() {
               ringPaintActive={ringPaintActive}
               ringFillOpacity={appSettings.general.colorTargets.ringFillOpacity}
               omitCanvasTextBodyId={
-                canvasTextTransforming
-                  ? null
-                  : inlineEditorFocused
-                    ? selectedCanvasTextId
-                    : null
+                // The HTML editor renders the letters whenever a text is
+                // selected (not just focused); drawing them on canvas too would
+                // double the glyphs. During move/resize/rotate the overlay is
+                // unmounted and the canvas takes over with the drag preview.
+                canvasTextTransforming || !inlineEditorPos ? null : selectedCanvasTextId
               }
               onCanvasTextTransforming={setCanvasTextTransforming}
               reactionArrowKind={reactionArrowKind}
@@ -2711,8 +2711,14 @@ function App() {
           selectedCanvasText={selectedCanvasText}
           position={inlineEditorPos}
           onUpdate={handleUpdateCanvasText}
+          onMount={handleInlineEditorMount}
+          themeInk={structureTheme.ink}
           onFocus={() => setInlineEditorFocused(true)}
           onBlur={() => setInlineEditorFocused(false)}
+          onEscape={() => {
+            setInlineEditorFocused(false);
+            setSelectedCanvasTextId(null);
+          }}
         />
       )}
 

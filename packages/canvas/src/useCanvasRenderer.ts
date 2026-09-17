@@ -241,7 +241,17 @@ const applySoloObjectDragPreview = (mol: Molecule, drag: DragActionState): Molec
       ...mol,
       canvasTexts: (mol.canvasTexts ?? []).map(t =>
         t.id === drag.textId
-          ? { ...t, ...canvasTextResizePatch(drag.origText, drag.corner, drag.currentX, drag.currentY) }
+          ? {
+              ...t,
+              ...canvasTextResizePatch(
+                drag.origText,
+                drag.corner,
+                drag.currentX,
+                drag.currentY,
+                drag.minW,
+                drag.minH,
+              ),
+            }
           : t,
       ),
     };

@@ -1,54 +1,75 @@
 /**
- * Floating in-place text editor. Formatting (bold / italic / sub / super) lives in
- * the top toolbar when text is selected — no floating tooltip chrome.
+ * In-place editor for a selected `CanvasText`.
+ *
+ * The textarea is laid out with the *same* geometry the canvas uses
+ * (`canvasTextEditorLayout`): identical box, font, line-height and vertical
+ * centring, rotated about the box centre. The canvas keeps drawing the
+ * transform frame + handles underneath; only the letters are swapped for the
+ * live textarea, so what you type is exactly where the label renders.
+ *
+ * The textarea is inset from the frame by the handle size so the corner /
+ * edge strip stays on the canvas — drag the frame to move, corners to
+ * resize, the knob above to rotate — even while typing.
+ *
+ * Formatting (bold / italic / sub / super / symbols) lives in the top toolbar.
  */
-import { forwardRef, useCallback, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { CanvasText } from '@moldraw/domain';
+import {
+  buildCanvasTextFont,
+  canvasTextEditorLayout,
+  canvasTextEffectiveFontSize,
+  canvasTextFitContentPatch,
+  resolveCanvasTextInk,
+} from '@moldraw/canvas/geometry';
 
 export interface InlineTextEditorProps {
   selectedCanvasText: CanvasText;
+  /** Client-space centre of the text box + current camera zoom. */
   position: { left: number; top: number; zoom: number };
   onUpdate: (id: string, patch: Partial<CanvasText>) => void;
   onFocus: () => void;
   onBlur: () => void;
+  /** Escape: leave the editor and drop the selection. */
+  onEscape?: () => void;
+  /** Fired once the textarea is in the DOM (host may hand it the caret). */
+  onMount?: () => void;
+  /** Structure ink of the active theme — default-coloured labels follow it. */
+  themeInk?: string;
 }
 
-function measureFit(text: string, t: CanvasText): { boxWidth: number; boxHeight: number } {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  const script = t.textScript ?? 'normal';
-  const fs = script === 'super' || script === 'sub' ? t.fontSize * 0.72 : t.fontSize;
-  const italic = t.fontStyle === 'italic' ? 'italic ' : '';
-  const weight = t.fontWeight === 'bold' ? 'bold ' : '';
-  const family = t.fontFamily?.trim() || 'Inter';
-  if (ctx) ctx.font = `${italic}${weight}${fs}px ${family}, sans-serif`;
-  const lines = text.split(/\r?\n/);
-  const lineHeight = fs * 1.3;
-  let maxW = 40;
-  for (const line of lines) {
-    const w = ctx ? ctx.measureText(line || ' ').width : (line.length || 1) * fs * 0.55;
-    if (w > maxW) maxW = w;
-  }
-  const padX = 10;
-  const padY = 8;
-  const contentW = maxW + padX * 2;
-  const contentH = Math.max(1, lines.length) * lineHeight + padY * 2;
-  return {
-    boxWidth: Math.max(56, Math.max(t.boxWidth ?? 0, contentW)),
-    boxHeight: Math.max(28, Math.max(t.boxHeight ?? 0, contentH)),
-  };
+let measureCtx: CanvasRenderingContext2D | null = null;
+function getMeasureCtx(): CanvasRenderingContext2D | null {
+  if (measureCtx) return measureCtx;
+  if (typeof document === 'undefined') return null;
+  measureCtx = document.createElement('canvas').getContext('2d');
+  return measureCtx;
 }
+
+/** Handle half-size in screen px — mirrors `drawCanvasTexts` (`max(4.5, 5.5/zoom)` world). */
+const handleInsetPx = (zoom: number): number => Math.max(4.5 * zoom, 5.5) + 1;
 
 export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditorProps>(
-  function InlineTextEditor({ selectedCanvasText, position, onUpdate, onFocus, onBlur }, ref) {
+  function InlineTextEditor(
+    { selectedCanvasText, position, onUpdate, onFocus, onBlur, onEscape, onMount, themeInk },
+    ref,
+  ) {
     const t = selectedCanvasText;
+    const ink = resolveCanvasTextInk(t, themeInk ?? t.color);
     const blurTimer = useRef<number | null>(null);
-    const rotDeg = ((t.rotationRad ?? 0) * 180) / Math.PI;
     const z = position.zoom;
-    const boxW = Math.max(56, (t.boxWidth ?? 120) * z);
-    const boxH = Math.max(28, (t.boxHeight ?? 36) * z);
-    const script = t.textScript ?? 'normal';
-    const fs = (script === 'super' || script === 'sub' ? t.fontSize * 0.72 : t.fontSize) * z;
+
+    const onMountRef = useRef(onMount);
+    onMountRef.current = onMount;
+    useEffect(() => {
+      onMountRef.current?.();
+    }, []);
+
+    const layout = useMemo(() => {
+      const ctx = getMeasureCtx();
+      if (!ctx) return null;
+      return canvasTextEditorLayout(ctx, t);
+    }, [t]);
 
     const clearBlurTimer = () => {
       if (blurTimer.current != null) {
@@ -59,11 +80,24 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
 
     const handleChange = useCallback(
       (value: string) => {
-        const fit = measureFit(value, t);
-        onUpdate(t.id, { text: value, boxWidth: fit.boxWidth, boxHeight: fit.boxHeight });
+        const ctx = getMeasureCtx();
+        const next: CanvasText = { ...t, text: value };
+        const fit = ctx ? canvasTextFitContentPatch(ctx, next) : {};
+        onUpdate(t.id, { text: value, ...fit });
       },
       [onUpdate, t],
     );
+
+    if (!layout) return null;
+
+    const { box, lineHeight, blockTop, scriptDy } = layout;
+    const rotDeg = ((t.rotationRad ?? 0) * 180) / Math.PI;
+    const boxW = box.width * z;
+    const boxH = box.height * z;
+    const inset = Math.min(handleInsetPx(z), boxW / 4, boxH / 4);
+    const fsPx = canvasTextEffectiveFontSize(t) * z;
+    const font = buildCanvasTextFont(t);
+    const fontFamily = font.slice(font.indexOf('px ') + 3);
 
     return (
       <div
@@ -73,17 +107,22 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
           zIndex: 620,
           left: position.left,
           top: position.top,
-          transform: 'translate(-50%, -50%)',
+          width: boxW,
+          height: boxH,
+          transform: `translate(-50%, -50%) rotate(${rotDeg}deg)`,
           transformOrigin: 'center center',
-          pointerEvents: 'auto',
+          pointerEvents: 'none',
         }}
-        onMouseDown={e => e.stopPropagation()}
       >
         <textarea
           ref={ref}
           className="canvas-inline-text"
           value={t.text}
+          placeholder="Text"
+          wrap="off"
           onChange={e => handleChange(e.target.value)}
+          onPointerDown={e => e.stopPropagation()}
+          onMouseDown={e => e.stopPropagation()}
           onFocus={() => {
             clearBlurTimer();
             onFocus();
@@ -94,24 +133,24 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
           }}
           onKeyDown={e => {
             e.stopPropagation();
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              (e.currentTarget as HTMLTextAreaElement).blur();
+              onEscape?.();
+            }
           }}
           spellCheck={false}
           style={{
+            position: 'absolute',
+            left: inset,
+            top: inset,
+            width: Math.max(0, boxW - inset * 2),
+            height: Math.max(0, boxH - inset * 2),
             display: 'block',
-            width: boxW,
-            height: boxH,
-            minWidth: 56 * z,
-            minHeight: 28 * z,
-            fontSize: `${Math.max(10, fs)}px`,
-            fontWeight: t.fontWeight === 'bold' ? 700 : 500,
-            fontStyle: t.fontStyle === 'italic' ? 'italic' : 'normal',
-            textDecoration: t.textDecoration === 'underline' ? 'underline' : 'none',
-            fontFamily: `${t.fontFamily?.trim() || 'Inter'}, sans-serif`,
-            color: t.color,
-            textAlign: 'center',
-            lineHeight: 1.3,
-            padding: `${6 * z}px ${8 * z}px`,
+            boxSizing: 'border-box',
             margin: 0,
+            // Vertical centring identical to the canvas: line block centred on cy.
+            padding: `${Math.max(0, blockTop * z - inset)}px 0 0 0`,
             border: 'none',
             borderRadius: 0,
             background: 'transparent',
@@ -119,11 +158,19 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
             outline: 'none',
             resize: 'none',
             overflow: 'hidden',
+            whiteSpace: 'pre',
+            textAlign: 'center',
+            fontSize: `${fsPx}px`,
+            lineHeight: `${lineHeight * z}px`,
+            fontWeight: t.fontWeight === 'bold' ? 700 : 400,
+            fontStyle: t.fontStyle === 'italic' ? 'italic' : 'normal',
+            textDecoration: t.textDecoration === 'underline' ? 'underline' : 'none',
+            fontFamily,
+            color: ink,
+            caretColor: ink,
             userSelect: 'text',
-            caretColor: t.color,
-            boxSizing: 'border-box',
-            transform: `rotate(${rotDeg}deg)`,
-            transformOrigin: 'center center',
+            pointerEvents: 'auto',
+            transform: scriptDy ? `translateY(${scriptDy * z}px)` : undefined,
           }}
         />
       </div>

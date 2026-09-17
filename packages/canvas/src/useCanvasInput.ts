@@ -311,7 +311,22 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
     useState<DrawingReactionArrowState | null>(null);
   const [drawingCanvasShape, setDrawingCanvasShape] =
     useState<DrawingCanvasShapeState | null>(null);
-  const [dragAction, setDragAction] = useState<DragActionState | null>(null);
+  const [dragAction, setDragActionState] = useState<DragActionState | null>(null);
+  // Synchronous mirror of `dragAction`. A click (down + up in quick succession)
+  // can deliver pointerup before React has re-rendered with the drag seeded on
+  // pointerdown; reading the ref keeps commit/cancel from seeing a stale
+  // `null` and leaving a move/resize stuck on (text overlay hidden, label
+  // gliding with the hover pointer).
+  const dragActionRef = useRef<DragActionState | null>(null);
+  const setDragAction = useCallback(
+    (next: React.SetStateAction<DragActionState | null>) => {
+      const resolved =
+        typeof next === 'function' ? next(dragActionRef.current) : next;
+      dragActionRef.current = resolved;
+      setDragActionState(resolved);
+    },
+    [],
+  );
 
   const [hoveredAtomCircleId, setHoveredAtomCircleId] = useState<string | null>(null);
   const [hoveredBondHighlightId, setHoveredBondHighlightId] = useState<string | null>(null);
@@ -596,7 +611,8 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       drawingStroke,
       drawingReactionArrow,
       drawingCanvasShape,
-      dragAction,
+      // Live value — see `dragActionRef`.
+      dragAction: dragActionRef.current,
       hoverBondId,
       setDrawingBond,
       setDrawingChain,
