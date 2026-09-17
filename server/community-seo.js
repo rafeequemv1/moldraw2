@@ -21,7 +21,7 @@ const SUPABASE_KEY =
   || process.env.SUPABASE_ANON_KEY
   || 'sb_publishable_lP5X_egPBmD__qqKPjyoyg_M4iNUj_C';
 
-const POST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at';
+const POST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,request_status,created_at';
 const COMMENT_SELECT = 'id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
 const FEATURE_SELECT = 'id,user_id,name,title,description,image_urls,status,upvote_count,created_at';
 const FEATURE_COMMENT_SELECT = 'id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
@@ -135,24 +135,40 @@ function implementedCrown(userId, name) {
   return `<button type="button" class="implemented-crown" data-done-features data-done-user="${escapeHtml(userId || '')}" data-done-name="${escapeHtml(name || '')}" aria-label="${escapeHtml(label)}" title="${escapeHtml(tip)}">${CROWN_ICON}<span class="implemented-crown-count">${count}</span><span class="implemented-crown-tip">${escapeHtml(tip)}</span></button>`;
 }
 
+function pushDoneItem(byUser, byName, row) {
+  if (row.user_id) {
+    if (!byUser.has(row.user_id)) byUser.set(row.user_id, []);
+    byUser.get(row.user_id).push(row);
+  } else if (row.name) {
+    if (!byName.has(row.name)) byName.set(row.name, []);
+    byName.get(row.name).push(row);
+  }
+}
+
 async function loadDoneFeatureIndex() {
   const byUser = new Map();
   const byName = new Map();
   try {
-    const { data } = await supabaseQuery(
-      'community_feature_requests',
-      'select=id,user_id,name,title,created_at&status=eq.done&order=created_at.desc',
-      { range: { from: 0, to: 999 } },
-    );
-    (data || []).forEach((row) => {
-      if (row.user_id) {
-        if (!byUser.has(row.user_id)) byUser.set(row.user_id, []);
-        byUser.get(row.user_id).push(row);
-      } else if (row.name) {
-        if (!byName.has(row.name)) byName.set(row.name, []);
-        byName.get(row.name).push(row);
-      }
-    });
+    const [features, posts] = await Promise.all([
+      supabaseQuery(
+        'community_feature_requests',
+        'select=id,user_id,name,title,created_at&status=eq.done&order=created_at.desc',
+        { range: { from: 0, to: 999 } },
+      ),
+      supabaseQuery(
+        'community_posts',
+        'select=id,user_id,title,author_name,created_at&request_status=eq.done&order=created_at.desc',
+        { range: { from: 0, to: 999 } },
+      ).catch(() => ({ data: [] })),
+    ]);
+    (features.data || []).forEach((row) => pushDoneItem(byUser, byName, { ...row, kind: 'feature' }));
+    (posts.data || []).forEach((row) => pushDoneItem(byUser, byName, {
+      ...row,
+      kind: 'post',
+      name: row.author_name,
+    }));
+    byUser.forEach((rows) => rows.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)));
+    byName.forEach((rows) => rows.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)));
   } catch {
     // Crowns are optional; the public feed still renders without them.
   }
@@ -568,7 +584,7 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
                 </div>
               </div>
             </div>
-            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a></${titleTag}>
+            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${post.request_status ? renderFeatureStatus(post.request_status) : ''}</${titleTag}>
             <p class="card-body">${renderMentionedText(post.body)}</p>
             ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
@@ -794,6 +810,9 @@ function applyDocument(template, {
   html = replaceAttr(html, /<meta name="twitter:description" content="[^"]*">/, `<meta name="twitter:description" content="${escapeHtml(description)}">`);
   html = replaceAttr(html, /<meta name="twitter:image" content="[^"]*">/, `<meta name="twitter:image" content="${escapeHtml(ogImage)}">`);
   html = replaceAttr(html, /<link rel="canonical"[^>]*>/, `<link rel="canonical" id="canonical-url" href="${escapeHtml(canonical)}">`);
+  if (!/<link[^>]+rel=["']icon["']/i.test(html)) {
+    html = html.replace(/<head[^>]*>/i, (match) => `${match}\n  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />`);
+  }
 
   const extraLinks = [
     prevHref ? `<link rel="prev" href="${escapeHtml(absUrl(prevHref))}">` : '',

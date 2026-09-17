@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MolDraw Community | Chemistry Discussion Forum and Feature Requests</title>
   <meta name="description" content="Join the MolDraw Community, a chemistry discussion forum for molecular drawing workflows, editor tips, 3D molecule viewing, feature requests, comments, replies, and upvotes.">
@@ -2061,12 +2062,23 @@
       const label = statusLabels[key] || String(key).replace(/_/g, ' ');
       return `<span class="feature-status ${meta.className}" title="${escapeHtml(label)}"><span class="feature-status-symbol" aria-hidden="true">${meta.symbol}</span><span class="feature-status-label">${escapeHtml(label)}</span></span>`;
     }
+    function renderPostRequestStatus(status) {
+      return status ? renderFeatureStatus(status) : '';
+    }
+    function renderPostStatusControl(post) {
+      if (!isAdmin()) return '';
+      const current = post?.request_status || '';
+      return `<select class="status-select" data-post-request-status="${escapeHtml(post.id)}" aria-label="Change discussion request status">
+        <option value=""${current ? '' : ' selected'}>No request status</option>
+        ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === current ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
+      </select>`;
+    }
     const COMMUNITY_PAGE_SIZE = 20;
     const FEED_COMMENT_PREVIEW = 3;
-    const FEED_CACHE_VERSION = 3;
+    const FEED_CACHE_VERSION = 4;
     const FEED_CACHE_PREFIX = 'moldraw.community.feed.v2';
-    const DISCUSSION_LIST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,created_at';
-    const DISCUSSION_HEAD_SELECT = 'id,created_at,comment_count,upvote_count';
+    const DISCUSSION_LIST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,request_status,created_at';
+    const DISCUSSION_HEAD_SELECT = 'id,created_at,comment_count,upvote_count,request_status';
     const FEATURE_LIST_SELECT = 'id,user_id,name,title,description,image_urls,status,upvote_count,created_at';
     const FEATURE_HEAD_SELECT = 'id,created_at,upvote_count,status';
     const COMMENT_PREVIEW_SELECT = 'id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
@@ -2298,7 +2310,7 @@
               <div class="author-meta">${isFeature ? 'Feature request' : escapeHtml(item.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(item.created_at))}</div>
             </div>
           </div>
-          <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}${isFeature ? renderFeatureStatus(item.status) : ''}</h1>
+          <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}${isFeature ? renderFeatureStatus(item.status) : renderPostRequestStatus(item.request_status)}${isFeature ? '' : renderPostStatusControl(item)}</h1>
           <p class="card-body">${isFeature ? escapeHtml(item.description) : renderCommentBody(item.body)}</p>
           ${renderImages(item.image_urls, isFeature ? 'Feature request attachment' : 'Community attachment')}
           <div class="comments visible" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
@@ -2324,6 +2336,12 @@
       document.getElementById(selectedId)?.classList.add('is-selected');
       if (isFeature) bindFeatureCommentThread(threadPanelBody, item.id);
       else bindCommentThread(threadPanelBody, item.id);
+      threadPanelBody.querySelectorAll('[data-post-request-status]').forEach((select) => {
+        select.addEventListener('change', (event) => {
+          event.stopPropagation();
+          updateDiscussionRequestStatus(select.getAttribute('data-post-request-status'), select.value);
+        });
+      });
       threadPanelBody.querySelectorAll('a.comment-permalink, a.comment-time-link, a.more-thread').forEach((link) => {
         link.addEventListener('click', (event) => {
           if (isModifiedClick(event)) return;
@@ -2430,6 +2448,9 @@
     function doneFeatureCount(userId, name) {
       return doneFeaturesFor(userId, name).length;
     }
+    function implementedItemUrl(row) {
+      return row.kind === 'post' ? discussionUrl(row) : featureUrl(row);
+    }
     function implementedCrown(userId, name) {
       const count = doneFeatureCount(userId, name);
       if (count < 1) return '';
@@ -2441,29 +2462,52 @@
       doneFeatureIndex = null;
       doneFeatureIndexPromise = null;
     }
+    function pushDoneItem(byUser, byName, row) {
+      if (row.user_id) {
+        if (!byUser.has(row.user_id)) byUser.set(row.user_id, []);
+        byUser.get(row.user_id).push(row);
+      } else if (row.name) {
+        if (!byName.has(row.name)) byName.set(row.name, []);
+        byName.get(row.name).push(row);
+      }
+    }
+    function sortDoneItems(map) {
+      map.forEach((rows) => {
+        rows.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      });
+    }
     async function loadDoneFeatureIndex() {
       if (doneFeatureIndex) return doneFeatureIndex;
       if (doneFeatureIndexPromise) return doneFeatureIndexPromise;
       doneFeatureIndexPromise = (async () => {
-        const { data, error } = await client
-          .from('community_feature_requests')
-          .select('id,user_id,name,title,created_at')
-          .eq('status', 'done')
-          .order('created_at', { ascending: false })
-          .limit(1000);
+        const [features, posts] = await Promise.all([
+          client
+            .from('community_feature_requests')
+            .select('id,user_id,name,title,created_at')
+            .eq('status', 'done')
+            .order('created_at', { ascending: false })
+            .limit(1000),
+          client
+            .from('community_posts')
+            .select('id,user_id,title,author_name,created_at')
+            .eq('request_status', 'done')
+            .order('created_at', { ascending: false })
+            .limit(1000)
+        ]);
         const byUser = new Map();
         const byName = new Map();
-        if (!error) {
-          (data || []).forEach((row) => {
-            if (row.user_id) {
-              if (!byUser.has(row.user_id)) byUser.set(row.user_id, []);
-              byUser.get(row.user_id).push(row);
-            } else if (row.name) {
-              if (!byName.has(row.name)) byName.set(row.name, []);
-              byName.get(row.name).push(row);
-            }
-          });
+        if (!features.error) {
+          (features.data || []).forEach((row) => pushDoneItem(byUser, byName, { ...row, kind: 'feature' }));
         }
+        if (!posts.error) {
+          (posts.data || []).forEach((row) => pushDoneItem(byUser, byName, {
+            ...row,
+            kind: 'post',
+            name: row.author_name
+          }));
+        }
+        sortDoneItems(byUser);
+        sortDoneItems(byName);
         doneFeatureIndex = { byUser, byName };
         return doneFeatureIndex;
       })();
@@ -2491,9 +2535,9 @@
         implementedPanelSubtitle.textContent = `${label}. Features they requested that are now done.`;
       }
       implementedPanelList.innerHTML = rows.map((row) => `
-        <a class="implemented-panel-item" href="${escapeHtml(featureUrl(row))}">
-          <span class="implemented-panel-item-title">${escapeHtml(row.title || 'Feature request')}</span>
-          <span class="author-meta">${escapeHtml(timeText(row.created_at))}</span>
+        <a class="implemented-panel-item" href="${escapeHtml(implementedItemUrl(row))}">
+          <span class="implemented-panel-item-title">${escapeHtml(row.title || (row.kind === 'post' ? 'Discussion' : 'Feature request'))}</span>
+          <span class="author-meta">${row.kind === 'post' ? 'Discussion' : 'Feature request'} · ${escapeHtml(timeText(row.created_at))}</span>
         </a>
       `).join('');
       implementedPanelRoot.hidden = false;
@@ -2943,6 +2987,7 @@
         return {
           ...base,
           upvote_count: row.upvote_count ?? base.upvote_count,
+          request_status: row.request_status ?? base.request_status,
           comment_count: commentTotal,
           commentsPreview: latestChronological(comments, FEED_COMMENT_PREVIEW),
           commentTotal
@@ -4080,7 +4125,7 @@
                 </div>
               </div>
             </div>
-            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a></h2>
+            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${renderPostRequestStatus(post.request_status)}${renderPostStatusControl(post)}</h2>
             <p class="card-body">${renderCommentBody(post.body)}</p>
             ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
@@ -4121,6 +4166,12 @@
             btn.getAttribute('data-report-id'),
             btn.getAttribute('data-report-label')
           );
+        });
+      });
+      feed.querySelectorAll('[data-post-request-status]').forEach((select) => {
+        select.addEventListener('change', (event) => {
+          event.stopPropagation();
+          updateDiscussionRequestStatus(select.getAttribute('data-post-request-status'), select.value);
         });
       });
       posts.forEach((post) => {
@@ -4358,6 +4409,25 @@
       });
       resetDoneFeatureIndex();
       await loadFeatureRequests();
+    }
+
+    async function updateDiscussionRequestStatus(postId, requestStatus) {
+      if (!isAdmin()) {
+        openAuthModal('Admin access required');
+        return;
+      }
+      statusEl.textContent = 'Updating discussion status...';
+      const nextStatus = requestStatus || null;
+      const { error } = await client
+        .from('community_posts')
+        .update({ request_status: nextStatus })
+        .eq('id', postId);
+      if (error) {
+        statusEl.textContent = error.message || 'Could not update discussion status.';
+        return;
+      }
+      resetDoneFeatureIndex();
+      await loadDiscussions(false);
     }
 
     async function submitCommunityFeatureRequest(event) {
