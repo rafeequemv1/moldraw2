@@ -2,9 +2,13 @@
  * Textbook / Ketcher-style aromatic rings: a solid inscribed circle, not a
  * dashed inner companion that reads as a dashed circle around the ring.
  *
- * Complete 5–8 membered rings whose every edge is aromatic get a circle.
+ * Complete simple 5–8 membered faces whose every edge is aromatic get a circle.
  * Isolated aromatic bonds (aromatic-bond tool) keep the solid+dashed parallel
  * depiction in `drawBonds`.
+ *
+ * Face walks must be simple: a dangling / adjacent aromatic bond on a fused
+ * Kekulé ring used to close an 8-step walk that revisited the fusion vertex
+ * and drew a second, smaller circle inside the real ring.
  */
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
 import { uniqueRingPaths } from '@moldraw/domain';
@@ -31,6 +35,14 @@ export type AromaticCircle = {
 const edgeKey = (a: string, b: string): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
 const ringKey = (ids: readonly string[]): string => [...ids].sort().join('\0');
+
+/** True when every vertex appears once (a real ring, not a walk with a spur). */
+const isSimpleCycle = (ids: readonly string[]): boolean => {
+  if (ids.length < MIN_AROMATIC_CIRCLE_ATOMS || ids.length > MAX_AROMATIC_CIRCLE_ATOMS) {
+    return false;
+  }
+  return new Set(ids).size === ids.length;
+};
 
 const aromaticCircleGeometry = (
   ids: readonly string[],
@@ -81,6 +93,28 @@ const cycleBondIdsIfAromatic = (
   return bondIds;
 };
 
+/**
+ * Aromatic bond between two non-adjacent vertices of the cycle — the walk is
+ * a fused perimeter (or a shortcut), not an SSSR face.
+ */
+const hasAromaticChord = (ids: readonly string[], bondByEdge: Map<string, Bond>): boolean => {
+  const n = ids.length;
+  if (n < 4) return false;
+  const cycleEdge = new Set<string>();
+  for (let i = 0; i < n; i++) {
+    cycleEdge.add(edgeKey(ids[i]!, ids[(i + 1) % n]!));
+  }
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue;
+      const k = edgeKey(ids[i]!, ids[j]!);
+      if (cycleEdge.has(k)) continue;
+      if (bondByEdge.get(k)?.aromatic) return true;
+    }
+  }
+  return false;
+};
+
 /** Tightest CCW (left) turn at `cur` arriving from `prev`. */
 const mostCcwNeighbor = (
   prev: string,
@@ -117,6 +151,7 @@ const aromaticFaceCycles = (adj: Map<string, string[]>, atomById: Map<string, At
   for (const [from, nbrs] of adj) {
     for (const to of nbrs) {
       const path = [from];
+      const used = new Set([from]);
       let prev = from;
       let cur = to;
       let ok = false;
@@ -125,13 +160,16 @@ const aromaticFaceCycles = (adj: Map<string, string[]>, atomById: Map<string, At
           ok = path.length >= MIN_AROMATIC_CIRCLE_ATOMS;
           break;
         }
+        // Revisit = spur / figure-8, not a face.
+        if (used.has(cur)) break;
         path.push(cur);
+        used.add(cur);
         const nxt = mostCcwNeighbor(prev, cur, adj.get(cur) ?? [], atomById);
         if (!nxt) break;
         prev = cur;
         cur = nxt;
       }
-      if (!ok) continue;
+      if (!ok || !isSimpleCycle(path)) continue;
       const key = ringKey(path);
       if (seen.has(key)) continue;
       seen.add(key);
@@ -150,23 +188,44 @@ const candidateCycles = (
   const seen = new Set<string>();
   const out: string[][] = [];
   const add = (ids: readonly string[] | undefined) => {
-    if (!ids) return;
-    if (ids.length < MIN_AROMATIC_CIRCLE_ATOMS || ids.length > MAX_AROMATIC_CIRCLE_ATOMS) {
-      return;
-    }
+    if (!ids || !isSimpleCycle(ids)) return;
     const key = ringKey(ids);
     if (seen.has(key)) return;
     seen.add(key);
     out.push([...ids]);
   };
 
+  let fromBondMap = 0;
   for (const b of mol.bonds) {
     if (!b.aromatic) continue;
+    if (ringAtomIdsByBondId.has(b.id)) fromBondMap += 1;
     add(ringAtomIdsByBondId.get(b.id));
   }
-  for (const ids of uniqueRingPaths(mol)) add(ids);
+  // uniqueRingPaths BFS-per-bond (cap 48) is the slow fallback for ghosts that
+  // have no ring map. Skip it when the revision cache already walked rings.
+  if (fromBondMap === 0) {
+    for (const ids of uniqueRingPaths(mol)) add(ids);
+  }
   for (const ids of aromaticFaceCycles(adj, atomById)) add(ids);
   return out;
+};
+
+/**
+ * A smaller circle whose center sits inside a larger one is the fused-spur
+ * artifact (or a perimeter walk), not a second aromatic ring.
+ */
+const suppressNestedCircles = (circles: AromaticCircle[]): AromaticCircle[] => {
+  if (circles.length < 2) return circles;
+  const sorted = [...circles].sort((a, b) => b.radius - a.radius);
+  const kept: AromaticCircle[] = [];
+  for (const c of sorted) {
+    const nested = kept.some(k => {
+      const d = Math.hypot(c.center.x - k.center.x, c.center.y - k.center.y);
+      return d < k.radius - 2 && c.radius < k.radius * 0.92;
+    });
+    if (!nested) kept.push(c);
+  }
+  return kept;
 };
 
 /**
@@ -192,15 +251,19 @@ export const collectAromaticCircles = (
     t.push(b.fromAtomId);
   }
 
-  const circles: AromaticCircle[] = [];
-  const bondIds = new Set<string>();
+  const collected: AromaticCircle[] = [];
   for (const ids of candidateCycles(mol, atomById, ringAtomIdsByBondId, adj)) {
     const cycleBonds = cycleBondIdsIfAromatic(ids, bondByEdge);
     if (!cycleBonds) continue;
+    if (hasAromaticChord(ids, bondByEdge)) continue;
     const geom = aromaticCircleGeometry(ids, atomById);
     if (!geom) continue;
-    circles.push({ atomIds: ids, bondIds: cycleBonds, ...geom });
-    for (const id of cycleBonds) bondIds.add(id);
+    collected.push({ atomIds: ids, bondIds: cycleBonds, ...geom });
+  }
+  const circles = suppressNestedCircles(collected);
+  const bondIds = new Set<string>();
+  for (const c of circles) {
+    for (const id of c.bondIds) bondIds.add(id);
   }
   return { circles, bondIds };
 };

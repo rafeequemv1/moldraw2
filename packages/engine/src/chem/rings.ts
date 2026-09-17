@@ -12,6 +12,29 @@ import type { Molecule } from '@moldraw/domain';
 import { buildGraph, type MoleculeGraph } from '../graph';
 import type { Ring } from '../types';
 
+/** Atoms that survive iterative leaf pruning — only these can lie on a cycle. */
+const cyclicAtomIds = (g: MoleculeGraph): Set<string> => {
+  const deg = new Map<string, number>();
+  for (const [id, node] of g.nodes) deg.set(id, node.neighbors.length);
+  const stack: string[] = [];
+  for (const [id, d] of deg) if (d <= 1) stack.push(id);
+  const removed = new Set<string>();
+  while (stack.length) {
+    const id = stack.pop()!;
+    if (removed.has(id)) continue;
+    removed.add(id);
+    for (const n of g.nodes.get(id)?.neighbors ?? []) {
+      if (removed.has(n)) continue;
+      const d = (deg.get(n) ?? 0) - 1;
+      deg.set(n, d);
+      if (d <= 1) stack.push(n);
+    }
+  }
+  const out = new Set<string>();
+  for (const id of g.nodes.keys()) if (!removed.has(id)) out.add(id);
+  return out;
+};
+
 const shortestCycleThroughBond = (
   g: MoleculeGraph,
   fromId: string,
@@ -106,10 +129,15 @@ export const perceiveRings = (mol: Molecule): Ring[] => {
   const ringCount = E - V + comps;
   if (ringCount <= 0) return [];
 
+  // Skip acyclic bonds: BFS-per-bond on a chain is O(bonds × atoms).
+  const cyclic = cyclicAtomIds(g);
+  if (cyclic.size < 3) return [];
+
   // Candidate smallest rings: shortest alt-cycle through each bond.
   const candidates: { atomIds: string[]; bondIds: string[]; bondSet: Set<string> }[] = [];
   const seenSig = new Set<string>();
   for (const b of mol.bonds) {
+    if (!cyclic.has(b.fromAtomId) || !cyclic.has(b.toAtomId)) continue;
     const path = shortestCycleThroughBond(g, b.fromAtomId, b.toAtomId, b.id);
     if (!path || path.length < 3) continue;
     const bondIds = ringBondIds(g, path);

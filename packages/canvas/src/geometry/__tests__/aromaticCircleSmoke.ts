@@ -210,4 +210,136 @@ clearMoleculeRevisionCache();
   eq(r.circles.length, 7, 'coronene-like flake has a circle in every hexagon');
 }
 
+// Mixed naphthalene: one Kekulé hexagon fused to one aromatic-circle hexagon.
+{
+  const L = 40;
+  const inr = L * Math.cos(Math.PI / 6);
+  const atoms: Atom[] = [];
+  const atomByKey = new Map<string, Atom>();
+  const coordKey = (x: number, y: number) => `${Math.round(x * 50)}_${Math.round(y * 50)}`;
+  const vertex = (x: number, y: number): Atom => {
+    const k = coordKey(x, y);
+    const existing = atomByKey.get(k);
+    if (existing) return existing;
+    const a: Atom = { id: `m${atoms.length}`, element: 'C', x, y, charge: 0 };
+    atomByKey.set(k, a);
+    atoms.push(a);
+    return a;
+  };
+  const bondSet = new Set<string>();
+  const bonds: Bond[] = [];
+  const addHex = (cx: number, cy: number, aromatic: boolean) => {
+    const ids: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI) / 3;
+      ids.push(vertex(cx + L * Math.cos(a), cy + L * Math.sin(a)).id);
+    }
+    for (let i = 0; i < 6; i++) {
+      const a = ids[i]!;
+      const b = ids[(i + 1) % 6]!;
+      const k = a < b ? `${a}|${b}` : `${b}|${a}`;
+      if (bondSet.has(k)) {
+        if (aromatic) {
+          const existing = bonds.find(
+            x =>
+              (x.fromAtomId === a && x.toAtomId === b) ||
+              (x.fromAtomId === b && x.toAtomId === a),
+          );
+          if (existing) existing.aromatic = true;
+        }
+        continue;
+      }
+      bondSet.add(k);
+      bonds.push({
+        id: `mb${bonds.length}`,
+        fromAtomId: a,
+        toAtomId: b,
+        order: aromatic ? 1 : i % 2 === 0 ? 2 : 1,
+        ...(aromatic ? { aromatic: true } : {}),
+      });
+    }
+  };
+  addHex(0, 0, true);
+  addHex(2 * inr, 0, false);
+  const mixed = collect(molOf(atoms, bonds));
+  eq(mixed.circles.length, 1, 'mixed naphthalene has one aromatic circle');
+
+  // A nearby Kekulé-ring bond marked aromatic (select / aromatic-bond tool)
+  // used to spawn a second smaller circle inside the real ring.
+  const extra = bonds.find(b => !b.aromatic);
+  ok(extra, 'mixed naphthalene has a Kekulé bond to flag');
+  const near: Bond[] = bonds.map(b =>
+    b.id === extra!.id ? { ...b, aromatic: true } : b,
+  );
+  const r = collect(molOf(atoms, near));
+  eq(r.circles.length, 1, 'nearby aromatic bond does not spawn a nested circle');
+  ok(r.circles[0]!.radius > 20, `real ring keeps full radius, got ${r.circles[0]!.radius}`);
+}
+
+// Phenanthrene-like: two aromatic terminals + Kekulé middle. One nearby
+// aromatic bond must not put a small inner circle in either terminal.
+{
+  const L = 40;
+  const inr = L * Math.cos(Math.PI / 6);
+  const atoms: Atom[] = [];
+  const atomByKey = new Map<string, Atom>();
+  const coordKey = (x: number, y: number) => `${Math.round(x * 50)}_${Math.round(y * 50)}`;
+  const vertex = (x: number, y: number): Atom => {
+    const k = coordKey(x, y);
+    const existing = atomByKey.get(k);
+    if (existing) return existing;
+    const a: Atom = { id: `p${atoms.length}`, element: 'C', x, y, charge: 0 };
+    atomByKey.set(k, a);
+    atoms.push(a);
+    return a;
+  };
+  const bondSet = new Set<string>();
+  const bonds: Bond[] = [];
+  const addHex = (cx: number, cy: number, aromatic: boolean) => {
+    const ids: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI) / 3;
+      ids.push(vertex(cx + L * Math.cos(a), cy + L * Math.sin(a)).id);
+    }
+    for (let i = 0; i < 6; i++) {
+      const a = ids[i]!;
+      const b = ids[(i + 1) % 6]!;
+      const k = a < b ? `${a}|${b}` : `${b}|${a}`;
+      if (bondSet.has(k)) {
+        if (aromatic) {
+          const existing = bonds.find(
+            x =>
+              (x.fromAtomId === a && x.toAtomId === b) ||
+              (x.fromAtomId === b && x.toAtomId === a),
+          );
+          if (existing) existing.aromatic = true;
+        }
+        continue;
+      }
+      bondSet.add(k);
+      bonds.push({
+        id: `pb${bonds.length}`,
+        fromAtomId: a,
+        toAtomId: b,
+        order: 1,
+        ...(aromatic ? { aromatic: true } : {}),
+      });
+    }
+  };
+  addHex(0, 0, true);
+  addHex(2 * inr, 0, false);
+  addHex(inr, 1.5 * L, true);
+  const clean = collect(molOf(atoms, bonds));
+  eq(clean.circles.length, 2, 'phenanthrene-like mixed has two aromatic circles');
+
+  const extra = bonds.find(b => !b.aromatic);
+  ok(extra, 'middle ring has a Kekulé bond');
+  const near = bonds.map(b => (b.id === extra!.id ? { ...b, aromatic: true } : b));
+  const r = collect(molOf(atoms, near));
+  eq(r.circles.length, 2, 'nearby bond does not add a nested aromatic circle');
+  for (const c of r.circles) {
+    ok(c.radius > 20, `terminal ring radius stays full-size, got ${c.radius}`);
+  }
+}
+
 console.log('aromaticCircleSmoke OK');
