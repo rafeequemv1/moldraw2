@@ -137,6 +137,7 @@ import type { MoleculeWorkerResponse } from '@moldraw/core/moleculeWorker/messag
 const IMAGE_FILE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg';
 const VIEWER3D_OPEN_KEY = 'moldraw.viewer3d.open';
 const NEW_TAB_SIGNUP_NOTICE = 'Sign up to open more design tabs.';
+const EXPORT_SIGNUP_NOTICE = 'Sign up to download and export structures.';
 
 function readViewer3DOpenPref(): boolean {
   try {
@@ -223,6 +224,11 @@ function App() {
   const requireNewTabSignup = useCallback((): boolean => {
     if (auth.signedIn) return true;
     auth.openAuthModal('signup', NEW_TAB_SIGNUP_NOTICE);
+    return false;
+  }, [auth.signedIn, auth.openAuthModal]);
+  const requireExportSignup = useCallback((): boolean => {
+    if (auth.signedIn) return true;
+    auth.openAuthModal('signup', EXPORT_SIGNUP_NOTICE);
     return false;
   }, [auth.signedIn, auth.openAuthModal]);
   const [docRoute, setDocRoute] = useState<AppDocRoute>(() => parseAppRoute(window.location));
@@ -1721,6 +1727,7 @@ function App() {
     },
     onFragmentPaste: handlePasteSelection,
     revealAtomsInView,
+    requireAuth: requireExportSignup,
   });
   // Bridge: context menu paste / Ctrl+S were wired before import/export exists.
   /* eslint-disable react-hooks/refs -- intentional circular-dep bridge */
@@ -1730,7 +1737,8 @@ function App() {
   /* eslint-enable react-hooks/refs */
 
   const handleHeaderCopySmiles = useCallback(() => {
-    handleCopyAs('smiles');
+    const ok = handleCopyAs('smiles');
+    if (ok === false) return;
     setSmilesCopied(true);
     window.setTimeout(() => setSmilesCopied(false), 1800);
   }, [handleCopyAs]);
@@ -1931,8 +1939,14 @@ function App() {
         onRenameFolder={renameFolder}
         onDeleteFolder={deleteFolder}
         onMoveProjectsToFolder={moveProjectsToFolder}
-        onDownloadProject={downloadProjectMoldrawFile}
-        onDownloadAll={downloadAllProjectsMoldraw}
+        onDownloadProject={id => {
+          if (!requireExportSignup()) return;
+          return downloadProjectMoldrawFile(id);
+        }}
+        onDownloadAll={asZip => {
+          if (!requireExportSignup()) return;
+          return downloadAllProjectsMoldraw(asZip);
+        }}
         onBackToEditor={handleBackToEditor}
       />
       </Suspense>
@@ -2033,8 +2047,14 @@ function App() {
         onRenameFolder={renameFolder}
         onDeleteFolder={deleteFolder}
         onMoveProjectsToFolder={moveProjectsToFolder}
-        onDownloadProject={downloadProjectMoldrawFile}
-        onDownloadAll={downloadAllProjectsMoldraw}
+        onDownloadProject={id => {
+          if (!requireExportSignup()) return;
+          return downloadProjectMoldrawFile(id);
+        }}
+        onDownloadAll={asZip => {
+          if (!requireExportSignup()) return;
+          return downloadAllProjectsMoldraw(asZip);
+        }}
       />
 
       {showAppSettings ? (
@@ -2637,6 +2657,8 @@ function App() {
                       onApplyMmff94={handleApplyMmff94}
                       backgroundColor={viewer3dBackground}
                       controlsAsSheet={isCompactViewport}
+                      onBeforeExport={requireExportSignup}
+                      canExport={auth.signedIn}
                     />
                   </Suspense>
                 }
@@ -2704,6 +2726,7 @@ function App() {
             runBatchPipeline: runBatchSmilesPipeline,
             onImportMolblockToCanvas: handleBatchImportMolblockOnly,
             onImportMolblocksToCanvas: handleBatchImportMolblocksToCanvas,
+            onBeforeDownload: requireExportSignup,
           }}
         />
         </Suspense>

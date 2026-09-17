@@ -137,6 +137,11 @@ export interface UseMoleculeImportExportOptions {
   onApplyExternal3DPose?: (molblock: string, sourceLabel: string) => void;
   /** Mirrored settings flag for SMILES→2D (default true). */
   preferIndigo2dRef?: React.MutableRefObject<boolean>;
+  /**
+   * Return false to cancel a download / save / copy-as export
+   * (e.g. show signup first).
+   */
+  requireAuth?: () => boolean;
   /** Replace the open document from a native .moldraw file. */
   onLoadDesignFile?: (molecule: Molecule, name: string) => void;
   /** Current tab name — used for Save as ChemDraw filename. */
@@ -185,6 +190,7 @@ export function useMoleculeImportExport({
   projectName = 'design',
   onFragmentPaste,
   revealAtomsInView,
+  requireAuth,
 }: UseMoleculeImportExportOptions) {
   const [openFileBusy, setOpenFileBusy] = useState(false);
   const [openFileError, setOpenFileError] = useState<string | null>(null);
@@ -885,6 +891,7 @@ export function useMoleculeImportExport({
 
   const handleDownload = useCallback(
     (format: DownloadFormat) => {
+      if (requireAuth && requireAuth() === false) return;
       setContextMenu(null);
 
       const isVisualExport =
@@ -1160,10 +1167,12 @@ export function useMoleculeImportExport({
       structureTheme,
       structureDrawMode,
       workerRef,
+      requireAuth,
     ],
   );
 
   const handleSaveMolToDisk = useCallback(async () => {
+    if (requireAuth && requireAuth() === false) return;
     setContextMenu(null);
     const mol = getMoleculeForExport('visual');
     if (mol.atoms.length === 0) {
@@ -1185,9 +1194,10 @@ export function useMoleculeImportExport({
           : `Saved ${base}.mol — opens in ChemDraw, Moldraw, and other editors`,
       );
     }
-  }, [getMoleculeForExport, projectName, setContextMenu, setSmilesBarHint]);
+  }, [getMoleculeForExport, projectName, requireAuth, setContextMenu, setSmilesBarHint]);
 
   const handleSaveChemDrawToDisk = useCallback(async () => {
+    if (requireAuth && requireAuth() === false) return;
     setContextMenu(null);
     const mol = getMoleculeForExport('visual');
     if (mol.atoms.length === 0) {
@@ -1203,9 +1213,10 @@ export function useMoleculeImportExport({
       extensions: ['.cdxml'],
     });
     if (saved) setSmilesBarHint(`Saved ${base}.cdxml — opens in ChemDraw`);
-  }, [getMoleculeForExport, projectName, setContextMenu, setSmilesBarHint]);
+  }, [getMoleculeForExport, projectName, requireAuth, setContextMenu, setSmilesBarHint]);
 
   const handleSaveMoldrawToDisk = useCallback(async () => {
+    if (requireAuth && requireAuth() === false) return;
     setContextMenu(null);
     const base = sanitizeDesignFilename(projectName);
     const saved = await saveTextFileToDisk({
@@ -1216,9 +1227,10 @@ export function useMoleculeImportExport({
       extensions: ['.moldraw'],
     });
     if (saved) setSmilesBarHint(`Saved ${base}.moldraw — entire canvas`);
-  }, [molecule, projectName, setContextMenu, setSmilesBarHint]);
+  }, [molecule, projectName, requireAuth, setContextMenu, setSmilesBarHint]);
 
   const handleSaveAsDialog = useCallback(async () => {
+    if (requireAuth && requireAuth() === false) return;
     setContextMenu(null);
     const mol = getMoleculeForExport('visual');
     const base = sanitizeDesignFilename(projectName);
@@ -1324,6 +1336,7 @@ export function useMoleculeImportExport({
     showHydrogens,
     structureDrawMode,
     structureTheme,
+    requireAuth,
   ]);
 
   const handleSaveAs = useCallback(
@@ -1422,6 +1435,7 @@ export function useMoleculeImportExport({
    */
   const handleCopyAs = useCallback(
     (format: CopyAsFormat) => {
+      if (requireAuth && requireAuth() === false) return false;
       setContextMenu(null);
       const item = COPY_AS_FORMAT_ITEMS.find(f => f.key === format);
       if (item && !item.available) {
@@ -1565,6 +1579,7 @@ export function useMoleculeImportExport({
       getMoleculeForExport,
       imageExportScale,
       postConvertCopy,
+      requireAuth,
       resolveMoleculeForCopy,
       selectedAtomIds.length,
       setContextMenu,
