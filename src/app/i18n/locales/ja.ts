@@ -467,6 +467,7 @@ export const ja: LocaleMessages = {
     menuChair: 'チェア',
     menuBoat: 'ボート',
     menuLonePair: '孤立電子対',
+    menuLonePairAll: 'すべてに孤立電子対を1つ',
     menuFreeRadical: 'フリーラジカル',
     menuOrbitalP: 'p軌道',
     menuOrbitalS: 's軌道',

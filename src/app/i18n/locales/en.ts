@@ -465,6 +465,7 @@ export const en = {
     menuChair: 'Chair',
     menuBoat: 'Boat',
     menuLonePair: 'Lone pair',
+    menuLonePairAll: 'Add one lone pair to all',
     menuFreeRadical: 'Free radical',
     menuOrbitalP: 'p orbital',
     menuOrbitalS: 's orbital',

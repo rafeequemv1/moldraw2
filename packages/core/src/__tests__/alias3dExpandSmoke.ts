@@ -272,6 +272,51 @@ assertCharge('(CH2)3NH22+', '(CH2)3NH2', 2);
 if (normalizeAliasLabelCharacters('(CH₂)₃CH₃') !== '(CH2)3CH3') {
   throw new Error('unicode subscript normalize');
 }
+if (normalizeCondensedKey('NH₂') !== 'NH2') throw new Error('NH₂ key should be NH2');
+
+// Carbon with alias NH2 (and NH₂) plus two carbon bonds and one explicit H
+// still gains a bonded nitrogen. A real terminal N is left in place.
+const aminoCarbon = (alias: string): Molecule => ({
+  atoms: [
+    { id: 'c1', element: 'C', x: 0, y: 0, charge: 0 },
+    { id: 'c2', element: 'C', x: 40, y: 0, charge: 0, alias },
+    { id: 'c3', element: 'C', x: 80, y: 0, charge: 0 },
+    { id: 'h1', element: 'H', x: 40, y: 30, charge: 0 },
+  ],
+  bonds: [
+    { id: 'b1', fromAtomId: 'c1', toAtomId: 'c2', order: 1 },
+    { id: 'b2', fromAtomId: 'c2', toAtomId: 'c3', order: 1 },
+    { id: 'b3', fromAtomId: 'c2', toAtomId: 'h1', order: 1 },
+  ],
+});
+const bondedTo = (m: Molecule, id: string, el: string) =>
+  m.bonds.some(b => {
+    const other = b.fromAtomId === id ? b.toAtomId : b.toAtomId === id ? b.fromAtomId : '';
+    return other && m.atoms.find(a => a.id === other)?.element === el;
+  });
+for (const alias of ['NH2', 'NH₂']) {
+  const ex = expandAliasesFor3D(aminoCarbon(alias));
+  if (ex.atoms.find(a => a.id === 'c2')?.alias) throw new Error(`${alias}: alias not cleared`);
+  if (!bondedTo(ex, 'c2', 'N')) throw new Error(`${alias}: carbon should be bonded to N`);
+  if (count(ex, 'N') !== 1) throw new Error(`${alias}: expected 1 N, got ${count(ex, 'N')}`);
+}
+const terminalN = expandAliasesFor3D({
+  atoms: [
+    { id: 'c0', element: 'C', x: 0, y: 0, charge: 0 },
+    { id: 'n1', element: 'N', x: 40, y: 0, charge: 0 },
+  ],
+  bonds: [{ id: 'b1', fromAtomId: 'c0', toAtomId: 'n1', order: 1 }],
+});
+if (!terminalN.atoms.some(a => a.id === 'n1' && a.element === 'N')) {
+  throw new Error('real terminal N should be preserved');
+}
+if (count(terminalN, 'N') !== 1) throw new Error('terminal N must not be duplicated');
+
+const carboxyl = expandAliasesFor3D(mol('COOH'));
+if (carboxyl.atoms.find(a => a.id === 'a1')?.alias) throw new Error('COOH alias not cleared');
+if (count(carboxyl, 'O') < 2) throw new Error(`COOH should add two O, got ${count(carboxyl, 'O')}`);
+if (!bondedTo(carboxyl, 'a1', 'O')) throw new Error('COOH carbon should be bonded to O');
+
 if (!looksLikeExpandableFormulaLabel('C18H37')) throw new Error('C18H37 expandable');
 if (!looksLikeExpandableFormulaLabel('(CH2)3CH3')) throw new Error('paren expandable');
 const c18 = condensedToSmiles('C18H37');

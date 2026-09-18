@@ -100,7 +100,10 @@ export const resolveArrowAnchor = (
     if (awayFrom) {
       const mx = (from.x + to.x) / 2;
       const my = (from.y + to.y) / 2;
-      if (nx * (mx - awayFrom.x) + ny * (my - awayFrom.y) < 0) {
+      // Face the other endpoint. The old test pushed the tail to the far
+      // side of the bond, so a bond→atom arrow aimed the wrong way until
+      // a later edit rebuilt the centroid.
+      if (nx * (mx - awayFrom.x) + ny * (my - awayFrom.y) > 0) {
         nx = -nx;
         ny = -ny;
       }
@@ -713,8 +716,9 @@ export const snapArrowEndpointToStructure = (
     const vy = to.y - from.y;
     const len2 = vx * vx + vy * vy || 1;
     let t = ((x - from.x) * vx + (y - from.y) * vy) / len2;
-    if (t < 0.18 || t > 0.82) continue;
-    t = Math.min(0.8, Math.max(0.2, t));
+    if (t < 0.12 || t > 0.88) continue;
+    if (t > 0.35 && t < 0.65) t = 0.5;
+    else t = Math.min(0.8, Math.max(0.2, t));
     const onx = from.x + vx * t;
     const ony = from.y + vy * t;
     const blen = Math.hypot(vx, vy) || 1;
@@ -788,13 +792,13 @@ export const applyElectronFlowEndpointResnap = (
     mol,
     x,
     y,
-    end === 'tail' ? 22 : 11,
+    end === 'tail' ? 22 : 18,
     end === 'tail'
       ? {
           role: 'start',
           awayFrom,
           includeAtoms: false,
-          includeBonds: false,
+          includeBonds: true,
           includeFormingBonds: false,
           includeLonePairs: true,
           atomToLonePairTol: 16,
@@ -803,7 +807,7 @@ export const applyElectronFlowEndpointResnap = (
           role: 'end',
           awayFrom,
           includeAtoms: true,
-          includeBonds: false,
+          includeBonds: true,
           includeFormingBonds: false,
           includeLonePairs: false,
         },

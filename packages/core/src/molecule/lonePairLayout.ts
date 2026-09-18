@@ -139,14 +139,16 @@ const clearHeadBox = (
   if (!headBox) return placements;
   return placements.map(p => {
     let dist = p.dist;
-    const dir = p.dir;
-    for (let attempt = 0; attempt < 10; attempt++) {
+    let ang = Math.atan2(p.dir.y, p.dir.x);
+    for (let attempt = 0; attempt < 14; attempt++) {
+      const dir = { x: Math.cos(ang), y: Math.sin(ang) };
       if (!pairHitsHeadBox(dir, dist, headBox, labelCounterRad)) {
         return { dir, dist };
       }
-      dist += 1;
+      if (attempt < 5) dist += 1.6;
+      else ang += attempt % 2 === 0 ? 0.42 : -0.42;
     }
-    return { dir, dist };
+    return { dir: { x: Math.cos(ang), y: Math.sin(ang) }, dist };
   });
 };
 
@@ -318,6 +320,13 @@ export const getLonePairPlacements = (
   const reserveCharge =
     opts.reserveChargeSeat !== false && (atom.charge ?? 0) !== 0;
   const reservedAngle = reserveCharge ? defaultChargeSeatAngle(atom, mol) : null;
+  // Callers that don't measure the glyph (electron-flow loci, arrow anchors)
+  // still need a keep-out so a third pair does not sit on Cl / O / N.
+  let headBox = opts.headBox;
+  if (!headBox && atom.element !== 'C') {
+    const w = Math.max(10, atom.element.length * 7.2);
+    headBox = labelBoxFromExtents(-w / 2, w / 2, 13);
+  }
 
   const neighborAngles: number[] = [];
   let heavyNeighborCount = 0;
@@ -379,7 +388,7 @@ export const getLonePairPlacements = (
   }
 
   placements = avoidReservedAngle(placements, reservedAngle);
-  placements = clearHeadBox(placements, opts.headBox, labelCounterRad);
+  placements = clearHeadBox(placements, headBox, labelCounterRad);
   return placements;
 };
 

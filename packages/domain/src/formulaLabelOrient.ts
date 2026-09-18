@@ -119,6 +119,18 @@ const findAttachmentHeadIndex = (units: string[], attachment: string): number =>
 };
 
 /**
+ * Bonding atom of a condensed / alias formula when the parent element is not
+ * in the text (NH2 written on carbon → N). Hydrogen prefixes (H2N, HO, HOOC)
+ * are not the attachment. Abbreviations with no element glyph (Ph, Me, Boc)
+ * return ''.
+ */
+const inferFormulaAttachmentElement = (units: string[]): string => {
+  const elements = units.map(unitElement).filter(Boolean);
+  const heavy = elements.find(el => el.toUpperCase() !== 'H');
+  return heavy ?? '';
+};
+
+/**
  * Re-order a condensed / alias formula so the attachment atom is toward the
  * parent bond and the rest of the group reads away from it.
  */
@@ -134,7 +146,16 @@ export function orientFormulaLabel(
 
   const units = tokenizeFormulaUnits(trimmed);
   const hasParen = units.some(u => u === '(' || u === ')');
-  const headI = hasParen ? -1 : findAttachmentHeadIndex(units, attachmentElement);
+  let headI = hasParen ? -1 : findAttachmentHeadIndex(units, attachmentElement);
+  // Parent carbon often carries NH2 / NO2 / OMe. The bonding glyph is the
+  // group's own atom (N, O, …), not the carbon the label is stored on.
+  if (headI < 0 && !hasParen) {
+    const inferred = inferFormulaAttachmentElement(units);
+    if (inferred) {
+      const alt = findAttachmentHeadIndex(units, inferred);
+      if (alt >= 0) headI = alt;
+    }
+  }
 
   if (headI < 0) {
     return {

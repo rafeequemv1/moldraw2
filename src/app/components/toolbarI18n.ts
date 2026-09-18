@@ -199,6 +199,7 @@ export function useToolbarI18n() {
       ],
       lonePairOptions: [
         { value: 'lone_pair', label: t('toolbar.menuLonePair') },
+        { value: 'lone_pair_all', label: t('toolbar.menuLonePairAll') },
         { value: 'free_radical', label: t('toolbar.menuFreeRadical') },
       ],
       orbitalOptions: [

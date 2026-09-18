@@ -43,7 +43,7 @@ export function AtomPalette({
               title={(() => {
                 const kb = placementPaletteShortcutLabel(row.sym);
                 const base = `Place ${row.sym} (click canvas or extend bonds / chain)`;
-                return kb ? `${base} — keyboard ${kb}` : base;
+                return kb ? `${base} Keyboard: ${kb}` : base;
               })()}
               aria-pressed={activePlacementElement === row.sym}
               onClick={() => onSelect(row.sym)}

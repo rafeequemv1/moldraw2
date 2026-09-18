@@ -374,19 +374,22 @@ export const SHORTCUT_ACTION_DEFS: ShortcutActionDef[] = [
     id: 'elementCl',
     label: 'Chlorine',
     group: 'Atom labels',
+    // C is carbon and L is lasso; Ctrl+Shift+C / Alt+Shift+C are selection.
     defaults: [{ shift: true, key: 'c' }],
   },
   {
     id: 'elementBr',
     label: 'Bromine',
     group: 'Atom labels',
+    // B is the benzene ring tool.
     defaults: [{ shift: true, key: 'b' }],
   },
   {
     id: 'elementI',
     label: 'Iodine',
     group: 'Atom labels',
-    defaults: [{ shift: true, key: 'i' }],
+    // Bare I is free (Ctrl+Shift+I is invert selection).
+    defaults: [{ key: 'i' }],
   },
   {
     id: 'cleanup3d',

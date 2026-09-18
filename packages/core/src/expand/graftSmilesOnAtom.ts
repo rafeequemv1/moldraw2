@@ -106,13 +106,21 @@ export const graftSmilesOnAtom = (
     };
   }
 
-  let frag: Molecule;
+  let parsed: Molecule;
   try {
-    frag = kekulize(parseSmilesToMolecule(smiles.trim()));
+    parsed = parseSmilesToMolecule(smiles.trim());
   } catch {
     return null;
   }
-  if (frag.atoms.length === 0) return null;
+  if (parsed.atoms.length === 0) return null;
+  // A single-atom fragment ("N" for an NH2 alias) has nothing to kekulize.
+  // Keep the parsed graph if kekulize throws — dropping it leaves a plain carbon.
+  let frag = parsed;
+  try {
+    frag = kekulize(parsed);
+  } catch {
+    frag = parsed;
+  }
 
   const next: Molecule = {
     ...mol,

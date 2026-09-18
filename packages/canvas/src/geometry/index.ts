@@ -35,6 +35,7 @@ export {
   implicitHydrogenLabelDist,
   implicitHydrogenBondEnd,
   hGoesLeft,
+  groupLabelTailGoesLeft,
   carbonLabelHGoesLeft,
   getHydrogenStubDirections,
 } from './hydrogenLayout';

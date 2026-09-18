@@ -82,6 +82,8 @@ export interface ToolbarRailProps {
   onToggleObjectsPanel?: () => void;
   /** Desktop Draw tab: pencil / shape / image flyout beside the left rail. */
   showDrawTools?: boolean;
+  /** Lone-pair menu: add one pair to every selected heteroatom, or all of them. */
+  onAddLonePairToAll?: () => void;
 }
 
 const categoryForTool = (toolId: string): MobileToolCategory | null => {
@@ -160,6 +162,7 @@ const renderToolOrArrowRow = (
     | 'onShapeMenuValueChange'
     | 'sruBracketSubscript'
     | 'onSruBracketSubscriptChange'
+    | 'onAddLonePairToAll'
   > & { onOpenGlasswareLibrary?: () => void; flattenShapes?: boolean; i18n: ToolbarI18n },
 ) => {
   tool = props.i18n.localizeTool(tool);
@@ -225,7 +228,13 @@ const renderToolOrArrowRow = (
         value={lpToolId}
         options={props.i18n.lonePairOptions}
         onSelectTool={() => props.onSelect(lpToolId)}
-        onChangeValue={v => props.onSelect(v)}
+        onChangeValue={v => {
+          if (v === 'lone_pair_all') {
+            props.onAddLonePairToAll?.();
+            return;
+          }
+          props.onSelect(v);
+        }}
         menuAriaLabel={props.i18n.t('toolbar.menuLoneRadical')}
         renderPreview={id => renderToolIcon(id)}
       />
@@ -477,6 +486,7 @@ export function ToolbarRail({
   showObjectsPanel = false,
   onToggleObjectsPanel,
   showDrawTools = false,
+  onAddLonePairToAll,
 }: ToolbarRailProps) {
   const i18n = useToolbarI18n();
   const [mobileCategory, setMobileCategory] = useState<MobileToolCategory>('select');
@@ -556,6 +566,7 @@ export function ToolbarRail({
     onShapeMenuValueChange,
     sruBracketSubscript,
     onSruBracketSubscriptChange,
+    onAddLonePairToAll,
     onOpenGlasswareLibrary: () => setGlasswareLibraryOpen(true),
     i18n,
   };

@@ -25,6 +25,7 @@ import {
 import { resolveCanvasPreferences } from '@moldraw/core/canvasPreferences';
 import { viewportWorldCenter } from '@moldraw/core/molecule/importPlacement';
 import { CMD } from '@moldraw/core/commands/registry';
+import { getMaxLonePairsForAtom } from '@moldraw/domain';
 import {
   bondIdsTargetedBySelection,
   bondPatchForStyleTool,
@@ -1219,6 +1220,24 @@ function App() {
   useEffect(() => {
     cleanupStructureRef.current = handleCleanupStructureSmart;
   }, [handleCleanupStructureSmart]);
+
+  const handleAddLonePairToAll = useCallback(() => {
+    const mol = editorStore.getMolecule();
+    const selected = new Set(editorStore.getSelection().atomIds);
+    const pool = selected.size
+      ? mol.atoms.filter(a => selected.has(a.id))
+      : mol.atoms;
+    for (const atom of pool) {
+      if (atom.element === 'H') continue;
+      if (atom.element === 'C' && (atom.charge ?? 0) === 0) continue;
+      const bondOrderSum = mol.bonds
+        .filter(b => b.fromAtomId === atom.id || b.toAtomId === atom.id)
+        .reduce((sum, b) => sum + (b.dative ? 0 : b.order), 0);
+      const max = getMaxLonePairsForAtom(atom.element, atom.charge ?? 0, bondOrderSum);
+      if ((atom.lonePairs ?? 0) >= max) continue;
+      editorStore.applyCommand(CMD.UpdateAtomLonePairs, { atomId: atom.id, delta: 1 });
+    }
+  }, [editorStore]);
 
   const handleToolbarSelectWithPerspective = useCallback(
     (toolId: string) => {
@@ -2649,6 +2668,7 @@ function App() {
               showObjectsPanel={showObjectsPanel}
               onToggleObjectsPanel={() => setShowObjectsPanel(v => !v)}
               showDrawTools={false}
+              onAddLonePairToAll={handleAddLonePairToAll}
             />
             <ArrowPropertiesPanel
               arrow={selectedReactionArrow}

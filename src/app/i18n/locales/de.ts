@@ -467,6 +467,7 @@ export const de: LocaleMessages = {
     menuChair: 'Sessel',
     menuBoat: 'Boot',
     menuLonePair: 'Freies Elektronenpaar',
+    menuLonePairAll: 'Ein Elektronenpaar an alle',
     menuFreeRadical: 'Freies Radikal',
     menuOrbitalP: 'p-Orbital',
     menuOrbitalS: 's-Orbital',

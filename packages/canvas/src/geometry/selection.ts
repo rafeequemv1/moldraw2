@@ -13,7 +13,7 @@ import { pointInPolygon, type Point } from './polygons';
 import { reactionArrowSelectionAabb } from './reactionArrow';
 import { getCanvasShapeBox } from './canvasShapeTransform';
 import { canvasTextBbox, estimateCanvasTextAabb } from './canvasText';
-import { getHydrogenStubDirections, hGoesLeft, IMPLICIT_H_LABEL_DIST } from './hydrogenLayout';
+import { getHydrogenStubDirections, groupLabelTailGoesLeft, hGoesLeft, IMPLICIT_H_LABEL_DIST } from './hydrogenLayout';
 
 export type MarqueeSelectionBoundsInput = {
   atomIds: string[];
@@ -326,7 +326,11 @@ export const estimateLabelTextAabb = (
 ): { minX: number; maxX: number; minY: number; maxY: number } | null => {
   const label = text?.trim();
   if (!label) return null;
-  const tailGoesLeft = mol ? hGoesLeft(atom, mol) : false;
+  const tailGoesLeft = mol
+    ? atom.alias?.trim() === label
+      ? groupLabelTailGoesLeft(atom, mol)
+      : hGoesLeft(atom, mol)
+    : false;
   const oriented = orientFormulaLabel(label, atom.element, tailGoesLeft);
   const charW = 9.5;
   const h = 22;

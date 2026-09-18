@@ -19,8 +19,8 @@ const MIN_ARROW_LENGTH = 12;
 const START_LP_SNAP_TOL = 22;
 /** Clicking the heteroatom itself still picks its nearest lone pair. */
 const START_ATOM_TO_LP_TOL = 16;
-/** End: tight snap onto nearby atoms only. */
-const END_ATOM_SNAP_TOL = 11;
+/** End: atoms, and the middle of a bond when the pointer is nearer the bond than an atom. */
+const END_SNAP_TOL = 18;
 /** Below this drag distance, treat the gesture as a click (park start / place end). */
 const CLICK_PLACE_SLOP = 6;
 
@@ -59,20 +59,20 @@ const applyStructureSnap = (
       role: 'start',
       awayFrom,
       bondLengthPx: ctx.bondLengthPx,
-      includeAtoms: false,
-      includeBonds: false,
+      includeAtoms: true,
+      includeBonds: true,
       includeFormingBonds: false,
       includeLonePairs: true,
       atomToLonePairTol: START_ATOM_TO_LP_TOL,
     });
   }
-  return snapArrowEndpointToStructure(ctx.molecule, x, y, END_ATOM_SNAP_TOL, {
+  return snapArrowEndpointToStructure(ctx.molecule, x, y, END_SNAP_TOL, {
     role: 'end',
     awayFrom,
     bondLengthPx: ctx.bondLengthPx,
     includeAtoms: true,
-    includeBonds: false,
-    includeFormingBonds: false,
+    includeBonds: true,
+    includeFormingBonds: true,
     includeLonePairs: false,
   });
 };

@@ -4,6 +4,7 @@ import { getMaxValencyForElement } from '@moldraw/domain';
 import { bestSproutAngle } from '../geometry';
 import {
   getAtomValency,
+  pickAtomAt,
   pickAtomCenterAt,
   pickAtomOrBondForBondTool,
 } from './hitTest';
@@ -59,10 +60,10 @@ const orderForTool = (tool: BondToolId): 1 | 2 | 3 => {
  * Pointer-move snaps the ghost end to the configured angle increment at fixed length.
  *
  * Pointer-up commit branches:
- *   - Click on existing atom in single-bond mode with a *different* placement
- *     element → relabel the atom (except H: that attaches an explicit bonded
- *     H — never rewrite a heavy atom to hydrogen).
- *   - Click on existing atom otherwise → sprout a bond of the tool's
+ *   - Click on an atom or its functional-group label (NH2, COOH, …) in
+ *     single-bond mode with a palette element → relabel that atom. H clears
+ *     the alias and sets element H (it does not sprout a second hydrogen).
+ *   - Click on an existing atom otherwise → sprout a bond of the tool's
  *     order/style into the best free direction (`bestSproutAngle`).
  *   - Click on empty canvas → horizontal C–C bond (carbon placement) or a
  *     single atom of the chosen element (heteroatom placement).
@@ -270,21 +271,24 @@ export const bondToolMouseUp = (ctx: InteractionContext): boolean => {
   const CLICK_DRAG_THRESHOLD = ctx.hit.clickDragThresholdPx;
   const ATOM_HIT_RADIUS = ctx.hit.atomAttachRadius;
 
-  // Tiny single-bond click on existing atom:
-  //   - placement H → add an explicit bonded H (never rewrite C/O/… to H)
-  //   - other elements → relabel the atom
+  // Tiny single-bond click on an existing atom or its functional-group label:
+  //   - H / other palette elements → relabel that atom (clears NH2 / COOH / …)
+  //   - same element, no alias → fall through and sprout a bond
   if (distance < CLICK_DRAG_THRESHOLD && e.button === 0 && activeTool === 'single_bond') {
-    const releaseAtom = pickAtomCenterAt(molecule, worldPos, ATOM_HIT_RADIUS);
+    const releaseAtom = pickAtomAt(molecule, worldPos, ATOM_HIT_RADIUS, {
+      includeLabels: true,
+      inflateLabelDisk: false,
+    });
     if (releaseAtom) {
+      const labeled = Boolean(releaseAtom.alias?.trim());
       if (placementElement === 'H') {
-        const ok =
-          releaseAtom.element !== 'H' &&
-          ctx.onAddExplicitHydrogen?.(releaseAtom.id) === true;
-        if (!ok) ctx.flashAtomError(releaseAtom.id);
+        if (releaseAtom.element !== 'H' || labeled) {
+          ctx.onUpdateAtomElement?.(releaseAtom.id, 'H');
+        }
         ctx.setDrawingBond(null);
         return true;
       }
-      if (ctx.onUpdateAtomElement && releaseAtom.element !== placementElement) {
+      if (ctx.onUpdateAtomElement && (releaseAtom.element !== placementElement || labeled)) {
         ctx.onUpdateAtomElement(releaseAtom.id, placementElement);
         ctx.setDrawingBond(null);
         return true;
@@ -310,6 +314,12 @@ export const bondToolMouseUp = (ctx: InteractionContext): boolean => {
     const clickAtom = ctx.drawingBond.startAtomId
       ? molecule.atoms.find(a => a.id === ctx.drawingBond!.startAtomId) ?? null
       : pickAtomCenterAt(molecule, worldPos, ATOM_HIT_RADIUS);
+
+    if (clickAtom && placementElement === 'H') {
+      if (clickAtom.element !== 'H') ctx.onUpdateAtomElement?.(clickAtom.id, 'H');
+      ctx.setDrawingBond(null);
+      return true;
+    }
 
     if (clickAtom) {
       const angle = bestSproutAngle(clickAtom, molecule, ctx.bondAngleSnapRad);

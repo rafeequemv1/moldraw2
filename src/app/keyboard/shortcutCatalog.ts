@@ -1,7 +1,14 @@
 /**
  * Single source of truth for shortcut *documentation* strings (tooltips, modal).
- * Actual key handling lives in `useKeyboardShortcuts.ts` — keep behavior and labels aligned.
+ * Actual key handling lives in `useKeyboardShortcuts.ts`.
+ * Atom-palette keys are read from `DEFAULT_SHORTCUT_BINDINGS` so tooltips and
+ * the shortcuts modal cannot drift from the handler.
  */
+import {
+  DEFAULT_SHORTCUT_BINDINGS,
+  formatChordKeys,
+  type ShortcutActionId,
+} from './shortcutBindings';
 
 export interface ShortcutRow {
   label: string;
@@ -13,6 +20,38 @@ export interface ShortcutGroup {
   title: string;
   rows: ShortcutRow[];
 }
+
+/** Quick-palette atoms. Order matches the shortcuts modal. Keys come from bindings. */
+const ATOM_PLACEMENT: { symbol: string; action: ShortcutActionId; label: string }[] = [
+  { symbol: 'C', action: 'elementC', label: 'Carbon' },
+  { symbol: 'N', action: 'elementN', label: 'Nitrogen' },
+  { symbol: 'O', action: 'elementO', label: 'Oxygen' },
+  { symbol: 'S', action: 'elementS', label: 'Sulfur' },
+  { symbol: 'P', action: 'elementP', label: 'Phosphorus' },
+  { symbol: 'F', action: 'elementF', label: 'Fluorine' },
+  { symbol: 'H', action: 'elementH', label: 'Hydrogen' },
+  { symbol: 'Cl', action: 'elementCl', label: 'Chlorine' },
+  { symbol: 'Br', action: 'elementBr', label: 'Bromine' },
+  { symbol: 'I', action: 'elementI', label: 'Iodine' },
+];
+
+function atomPlacementChordLabel(action: ShortcutActionId): string[] | undefined {
+  const chord = DEFAULT_SHORTCUT_BINDINGS[action]?.[0];
+  if (!chord) return undefined;
+  return formatChordKeys(chord);
+}
+
+const ATOM_PLACEMENT_ROWS: ShortcutRow[] = ATOM_PLACEMENT.map(({ label, action }) => {
+  const keys = atomPlacementChordLabel(action);
+  return { label, keys: keys ? [keys] : [] };
+});
+
+const ATOM_SHORTCUT_LABEL: Record<string, string> = Object.fromEntries(
+  ATOM_PLACEMENT.flatMap(({ symbol, action }) => {
+    const keys = atomPlacementChordLabel(action);
+    return keys ? [[symbol, keys.join('+')]] : [];
+  }),
+);
 
 /** Groups rendered in the keyboard shortcuts modal (order preserved). */
 export const SHORTCUT_MODAL_GROUPS: ShortcutGroup[] = [
@@ -87,18 +126,7 @@ export const SHORTCUT_MODAL_GROUPS: ShortcutGroup[] = [
   },
   {
     title: 'Atom labels (placement element when no atom selected)',
-    rows: [
-      { label: 'Carbon', keys: [['C']] },
-      { label: 'Nitrogen', keys: [['N']] },
-      { label: 'Oxygen', keys: [['O']] },
-      { label: 'Sulfur', keys: [['S']] },
-      { label: 'Phosphorus', keys: [['P']] },
-      { label: 'Fluorine', keys: [['F']] },
-      { label: 'Hydrogen', keys: [['H']] },
-      { label: 'Chlorine', keys: [['Shift', 'C']] },
-      { label: 'Bromine', keys: [['Shift', 'B']] },
-      { label: 'Iodine', keys: [['Shift', 'I']] },
-    ],
+    rows: ATOM_PLACEMENT_ROWS,
   },
   {
     title: 'Type-to-rename (one atom selected)',
@@ -169,20 +197,7 @@ export function tooltipShortcutSuffix(toolId: string): string {
   return k ? ` Keyboard: ${k}` : '';
 }
 
-/** Keyboard hint for placement palette symbols (matches `useKeyboardShortcuts`). */
-const PLACEMENT_KEY_BY_SYMBOL: Record<string, string> = {
-  C: 'C',
-  N: 'N',
-  O: 'O',
-  S: 'S',
-  P: 'P',
-  F: 'F',
-  H: 'H',
-  Cl: 'Shift+C',
-  Br: 'Shift+B',
-  I: 'Shift+I',
-};
-
+/** Keyboard hint for placement palette symbols (matches `useKeyboardShortcuts` and the modal). */
 export function placementPaletteShortcutLabel(symbol: string): string | undefined {
-  return PLACEMENT_KEY_BY_SYMBOL[symbol];
+  return ATOM_SHORTCUT_LABEL[symbol];
 }

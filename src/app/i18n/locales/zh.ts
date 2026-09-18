@@ -459,6 +459,7 @@ export const zh: LocaleMessages = {
     menuChair: '椅式',
     menuBoat: '船式',
     menuLonePair: '孤对电子',
+    menuLonePairAll: '给全部原子加一对',
     menuFreeRadical: '自由基',
     menuOrbitalP: 'p 轨道',
     menuOrbitalS: 's 轨道',

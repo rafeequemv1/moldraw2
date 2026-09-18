@@ -20,6 +20,7 @@ import { buildAliasDisplayRuns } from '@moldraw/domain';
 import { condensedGroupLabelForAtom, isIsolatedWaterOxygen } from '@moldraw/domain';
 import {
   carbonLabelHGoesLeft,
+  groupLabelTailGoesLeft,
   hGoesLeft,
   getHydrogenStubDirections,
   implicitHydrogenBondEnd,
@@ -178,9 +179,17 @@ export const drawAtomLabels = (ctx: CanvasRenderingContext2D, R: RenderContext):
     const isotopeStr = getIsotopeString(atom.element, atom.isotope);
 
     /** Draw multi-glyph label with the bonding atom glyph centered on `atom` (ChemDraw-style). */
-    const drawHeadAnchoredRuns = (rawLabel: string) => {
+    const drawHeadAnchoredRuns = (rawLabel: string, aliasLabel = false) => {
+      const counter =
+        aliasLabel &&
+        R.selectedAtomIds.includes(atom.id) &&
+        Math.abs(R.labelCounterRad) > 1e-5
+          ? R.labelCounterRad
+          : 0;
       const metrics = measureHeadAnchoredLabelSize(ctx, { ...P, ...fonts }, rawLabel, charge, {
-        tailGoesLeft: hGoesLeft(atom, R.renderedMolecule),
+        tailGoesLeft: aliasLabel
+          ? groupLabelTailGoesLeft(atom, R.renderedMolecule, counter)
+          : hGoesLeft(atom, R.renderedMolecule),
         attachmentElement: atom.element,
       });
       if (!metrics.text) return;
@@ -209,7 +218,7 @@ export const drawAtomLabels = (ctx: CanvasRenderingContext2D, R: RenderContext):
     if (atom.alias?.trim()) {
       if (atom.id !== R.omitAtomAliasBodyId) {
         R.applyLabelUpright(atom.id, () => {
-          drawHeadAnchoredRuns(atom.alias!.trim());
+          drawHeadAnchoredRuns(atom.alias!.trim(), true);
         });
       }
       ctx.restore();
@@ -387,7 +396,11 @@ export function measureDeltaLabelExtents(
   const bondSum = R.valencyMap.get(atom.id) || 0;
 
   if (atom.alias?.trim()) {
-    const m = measureAliasLabelSize(ctx, P, atom, mol);
+    const counter =
+      R.selectedAtomIds.includes(atom.id) && Math.abs(R.labelCounterRad) > 1e-5
+        ? R.labelCounterRad
+        : 0;
+    const m = measureAliasLabelSize(ctx, P, atom, mol, counter);
     return { left: m.left, right: m.right };
   }
   if (R.condensedGroupLabels) {

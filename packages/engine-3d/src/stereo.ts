@@ -134,15 +134,16 @@ const perceiveTetrahedral = (
     for (const bid of node.bonds) {
       const b = g.bondById.get(bid);
       if (!b || !b.stereo) continue;
-      if (b.fromAtomId !== center.id) continue; // narrow end must be the center
-      const other = b.toAtomId;
-      if (b.stereo === 'wedge') {
-        zOf.set(other, 1);
-        hasStereoBond = true;
-      } else if (b.stereo === 'dash') {
-        zOf.set(other, -1);
-        hasStereoBond = true;
-      }
+      if (b.fromAtomId !== center.id && b.toAtomId !== center.id) continue;
+      const narrowIsCenter = b.fromAtomId === center.id;
+      const other = narrowIsCenter ? b.toAtomId : b.fromAtomId;
+      if (!neighbors.includes(other)) continue;
+      const sign = b.stereo === 'wedge' ? 1 : b.stereo === 'dash' ? -1 : 0;
+      if (!sign) continue;
+      // Flipping the bond swaps which end is narrow. The substituent's z
+      // must invert with that flip, or the 3D center comes out backwards.
+      zOf.set(other, narrowIsCenter ? sign : -sign);
+      hasStereoBond = true;
     }
     if (!hasStereoBond) continue;
 

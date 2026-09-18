@@ -5,7 +5,7 @@
 import type { ResolvedCanvasPreferences } from '@moldraw/core';
 import type { Atom, Molecule } from '@moldraw/domain';
 import { buildAliasDisplayRuns, orientFormulaLabel } from '@moldraw/domain';
-import { hGoesLeft } from './hydrogenLayout';
+import { groupLabelTailGoesLeft } from './hydrogenLayout';
 
 /** Extra clearance past the measured label edge before the bond tip. */
 export const ALIAS_LABEL_BOND_PAD_PX = 4;
@@ -180,11 +180,12 @@ export function measureAliasLabelSize(
   P: ResolvedCanvasPreferences,
   atom: Atom,
   mol?: Molecule,
+  counterRad = 0,
 ): HeadAnchoredLabelMetrics {
   const raw = atom.alias?.trim();
   if (!raw) return emptyMetrics();
   return measureHeadAnchoredLabelSize(ctx, P, raw, atom.charge ?? 0, {
-    tailGoesLeft: mol ? hGoesLeft(atom, mol) : false,
+    tailGoesLeft: mol ? groupLabelTailGoesLeft(atom, mol, counterRad) : false,
     attachmentElement: atom.element,
   });
 }
@@ -244,7 +245,7 @@ export function aliasLabelBondGapTowardPartnerPx(
   labelCounterRad: number,
   mol?: Molecule,
 ): number {
-  const { w, h, left, right } = measureAliasLabelSize(ctx, P, atom, mol);
+  const { w, h, left, right } = measureAliasLabelSize(ctx, P, atom, mol, labelCounterRad);
   if (w < 2) return 0;
   return labelBoxBondGapTowardPartnerPx(left, right, h, atom, partner, labelCounterRad);
 }

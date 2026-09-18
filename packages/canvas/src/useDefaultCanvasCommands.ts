@@ -256,9 +256,8 @@ export function useDefaultCanvasCommands({
 
   const onUpdateAtomElement = useCallback(
     (atomId: string, element: string) => {
-      // Never rewrite a heavy atom into bare H via palette relabel — that
-      // destroys structures (Warwick: propanone “falls to bits”).
-      if (element === 'H') return;
+      // Palette H replaces the clicked atom. Growing a bonded H is the separate
+      // "add explicit H" tool — the bond tool used to sprout a carbon instead.
       applyCommand(CMD.UpdateAtomElement, { atomId, element });
     },
     [applyCommand],

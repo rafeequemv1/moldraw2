@@ -87,6 +87,32 @@ export const hGoesLeft = (atom: Atom, mol: Molecule): boolean => {
 };
 
 /**
+ * Which way a functional-group label's tail should run, in the frame the
+ * label is painted (selection counter-rotation included).
+ *
+ * A neighbor to the right means the bond meets the right end of an unflipped
+ * label, so the tail goes left and the bonding atom stays next to that bond
+ * (COOH → HOOC, NH2 → H2N). Explicit hydrogens do not count. Mid-chain
+ * carbons (two heavy neighbors) still flip — they are not interior CH₂ labels.
+ */
+export const groupLabelTailGoesLeft = (
+  atom: Atom,
+  mol: Molecule,
+  counterRad = 0,
+): boolean => {
+  const cos = Math.cos(counterRad);
+  const sin = Math.sin(counterRad);
+  for (const n of neighborsOf(atom, mol)) {
+    if (n.element === 'H') continue;
+    const dx = n.x - atom.x;
+    const dy = n.y - atom.y;
+    const ux = dx * cos + dy * sin;
+    if (ux > 0.5) return true;
+  }
+  return false;
+};
+
+/**
  * Carbon formula labels: interior chain atoms stay -CHₙ- (H on the right).
  * Terminals still flip to HₙC- when the chain continues to the right.
  */
