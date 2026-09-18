@@ -1403,7 +1403,9 @@ export const drawReactionArrowCanvas = (
 
 /** Draw-time geometry so handle hit-tests match the visible dots. */
 export const arrowsForHitTest = (mol: Molecule): ReactionArrow[] =>
-  (mol.reactionArrows ?? []).map(a => resolveReactionArrowGeometry(mol, a));
+  (mol.reactionArrows ?? []).map(a =>
+    (a.kind ?? 'straight') === 'electron_flow' ? a : resolveReactionArrowGeometry(mol, a),
+  );
 
 /**
  * Edit-handle radius in world units.

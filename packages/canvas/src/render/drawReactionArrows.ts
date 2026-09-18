@@ -5,13 +5,9 @@ import type { ReactionArrow } from '@moldraw/domain';
 import { reactionArrowSupportsReagentLabels, resolveReagentFontSize } from '@moldraw/domain';
 import {
   formatReagentLineForCanvas,
-  getLonePairPlacements,
-  lonePairSlotCountForAtom,
   moleculeCentroid,
   quadraticControlAwayFromCentroid,
   resolveReactionArrowGeometry,
-  LONE_PAIR_DOT_R_PX,
-  LONE_PAIR_DOT_SEP_PX,
 } from '@moldraw/core';
 import {
   arrowHandleRadiusWorld,
@@ -161,9 +157,12 @@ export const drawReactionArrows = (ctx: CanvasRenderingContext2D, R: RenderConte
     const previewed = arrowWithDragPreview(arr, R);
     const resizing =
       R.dragAction?.type === 'resize_reaction_arrow' && R.dragAction.arrowId === arr.id;
-    // While dragging a handle, keep the live preview — do not re-resolve from
-    // chemistry anchors (that would pin the dots and ignore the pointer).
-    const drawn = resizing ? previewed : resolveReactionArrowGeometry(mol, previewed);
+    // Mechanism arrows keep the coordinates the user set. Other anchored arrows
+    // still follow their chemistry targets, except while a handle is dragging.
+    const drawn =
+      resizing || (previewed.kind ?? 'straight') === 'electron_flow'
+        ? previewed
+        : resolveReactionArrowGeometry(mol, previewed);
     const isSelected =
       (R.selectedReactionArrowIds?.includes(arr.id) ?? false) ||
       R.selectedReactionArrowId === arr.id;
@@ -184,48 +183,10 @@ export const drawReactionArrows = (ctx: CanvasRenderingContext2D, R: RenderConte
  * In-progress drag ghost — must paint on the overlay layer so structure-cache
  * reuse during drag still shows a live preview.
  */
-const drawImplicitLonePairLoci = (ctx: CanvasRenderingContext2D, R: RenderContext): void => {
-  const ink = R.structureTheme.ink;
-  const mol = R.renderedMolecule;
-  ctx.save();
-  ctx.globalAlpha = 0.38;
-  ctx.fillStyle = ink;
-  for (const atom of mol.atoms) {
-    const drawn = atom.lonePairs ?? 0;
-    const slots = lonePairSlotCountForAtom(mol, atom);
-    if (slots <= drawn) continue;
-    const placements = getLonePairPlacements(atom, mol, slots, {
-      preferSide: atom.lonePairSide ?? 'above',
-    });
-    const sep = LONE_PAIR_DOT_SEP_PX;
-    const r = LONE_PAIR_DOT_R_PX * 0.92;
-    for (let i = drawn; i < placements.length; i++) {
-      const p = placements[i];
-      if (!p) continue;
-      const cx = atom.x + p.dir.x * p.dist;
-      const cy = atom.y + p.dir.y * p.dist;
-      const nx = -p.dir.y;
-      const ny = p.dir.x;
-      ctx.beginPath();
-      ctx.arc(cx + nx * sep, cy + ny * sep, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(cx - nx * sep, cy - ny * sep, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-  ctx.restore();
-};
-
 export const drawReactionArrowGhost = (
   ctx: CanvasRenderingContext2D,
   R: RenderContext,
 ): void => {
-  const showLoci =
-    R.activeTool === 'reaction_arrow' &&
-    (R.reactionArrowKind === 'electron_flow' || R.drawingReactionArrow?.kind === 'electron_flow');
-  if (showLoci) drawImplicitLonePairLoci(ctx, R);
-
   if (!R.drawingReactionArrow) return;
   const d = R.drawingReactionArrow;
   const vz = R.viewport.zoom;
@@ -276,9 +237,6 @@ export const drawReactionArrowGhost = (
       tailStyle: d.tailStyle ?? 'none',
       headScale: d.headScale ?? 0.72,
     };
-    if (d.fromAnchor || d.toAnchor) {
-      ghost = resolveReactionArrowGeometry(R.renderedMolecule, ghost);
-    }
   }
   ctx.save();
   ctx.globalAlpha = 0.55;
