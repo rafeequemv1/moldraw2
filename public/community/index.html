@@ -1085,7 +1085,8 @@
       color: #64748b;
       font-size: 13px;
     }
-    .card-title .status-select {
+    .card-title .status-select,
+    .comment-tools .status-select {
       margin-left: 0;
     }
     .card-body {
@@ -1349,11 +1350,124 @@
       color: #64748b;
       font: inherit;
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 400;
       padding: 0;
       cursor: pointer;
     }
     .comment-tool:hover {
+      color: #2C7A7B;
+    }
+    .comment-tool[data-reply-comment],
+    .comment-sort,
+    .comments-sort,
+    [data-comment-sort] {
+      font-weight: 400;
+    }
+    .pill[data-focus-reply] {
+      font-weight: 400;
+    }
+    .comment-like-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .comment-like {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .comment-like[aria-pressed="true"] {
+      color: #c53030;
+    }
+    .comment-like-heart {
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 400;
+    }
+    .comment-like-count,
+    .comment-like-avatars {
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 400;
+      padding: 0;
+      cursor: pointer;
+    }
+    .comment-like-count:hover,
+    .comment-like-avatars:hover,
+    .comment-like-count:hover + .comment-like-avatars {
+      color: #2C7A7B;
+    }
+    .comment-like-avatars {
+      display: inline-flex;
+      align-items: center;
+    }
+    .comment-like-avatars .avatar {
+      width: 16px;
+      height: 16px;
+      font-size: 8px;
+      margin-left: -4px;
+      border: 1px solid #fff;
+    }
+    .comment-like-avatars .avatar:first-child {
+      margin-left: 0;
+    }
+    .comment-likers {
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 6px);
+      z-index: 40;
+      min-width: 180px;
+      max-width: 240px;
+      max-height: 220px;
+      overflow: auto;
+      margin: 0;
+      padding: 8px;
+      list-style: none;
+      background: #fff;
+      border: 1px solid #c9d3dc;
+      border-radius: 10px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+    }
+    .comment-likers[hidden] { display: none; }
+    .comment-liker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 2px;
+      font-size: 12px;
+      font-weight: 400;
+      color: #0f172a;
+    }
+    .comment-liker .avatar {
+      width: 22px;
+      height: 22px;
+      font-size: 10px;
+    }
+    .comments-heading {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin: 0 0 4px;
+      font-size: 12px;
+      font-weight: 400;
+      color: #64748b;
+    }
+    .comments-heading .comment-sort {
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 400;
+      padding: 0;
+      cursor: pointer;
+    }
+    .comments-heading .comment-sort:hover {
       color: #2C7A7B;
     }
     .comment-replies {
@@ -1418,15 +1532,20 @@
       color: #b91c1c;
     }
     .status-select {
-      min-height: 28px;
-      border: 1px solid #bfdbfe;
+      min-height: 22px;
+      max-width: 11.5rem;
+      border: 1px solid #cbd5e1;
       border-radius: 999px;
-      background: #eff6ff;
-      color: #1d4ed8;
+      background: #f8fafc;
+      color: #334155;
       font: inherit;
-      font-size: 11px;
-      font-weight: 900;
-      padding: 0 8px;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 0 6px;
+    }
+    .comment-tools .status-select {
+      align-self: center;
     }
     .status {
       margin: 12px 0;
@@ -1854,7 +1973,8 @@
         width: 100%;
       }
       .status-select {
-        width: 100%;
+        width: auto;
+        max-width: 11.5rem;
       }
       .modal-backdrop {
         align-items: flex-end;
@@ -2154,6 +2274,8 @@
     const featureCommentCache = new Map();
     const featureCommentTotalCache = new Map();
     let featureCommentsAvailable = true;
+    let commentLikesAvailable = true;
+    let commentThreadSort = 'oldest';
     const statusLabels = {
       new: 'New',
       under_review: 'Under review',
@@ -2180,20 +2302,51 @@
     function renderPostRequestStatus(status) {
       return status ? renderFeatureStatus(status) : '';
     }
-    function renderFeatureStatusControl(request) {
-      if (!isAdmin()) return '';
+    function renderFeatureStatusControl(request, { compact = false } = {}) {
+      if (!isAdmin()) return compact ? '' : renderFeatureStatus(request?.status);
       const current = request?.status || 'new';
-      return `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="Change request status">
+      const aria = compact ? 'Change request status from this reply' : 'Change request status';
+      return `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="${aria}">
         ${Object.keys(featureStatusLabels).map((key) => `<option value="${key}"${key === current ? ' selected' : ''}>${featureStatusLabels[key]}</option>`).join('')}
       </select>`;
     }
-    function renderPostStatusControl(post) {
-      if (!isAdmin()) return '';
+    function renderPostStatusControl(post, { compact = false } = {}) {
+      if (!isAdmin()) return compact ? '' : renderPostRequestStatus(post?.request_status);
       const current = post?.request_status || '';
-      return `<select class="status-select" data-post-request-status="${escapeHtml(post.id)}" aria-label="Change discussion request status">
-        <option value=""${current ? '' : ' selected'}>No request status</option>
+      const aria = compact ? 'Change discussion status from this reply' : 'Change discussion request status';
+      return `<select class="status-select" data-post-request-status="${escapeHtml(post.id)}" aria-label="${aria}">
+        <option value=""${current ? '' : ' selected'}>No status</option>
         ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === current ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
       </select>`;
+    }
+    function renderCommentParentStatusControl(parentId, options = {}) {
+      if (!isAdmin()) return '';
+      const isFeature = options.statusKind === 'feature' || options.likeSource === 'feature_request_comments';
+      if (isFeature) {
+        const request = lastFeatureItems.find((item) => item.id === parentId) || { id: parentId };
+        return renderFeatureStatusControl(request, { compact: true });
+      }
+      const post = lastDiscussionItems.find((item) => item.id === parentId) || { id: parentId };
+      return renderPostStatusControl(post, { compact: true });
+    }
+    function bindParentStatusControls(root) {
+      if (!root) return;
+      root.querySelectorAll('[data-post-request-status]').forEach((select) => {
+        if (select.dataset.statusBound === '1') return;
+        select.dataset.statusBound = '1';
+        select.addEventListener('change', (event) => {
+          event.stopPropagation();
+          updateDiscussionRequestStatus(select.getAttribute('data-post-request-status'), select.value);
+        });
+      });
+      root.querySelectorAll('[data-feature-status]').forEach((select) => {
+        if (select.dataset.statusBound === '1') return;
+        select.dataset.statusBound = '1';
+        select.addEventListener('change', (event) => {
+          event.stopPropagation();
+          updateFeatureStatus(select.getAttribute('data-feature-status'), select.value);
+        });
+      });
     }
     const COMMUNITY_BATCH_SIZE = 10;
     const FEED_COMMENT_PREVIEW = 3;
@@ -2472,7 +2625,8 @@
           expandedReplyThreads: expandedFeatureReplyThreads,
           reportType: 'feature_request_comment',
           reportLabel: 'feature request reply',
-          permalinkHref: featureCommentPermalink
+          permalinkHref: featureCommentPermalink,
+          likeSource: 'feature_request_comments'
         } : {})
       };
       const commentsHtml = renderCommentThread(item.id, comments, isFeature ? comments.length : (item.comment_count || comments.length), threadOptions);
@@ -2494,7 +2648,7 @@
             </div>
             ${postOverflowMenuHtml(url)}
           </div>
-          <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}${isFeature ? renderFeatureStatus(item.status) : renderPostRequestStatus(item.request_status)}${isFeature ? renderFeatureStatusControl(item) : renderPostStatusControl(item)}</h1>
+          <h1 id="thread-modal-title" class="card-title">${escapeHtml(item.title)}${isFeature ? renderFeatureStatusControl(item) : renderPostStatusControl(item)}</h1>
           <p class="card-body">${isFeature ? escapeHtml(item.description) : renderCommentBody(item.body)}</p>
           ${renderImages(item.image_urls, isFeature ? 'Feature request attachment' : 'Community attachment')}
           <div class="comments visible" ${isFeature ? `data-feature-comments="${escapeHtml(item.id)}"` : `data-comments="${escapeHtml(item.id)}"`}>${commentsHtml}</div>
@@ -2520,18 +2674,6 @@
       document.getElementById(selectedId)?.classList.add('is-selected');
       if (isFeature) bindFeatureCommentThread(threadPanelBody, item.id);
       else bindCommentThread(threadPanelBody, item.id);
-      threadPanelBody.querySelectorAll('[data-post-request-status]').forEach((select) => {
-        select.addEventListener('change', (event) => {
-          event.stopPropagation();
-          updateDiscussionRequestStatus(select.getAttribute('data-post-request-status'), select.value);
-        });
-      });
-      threadPanelBody.querySelectorAll('[data-feature-status]').forEach((select) => {
-        select.addEventListener('change', (event) => {
-          event.stopPropagation();
-          updateFeatureStatus(select.getAttribute('data-feature-status'), select.value);
-        });
-      });
       threadPanelBody.querySelectorAll('a.comment-permalink, a.comment-time-link, a.more-thread').forEach((link) => {
         link.addEventListener('click', (event) => {
           if (isModifiedClick(event)) return;
@@ -2565,6 +2707,7 @@
         comments = data || [];
         commentCache.set(post.id, comments);
       }
+      await hydrateCommentLikes('community_comments', comments);
       await loadDoneFeatureIndex();
       renderThreadPanel('post', post, comments, highlightId);
     }
@@ -2591,6 +2734,7 @@
           featureCommentCache.set(request.id, comments);
         } else comments = [];
       }
+      await hydrateCommentLikes('feature_request_comments', comments || []);
       await loadDoneFeatureIndex();
       renderThreadPanel('feature', request, comments || [], highlightId);
     }
@@ -3176,6 +3320,9 @@
         byParent.set(id, [...newestFirst].reverse());
         totals.set(id, Number(knownTotals?.get(id)) || newestFirst.length);
       }));
+      const allComments = [];
+      byParent.forEach((list) => allComments.push(...list));
+      await hydrateCommentLikes(table, allComments);
       return { byParent, totals };
     }
 
@@ -3892,6 +4039,164 @@
       };
     }
 
+    function applyLikesToComments(comments, likeRows) {
+      const byComment = new Map();
+      (likeRows || []).forEach((row) => {
+        const list = byComment.get(row.comment_id) || [];
+        list.push(row);
+        byComment.set(row.comment_id, list);
+      });
+      (comments || []).forEach((comment) => {
+        const likers = byComment.get(comment.id) || [];
+        comment.likers = likers;
+        comment.like_count = likers.length;
+        comment.liked_by_me = likers.some((row) => row.user_id && session?.user?.id === row.user_id);
+      });
+      return comments;
+    }
+
+    async function hydrateCommentLikes(source, comments) {
+      const ids = [...new Set((comments || [])
+        .map((comment) => comment.id)
+        .filter((id) => id && !String(id).startsWith('pending-')))];
+      if (!commentLikesAvailable || !ids.length) return comments;
+      const { data, error } = await client
+        .from('community_comment_likes')
+        .select('comment_id,user_id,liker_name,liker_avatar_key,created_at')
+        .eq('source', source)
+        .in('comment_id', ids);
+      if (error) {
+        commentLikesAvailable = false;
+        return comments;
+      }
+      return applyLikesToComments(comments, data || []);
+    }
+
+    function parentIdForCachedComment(source, comment) {
+      if (source === 'feature_request_comments') {
+        return comment.feature_request_id
+          || [...featureCommentCache.entries()].find(([, rows]) => (rows || []).some((row) => row.id === comment.id))?.[0]
+          || null;
+      }
+      return comment.post_id
+        || [...commentCache.entries()].find(([, rows]) => (rows || []).some((row) => row.id === comment.id))?.[0]
+        || null;
+    }
+
+    function cachedCommentById(source, commentId) {
+      const cache = source === 'feature_request_comments' ? featureCommentCache : commentCache;
+      for (const comments of cache.values()) {
+        const found = (comments || []).find((comment) => comment.id === commentId);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function syncCommentViewsForSource(source, parentId) {
+      if (!parentId) return;
+      if (source === 'feature_request_comments') syncFeatureCommentViews(parentId);
+      else syncDiscussionCommentViews(parentId);
+    }
+
+    async function toggleCommentLike(source, commentId, currentlyLiked) {
+      if (!requireAuth()) return;
+      const comment = cachedCommentById(source, commentId);
+      const parentId = comment ? parentIdForCachedComment(source, comment) : null;
+      const previousLikers = comment ? [...(comment.likers || [])] : [];
+      if (comment) {
+        const nextLikers = currentlyLiked
+          ? previousLikers.filter((row) => row.user_id !== session.user.id)
+          : [...previousLikers.filter((row) => row.user_id !== session.user.id), {
+            comment_id: commentId,
+            user_id: session.user.id,
+            liker_name: profile?.name || displayNameFromEmail(session.user.email) || 'You',
+            liker_avatar_key: safeAvatarKey(profile?.avatar_key)
+          }];
+        comment.likers = nextLikers;
+        comment.like_count = nextLikers.length;
+        comment.liked_by_me = !currentlyLiked;
+        syncCommentViewsForSource(source, parentId);
+      }
+      const { error } = currentlyLiked
+        ? await client.from('community_comment_likes').delete().eq('source', source).eq('comment_id', commentId)
+        : await client.from('community_comment_likes').insert({ source, comment_id: commentId });
+      if (error) {
+        if (comment) {
+          comment.likers = previousLikers;
+          comment.like_count = previousLikers.length;
+          comment.liked_by_me = currentlyLiked;
+          syncCommentViewsForSource(source, parentId);
+        }
+        statusEl.textContent = error.message || 'Could not update like.';
+        if (/community_comment_likes|schema cache|does not exist/i.test(error.message || '')) {
+          commentLikesAvailable = false;
+        }
+      }
+    }
+
+    function closeCommentLikerPanels(root = document) {
+      root.querySelectorAll?.('[data-likers-panel]').forEach((panel) => panel.setAttribute('hidden', ''));
+      root.querySelectorAll?.('[data-open-likers]').forEach((btn) => btn.setAttribute('aria-expanded', 'false'));
+    }
+
+    function bindCommentSortControl(root, source, parentId) {
+      root.querySelectorAll?.('[data-comment-sort]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          commentThreadSort = btn.getAttribute('data-comment-sort') || 'oldest';
+          if (source === 'feature_request_comments') refreshFeatureCommentList(root, parentId);
+          else refreshCommentList(root, parentId);
+        });
+      });
+    }
+
+    function bindCommentLikeControls(list, source) {
+      if (!list) return;
+      list.querySelectorAll('[data-toggle-like]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          toggleCommentLike(
+            btn.getAttribute('data-like-source') || source,
+            btn.getAttribute('data-toggle-like'),
+            btn.getAttribute('aria-pressed') === 'true'
+          );
+        });
+      });
+      list.querySelectorAll('[data-open-likers]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const id = btn.getAttribute('data-open-likers');
+          const panel = list.querySelector(`[data-likers-panel="${id}"]`);
+          if (!panel) return;
+          const willOpen = panel.hasAttribute('hidden');
+          closeCommentLikerPanels(list);
+          if (willOpen) {
+            panel.removeAttribute('hidden');
+            btn.setAttribute('aria-expanded', 'true');
+          }
+        });
+      });
+    }
+
+    function renderCommentLikeControls(comment, options = {}) {
+      if (!commentLikesAvailable || comment.pending) return '';
+      const source = options.likeSource || 'community_comments';
+      const liked = Boolean(comment.liked_by_me);
+      const likers = comment.likers || [];
+      const count = Number(comment.like_count ?? likers.length) || 0;
+      const whoLiked = count > 0
+        ? `<button class="comment-like-count" type="button" data-open-likers="${escapeHtml(comment.id)}" aria-expanded="false" aria-label="See who liked this comment">${count}</button>
+           <button class="comment-like-avatars" type="button" data-open-likers="${escapeHtml(comment.id)}" aria-label="See who liked this comment">${likers.slice(0, 3).map((liker) => `<span class="avatar ${escapeHtml(safeAvatarKey(liker.liker_avatar_key))}">${escapeHtml(initials(liker.liker_name))}</span>`).join('')}</button>
+           <ul class="comment-likers" hidden data-likers-panel="${escapeHtml(comment.id)}">${likers.map((liker) => `<li class="comment-liker"><span class="avatar ${escapeHtml(safeAvatarKey(liker.liker_avatar_key))}">${escapeHtml(initials(liker.liker_name))}</span><span>${escapeHtml(liker.liker_name || 'Community member')}</span></li>`).join('')}</ul>`
+        : '';
+      return `<span class="comment-like-wrap">
+        <button class="comment-tool comment-like" type="button" data-toggle-like="${escapeHtml(comment.id)}" data-like-source="${escapeHtml(source)}" aria-pressed="${liked ? 'true' : 'false'}" aria-label="${liked ? 'Unlike comment' : 'Like comment'}">
+          <span class="comment-like-heart" aria-hidden="true">${liked ? '♥' : '♡'}</span>
+        </button>
+        ${whoLiked}
+      </span>`;
+    }
+
     function restoreReplyDraft(selector, body) {
       const input = document.querySelector(selector);
       if (input && !input.value.trim()) input.value = body;
@@ -4054,9 +4359,11 @@
           <div class="comment-tools">
             ${pending
               ? '<span class="author-meta">Sending…</span>'
-              : `<button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(comment.id)}">Reply</button>
+              : `${renderCommentLikeControls(comment, options)}
+            <button class="comment-tool" type="button" data-reply-comment="${escapeHtml(comment.id)}" data-reply-parent="${escapeHtml(comment.id)}">Reply</button>
             <button class="comment-tool" type="button" data-report-type="${escapeHtml(reportType)}" data-report-id="${escapeHtml(comment.id)}" data-report-label="${escapeHtml(reportLabel)}">Report</button>
-            ${ownerTools}`}
+            ${ownerTools}
+            ${renderCommentParentStatusControl(postId, options)}`}
           </div>
           <div class="comment-inline-slot" data-comment-slot="${escapeHtml(comment.id)}"></div>
           ${replies || hiddenReplies ? `
@@ -4072,7 +4379,11 @@
     function renderCommentThread(postId, comments, totalCount, options = {}) {
       const commentThreads = options.expandedCommentThreads || expandedCommentThreads;
       const expanded = Boolean(options.showAll) || commentThreads.has(postId);
-      const roots = buildCommentTree(comments);
+      const sortNewest = (options.commentSort || commentThreadSort) === 'newest';
+      let roots = buildCommentTree(comments);
+      if (sortNewest) {
+        roots = [...roots].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      }
       const visibleComments = expanded ? roots : roots.slice(0, FEED_COMMENT_PREVIEW);
       const rendered = visibleComments.map((comment) => renderSingleComment(comment, postId, false, comment.id, options)).join('');
       const hiddenCount = Math.max((Number(totalCount) || comments.length) - visibleComments.length, 0);
@@ -4081,8 +4392,12 @@
         ? ''
         : '<p class="author-meta">No replies yet. Be the first to reply.</p>';
       const composer = options.includeComposer ? renderCardReplyComposer() : '';
+      const sortHtml = options.showAll && (rendered || options.allowEmptyMessage)
+        ? `<div class="comments-heading"><button type="button" class="comment-sort" data-comment-sort="${sortNewest ? 'oldest' : 'newest'}">${sortNewest ? 'Newest first' : 'Oldest first'}</button></div>`
+        : '';
 
       return `
+        ${sortHtml}
         ${rendered || empty}
         ${!expanded && hiddenCount > 0 ? `<a class="more-thread" data-open-thread href="${escapeHtml(threadUrl)}">View more comments</a>` : ''}
         ${composer}
@@ -4099,6 +4414,7 @@
         includeComposer: false,
         allowEmptyMessage: inModal,
         useCommentDomId: inModal,
+        showAll: inModal,
         threadUrl: discussionUrl(post || postId)
       });
       bindCommentThread(root, postId);
@@ -4113,11 +4429,13 @@
         includeComposer: false,
         allowEmptyMessage: inModal,
         useCommentDomId: inModal,
+        showAll: inModal,
         expandedCommentThreads: expandedFeatureCommentThreads,
         expandedReplyThreads: expandedFeatureReplyThreads,
         reportType: 'feature_request_comment',
         reportLabel: 'feature request reply',
         permalinkHref: featureCommentPermalink,
+        likeSource: 'feature_request_comments',
         threadUrl: featureUrl(request || requestId)
       });
       bindFeatureCommentThread(root, requestId);
@@ -4185,6 +4503,9 @@
         expandedCommentThreads.add(postId);
         refreshCommentList(root, postId);
       });
+      bindCommentLikeControls(list, 'community_comments');
+      bindCommentSortControl(root, 'community_comments', postId);
+      bindParentStatusControls(root);
     }
 
     async function openComments(postId) {
@@ -4196,14 +4517,17 @@
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
         .limit(100);
-      commentCache.set(postId, data || []);
-      commentTotalCache.set(postId, (data || []).length);
+      const comments = data || [];
+      await hydrateCommentLikes('community_comments', comments);
+      commentCache.set(postId, comments);
+      commentTotalCache.set(postId, comments.length);
       wraps.forEach((wrap) => {
         const inModal = Boolean(wrap.closest('#thread-panel-body'));
-        wrap.innerHTML = renderCommentThread(postId, data || [], (data || []).length, {
+        wrap.innerHTML = renderCommentThread(postId, comments, comments.length, {
           includeComposer: false,
           allowEmptyMessage: inModal,
           useCommentDomId: inModal,
+          showAll: inModal,
           threadUrl: discussionUrl(lastDiscussionItems.find((post) => post.id === postId) || postId)
         });
         bindCommentThread(commentBindRoot(wrap), postId);
@@ -4222,6 +4546,7 @@
         reportType: 'feature_request_comment',
         reportLabel: 'feature request reply',
         permalinkHref: featureCommentPermalink,
+        likeSource: 'feature_request_comments',
         threadUrl: featureUrl(requestId)
       });
     }
@@ -4374,6 +4699,9 @@
         expandedFeatureCommentThreads.add(requestId);
         refreshFeatureCommentList(root, requestId);
       });
+      bindCommentLikeControls(list, 'feature_request_comments');
+      bindCommentSortControl(root, 'feature_request_comments', requestId);
+      bindParentStatusControls(root);
     }
 
     async function openFeatureComments(requestId) {
@@ -4390,19 +4718,23 @@
         wraps.forEach((wrap) => { wrap.innerHTML = renderFeatureCommentThread(requestId, [], 0); });
         return;
       }
-      featureCommentCache.set(requestId, data || []);
-      featureCommentTotalCache.set(requestId, (data || []).length);
+      const comments = data || [];
+      await hydrateCommentLikes('feature_request_comments', comments);
+      featureCommentCache.set(requestId, comments);
+      featureCommentTotalCache.set(requestId, comments.length);
       wraps.forEach((wrap) => {
         const inModal = Boolean(wrap.closest('#thread-panel-body'));
-        wrap.innerHTML = renderCommentThread(requestId, data || [], (data || []).length, {
+        wrap.innerHTML = renderCommentThread(requestId, comments, comments.length, {
           includeComposer: false,
           allowEmptyMessage: inModal,
           useCommentDomId: inModal,
+          showAll: inModal,
           expandedCommentThreads: expandedFeatureCommentThreads,
           expandedReplyThreads: expandedFeatureReplyThreads,
           reportType: 'feature_request_comment',
           reportLabel: 'feature request reply',
           permalinkHref: featureCommentPermalink,
+          likeSource: 'feature_request_comments',
           threadUrl: featureUrl(lastFeatureItems.find((item) => item.id === requestId) || requestId)
         });
         bindFeatureCommentThread(commentBindRoot(wrap), requestId);
@@ -4437,7 +4769,7 @@
               </div>
               ${postOverflowMenuHtml(url)}
             </div>
-            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${renderPostRequestStatus(post.request_status)}${renderPostStatusControl(post)}</h2>
+            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${renderPostStatusControl(post)}</h2>
             <p class="card-body">${renderCommentBody(post.body)}</p>
             ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
@@ -4472,10 +4804,6 @@
         event.stopPropagation();
         const btn = event.currentTarget;
         openReportModal(btn.getAttribute('data-report-type'), btn.getAttribute('data-report-id'), btn.getAttribute('data-report-label'));
-      });
-      card.querySelector('[data-post-request-status]')?.addEventListener('change', (event) => {
-        event.stopPropagation();
-        updateDiscussionRequestStatus(event.currentTarget.getAttribute('data-post-request-status'), event.currentTarget.value);
       });
       bindCommentThread(card, post.id);
       card.querySelector('[data-focus-reply]')?.addEventListener('click', (event) => {
@@ -4513,8 +4841,6 @@
       const voted = myVotes.has(request.id);
       const comments = request.commentsPreview || [];
       const commentTotal = request.commentTotal ?? comments.length;
-      const currentStatus = request.status || 'new';
-      const statusControl = renderFeatureStatusControl(request);
       const url = featureUrl(request);
       if (!featureCommentCache.has(request.id) && comments.length) featureCommentCache.set(request.id, comments);
       const commentsHtml = renderCommentThread(request.id, comments, commentTotal, {
@@ -4526,6 +4852,7 @@
         reportType: 'feature_request_comment',
         reportLabel: 'feature request reply',
         permalinkHref: featureCommentPermalink,
+        likeSource: 'feature_request_comments',
         threadUrl: url
       });
       return `
@@ -4540,7 +4867,7 @@
               </div>
               ${postOverflowMenuHtml(url)}
             </div>
-            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(currentStatus)}${statusControl}</h2>
+            <h2 class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatusControl(request)}</h2>
             <p class="card-body">${escapeHtml(request.description)}</p>
             ${images.length ? `<div class="card-images">${images.map((imageUrl) => `<a href="${escapeHtml(imageUrl)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(imageUrl)}" loading="lazy" alt="Feature request attachment"></a>`).join('')}</div>` : ''}
             <div class="card-actions">
@@ -4560,10 +4887,6 @@
         event.stopPropagation();
         const btn = event.currentTarget;
         toggleFeatureVote(btn.getAttribute('data-vote-feature'), btn.getAttribute('data-voted') === '1');
-      });
-      card.querySelector('[data-feature-status]')?.addEventListener('change', (event) => {
-        event.stopPropagation();
-        updateFeatureStatus(event.currentTarget.getAttribute('data-feature-status'), event.currentTarget.value);
       });
       card.querySelector('[data-report-type="feature_request"]')?.addEventListener('click', (event) => {
         event.stopPropagation();
@@ -4839,15 +5162,18 @@
           requestId
         );
         const authorEmail = String(session?.user?.email || profile?.email || '').trim();
-        const { error } = await client.from('feature_requests').insert({
+        const { data, error } = await client.from('feature_requests').insert({
           title,
           description,
           image_urls: imageUrls,
           name: profile?.name || displayNameFromEmail(authorEmail) || 'Community member',
           ...(authorEmail ? { email: authorEmail } : {}),
           ...(session?.user?.id ? { user_id: session.user.id } : {})
-        });
+        }).select('id').single();
         if (error) throw error;
+        if (data?.id) {
+          await pingCommunityNotify({ table: 'feature_requests', type: 'INSERT', record: { id: data.id } });
+        }
         if (typeof window.trackPiqo === 'function') window.trackPiqo('feature_request_submit');
         titleInput.value = '';
         descriptionInput.value = '';
@@ -5057,6 +5383,9 @@
       }
       closePostMenus();
     }, true);
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('.comment-like-wrap')) closeCommentLikerPanels();
+    });
     document.addEventListener('click', (event) => {
       const crown = event.target.closest('[data-done-features]');
       if (!crown) return;

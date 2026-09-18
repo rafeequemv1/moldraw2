@@ -24,6 +24,30 @@ const MIN_BOX_H = 28;
 const LINE_HEIGHT_RATIO = 1.35;
 const ROTATE_HANDLE_OFFSET = 26;
 const HANDLE_HIT_R = 8;
+/** Screen-px slop around an unselected box so small labels stay clickable. */
+export const CANVAS_TEXT_IDLE_GRAB_PAD_PX = 6;
+/** Screen-px slop around a selected box — grab the frame without pixel-hunting. */
+export const CANVAS_TEXT_SELECTED_GRAB_PAD_PX = 14;
+
+/** World-space hit pad for a text box at the current camera zoom. */
+export const canvasTextHitPadWorld = (
+  zoom: number,
+  kind: 'idle' | 'selected' = 'idle',
+): number => {
+  const px = kind === 'selected' ? CANVAS_TEXT_SELECTED_GRAB_PAD_PX : CANVAS_TEXT_IDLE_GRAB_PAD_PX;
+  return px / Math.max(0.2, zoom);
+};
+
+/** Whether a world point lies in a (rotated) text box, optionally padded. */
+export const hitCanvasTextBox = (
+  box: CanvasTextBox,
+  wx: number,
+  wy: number,
+  pad = 0,
+): boolean => {
+  const { lx, ly } = worldToTextLocal(box, wx, wy);
+  return Math.abs(lx) <= box.width / 2 + pad && Math.abs(ly) <= box.height / 2 + pad;
+};
 
 export type CanvasTextBox = {
   width: number;
@@ -340,14 +364,53 @@ export const pickCanvasTextAt = (
   texts: CanvasText[],
   wx: number,
   wy: number,
+  pad = 0,
 ): CanvasText | null => {
   for (let i = texts.length - 1; i >= 0; i--) {
     const t = texts[i]!;
     const box = getCanvasTextBox(ctx, t);
-    const { lx, ly } = worldToTextLocal(box, wx, wy);
-    if (Math.abs(lx) <= box.width / 2 && Math.abs(ly) <= box.height / 2) return t;
+    if (hitCanvasTextBox(box, wx, wy, pad)) return t;
   }
   return null;
+};
+
+/**
+ * True when the pointer is over painted glyphs (not empty interior / frame).
+ * Used so a second click on the letters enters edit, while empty padding moves.
+ */
+export const pickCanvasTextContentAt = (
+  ctx: CanvasRenderingContext2D,
+  t: CanvasText,
+  wx: number,
+  wy: number,
+): boolean => {
+  const source = t.text ?? '';
+  if (!source.trim()) return false;
+  const box = getCanvasTextBox(ctx, t);
+  const { lx, ly } = worldToTextLocal(box, wx, wy);
+  const { lineHeight, lines } = measureCanvasTextBox(ctx, t);
+  const align = canvasTextAlign(t);
+  const innerLeft = -box.width / 2 + PAD_X;
+  const innerRight = box.width / 2 - PAD_X;
+  const count = Math.max(1, lines.length);
+  const glyphPad = Math.max(3, canvasTextEffectiveFontSize(t) * 0.15);
+  ctx.font = buildCanvasTextFont(t);
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li] ?? '';
+    if (!line) continue;
+    const tw = ctx.measureText(line).width;
+    if (tw < 1) continue;
+    const x0 = align === 'right' ? innerRight - tw : align === 'center' ? -tw / 2 : innerLeft;
+    const y0 = (li - (count - 1) / 2) * lineHeight;
+    if (
+      lx >= x0 - glyphPad &&
+      lx <= x0 + tw + glyphPad &&
+      Math.abs(ly - y0) <= lineHeight / 2 + glyphPad
+    ) {
+      return true;
+    }
+  }
+  return false;
 };
 
 /** Corner nearest the pointer when within handle radius; otherwise null. */
@@ -547,8 +610,8 @@ export const canvasTextCornerCursor = (
 
 /**
  * Cursor to show for the pointer at world (wx, wy) with the text / select
- * tool: rotate knob → grab, corner → resize arrows, inside a label → move,
- * otherwise null (caller falls back to the tool cursor).
+ * tool: rotate knob → grab, corner → resize arrows, inside a label → grab
+ * (I-beam only while editing the glyphs), otherwise null.
  */
 export const canvasTextCursorAt = (
   ctx: CanvasRenderingContext2D,
@@ -557,6 +620,7 @@ export const canvasTextCursorAt = (
   wx: number,
   wy: number,
   zoom: number,
+  opts?: { editing?: boolean },
 ): string | null => {
   if (!texts.length) return null;
   const selected = selectedId ? texts.find(t => t.id === selectedId) : undefined;
@@ -564,8 +628,14 @@ export const canvasTextCursorAt = (
     if (pickCanvasTextRotateHandle(ctx, selected, wx, wy, zoom)) return 'grab';
     const corner = pickCanvasTextResizeHandle(ctx, selected, wx, wy, zoom);
     if (corner) return canvasTextCornerCursor(corner, selected.rotationRad ?? 0);
+    const grabPad = canvasTextHitPadWorld(zoom, 'selected');
+    if (hitCanvasTextBox(getCanvasTextBox(ctx, selected), wx, wy, grabPad)) {
+      if (opts?.editing && pickCanvasTextContentAt(ctx, selected, wx, wy)) return 'text';
+      return 'grab';
+    }
   }
-  return pickCanvasTextAt(ctx, texts, wx, wy) ? 'move' : null;
+  const idlePad = canvasTextHitPadWorld(zoom, 'idle');
+  return pickCanvasTextAt(ctx, texts, wx, wy, idlePad) ? 'grab' : null;
 };
 
 export const canvasTextRotatePatch = (

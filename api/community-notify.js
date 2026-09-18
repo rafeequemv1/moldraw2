@@ -2,6 +2,13 @@ const crypto = require('node:crypto');
 
 const SITE = 'https://www.moldraw.com';
 const DEFAULT_FROM = 'MolDraw <rafeeque@moldraw.com>';
+const DEFAULT_ADMIN_EMAIL = 'rafeequemavoor@gmail.com';
+/** Logo / community accent — `public/logo-mark.svg`, `--accent:#2C7A7B`. */
+const BRAND_TEAL = '#2C7A7B';
+const MAIL_BG = '#f3f7f7';
+const MAIL_BORDER = '#d0e0e0';
+const MAIL_INK = '#16302b';
+const MAIL_MUTED = '#3d5f60';
 
 function fromAddress() {
   const configured = String(process.env.RESEND_FROM || '').trim();
@@ -13,6 +20,10 @@ function fromAddress() {
 
 const FROM = fromAddress();
 const REPLY_TO = process.env.RESEND_REPLY_TO || 'rafeequemavoor@gmail.com';
+
+function adminNotifyEmail() {
+  return String(process.env.COMMUNITY_ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+}
 
 const SUPABASE_URL =
   process.env.REACT_APP_SUPABASE_URL
@@ -259,33 +270,39 @@ async function sendResend({ to, subject, html, text, idempotencyKey, unsubUrl })
 
 function brandedHtml({ heading, preview, href, cta, unsubUrl }) {
   const footer = unsubUrl
-    ? `<tr><td style="padding:0 24px 24px;font-size:12px;line-height:1.5;color:#7a9088;">
+    ? `<tr><td style="padding:0 24px 24px;font-size:12px;line-height:1.5;color:#6e8b8b;">
         You’re receiving this because of activity on MolDraw Community.
-        <a href="${escapeHtml(unsubUrl)}" style="color:#3d6b5c;">Unsubscribe</a>
+        <a href="${escapeHtml(unsubUrl)}" style="color:${BRAND_TEAL};">Unsubscribe</a>
       </td></tr>`
     : '';
   return `<!DOCTYPE html>
 <html lang="en">
-<body style="margin:0;background:#f4f7f5;font-family:Georgia,serif;color:#16302b;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:24px auto;background:#fff;border:1px solid #d7e4dc;border-radius:12px;">
-    <tr><td style="padding:20px 24px 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#3d6b5c;">MolDraw Community</td></tr>
+<body style="margin:0;background:${MAIL_BG};font-family:Georgia,serif;color:${MAIL_INK};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:24px auto;background:#fff;border:1px solid ${MAIL_BORDER};border-radius:12px;">
+    <tr><td style="padding:20px 24px 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:${BRAND_TEAL};">MolDraw Community</td></tr>
     <tr><td style="padding:0 24px 8px;font-size:22px;line-height:1.3;">${escapeHtml(heading)}</td></tr>
-    <tr><td style="padding:0 24px 16px;font-size:16px;line-height:1.5;color:#35564c;">${escapeHtml(preview)}</td></tr>
-    <tr><td style="padding:0 24px 28px;"><a href="${escapeHtml(href)}" style="display:inline-block;background:#1f6b4a;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;">${escapeHtml(cta)}</a></td></tr>
+    <tr><td style="padding:0 24px 16px;font-size:16px;line-height:1.5;color:${MAIL_MUTED};">${escapeHtml(preview)}</td></tr>
+    <tr><td style="padding:0 24px 28px;"><a href="${escapeHtml(href)}" style="display:inline-block;background:${BRAND_TEAL};color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;">${escapeHtml(cta)}</a></td></tr>
     ${footer}
   </table>
 </body>
 </html>`;
 }
 
-async function deliver({ userId, email, subject, heading, preview, href, cta, eventKey }) {
+async function deliver({ userId, email, subject, heading, preview, href, cta, eventKey, skipUnsubscribe }) {
   const to = String(email || '').trim().toLowerCase() || await emailForUser(userId);
   if (!to) return { skipped: 'no_email' };
-  if (await isUnsubscribed({ userId, email: to })) return { skipped: 'unsubscribed' };
+  if (!skipUnsubscribe && await isUnsubscribed({ userId, email: to })) return { skipped: 'unsubscribed' };
   if (!(await claimEvent(eventKey))) return { skipped: 'already_sent' };
-  const token = await ensureUnsubToken({ userId, email: to });
-  if (!token && await isUnsubscribed({ userId, email: to })) return { skipped: 'unsubscribed' };
-  const unsubUrl = token ? `${SITE}/community/unsubscribe?token=${encodeURIComponent(token)}` : '';
+  let unsubUrl = '';
+  if (!skipUnsubscribe) {
+    const token = await ensureUnsubToken({ userId, email: to });
+    if (!token && await isUnsubscribed({ userId, email: to })) {
+      await releaseEvent(eventKey);
+      return { skipped: 'unsubscribed' };
+    }
+    unsubUrl = token ? `${SITE}/community/unsubscribe?token=${encodeURIComponent(token)}` : '';
+  }
   const result = await sendResend({
     to,
     subject,
@@ -428,12 +445,40 @@ async function notifyPostRequestStatus(record, oldRecord, auth) {
   });
 }
 
-function addRecipient(recipients, { userId, email, kind, subject, heading, preview, href, cta }) {
+function addRecipient(recipients, { userId, email, kind, subject, heading, preview, href, cta, skipUnsubscribe }) {
   const normalized = String(email || '').trim().toLowerCase();
   const key = uuidParam(userId) || normalized;
   if (!key) return;
   if (recipients.has(key)) return;
-  recipients.set(key, { userId, email: normalized, kind, subject, heading, preview, href, cta });
+  recipients.set(key, { userId, email: normalized, kind, subject, heading, preview, href, cta, skipUnsubscribe });
+}
+
+function recipientsHaveEmail(recipients, email) {
+  const normalized = String(email || '').trim().toLowerCase();
+  if (!normalized) return false;
+  for (const recipient of recipients.values()) {
+    if (String(recipient.email || '').trim().toLowerCase() === normalized) return true;
+  }
+  return false;
+}
+
+async function addAdminRecipient(recipients, { actorId, actorEmail, subject, heading, preview, href, cta }) {
+  const to = adminNotifyEmail();
+  if (!to) return;
+  const authorEmail = String(actorEmail || '').trim().toLowerCase()
+    || (actorId ? await emailForUser(actorId) : '');
+  if (authorEmail && authorEmail === to) return;
+  if (recipientsHaveEmail(recipients, to)) return;
+  addRecipient(recipients, {
+    email: to,
+    kind: 'admin',
+    subject,
+    heading,
+    preview,
+    href,
+    cta,
+    skipUnsubscribe: true,
+  });
 }
 
 async function notifyComment(source, record, auth) {
@@ -552,6 +597,20 @@ async function notifyComment(source, record, auth) {
     }
   }
 
+  const isReply = Boolean(comment.parent_comment_id);
+  await addAdminRecipient(recipients, {
+    actorId,
+    subject: isReply
+      ? `${actorName} replied on “${threadTitle}”`
+      : `New comment on “${threadTitle}”`,
+    heading: isReply
+      ? `${actorName} replied in Community`
+      : `${actorName} commented in Community`,
+    preview,
+    href: threadHref,
+    cta: source === 'feature_request_comments' ? 'Open the request' : 'View the discussion',
+  });
+
   const results = [];
   for (const recipient of recipients.values()) {
     if (recipient.userId && recipient.userId === actorId) continue;
@@ -595,12 +654,62 @@ async function notifyPost(record, auth) {
     });
   }
 
+  await addAdminRecipient(recipients, {
+    actorId,
+    subject: `New community post: “${post.title || 'Untitled'}”`,
+    heading: `${actorName} posted in Community`,
+    preview: String(post.body || '').replace(/\s+/g, ' ').trim().slice(0, 180)
+      || (post.title || 'A new discussion was posted on MolDraw Community.'),
+    href,
+    cta: 'Open the discussion',
+  });
+
   const results = [];
   for (const recipient of recipients.values()) {
     if (recipient.userId && recipient.userId === actorId) continue;
     results.push(await deliver({
       ...recipient,
       eventKey: `community-post/${postId}/${recipient.userId || recipient.email}`,
+    }));
+  }
+  return { sent: results.length, results };
+}
+
+async function notifyFeatureNew(record, auth) {
+  const id = uuidParam(record?.id);
+  if (!id) return { skipped: 'no_request' };
+  const current = await supabaseGet(
+    'feature_requests',
+    `select=id,user_id,email,title,description,name&id=eq.${encodeURIComponent(id)}`,
+  );
+  if (!current) {
+    console.warn('community notify missing feature_requests row', { id });
+    return { skipped: 'missing_row' };
+  }
+  if (auth?.via === 'jwt' && current.user_id && auth.user.id !== current.user_id && !(await isAdminUser(auth.user.id))) {
+    return { skipped: 'not_actor' };
+  }
+
+  const actorName = current.name || 'Someone';
+  const preview = String(current.description || '').replace(/\s+/g, ' ').trim().slice(0, 180)
+    || (current.title || 'A new feature request was submitted.');
+  const href = permalink('feature', current.id, current.title);
+  const recipients = new Map();
+  await addAdminRecipient(recipients, {
+    actorId: current.user_id,
+    actorEmail: current.email,
+    subject: `New feature request: “${current.title || 'Untitled'}”`,
+    heading: `${actorName} submitted a feature request`,
+    preview,
+    href,
+    cta: 'Open the request',
+  });
+
+  const results = [];
+  for (const recipient of recipients.values()) {
+    results.push(await deliver({
+      ...recipient,
+      eventKey: `feature-new/${current.id}/${recipient.userId || recipient.email}`,
     }));
   }
   return { sent: results.length, results };
@@ -657,6 +766,12 @@ module.exports = async function handler(req, res) {
     }
     if (table === 'community_posts' && type === 'INSERT') {
       return json(res, 200, await notifyPost(record, auth));
+    }
+    if (
+      (table === 'feature_requests' || table === 'community_feature_requests')
+      && type === 'INSERT'
+    ) {
+      return json(res, 200, await notifyFeatureNew(record, auth));
     }
     if (table === 'community_posts' && type === 'UPDATE') {
       if (!viaSecret && !(jwtUser && await isAdminUser(jwtUser.id))) {

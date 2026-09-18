@@ -296,6 +296,8 @@ export interface InteractionContext {
   ) => void;
   onUpdateReactionArrow?: (id: string, patch: ReactionArrowUpdatePatch) => void;
   onRequestAtomAliasEdit?: (atomId: string) => void;
+  /** Enter inline edit for a canvas text (double-click / click letters when selected). */
+  onRequestCanvasTextEdit?: (textId: string) => void;
   /** Open inline editor for reagent above/below on the selected arrow. */
   onRequestArrowReagentEdit?: (arrowId: string, slot: 'above' | 'below') => void;
   /** Currently selected reaction arrow (for reagent slot hit-testing). */

@@ -164,6 +164,7 @@ export function useMoleculeCanvasCommands({
   updateAppSettingsGeneral,
 }: UseMoleculeCanvasCommandsOptions) {
   const [inlineEditorFocused, setInlineEditorFocused] = useState(false);
+  const [canvasTextEditing, setCanvasTextEditing] = useState(false);
   const [inlineEditorPos, setInlineEditorPos] = useState<{
     left: number;
     top: number;
@@ -173,6 +174,8 @@ export function useMoleculeCanvasCommands({
   const lastInlineFocusId = useRef<string | null>(null);
   /** Label id that should receive the caret as soon as its editor is mounted. */
   const pendingInlineFocusId = useRef<string | null>(null);
+  /** Character typed on a selected-but-not-editing label (insert after the editor mounts). */
+  const pendingTypeCharRef = useRef<string | null>(null);
 
   /**
    * Give the inline editor the caret if a focus request is parked for it.
@@ -193,6 +196,19 @@ export function useMoleculeCanvasCommands({
       if (el.value === 'Text') el.select();
     });
   }, []);
+
+  const beginCanvasTextEdit = useCallback((id: string, insertChar?: string) => {
+    if (insertChar) pendingTypeCharRef.current = insertChar;
+    setSelectedCanvasTextId(id);
+    setCanvasTextEditing(true);
+    pendingInlineFocusId.current = id;
+    focusInlineEditorIfPending();
+  }, [focusInlineEditorIfPending, setSelectedCanvasTextId]);
+
+  const handleRequestCanvasTextEdit = useCallback(
+    (id: string) => beginCanvasTextEdit(id),
+    [beginCanvasTextEdit],
+  );
 
   const handleDelete = useCallback(() => {
     if (editingAtomAliasId) {
@@ -350,6 +366,70 @@ export function useMoleculeCanvasCommands({
     [applyCommand, moleculeEditor],
   );
 
+  // Flush a character that opened edit mode (type-to-edit on a selected label).
+  useEffect(() => {
+    if (!canvasTextEditing || !selectedCanvasText) return;
+    const ch = pendingTypeCharRef.current;
+    if (!ch) return;
+    pendingTypeCharRef.current = null;
+    const t = selectedCanvasText;
+    const next = `${t.text}${ch}`;
+    const nextScripts = remapTextScriptRanges(
+      resolveCanvasTextScripts(t),
+      t.text.length,
+      t.text.length,
+      ch.length,
+      next.length,
+    );
+    handleUpdateCanvasText(t.id, {
+      text: next,
+      textScripts: nextScripts,
+      textScript: 'normal',
+    });
+    requestAnimationFrame(() => {
+      const ta = inlineTextareaRef.current;
+      if (!ta) return;
+      const pos = next.length;
+      ta.setSelectionRange(pos, pos);
+      setInlineTextCaret(pos, pos);
+    });
+  }, [canvasTextEditing, selectedCanvasText, handleUpdateCanvasText]);
+
+  // Selected but not editing: type (or Enter) opens the editor instead of
+  // firing tool shortcuts. First click never focuses, so drag stays free.
+  useEffect(() => {
+    if (!selectedCanvasTextId || canvasTextEditing) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.isComposing) return;
+      const ae = document.activeElement as HTMLElement | null;
+      if (
+        ae &&
+        (ae.tagName === 'INPUT' ||
+          ae.tagName === 'TEXTAREA' ||
+          ae.tagName === 'SELECT' ||
+          ae.isContentEditable)
+      ) {
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        beginCanvasTextEdit(selectedCanvasTextId);
+        return;
+      }
+      const isSpace = e.key === ' ' || e.code === 'Space';
+      const isPrintable = isSpace || (e.key.length === 1 && e.key !== 'Enter');
+      if (!isPrintable) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      beginCanvasTextEdit(selectedCanvasTextId, isSpace ? ' ' : e.key);
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [selectedCanvasTextId, canvasTextEditing, beginCanvasTextEdit]);
+
   // Selection moved off a label: close its typing session and, Figma-style,
   // discard the label if nothing was ever typed into it (no undo entry — the
   // user never saw it as content).
@@ -470,6 +550,8 @@ export function useMoleculeCanvasCommands({
     if (!selectedCanvasTextId) {
       setInlineEditorPos(null);
       lastInlineFocusId.current = null;
+      setCanvasTextEditing(false);
+      pendingTypeCharRef.current = null;
       return;
     }
     const t = molecule.canvasTexts?.find(x => x.id === selectedCanvasTextId);
@@ -491,15 +573,25 @@ export function useMoleculeCanvasCommands({
     setInlineEditorPos({ left: rect.left + cx, top: rect.top + cy, zoom: vp.zoom });
     if (lastInlineFocusId.current !== selectedCanvasTextId) {
       lastInlineFocusId.current = selectedCanvasTextId;
-      // Newly selected label wants the caret. The editor may not be mounted
-      // yet (a click seeds a zero-length move that hides it until pointerup),
-      // so park the request and let the editor claim it on mount.
-      pendingInlineFocusId.current = selectedCanvasTextId;
-      focusInlineEditorIfPending();
+      // Empty newly-placed labels open the editor immediately. Existing labels
+      // stay selected-for-move until double-click / click-letters / type.
+      if (t.text.trim() === '') {
+        setCanvasTextEditing(true);
+        pendingInlineFocusId.current = selectedCanvasTextId;
+        focusInlineEditorIfPending();
+      } else {
+        setCanvasTextEditing(false);
+      }
     }
     /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps -- molecule read for layout; position driven by canvasTextLayoutKey
   }, [selectedCanvasTextId, canvasTextLayoutKey, viewportInfo]);
+
+  useLayoutEffect(() => {
+    if (!canvasTextEditing || !selectedCanvasTextId) return;
+    pendingInlineFocusId.current = selectedCanvasTextId;
+    focusInlineEditorIfPending();
+  }, [canvasTextEditing, selectedCanvasTextId, focusInlineEditorIfPending]);
 
   const handleUpdateReactionArrow = useCallback(
     (id: string, patch: ReactionArrowUpdatePatch) => {
@@ -573,6 +665,12 @@ export function useMoleculeCanvasCommands({
       cancelAtomAliasEdit();
       return;
     }
+    if (canvasTextEditing) {
+      setCanvasTextEditing(false);
+      setInlineEditorFocused(false);
+      pendingTypeCharRef.current = null;
+      return;
+    }
     if (selectedCanvasTextId) {
       setSelectedCanvasTextId(null);
       return;
@@ -598,6 +696,7 @@ export function useMoleculeCanvasCommands({
     cancelAtomAliasEdit,
     selectedAtomIds.length,
     selectedBondIds.length,
+    canvasTextEditing,
     selectedCanvasTextId,
     selectedReactionArrowId,
     fragmentPlacement,
@@ -813,6 +912,9 @@ export function useMoleculeCanvasCommands({
   return {
     inlineEditorFocused,
     setInlineEditorFocused,
+    canvasTextEditing,
+    setCanvasTextEditing,
+    handleRequestCanvasTextEdit,
     inlineEditorPos,
     setInlineEditorPos,
     inlineTextareaRef,

@@ -2,11 +2,13 @@
  * Pointer-down on canvas text: rotate / resize / move / select.
  */
 import {
+  canvasTextHitPadWorld,
   canvasTextResizePatch,
   canvasTextRotatePatch,
   getCanvasTextBox,
   measureCanvasTextContentSize,
   pickCanvasTextAt,
+  pickCanvasTextContentAt,
   pickCanvasTextResizeHandle,
   pickCanvasTextRotateHandle,
 } from '../geometry';
@@ -108,8 +110,31 @@ export function handleCanvasTextPointerDown(
 
   if (opts?.handlesOnly) return false;
 
-  const picked = pickCanvasTextAt(canvasCtx, list, ctx.worldPos.x, ctx.worldPos.y);
+  const idlePad = canvasTextHitPadWorld(zoom, 'idle');
+  const grabPad = canvasTextHitPadWorld(zoom, 'selected');
+  const exactOrIdle = pickCanvasTextAt(canvasCtx, list, ctx.worldPos.x, ctx.worldPos.y, idlePad);
+  const selectedGrab =
+    selectedId &&
+    pickCanvasTextAt(
+      canvasCtx,
+      list.filter(t => t.id === selectedId),
+      ctx.worldPos.x,
+      ctx.worldPos.y,
+      grabPad,
+    );
+  const picked = exactOrIdle ?? selectedGrab ?? null;
   if (!picked) return false;
+
+  // Second click on the letters of the already-selected box → edit, not drag.
+  // Empty interior / frame / first click still start a move.
+  if (
+    picked.id === selectedId &&
+    ctx.onRequestCanvasTextEdit &&
+    pickCanvasTextContentAt(canvasCtx, picked, ctx.worldPos.x, ctx.worldPos.y)
+  ) {
+    ctx.onRequestCanvasTextEdit(picked.id);
+    return true;
+  }
 
   ctx.setSelectedCanvasTextId?.(picked.id);
   ctx.setSelectedAtomIds?.([]);

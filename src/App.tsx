@@ -1484,6 +1484,9 @@ function App() {
 
   const {
     setInlineEditorFocused,
+    canvasTextEditing,
+    setCanvasTextEditing,
+    handleRequestCanvasTextEdit,
     inlineEditorPos,
     inlineTextareaRef,
     handleDelete,
@@ -1677,16 +1680,16 @@ function App() {
 
   useEffect(() => {
     viewportOverlayActiveRef.current = Boolean(
-      editingAtomAliasId || selectedCanvasTextId || editingArrowReagent,
+      editingAtomAliasId || canvasTextEditing || editingArrowReagent,
     );
-  }, [editingAtomAliasId, selectedCanvasTextId, editingArrowReagent]);
+  }, [editingAtomAliasId, canvasTextEditing, editingArrowReagent]);
 
   useEffect(() => {
     setShowRightFontPanel(Boolean(selectedCanvasTextId));
   }, [selectedCanvasTextId]);
 
   const canvasTextEditorOpenRef = useRef(false);
-  canvasTextEditorOpenRef.current = Boolean(selectedCanvasTextId && !canvasTextTransforming);
+  canvasTextEditorOpenRef.current = Boolean(canvasTextEditing && !canvasTextTransforming);
 
   useKeyboardShortcuts({
     activeTool,
@@ -1694,7 +1697,7 @@ function App() {
     onPickTool: handleToolbarSelectWithPerspective,
     selectedAtomId: selectedAtomIds.length === 1 ? selectedAtomIds[0] : null,
     hoverAtomIdRef,
-    canvasTextEditorOpen: Boolean(selectedCanvasTextId && !canvasTextTransforming),
+    canvasTextEditorOpen: Boolean(canvasTextEditing && !canvasTextTransforming),
     canvasTextEditorOpenRef,
     onEscape: () => {
       canvasRef.current?.discardSmartDrawSession();
@@ -2471,12 +2474,11 @@ function App() {
               ringPaintActive={ringPaintActive}
               ringFillOpacity={appSettings.general.colorTargets.ringFillOpacity}
               omitCanvasTextBodyId={
-                // The HTML editor renders the letters whenever a text is
-                // selected (not just focused); drawing them on canvas too would
-                // double the glyphs. Super/sub ranges are painted on canvas,
-                // so keep the body when any script spans exist (editor glyphs
-                // go transparent). During move/resize/rotate the overlay is
-                // unmounted and the canvas takes over with the drag preview.
+                // Canvas paints glyphs while the box is selected-for-move.
+                // The HTML editor only mounts in edit mode; omit the body then
+                // so letters are not drawn twice. Super/sub ranges stay on
+                // canvas (editor glyphs go transparent). Drag hides the overlay.
+                !canvasTextEditing ||
                 canvasTextTransforming ||
                 !inlineEditorPos ||
                 (selectedCanvasText?.textScripts?.length ?? 0) > 0 ||
@@ -2485,7 +2487,15 @@ function App() {
                   ? null
                   : selectedCanvasTextId
               }
-              onCanvasTextTransforming={setCanvasTextTransforming}
+              canvasTextEditing={canvasTextEditing}
+              onRequestCanvasTextEdit={handleRequestCanvasTextEdit}
+              onCanvasTextTransforming={active => {
+                setCanvasTextTransforming(active);
+                if (active) {
+                  setCanvasTextEditing(false);
+                  setInlineEditorFocused(false);
+                }
+              }}
               reactionArrowKind={reactionArrowKind}
               reactionArrowHeadStyle={reactionArrowHeadStyle}
               reactionArrowTailStyle={reactionArrowTailStyle}
@@ -2791,7 +2801,7 @@ function App() {
         />
       ) : null}
 
-      {selectedCanvasText && inlineEditorPos && !canvasTextTransforming && (
+      {selectedCanvasText && canvasTextEditing && inlineEditorPos && !canvasTextTransforming && (
         <InlineTextEditor
           ref={inlineTextareaRef}
           selectedCanvasText={selectedCanvasText}
@@ -2806,7 +2816,7 @@ function App() {
           onBlur={() => setInlineEditorFocused(false)}
           onEscape={() => {
             setInlineEditorFocused(false);
-            setSelectedCanvasTextId(null);
+            setCanvasTextEditing(false);
           }}
         />
       )}

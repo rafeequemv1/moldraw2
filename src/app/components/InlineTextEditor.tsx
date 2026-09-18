@@ -285,6 +285,7 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
             color: hideGlyphs ? 'transparent' : ink,
             WebkitTextFillColor: hideGlyphs ? 'transparent' : undefined,
             caretColor: ink,
+            cursor: 'text',
             userSelect: 'text',
             pointerEvents: 'auto',
             transform: scriptDy ? `translateY(${scriptDy * z}px)` : undefined,

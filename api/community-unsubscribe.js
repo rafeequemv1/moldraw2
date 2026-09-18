@@ -15,11 +15,11 @@ function page(title, body) {
   <title>${title}</title>
   <link rel="canonical" href="${SITE}/community/unsubscribe">
 </head>
-<body style="margin:0;background:#f4f7f5;font-family:Georgia,serif;color:#16302b;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:48px auto;background:#fff;border:1px solid #d7e4dc;border-radius:12px;">
-    <tr><td style="padding:20px 24px 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#3d6b5c;">MolDraw Community</td></tr>
+<body style="margin:0;background:#f3f7f7;font-family:Georgia,serif;color:#16302b;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:48px auto;background:#fff;border:1px solid #d0e0e0;border-radius:12px;">
+    <tr><td style="padding:20px 24px 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#2C7A7B;">MolDraw Community</td></tr>
     <tr><td style="padding:0 24px 24px;font-size:20px;line-height:1.4;">${body}</td></tr>
-    <tr><td style="padding:0 24px 28px;"><a href="${SITE}/community/" style="color:#1f6b4a;">Back to community</a></td></tr>
+    <tr><td style="padding:0 24px 28px;"><a href="${SITE}/community/" style="color:#2C7A7B;">Back to community</a></td></tr>
   </table>
 </body>
 </html>`;

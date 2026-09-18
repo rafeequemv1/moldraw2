@@ -214,6 +214,10 @@ export interface InfiniteCanvasProps {
   onUpdateCanvasText?: (id: string, patch: Partial<CanvasText>) => void;
   /** Host should hide the HTML text overlay while true (smooth canvas drag preview). */
   onCanvasTextTransforming?: (active: boolean) => void;
+  /** True while the host inline editor is live — I-beam over glyphs, grab on the frame. */
+  canvasTextEditing?: boolean;
+  /** Double-click / click-letters-when-selected → host opens the inline editor. */
+  onRequestCanvasTextEdit?: (textId: string) => void;
   selectedCanvasImageId?: string | null;
   setSelectedCanvasImageId?: (id: string | null) => void;
   onUpdateCanvasImage?: (
@@ -417,6 +421,8 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       placementElement = 'C',
       omitAtomAliasBodyId = null,
       onRequestAtomAliasEdit,
+      onRequestCanvasTextEdit,
+      canvasTextEditing = false,
       onRequestArrowReagentEdit,
       displayScale = 1,
       displayPrefs,
@@ -561,6 +567,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       onTranslateCanvasShapes,
       onUpdateReactionArrow,
       onRequestAtomAliasEdit,
+      onRequestCanvasTextEdit,
       onRequestArrowReagentEdit,
       onContextMenu,
       onDismissChromeOverlays,
@@ -767,13 +774,12 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Text labels get design-tool cursors: move over the frame, resize arrows
-    // on the corners, grab on the rotate knob, and an I-beam on empty canvas
-    // with the text tool (so "click to type" is obvious).
+    // Text labels: grab the box to move, resize arrows on corners, grab on the
+    // rotate knob, I-beam only while editing glyphs (or empty canvas + text tool).
     const textCursor = useMemo((): string | null => {
       if (viewportApi.isPanning) return null;
       const drag = input.dragAction;
-      if (drag?.type === 'move_canvas_text') return 'move';
+      if (drag?.type === 'move_canvas_text') return 'grabbing';
       if (drag?.type === 'rotate_canvas_text') return 'grabbing';
       if (drag?.type === 'resize_canvas_text') {
         return canvasTextCornerCursor(drag.corner, drag.origText.rotationRad ?? 0);
@@ -786,12 +792,21 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       const ctx = getCursorMeasureCtx();
       const texts = displayMolecule.canvasTexts ?? [];
       const hit = ctx
-        ? canvasTextCursorAt(ctx, texts, selectedCanvasTextId, mp.x, mp.y, viewportApi.viewport.zoom)
+        ? canvasTextCursorAt(
+            ctx,
+            texts,
+            selectedCanvasTextId,
+            mp.x,
+            mp.y,
+            viewportApi.viewport.zoom,
+            { editing: canvasTextEditing },
+          )
         : null;
       if (hit) return hit;
       return textish ? 'text' : null;
     }, [
       activeTool,
+      canvasTextEditing,
       displayMolecule.canvasTexts,
       input.dragAction,
       input.mouseWorldPos,

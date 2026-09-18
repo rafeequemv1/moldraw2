@@ -32,7 +32,9 @@ import {
   shortestAngleDiff,
   pickSruBracketAt,
   expandAtomIdsToConnectedFragments,
+  canvasTextHitPadWorld,
   pickCanvasTextAt,
+  pickCanvasTextContentAt,
   pickCanvasImageAt,
   collectAnnotationsInRect,
   collectAnnotationsInPolygon,
@@ -401,6 +403,14 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
       const textId = marqueeBounds.canvasTextIds?.[0];
       const picked = textId ? molecule.canvasTexts?.find(t => t.id === textId) : undefined;
       if (picked) {
+        if (
+          canvasCtx &&
+          ctx.onRequestCanvasTextEdit &&
+          pickCanvasTextContentAt(canvasCtx, picked, worldPos.x, worldPos.y)
+        ) {
+          ctx.onRequestCanvasTextEdit(picked.id);
+          return true;
+        }
         beginCanvasTextMove(ctx, picked);
         return true;
       }
@@ -640,8 +650,26 @@ export function selectToolHasTargetAt(ctx: InteractionContext): boolean {
   const { worldPos, molecule, selectedAtomIds, selectedBondIds = [] } = ctx;
   const canvasCtx = ctx.getCanvasContext();
   const texts = molecule.canvasTexts ?? [];
-  if (canvasCtx && texts.length > 0 && pickCanvasTextAt(canvasCtx, texts, worldPos.x, worldPos.y)) {
-    return true;
+  const zoom = ctx.viewport?.zoom ?? 1;
+  if (canvasCtx && texts.length > 0) {
+    if (pickCanvasTextAt(canvasCtx, texts, worldPos.x, worldPos.y, canvasTextHitPadWorld(zoom, 'idle'))) {
+      return true;
+    }
+    const selectedText = ctx.selectedCanvasTextId
+      ? texts.find(t => t.id === ctx.selectedCanvasTextId)
+      : undefined;
+    if (
+      selectedText &&
+      pickCanvasTextAt(
+        canvasCtx,
+        [selectedText],
+        worldPos.x,
+        worldPos.y,
+        canvasTextHitPadWorld(zoom, 'selected'),
+      )
+    ) {
+      return true;
+    }
   }
   const images = molecule.canvasImages ?? [];
   if (images.length > 0 && pickCanvasImageAt(images, worldPos.x, worldPos.y)) {
@@ -653,7 +681,6 @@ export function selectToolHasTargetAt(ctx: InteractionContext): boolean {
   }
   if (pickSruBracketAt(molecule.sruBrackets, worldPos.x, worldPos.y)) return true;
   const arrows = arrowsForHitTest(molecule);
-  const zoom = ctx.viewport?.zoom ?? 1;
   const handleTol = arrowHandleHitTolWorld(zoom);
   if (pickReactionArrowEndpoint(arrows, worldPos.x, worldPos.y, handleTol)) return true;
   if (pickReactionArrowCurveHandle(arrows, worldPos.x, worldPos.y, handleTol)) return true;

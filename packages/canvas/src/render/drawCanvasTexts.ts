@@ -15,6 +15,7 @@ import {
   getCanvasTextRotateHandleWorld,
   getCanvasTextTopMidWorld,
   measureCanvasTextBox,
+  canvasTextHitPadWorld,
   pickCanvasTextAt,
   resolveCanvasTextInk,
   resolveCanvasTextScripts,
@@ -117,7 +118,13 @@ const TEXT_HOVER_TOOLS = new Set(['select', 'lasso_select', 'fragment_select', '
 function hoveredTextId(ctx: CanvasRenderingContext2D, R: RenderContext): string | null {
   if (R.dragAction || !R.mouseWorldPos || !TEXT_HOVER_TOOLS.has(R.activeTool)) return null;
   const list = R.renderedMolecule.canvasTexts ?? [];
-  const hit = pickCanvasTextAt(ctx, list, R.mouseWorldPos.x, R.mouseWorldPos.y);
+  const hit = pickCanvasTextAt(
+    ctx,
+    list,
+    R.mouseWorldPos.x,
+    R.mouseWorldPos.y,
+    canvasTextHitPadWorld(R.viewport.zoom, 'idle'),
+  );
   return hit?.id ?? null;
 }
 

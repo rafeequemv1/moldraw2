@@ -95,15 +95,33 @@ export function FeatureRequestModal({ open, defaultEmail, onClose }: FeatureRequ
         if (data?.publicUrl) imageUrls.push(data.publicUrl);
       }
       const { data: authData } = await supabase.auth.getUser();
-      const { error: insertError } = await supabase.from('feature_requests').insert({
+      const { data: inserted, error: insertError } = await supabase.from('feature_requests').insert({
         email: nextEmail,
         name: displayNameFromEmail(nextEmail),
         title: nextTitle,
         description: nextDescription,
         image_urls: imageUrls,
         ...(authData?.user?.id ? { user_id: authData.user.id } : {}),
-      });
+      }).select('id').single();
       if (insertError) throw insertError;
+      if (inserted?.id) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token || '';
+        if (accessToken) {
+          await fetch('/api/community-notify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              table: 'feature_requests',
+              type: 'INSERT',
+              record: { id: inserted.id },
+            }),
+          }).catch(() => undefined);
+        }
+      }
       trackEvent('feature_request_submit');
       setNotice('Thanks — your request was sent.');
       setTitle('');

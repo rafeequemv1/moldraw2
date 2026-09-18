@@ -12,7 +12,12 @@ import type {
   FragmentPlacementSession,
 } from '@moldraw/core';
 import type { Point } from './geometry';
-import { expandAtomIdsToConnectedFragments, findSmallestRingAtPoint } from './geometry';
+import {
+  canvasTextHitPadWorld,
+  expandAtomIdsToConnectedFragments,
+  findSmallestRingAtPoint,
+  pickCanvasTextAt,
+} from './geometry';
 import type {
   DragActionState,
   DrawingBondState,
@@ -189,6 +194,7 @@ export interface UseCanvasInputOptions {
   onTranslateCanvasShapes?: InteractionContext['onTranslateCanvasShapes'];
   onUpdateReactionArrow?: InteractionContext['onUpdateReactionArrow'];
   onRequestAtomAliasEdit?: InteractionContext['onRequestAtomAliasEdit'];
+  onRequestCanvasTextEdit?: InteractionContext['onRequestCanvasTextEdit'];
   onRequestArrowReagentEdit?: InteractionContext['onRequestArrowReagentEdit'];
   selectedReactionArrowId?: string | null;
 
@@ -709,6 +715,7 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       onUpdateCanvasImage: opts.onUpdateCanvasImage,
       onUpdateReactionArrow: opts.onUpdateReactionArrow,
       onRequestAtomAliasEdit: opts.onRequestAtomAliasEdit,
+      onRequestCanvasTextEdit: opts.onRequestCanvasTextEdit,
       onRequestArrowReagentEdit: opts.onRequestArrowReagentEdit,
       getCanvasContext: () => canvasRef.current?.getContext('2d') ?? null,
       fragmentPlacement: opts.fragmentPlacement,
@@ -1297,6 +1304,7 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
 
   /**
    * Double-click:
+   *  - text / select on a canvas label → inline text editor;
    *  - atom-label tool on an atom → inline alias editor;
    *  - select / lasso on an atom, bond, or ring → the whole connected molecule.
    */
@@ -1307,6 +1315,42 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       // pointerType on the native event — use finger-sized radii for touch.
       const nativeType = (e.nativeEvent as Partial<PointerEvent>).pointerType;
       const hit = hitMetricsFor(inputProfileOf(nativeType), opts.viewportZoom ?? 1);
+
+      if (isSelectTool(activeTool) || activeTool === 'text') {
+        const canvasCtx = canvasRef.current?.getContext('2d');
+        const texts = molecule.canvasTexts ?? [];
+        if (canvasCtx && texts.length > 0 && opts.onRequestCanvasTextEdit) {
+          const zoom = opts.viewportZoom ?? 1;
+          const idleHit = pickCanvasTextAt(canvasCtx, texts, worldPos.x, worldPos.y, canvasTextHitPadWorld(zoom, 'idle'));
+          const selected = opts.selectedCanvasTextId
+            ? texts.find(t => t.id === opts.selectedCanvasTextId)
+            : undefined;
+          const selectedHit =
+            selected &&
+            pickCanvasTextAt(
+              canvasCtx,
+              [selected],
+              worldPos.x,
+              worldPos.y,
+              canvasTextHitPadWorld(zoom, 'selected'),
+            )
+              ? selected
+              : null;
+          const textHit = idleHit ?? selectedHit;
+          if (textHit) {
+            e.preventDefault();
+            e.stopPropagation();
+            setDragAction(null);
+            opts.setSelectedCanvasTextId?.(textHit.id);
+            opts.setSelectedAtomIds?.([]);
+            opts.setSelectedBondIds?.([]);
+            opts.setSelectedReactionArrowId?.(null);
+            opts.setSelectedCanvasImageId?.(null);
+            opts.onRequestCanvasTextEdit(textHit.id);
+            return;
+          }
+        }
+      }
 
       if (activeTool === 'atom_label') {
         const labelAtom = pickAtomAt(molecule, worldPos, hit.atomHitRadius);
