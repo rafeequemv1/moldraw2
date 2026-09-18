@@ -971,6 +971,127 @@
     .comment.is-credited {
       box-shadow: inset 3px 0 0 #e8c85a;
     }
+    body.community-has-profile-bubble .site-topbar-inner {
+      position: relative;
+    }
+    .community-profile-bubble {
+      width: 34px;
+      height: 34px;
+      margin-left: 8px;
+      padding: 0;
+      border: 2px solid #2C7A7B;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .community-profile-bubble[hidden] {
+      display: none;
+    }
+    .community-profile-bubble:hover,
+    .community-profile-bubble:focus-visible {
+      box-shadow: 0 0 0 3px rgba(44, 122, 123, 0.22);
+    }
+    .community-profile-bubble .avatar {
+      width: 30px;
+      height: 30px;
+      font-size: 12px;
+    }
+    .avatar.has-image {
+      overflow: hidden;
+      padding: 0;
+      background: #eef6f6;
+    }
+    .avatar.avatar-face,
+    .avatar.has-image {
+      background: transparent;
+    }
+    .avatar.has-image img,
+    .avatar.has-image svg,
+    .avatar-face-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .profile-preview-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .profile-preview {
+      width: 72px;
+      height: 72px;
+      font-size: 24px;
+    }
+    .profile-email {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .avatar-style-picker {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .avatar-style-option {
+      position: relative;
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      margin: 0;
+      padding: 8px 4px;
+      border: 1px solid #dbe4ea;
+      border-radius: 12px;
+      background: #fff;
+      color: #334155;
+      font-size: 10px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .avatar-style-option input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+    .avatar-style-option.is-selected,
+    .avatar-style-option:has(input:checked) {
+      border-color: #2C7A7B;
+      background: #eefafa;
+      color: #1a5a5b;
+    }
+    .avatar-style-face {
+      width: 42px;
+      height: 42px;
+    }
+    .profile-seed-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+    }
+    .profile-seed-row .btn {
+      height: 38px;
+    }
+    @media (max-width: 560px) {
+      body.community-has-profile-bubble .community-profile-bubble {
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        margin-left: 0;
+      }
+      .avatar-style-picker {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
     .implemented-panel-root {
       display: none;
       position: fixed;
@@ -2342,6 +2463,40 @@
     </div>
   </div>
 
+  <div id="profile-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal post-modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+      <div class="post-modal-head">
+        <h2 id="profile-modal-title">Your profile</h2>
+        <button id="profile-modal-close" class="modal-close-btn" type="button" aria-label="Close profile">×</button>
+      </div>
+      <div class="post-modal-body">
+        <form id="profile-form" class="feature-request-form">
+          <div class="profile-preview-row">
+            <span id="profile-preview" class="avatar avatar-teal profile-preview">M</span>
+            <div>
+              <strong>Signed-in profile</strong>
+              <div id="profile-email" class="profile-email"></div>
+            </div>
+          </div>
+          <label>
+            Display name
+            <input id="profile-name" type="text" maxlength="80" autocomplete="nickname" required>
+          </label>
+          <div>
+            <span>Avatar</span>
+            <div id="avatar-style-picker" class="avatar-style-picker" role="radiogroup" aria-label="Avatar"></div>
+          </div>
+          <div class="profile-seed-row">
+            <p class="file-note">Letter keeps your initials. Each face is the same on every post.</p>
+            <button id="profile-shuffle-seed" class="btn btn-light" type="button">Shuffle</button>
+          </div>
+          <p id="profile-notice" class="status"></p>
+          <button class="post-modal-submit" type="submit">Save profile</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <div id="image-lightbox" class="image-lightbox" hidden>
     <img id="image-lightbox-img" alt="Community attachment">
   </div>
@@ -2362,6 +2517,7 @@
 
   <script src="/js/site-topbar.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/community-avatar.js"></script>
   <script>
     const SUPABASE_URL = 'https://wwehouchqznsvnrosaeb.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_lP5X_egPBmD__qqKPjyoyg_M4iNUj_C';
@@ -2384,6 +2540,8 @@
     const featureRequestModal = document.getElementById('feature-request-modal');
     const reportModal = document.getElementById('report-modal');
     const reportNote = document.getElementById('report-note');
+    const profileModal = document.getElementById('profile-modal');
+    let avatarColumnsAvailable = true;
     let session = null;
     let profile = null;
     let activeTab = 'discussions';
@@ -2430,38 +2588,27 @@
     function renderPostRequestStatus(status) {
       return status ? renderFeatureStatus(status) : '';
     }
-    function renderResolutionCredit(item, { compact = false } = {}) {
-      const name = item?.resolved_by_name;
-      if (!name && !compact) return '';
-      const label = compact ? 'Credit' : `Credit: ${name}`;
-      const tip = name
-        ? `Crown credit for the comment that was marked done. ${name}`
-        : 'Crown credit for the comment that was marked done.';
-      return `<span class="resolution-credit" title="${escapeHtml(tip)}">${CROWN_ICON}<span>${escapeHtml(label)}</span></span>`;
-    }
     function parentItemForComments(parentId, options = {}) {
       const isFeature = options.statusKind === 'feature' || options.likeSource === 'feature_request_comments';
       if (isFeature) return lastFeatureItems.find((item) => item.id === parentId) || null;
       return lastDiscussionItems.find((item) => item.id === parentId) || null;
     }
     function renderFeatureStatusControl(request, { compact = false } = {}) {
-      const credit = compact ? '' : renderResolutionCredit(request);
-      if (!isAdmin()) return compact ? '' : `${renderFeatureStatus(request?.status)}${credit}`;
+      if (!isAdmin()) return compact ? '' : renderFeatureStatus(request?.status);
       const current = request?.status || 'new';
       const aria = compact ? 'Change request status from this reply' : 'Change request status';
       return `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="${aria}">
         ${Object.keys(featureStatusLabels).map((key) => `<option value="${key}"${key === current ? ' selected' : ''}>${featureStatusLabels[key]}</option>`).join('')}
-      </select>${credit}`;
+      </select>`;
     }
     function renderPostStatusControl(post, { compact = false } = {}) {
-      const credit = compact ? '' : renderResolutionCredit(post);
-      if (!isAdmin()) return compact ? '' : `${renderPostRequestStatus(post?.request_status)}${credit}`;
+      if (!isAdmin()) return compact ? '' : renderPostRequestStatus(post?.request_status);
       const current = post?.request_status || '';
       const aria = compact ? 'Change discussion status from this reply' : 'Change discussion request status';
       return `<select class="status-select" data-post-request-status="${escapeHtml(post.id)}" aria-label="${aria}">
         <option value=""${current ? '' : ' selected'}>No status</option>
         ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === current ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
-      </select>${credit}`;
+      </select>`;
     }
     function renderCommentParentStatusControl(parentId, options = {}) {
       if (!isAdmin()) return '';
@@ -2814,7 +2961,7 @@
         <article class="community-card thread-post">
           <div class="card-top">
             <div class="author">
-              <span class="avatar ${isFeature ? '' : escapeHtml(safeAvatarKey(item.author_avatar_key))}">${escapeHtml(initials(isFeature ? item.name : item.author_name))}</span>
+              ${isFeature ? authorAvatarHtml(item.name, item.user_id) : authorAvatarHtml(item.author_name, item.user_id)}
               <div>
                 <div class="author-name">${authorNameLink(isFeature ? item.name : item.author_name, item.user_id)} ${isFeature ? '' : `${adminBadge(item.author_is_admin)} ${karmaBadge(item.author_karma_score)}`} ${implementedCrown(item.user_id, isFeature ? item.name : item.author_name)}</div>
                 <div class="author-meta">${isFeature ? 'Feature request' : escapeHtml(item.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(item.created_at))}</div>
@@ -2882,6 +3029,7 @@
         commentCache.set(post.id, comments);
       }
       await hydrateCommentLikes('community_comments', comments);
+      await hydrateAuthorAvatars([post, ...(comments || [])]);
       await loadDoneFeatureIndex();
       renderThreadPanel('post', post, comments, highlightId);
     }
@@ -2909,6 +3057,7 @@
         } else comments = [];
       }
       await hydrateCommentLikes('feature_request_comments', comments || []);
+      await hydrateAuthorAvatars([request, ...(comments || [])]);
       await loadDoneFeatureIndex();
       renderThreadPanel('feature', request, comments || [], highlightId);
     }
@@ -2997,6 +3146,104 @@
     const timeText = (value) => value ? new Date(value).toLocaleString() : '';
     const initials = (name) => String(name || 'M').trim().slice(0, 1).toUpperCase() || 'M';
     const safeAvatarKey = (key) => ['avatar-teal', 'avatar-blue', 'avatar-purple', 'avatar-amber'].includes(key) ? key : 'avatar-teal';
+    const PROFILE_SELECT_BASE = 'id,name,email,designation,avatar_key,role,is_admin,karma_score';
+    const authorAvatarCache = new Map();
+    function missingAvatarColumn(error) {
+      return /avatar_style|avatar_seed/i.test(`${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`);
+    }
+    function authorAvatarHtml(name, userId) {
+      const own = session?.user && userId && userId === session.user.id && profile?.avatar_style === 'face' ? profile : null;
+      const cached = userId ? authorAvatarCache.get(userId) : null;
+      const source = own || (cached?.avatar_style === 'face' ? cached : null);
+      if (window.MolDrawAvatar) return window.MolDrawAvatar.html(name, source);
+      return `<span class="avatar avatar-teal">${escapeHtml(initials(name))}</span>`;
+    }
+    async function hydrateAuthorAvatars(records) {
+      if (!window.MolDrawAvatar || !avatarColumnsAvailable) return;
+      const ids = [];
+      const walk = (item) => {
+        if (!item || typeof item !== 'object') return;
+        if (item.user_id) ids.push(item.user_id);
+        (item.commentsPreview || item.replies || []).forEach(walk);
+      };
+      (Array.isArray(records) ? records : [records]).forEach(walk);
+      const missing = [...new Set(ids.filter(Boolean))].filter((id) => !authorAvatarCache.has(id));
+      for (let index = 0; index < missing.length; index += 80) {
+        const chunk = missing.slice(index, index + 80);
+        let rows = null;
+        const rpc = await client.rpc('community_avatar_lookup', { user_ids: chunk });
+        if (!rpc.error) {
+          rows = rpc.data || [];
+        } else if (/community_avatar_lookup|schema cache|PGRST202|404|function/i.test(`${rpc.error.message || ''} ${rpc.error.details || ''} ${rpc.error.code || ''}`)) {
+          const fallback = await client.from('users').select('id,avatar_style,avatar_seed').in('id', chunk);
+          if (fallback.error && missingAvatarColumn(fallback.error)) {
+            avatarColumnsAvailable = false;
+            return;
+          }
+          if (fallback.error) return;
+          rows = fallback.data || [];
+        } else {
+          return;
+        }
+        const found = new Set();
+        (rows || []).forEach((row) => {
+          if (!row?.id) return;
+          authorAvatarCache.set(row.id, row);
+          found.add(row.id);
+        });
+        chunk.forEach((id) => {
+          if (!found.has(id)) authorAvatarCache.set(id, { id, avatar_style: null, avatar_seed: null });
+        });
+      }
+    }
+    function paintAvatar(el, name, source) {
+      if (!el) return;
+      const extra = [];
+      if (el.id === 'profile-preview') extra.push('profile-preview');
+      if (el.classList.contains('avatar-style-face')) extra.push('avatar-style-face');
+      const config = window.MolDrawAvatar?.decode(source?.avatar_style, source?.avatar_seed);
+      el.className = `${extra.join(' ')} avatar ${config ? 'avatar-face has-image' : 'avatar-teal'}`.replace(/\s+/g, ' ').trim();
+      el.replaceChildren();
+      if (!config || !window.MolDrawAvatar) {
+        el.textContent = initials(name);
+        return;
+      }
+      el.insertAdjacentHTML('beforeend', window.MolDrawAvatar.svg(config));
+    }
+    function ensureProfileBubble() {
+      const existing = document.getElementById('community-profile-bubble');
+      if (existing) return existing;
+      const nav = document.querySelector('.site-topbar-nav') || document.querySelector('.site-topbar-inner');
+      if (!nav) return null;
+      document.body.classList.add('community-has-profile-bubble');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.id = 'community-profile-bubble';
+      button.className = 'community-profile-bubble';
+      button.hidden = true;
+      button.setAttribute('aria-haspopup', 'dialog');
+      button.setAttribute('aria-label', 'Your profile');
+      button.innerHTML = '<span id="community-profile-bubble-face" class="avatar avatar-teal">M</span>';
+      button.addEventListener('click', () => {
+        if (!session?.user) {
+          openAuthModal('Sign in to manage your profile');
+          return;
+        }
+        openProfileModal();
+      });
+      nav.appendChild(button);
+      return button;
+    }
+    function syncProfileBubble() {
+      const button = ensureProfileBubble();
+      if (!button) return;
+      const signedIn = Boolean(session?.user);
+      button.hidden = !signedIn;
+      if (!signedIn) return;
+      const name = profile?.name || session.user.email || 'You';
+      paintAvatar(document.getElementById('community-profile-bubble-face'), name, profile);
+      button.setAttribute('aria-label', `Profile for ${name}`);
+    }
     const isAdmin = () => Boolean(profile && (profile.is_admin || profile.role === 'admin'));
     const adminBadge = (value) => value ? '<span class="admin-badge">Admin</span>' : '';
     const karmaBadge = (value) => `<span class="karma-badge">${Math.max(0, Number(value) || 0)} karma</span>`;
@@ -3296,7 +3543,7 @@
       state.menu.hidden = false;
       state.menu.innerHTML = matches.map((user, index) => `
         <button class="mention-option" type="button" role="option" data-mention-index="${index}" aria-selected="${index === state.active ? 'true' : 'false'}">
-          <span class="avatar ${escapeHtml(safeAvatarKey(user.avatar_key))}">${escapeHtml(initials(user.name))}</span>
+          <span>${authorAvatarHtml(user.name, user.id)}</span>
           <span>
             <strong>${escapeHtml(user.name || 'Community member')}</strong>
             <span>@${escapeHtml(mentionHandle(user))}${user.designation ? ` · ${escapeHtml(user.designation)}` : ''}</span>
@@ -3338,6 +3585,8 @@
       const { data, error } = await client.rpc('search_community_mention_users', { q: query || '' });
       if (error || state.requestId !== requestId) return;
       state.matches = (data || []).filter((user) => user.id !== session?.user?.id);
+      await hydrateAuthorAvatars(state.matches.map((user) => ({ user_id: user.id })));
+      if (state.requestId !== requestId) return;
       renderMentionMenu(input);
     }
 
@@ -3794,14 +4043,159 @@
 
     function updatePostIdentity() {
       const name = profile?.name || session?.user?.email || 'MolDraw user';
-      const avatarKey = safeAvatarKey(profile?.avatar_key);
-      const initial = initials(name);
-      document.getElementById('composer-avatar').className = `avatar ${avatarKey}`;
-      document.getElementById('composer-avatar').textContent = initial;
-      document.getElementById('post-modal-avatar').className = `avatar ${avatarKey}`;
-      document.getElementById('post-modal-avatar').textContent = initial;
+      paintAvatar(document.getElementById('composer-avatar'), name, profile);
+      paintAvatar(document.getElementById('post-modal-avatar'), name, profile);
       document.getElementById('post-modal-name').textContent = name;
       document.getElementById('post-modal-meta').textContent = profile?.designation ? `${profile.designation} · Public community post` : 'Public community post';
+      syncProfileBubble();
+    }
+
+    function profileSelectColumns() {
+      return avatarColumnsAvailable ? `${PROFILE_SELECT_BASE},avatar_style,avatar_seed` : PROFILE_SELECT_BASE;
+    }
+
+    async function fetchOwnProfile(userId) {
+      let result = await client.from('users').select(profileSelectColumns()).eq('id', userId).maybeSingle();
+      if (result.error && avatarColumnsAvailable && missingAvatarColumn(result.error)) {
+        avatarColumnsAvailable = false;
+        result = await client.from('users').select(PROFILE_SELECT_BASE).eq('id', userId).maybeSingle();
+      }
+      return result;
+    }
+
+    function currentAvatarDraft() {
+      const seed = document.querySelector('#avatar-style-picker input[name="avatar_seed"]:checked')?.value || '';
+      return {
+        style: seed ? 'face' : '',
+        seed,
+        avatar_key: profile?.avatar_key
+      };
+    }
+
+    function syncAvatarDraftFaces() {
+      const draft = currentAvatarDraft();
+      const name = document.getElementById('profile-name')?.value || profile?.name || session?.user?.email || 'M';
+      paintAvatar(document.getElementById('profile-preview'), name, {
+        avatar_style: draft.style,
+        avatar_seed: draft.seed
+      });
+      document.querySelectorAll('[data-avatar-face]').forEach((face) => {
+        const seed = face.getAttribute('data-avatar-face') || '';
+        paintAvatar(face, name, {
+          avatar_style: seed ? 'face' : '',
+          avatar_seed: seed
+        });
+      });
+      document.querySelectorAll('.avatar-style-option').forEach((label) => {
+        label.classList.toggle('is-selected', Boolean(label.querySelector('input')?.checked));
+      });
+    }
+
+    function renderFacePicker(selectedSeed) {
+      const root = document.getElementById('avatar-style-picker');
+      const lib = window.MolDrawAvatar;
+      if (!root || !lib) return;
+      const selected = lib.decode('face', selectedSeed) ? selectedSeed : '';
+      const options = [{ seed: '', label: 'Letter' }, ...lib.presets()];
+      if (selected && !options.some((item) => item.seed === selected)) {
+        options.splice(1, 0, { seed: selected, label: 'Yours' });
+      }
+      root.innerHTML = options.map((option) => `
+        <label class="avatar-style-option">
+          <input type="radio" name="avatar_seed" value="${escapeHtml(option.seed)}"${option.seed === selected ? ' checked' : ''}>
+          <span class="avatar-style-face avatar avatar-teal" data-avatar-face="${escapeHtml(option.seed)}"></span>
+          <span>${escapeHtml(option.label)}</span>
+        </label>
+      `).join('');
+      if (!root.dataset.bound) {
+        root.dataset.bound = '1';
+        root.addEventListener('change', (event) => {
+          if (event.target?.name === 'avatar_seed') syncAvatarDraftFaces();
+        });
+      }
+      syncAvatarDraftFaces();
+    }
+
+    function openProfileModal() {
+      if (!session?.user) {
+        openAuthModal('Sign in to manage your profile');
+        return;
+      }
+      const name = profile?.name || displayNameFromEmail(session.user.email) || '';
+      document.getElementById('profile-name').value = name;
+      document.getElementById('profile-email').textContent = profile?.email || session.user.email || '';
+      const saved = profile?.avatar_style === 'face' ? (profile.avatar_seed || '') : '';
+      renderFacePicker(saved);
+      const notice = document.getElementById('profile-notice');
+      notice.textContent = avatarColumnsAvailable
+        ? ''
+        : 'Avatar columns are not in the database yet. Paste supabase/sql/pending_profile_avatar_paste.sql in the Supabase SQL editor. Display name can still be saved.';
+      profileModal.classList.add('visible');
+      profileModal.setAttribute('aria-hidden', 'false');
+      setTimeout(() => document.getElementById('profile-name').focus(), 0);
+    }
+
+    function closeProfileModal() {
+      profileModal.classList.remove('visible');
+      profileModal.setAttribute('aria-hidden', 'true');
+    }
+
+    async function saveProfile(event) {
+      event.preventDefault();
+      if (!session?.user) return;
+      const notice = document.getElementById('profile-notice');
+      const name = document.getElementById('profile-name').value.trim();
+      if (!name) {
+        notice.textContent = 'Add a display name.';
+        return;
+      }
+      const draft = currentAvatarDraft();
+      const style = draft.style || null;
+      const seed = style ? draft.seed : null;
+      notice.textContent = 'Saving...';
+      let payload = { name };
+      if (avatarColumnsAvailable) {
+        payload = { ...payload, avatar_style: style, avatar_seed: seed };
+      }
+      let { data, error } = await client
+        .from('users')
+        .update(payload)
+        .eq('id', session.user.id)
+        .select(profileSelectColumns())
+        .maybeSingle();
+      if (error && avatarColumnsAvailable && missingAvatarColumn(error)) {
+        avatarColumnsAvailable = false;
+        ({ data, error } = await client
+          .from('users')
+          .update({ name })
+          .eq('id', session.user.id)
+          .select(PROFILE_SELECT_BASE)
+          .maybeSingle());
+        if (!error) {
+          profile = { ...(profile || {}), ...(data || {}), name };
+          updatePostIdentity();
+          notice.textContent = 'Display name saved. Avatar columns are not in the database yet. Paste supabase/sql/pending_profile_avatar_paste.sql in the Supabase SQL editor, then save again.';
+        } else {
+          notice.textContent = error.message || 'Could not save profile.';
+        }
+        return;
+      }
+      if (error) {
+        notice.textContent = error.message || 'Could not save profile.';
+        return;
+      }
+      profile = {
+        ...(profile || {}),
+        ...(data || {}),
+        name,
+        email: data?.email || profile?.email || session.user.email,
+        avatar_style: avatarColumnsAvailable ? style : profile?.avatar_style || null,
+        avatar_seed: avatarColumnsAvailable ? seed : profile?.avatar_seed || null
+      };
+      authorAvatarCache.set(session.user.id, { id: session.user.id, avatar_style: style, avatar_seed: seed });
+      updatePostIdentity();
+      notice.textContent = 'Profile saved.';
+      loadActiveTab();
     }
 
     function openPostModal(option, post = null) {
@@ -4075,12 +4469,8 @@
       session = data?.session || null;
       profile = null;
       if (session?.user) {
-        const { data: userProfile } = await client
-          .from('users')
-          .select('id,name,email,designation,avatar_key,role,is_admin,karma_score')
-          .eq('id', session.user.id)
-          .maybeSingle();
-        profile = userProfile || {
+        const { data: userProfile, error: profileError } = await fetchOwnProfile(session.user.id);
+        profile = (!profileError && userProfile) ? userProfile : {
           name: session.user.user_metadata?.name || session.user.email,
           email: session.user.email,
           designation: 'Other',
@@ -4619,9 +5009,9 @@
       return `
         <div class="comment ${isReply ? 'comment-reply' : ''}${highlighted ? ' is-highlight' : ''}${pending ? ' is-pending' : ''}${credited ? ' is-credited' : ''}" ${domId} data-comment-id="${escapeHtml(comment.id)}">
           <div class="author">
-            <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
+            ${authorAvatarHtml(comment.author_name, comment.user_id)}
             <div>
-              <strong>${authorNameLink(comment.author_name, comment.user_id)} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}${credited ? renderResolutionCredit({ resolved_by_name: comment.author_name || parentItem?.resolved_by_name }, { compact: true }) : ''}</strong>
+              <strong>${authorNameLink(comment.author_name, comment.user_id)} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}</strong>
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · ${timeHtml}</div>
             </div>
           </div>
@@ -4790,6 +5180,7 @@
         .limit(100);
       const comments = data || [];
       await hydrateCommentLikes('community_comments', comments);
+      await hydrateAuthorAvatars(comments);
       commentCache.set(postId, comments);
       commentTotalCache.set(postId, comments.length);
       wraps.forEach((wrap) => {
@@ -5002,6 +5393,7 @@
       }
       const comments = data || [];
       await hydrateCommentLikes('feature_request_comments', comments);
+      await hydrateAuthorAvatars(comments);
       featureCommentCache.set(requestId, comments);
       featureCommentTotalCache.set(requestId, comments.length);
       wraps.forEach((wrap) => {
@@ -5043,7 +5435,7 @@
           <article class="community-card${selectedPostId === post.id ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}" data-created-at="${escapeHtml(post.created_at || '')}">
             <div class="card-top">
               <div class="author">
-                <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
+                ${authorAvatarHtml(post.author_name, post.user_id)}
                 <div>
                   <div class="author-name">${authorNameLink(post.author_name, post.user_id)} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)} ${implementedCrown(post.user_id, post.author_name)}</div>
                   <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(post.created_at))}</div>
@@ -5094,7 +5486,8 @@
       });
       bindFeedOpeners('post', posts, card);
     }
-    function paintDiscussionCards(posts, myVotes, selectedPostId, { append = false } = {}) {
+    async function paintDiscussionCards(posts, myVotes, selectedPostId, { append = false } = {}) {
+      await hydrateAuthorAvatars(posts);
       if (append) {
         posts.forEach((post) => {
           if (document.getElementById(`post-${post.id}`)) return;
@@ -5141,7 +5534,7 @@
           <article class="community-card${selectedRequestId === request.id ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}" data-created-at="${escapeHtml(request.created_at || '')}">
             <div class="card-top">
               <div class="author">
-                <span class="avatar">${escapeHtml(initials(request.name))}</span>
+                ${authorAvatarHtml(request.name, request.user_id)}
                 <div>
                   <div class="author-name">${authorNameLink(request.name, request.user_id, 'MolDraw user')} ${implementedCrown(request.user_id, request.name)}</div>
                   <div class="author-meta">Feature request · ${escapeHtml(timeText(request.created_at))}</div>
@@ -5182,7 +5575,8 @@
       });
       bindFeedOpeners('feature', requests, card);
     }
-    function paintFeatureCards(requests, myVotes, selectedRequestId, { append = false } = {}) {
+    async function paintFeatureCards(requests, myVotes, selectedRequestId, { append = false } = {}) {
+      await hydrateAuthorAvatars(requests);
       if (append) {
         requests.forEach((request) => {
           if (document.getElementById(`feature-${request.id}`)) return;
@@ -5257,7 +5651,7 @@
         lastDiscussionItems = cached.items;
         discussionCursor = feedCursorOf(cached.items);
         discussionHasMore = cached.items.length >= COMMUNITY_BATCH_SIZE;
-        paintDiscussionCards(cached.items, new Set(), selectedPostId);
+        await paintDiscussionCards(cached.items, new Set(), selectedPostId);
         setFeedMoreState(discussionHasMore ? '' : (cached.items.length ? 'end' : ''));
       }
       const { posts: fetchedPosts, error, hasMore } = await loadDiscussionRowsIncremental(cached);
@@ -5308,7 +5702,7 @@
       discussionHasMore = Boolean(hasMore);
       await loadDoneFeatureIndex();
       const scrollY = window.scrollY;
-      paintDiscussionCards(posts, discussionVotes, selectedPostId);
+      await paintDiscussionCards(posts, discussionVotes, selectedPostId);
       if (!setLoading) window.scrollTo(0, scrollY);
       setFeedMoreState(posts.length ? (discussionHasMore ? '' : 'end') : '');
       ensureFeedMoreObserver();
@@ -5349,7 +5743,7 @@
         }
         lastDiscussionItems = mergeFeedItems(lastDiscussionItems, fresh);
         fresh.forEach((post) => commentTotalCache.set(post.id, post.commentTotal ?? post.comment_count ?? (post.commentsPreview || []).length));
-        paintDiscussionCards(fresh, discussionVotes, null, { append: true });
+        await paintDiscussionCards(fresh, discussionVotes, null, { append: true });
         discussionCursor = feedCursorOf(fresh) || discussionCursor;
       }
       discussionHasMore = Boolean(hasMore) && fresh.length > 0;
@@ -5539,7 +5933,7 @@
         lastFeatureItems = cached.items;
         featureCursor = feedCursorOf(cached.items);
         featureHasMore = cached.items.length >= COMMUNITY_BATCH_SIZE;
-        paintFeatureCards(cached.items, new Set(), selectedRequestId);
+        await paintFeatureCards(cached.items, new Set(), selectedRequestId);
         setFeedMoreState(featureHasMore ? '' : (cached.items.length ? 'end' : ''));
       }
       const { requests: fetchedRequests, error, hasMore } = await loadFeatureRowsIncremental(cached);
@@ -5580,7 +5974,7 @@
       featureHasMore = Boolean(hasMore);
       await loadDoneFeatureIndex();
       const scrollY = window.scrollY;
-      paintFeatureCards(requests, featureVotes, selectedRequestId);
+      await paintFeatureCards(requests, featureVotes, selectedRequestId);
       if (!setLoading) window.scrollTo(0, scrollY);
       setFeedMoreState(requests.length ? (featureHasMore ? '' : 'end') : '');
       ensureFeedMoreObserver();
@@ -5621,7 +6015,7 @@
         }
         lastFeatureItems = mergeFeedItems(lastFeatureItems, fresh);
         fresh.forEach((request) => featureCommentTotalCache.set(request.id, request.commentTotal ?? (request.commentsPreview || []).length));
-        paintFeatureCards(fresh, featureVotes, null, { append: true });
+        await paintFeatureCards(fresh, featureVotes, null, { append: true });
         featureCursor = feedCursorOf(fresh) || featureCursor;
       }
       featureHasMore = Boolean(hasMore) && fresh.length > 0;
@@ -5735,13 +6129,21 @@
     document.querySelectorAll('[data-auth-open]').forEach((btn) => btn.addEventListener('click', () => openAuthModal('Sign in to continue')));
     document.getElementById('auth-cancel').addEventListener('click', closeAuthModal);
     authModal.addEventListener('click', (event) => { if (event.target === authModal) closeAuthModal(); });
+    document.getElementById('profile-form')?.addEventListener('submit', saveProfile);
+    document.getElementById('profile-modal-close')?.addEventListener('click', closeProfileModal);
+    document.getElementById('profile-shuffle-seed')?.addEventListener('click', () => {
+      const seed = window.MolDrawAvatar?.randomSeed() || '';
+      renderFacePicker(seed);
+    });
+    profileModal?.addEventListener('click', (event) => { if (event.target === profileModal) closeProfileModal(); });
     window.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
       if (document.querySelector('.post-overflow.is-open')) {
         closePostMenus();
         return;
       }
-      if (implementedPanelRoot?.classList.contains('is-open')) closeImplementedPanel();
+      if (profileModal?.classList.contains('visible')) closeProfileModal();
+      else if (implementedPanelRoot?.classList.contains('is-open')) closeImplementedPanel();
       else if (document.getElementById('image-lightbox')?.classList.contains('is-open')) closeImageLightbox();
       else if (event.key === 'Escape' && authModal.classList.contains('visible')) closeAuthModal();
       else if (event.key === 'Escape' && postModal.classList.contains('visible')) closePostModal();
@@ -5819,6 +6221,8 @@
         window.location.replace('/community/features');
       }
     });
+
+    document.addEventListener('DOMContentLoaded', syncProfileBubble);
 
     refreshSession().then(() => {
       if (window.location.hash === '#feature-requests') {

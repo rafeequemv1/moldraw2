@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const communityAvatar = require(path.join(__dirname, '../public/js/community-avatar.js'));
 
 const SITE = 'https://www.moldraw.com';
 const PAGE_SIZE = 10;
@@ -353,6 +354,69 @@ async function renderCommunityPageSafe(pathname, options = {}) {
   }
 }
 
+function authorAvatarHtml(name, source) {
+  return communityAvatar.html(name, source);
+}
+
+async function fetchAvatarMap(ids) {
+  const unique = [...new Set((ids || []).filter(Boolean))];
+  const map = new Map();
+  for (let index = 0; index < unique.length; index += 80) {
+    const part = await fetchAvatarChunk(unique.slice(index, index + 80));
+    part.forEach((row, id) => map.set(id, row));
+  }
+  return map;
+}
+
+async function fetchAvatarChunk(unique) {
+  if (!unique.length) return new Map();
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/community_avatar_lookup`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_ids: unique }),
+    });
+    if (!response.ok) throw new Error('avatar lookup unavailable');
+    const data = await response.json();
+    return new Map((Array.isArray(data) ? data : []).map((row) => [row.id, row]));
+  } catch {
+    try {
+      const { data } = await supabaseQuery(
+        'users',
+        `select=id,avatar_style,avatar_seed&id=in.(${unique.map((id) => encodeEq(id)).join(',')})`,
+      );
+      return new Map((data || []).filter((row) => row.avatar_style === 'face').map((row) => [row.id, row]));
+    } catch {
+      return new Map();
+    }
+  }
+}
+
+async function attachFaceAvatars(...groups) {
+  const nodes = [];
+  const visit = (item) => {
+    if (!item || typeof item !== 'object') return;
+    nodes.push(item);
+    (item.replies || []).forEach(visit);
+  };
+  groups.forEach((group) => {
+    if (Array.isArray(group)) group.forEach(visit);
+    else visit(group);
+  });
+  const map = await fetchAvatarMap(nodes.map((node) => node.user_id));
+  nodes.forEach((node) => {
+    const row = map.get(node.user_id);
+    if (!row || row.avatar_style !== 'face') return;
+    node.avatar_style = row.avatar_style;
+    node.avatar_seed = row.avatar_seed;
+  });
+}
+
 async function supabaseQuery(table, search, { range } = {}) {
   const url = `${SUPABASE_URL}/rest/v1/${table}?${search}`;
   const headers = {
@@ -632,9 +696,9 @@ function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllRe
         <article class="comment${comment.parent_comment_id ? ' comment-reply' : ''}${highlighted ? ' is-highlight' : ''}${credited ? ' is-credited' : ''}" ${domId} data-comment-id="${escapeHtml(comment.id)}">
           <${heading} class="comment-heading">${escapeHtml(comment.author_name || 'Community member')}</${heading}>
           <div class="author"${highlighted ? ' id="author"' : ''}>
-            <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
+            ${authorAvatarHtml(comment.author_name, comment)}
             <div>
-              <strong>${authorNameLink(comment.author_name, comment.user_id)} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}${credited ? renderResolutionCredit(comment.author_name, { compact: true }) : ''}</strong>
+              <strong>${authorNameLink(comment.author_name, comment.user_id)} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}</strong>
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · <a class="comment-time-link" href="${escapeHtml(permalink)}"><time datetime="${escapeHtml(isoDate(comment.created_at) || '')}">${escapeHtml(timeText(comment.created_at))}</time></a></div>
             </div>
           </div>
@@ -705,7 +769,7 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
           <article class="community-card${selected ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}" data-created-at="${escapeHtml(isoDate(post.created_at) || '')}">
             <div class="card-top">
               <div class="author"${includeComments && !highlightId ? ' id="author"' : ''}>
-                <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
+                ${authorAvatarHtml(post.author_name, post)}
                 <div>
                   <div class="author-name">${authorNameLink(post.author_name, post.user_id)} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)} ${implementedCrown(post.user_id, post.author_name)}</div>
                   <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · <time datetime="${escapeHtml(isoDate(post.created_at) || '')}">${escapeHtml(timeText(post.created_at))}</time></div>
@@ -713,7 +777,7 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
               </div>
               ${postOverflowMenuHtml(url)}
             </div>
-            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${post.request_status ? renderFeatureStatus(post.request_status) : ''}${post.resolved_by_name ? renderResolutionCredit(post.resolved_by_name) : ''}</${titleTag}>
+            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${post.request_status ? renderFeatureStatus(post.request_status) : ''}</${titleTag}>
             <p class="card-body">${renderMentionedText(post.body)}</p>
             ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
@@ -742,15 +806,6 @@ function renderFeatureStatus(status) {
   return `<span class="feature-status ${meta.className}" title="${escapeHtml(meta.label)}"><span class="feature-status-symbol" aria-hidden="true">${meta.symbol}</span><span class="feature-status-label">${escapeHtml(meta.label)}</span></span>`;
 }
 
-function renderResolutionCredit(name, { compact = false } = {}) {
-  if (!name && !compact) return '';
-  const label = compact ? 'Credit' : `Credit: ${name}`;
-  const tip = name
-    ? `Crown credit for the comment that was marked done. ${name}`
-    : 'Crown credit for the comment that was marked done.';
-  return `<span class="resolution-credit" title="${escapeHtml(tip)}">${CROWN_ICON}<span>${escapeHtml(label)}</span></span>`;
-}
-
 function renderFeatureCard(request, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '', commentTotal } = {}) {
   const url = featurePath(request);
   const titleTag = heading;
@@ -769,7 +824,7 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
           <article class="community-card${selected ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}" data-created-at="${escapeHtml(isoDate(request.created_at) || '')}">
             <div class="card-top">
               <div class="author"${includeComments && !highlightId ? ' id="author"' : ''}>
-                <span class="avatar">${escapeHtml(initials(request.name))}</span>
+                ${authorAvatarHtml(request.name, request)}
                 <div>
                   <div class="author-name">${authorNameLink(request.name, request.user_id, { fallback: 'MolDraw user' })} ${implementedCrown(request.user_id, request.name)}</div>
                   <div class="author-meta">Feature request · <time datetime="${escapeHtml(isoDate(request.created_at) || '')}">${escapeHtml(timeText(request.created_at))}</time></div>
@@ -777,7 +832,7 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
               </div>
               ${postOverflowMenuHtml(url)}
             </div>
-            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(request.status)}${request.resolved_by_name ? renderResolutionCredit(request.resolved_by_name) : ''}</${titleTag}>
+            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(request.status)}</${titleTag}>
             <p class="card-body">${escapeHtml(request.description)}</p>
             ${renderImages(request.image_urls, 'Feature request attachment')}
             <div class="card-actions">
@@ -1166,6 +1221,7 @@ async function renderListPage(route, { accept } = {}) {
     ? 'Public MolDraw feature requests with titles, descriptions, votes, and replies. Sign in to submit or vote.'
     : excerpt(rows.map((row) => row.title).filter(Boolean).join('. ') || 'Public MolDraw community discussions about chemical structure drawing, editor workflows, and 3D molecule viewing.');
 
+  await attachFaceAvatars(rows, ...previews.byParent.values());
   const feedHtml = isFeatures
     ? `<section class="feature-cta-card"><div><h2>Have an idea for MolDraw?</h2><p>Request a feature here so the community can vote and track progress. Sign in to submit.</p></div></section>${rows.map((request) => renderFeatureCard(request, previews.byParent.get(request.id) || [], { commentTotal: previews.totals.get(request.id) })).join('')}`
     : rows.map((post) => renderPostCard(post, previews.byParent.get(post.id) || [], { commentTotal: post.comment_count ?? previews.totals.get(post.id) })).join('')
@@ -1263,6 +1319,7 @@ async function renderPostPage(post, comments, { canonicalPath, accept, robots, e
   const list = await fetchPostsPage(1).catch(() => ({ data: [] }));
   let listRows = list.data || [];
   if (!listRows.some((row) => row.id === post.id)) listRows = [post, ...listRows];
+  await attachFaceAvatars(post, comments, listRows);
   const feedHtml = listRows.map((row) => renderPostCard(row, [], { selected: row.id === post.id })).join('');
   const threadHtml = `${renderPostCard(post, comments, { heading: 'h1', showAllComments: true, includeComments: true, highlightId })}${highlightId ? `<p class="author-meta">Showing the indexed comment <a href="#comment-${escapeHtml(highlightId)}">#${escapeHtml(highlightId)}</a>.</p>` : ''}`;
 
@@ -1326,6 +1383,7 @@ async function renderFeaturePage(request, comments, { canonicalPath, accept, ext
   const list = await fetchFeaturesPage(1).catch(() => ({ data: [] }));
   let listRows = list.data || [];
   if (!listRows.some((row) => row.id === request.id)) listRows = [request, ...listRows];
+  await attachFaceAvatars(request, comments, listRows);
   const feedHtml = `<section class="feature-cta-card"><div><h2>Have an idea for MolDraw?</h2><p>Request a feature here so the community can vote and track progress. Sign in to submit.</p></div></section>${listRows.map((row) => renderFeatureCard(row, [], { selected: row.id === request.id })).join('')}`;
   const threadHtml = `${renderFeatureCard(request, comments, { heading: 'h1', showAllComments: true, includeComments: true, highlightId })}${highlightId ? `<p class="author-meta">Showing the indexed comment <a href="#comment-${escapeHtml(highlightId)}">#${escapeHtml(highlightId)}</a>.</p>` : ''}`;
 
@@ -1435,6 +1493,7 @@ async function renderProfilePage(route, { accept } = {}) {
     };
   }
 
+  await attachFaceAvatars(posts, features);
   const feedHtml = [
     ...posts.map((post) => renderPostCard(post, [])),
     ...features.map((request) => renderFeatureCard(request, [])),

@@ -168,6 +168,9 @@ export interface InteractionContext {
     imageIds: string[];
     dx: number;
     dy: number;
+    /** When set, the dragged atom is merged into the stationary target after the move. */
+    mergeSourceAtomId?: string;
+    mergeTargetAtomId?: string;
   }) => void;
   /** Currently selected annotation shape id (same as color-edit shape target). */
   selectedCanvasShapeId?: string | null;

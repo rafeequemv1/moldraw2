@@ -433,7 +433,7 @@
 
 /* Compact rows (no "More" menu): account sits at the right edge. */
 .tb-btn-auth-signed--right {
-  margin-left: auto;
+  margin-left: 0;
 }
 
 /* Signed in: the right-hand "More" button carries the account. */

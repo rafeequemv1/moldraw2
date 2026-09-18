@@ -77,7 +77,16 @@ export const DEFAULT_STRUCTURE_THEME: StructureThemeColors = {
 };
 
 export type DragActionState =
-  | { type: 'move_selection'; startX: number; startY: number; currentX: number; currentY: number }
+  | {
+      type: 'move_selection';
+      startX: number;
+      startY: number;
+      currentX: number;
+      currentY: number;
+      /** Stationary atom this drag will join into on release. */
+      attachSourceId?: string;
+      attachTargetId?: string;
+    }
   | { type: 'box_select'; startX: number; startY: number; currentX: number; currentY: number }
   | { type: 'lasso_select'; points: Point[]; currentX: number; currentY: number }
   | {

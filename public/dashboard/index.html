@@ -1080,7 +1080,6 @@
                 ${Object.keys(requestStatusLabels).map((key) => `<option value="${key}"${key === currentStatus ? ' selected' : ''}>${requestStatusLabels[key]}</option>`).join('')}
               </select>
             </label>
-            ${request.resolved_by_name ? `<p class="request-meta">Credit: ${escapeHtml(request.resolved_by_name)}</p>` : ''}
           </div>
           <button class="dashboard-modal-close" type="button" aria-label="Close feature request">×</button>
         </div>

@@ -5,18 +5,18 @@
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Embed the MolDraw editor on a course page, lab manual, or docs site. Copy one iframe, preview the player, and see what embedding does and does not do for search.">
-  <meta name="keywords" content="embed MolDraw, MolDraw iframe, embed molecule editor, chemistry editor embed, LMS molecule drawing">
+  <meta name="description" content="Embed the MolDraw editor on your site. Copy one iframe, paste it into a blog, course, docs page, or app, and set the frame height. Includes a live preview.">
+  <meta name="keywords" content="embed MolDraw, MolDraw iframe, embed molecule editor">
   <meta name="author" content="Scidart Academy">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <meta property="og:title" content="Embed MolDraw on Your Site">
-  <meta property="og:description" content="Copy a ready iframe, preview the MolDraw editor, and use it on teaching pages, docs, and LMS courses. Embedding is a referral channel, not a ranking shortcut.">
+  <meta property="og:description" content="Copy one iframe and paste the MolDraw editor into a blog, lesson, docs page, or app. Set the height, preview the player, and keep Open in MolDraw for the full editor.">
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://www.moldraw.com/blog/embed-moldraw.html">
   <meta property="og:image" content="https://www.moldraw.com/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Embed MolDraw on Your Site">
-  <meta name="twitter:description" content="One-click iframe for teachers, docs, and LMS pages, with a live preview and a link back to MolDraw.">
+  <meta name="twitter:description" content="Copy one iframe, paste the MolDraw editor on your page, and size the frame. Live preview included.">
   <link rel="canonical" href="https://www.moldraw.com/blog/embed-moldraw.html">
   <link rel="alternate" type="text/plain" href="/llms.txt" title="MolDraw LLM index">
   <link rel="stylesheet" href="/css/site-topbar.css">
@@ -26,8 +26,8 @@
   {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    "headline": "Embed MolDraw on Your Site",
-    "description": "How to place the MolDraw editor on a course page, documentation site, or LMS with a single iframe, and what that embed does not do for search rankings.",
+    "headline": "Embed the MolDraw editor on your site",
+    "description": "How to copy one iframe, paste the MolDraw editor into a blog, course, docs page, or app, and set the frame height.",
     "datePublished": "2026-09-18",
     "dateModified": "2026-09-18",
     "author": { "@type": "Organization", "name": "Scidart Academy" },
@@ -40,8 +40,8 @@
   {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    "name": "Embed MolDraw on your site",
-    "description": "Copy the MolDraw iframe and paste it into a page that should show the molecule editor.",
+    "name": "Embed the MolDraw editor on your site",
+    "description": "Copy the MolDraw iframe and paste it into a blog, course, docs page, or app that should show the molecule editor.",
     "totalTime": "PT2M",
     "step": [
       {
@@ -52,12 +52,12 @@
       {
         "@type": "HowToStep",
         "name": "Paste it into your page",
-        "text": "Paste the snippet where the editor should appear: a lesson, lab handout, documentation page, or LMS HTML block."
+        "text": "Paste the snippet where the editor should appear: a blog post, lesson, lab handout, documentation page, LMS HTML block, or app screen."
       },
       {
         "@type": "HowToStep",
-        "name": "Leave the Open in MolDraw link available",
-        "text": "The player shows an Open in MolDraw link so a visitor can continue in the full editor. Do not strip that bar if you want the embed to send people back to MolDraw."
+        "name": "Set the frame size",
+        "text": "Width is 100 percent so the editor fills the column. Height starts at 640 pixels. Raise it for a larger canvas, or lower it if the page is short."
       }
     ]
   }
@@ -69,42 +69,34 @@
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "Who is the MolDraw embed for?",
+        "name": "Who is this for?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Teachers, course authors, documentation writers, and LMS pages that need a molecule editor next to an explanation. Students can draw in place, then open the full MolDraw app if they want to keep working."
+          "text": "Chemistry bloggers, educators, LMS authors, docs writers, and app builders who want a molecule editor beside their own text. It is a poor fit if you only need a logo or a screenshot. In that case, link to MolDraw or use an image."
         }
       },
       {
         "@type": "Question",
-        "name": "Does embedding MolDraw improve my site's Google ranking?",
+        "name": "Do readers need an account?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "No. An iframe is a convenience and referral channel. It does not transfer MolDraw's rankings to the host page, and it is not a shortcut for search traffic."
+          "text": "No. They can draw in the frame without signing up on your site. Open in MolDraw is there when they want the full editor."
         }
       },
       {
         "@type": "Question",
-        "name": "Which page does Google associate with content inside an iframe?",
+        "name": "Can I change the size after I paste it?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Google associates the framed document with the iframe source URL, not with the parent page that contains the iframe. For this embed the source is https://www.moldraw.com/embed. That still does not pass ranking from MolDraw to the site that hosts the frame. Cite and link this guide, or the MolDraw homepage, when you want a normal HTML link."
+          "text": "Yes. Edit height in the snippet. Leave width at 100 percent unless your layout needs a fixed width. The preview on this page is 640 pixels tall on a wide screen and shorter on a phone."
         }
       },
       {
         "@type": "Question",
-        "name": "Can any website frame the whole MolDraw app?",
+        "name": "The frame is blank. What now?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "No. Cross-site framing is allowed only on the embed URL. Other MolDraw routes send framing rules that keep third-party pages from wrapping the signed-in app, which limits clickjacking. Same-origin MolDraw tools can still use their own editor frames."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How do visitors get from the embed back to MolDraw?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "The embed player includes an Open in MolDraw link that opens https://www.moldraw.com/ in a new tab so the host lesson stays put."
+          "text": "A blank frame usually means the host blocks iframes. Switch to the platform’s HTML or embed block. If that still fails, send readers to https://www.moldraw.com/ with a normal link."
         }
       }
     ]
@@ -144,9 +136,10 @@
   <main class="layout">
     <aside class="outline" aria-label="Article sections">
       <h2>On this page</h2>
-      <a href="#what-it-is">What the embed is</a>
-      <a href="#copy">Copy the iframe</a>
+      <a href="#who">Who it is for</a>
+      <a href="#copy">Copy and paste</a>
       <a href="#preview">Preview</a>
+      <a href="#size">Size the frame</a>
       <a href="#open">Open in MolDraw</a>
       <a href="#faq">FAQ</a>
     </aside>
@@ -156,56 +149,63 @@
         <a class="top-link" href="/tools/">Chemistry Tools</a>
         <a class="primary-link" href="/">Open MolDraw</a>
       </nav>
-      <h1>Embed MolDraw on your site</h1>
+      <h1>Embed the MolDraw editor on your site</h1>
       <p class="meta">Published: 18 Sep 2026 · Author: Scidart Academy</p>
-      <p class="lede">Put the MolDraw editor on a lesson, lab page, or documentation site with one iframe. Visitors can sketch a structure where they are reading, then open the full app if they want to continue.</p>
+      <p class="lede">Add a live molecule editor to a chemistry blog, lesson, lab page, docs article, or app. Copy one iframe, paste it where the drawing should appear, and set the height so the canvas fits your layout.</p>
       <div class="answer-box">
-        <strong>Short version:</strong> copy the snippet below, paste it into your HTML, and leave the “Open in MolDraw” link in the player. This is a way to share the editor. It does not move MolDraw’s search rankings onto your site.
+        <strong>Short version:</strong> click Copy embed code, paste the snippet into your HTML, and start with a height of 640 pixels. Readers draw in place. Open in MolDraw opens the full editor in a new tab.
       </div>
 
-      <section id="what-it-is">
-        <h2>What the embed is</h2>
-        <p>The embed is a framed copy of the MolDraw drawing screen, served from <a href="https://www.moldraw.com/embed">https://www.moldraw.com/embed</a>. It is the same browser editor people use on the homepage, with a thin bar that names MolDraw and links back to the full site.</p>
-        <p>It is meant for places where a reader should try a structure without leaving the explanation: a lecture note, a lab manual, an LMS page, or a docs article about a reaction or file format. The host page stays yours. The editor stays on MolDraw’s domain.</p>
-        <p>Use it when drawing in place helps the reader. If you only need to send someone to MolDraw, a normal link to <a href="https://www.moldraw.com/">www.moldraw.com</a> is simpler and is what search engines and answer engines should cite.</p>
+      <section id="who">
+        <h2>Who it is for</h2>
+        <p>Use the embed when a reader should try a structure next to your explanation, not only look at a picture.</p>
+        <ul>
+          <li><strong>Chemistry bloggers</strong> — a working canvas under a reaction or structure post.</li>
+          <li><strong>Educators and LMS authors</strong> — a drawing box on a lesson, lab manual, or problem set.</li>
+          <li><strong>Docs authors</strong> — an editor beside a format, SMILES, or workflow note.</li>
+          <li><strong>App builders</strong> — a ready editor frame inside a page that already has its own interface.</li>
+        </ul>
+        <p>You do not host the editor. The frame loads it from <a href="https://www.moldraw.com/embed">https://www.moldraw.com/embed</a>. Your page stays yours.</p>
       </section>
 
       <section id="copy">
-        <h2>Copy the iframe</h2>
-        <p>The button copies a finished snippet. Width is 100% so it fits the column you drop it into. Height is 640 pixels, which is enough for the toolbar and a small structure. Change the height if your layout needs a shorter player.</p>
+        <h2>Copy and paste</h2>
+        <p>Copy embed code puts this snippet on your clipboard. Paste it into the HTML of your page, an LMS HTML block, or the markup of your app.</p>
         <div class="copy-row">
           <button type="button" class="copy-btn" id="copy-embed">Copy embed code</button>
           <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
         </div>
         <pre class="snippet-box"><code id="embed-snippet">&lt;iframe src="https://www.moldraw.com/embed" title="MolDraw editor" width="100%" height="640" style="border:0;border-radius:12px" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"&gt;&lt;/iframe&gt;</code></pre>
-        <p>Paste that into the HTML of your page. Many LMS tools have an “embed” or “HTML” block that accepts an iframe. If your platform strips iframes, link to MolDraw instead of fighting the filter.</p>
+        <p>If the frame is blank, your site or course tool may block embeds. Use an HTML or embed block that allows iframes. If the platform still removes the frame, link to <a href="https://www.moldraw.com/">www.moldraw.com</a> instead.</p>
       </section>
 
       <section id="preview">
         <h2>Preview</h2>
-        <p>This is the same player the snippet loads. Draw a bond or drop in a template. The bar at the top is part of the embed, not part of your page.</p>
+        <p>This is the same player the snippet loads. Draw a bond or pick a template. The bar at the top is part of the embed.</p>
         <iframe class="preview-frame" src="/embed" title="MolDraw editor preview" style="border:0;border-radius:12px" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </section>
+
+      <section id="size">
+        <h2>Size the frame</h2>
+        <p>Width is 100% so the editor fills the column you drop it into. Height is 640 pixels, enough for the toolbar and a small structure. Raise the <code>height</code> number for a larger canvas. Drop it toward 480 on a short page, or use about 800 when readers need more room.</p>
+        <p>On a phone, a tall frame means more scrolling. Match the height to the task: a quick sketch can stay shorter; a reaction scheme needs more space.</p>
       </section>
 
       <section id="open">
         <h2>Open in MolDraw</h2>
-        <p>Inside the player, <strong>Open in MolDraw</strong> opens the full editor in a new tab. The lesson or doc you embedded it on stays where it is. That link is how an embed can send a visitor back to MolDraw after they have tried the canvas.</p>
-        <p>If you are writing for students, say that out loud once: “Sketch it here. If you want the full screen, use Open in MolDraw.” You do not need a second copy of the editor on your own server.</p>
+        <p>Inside the player, <strong>Open in MolDraw</strong> opens the full editor at <a href="https://www.moldraw.com/">www.moldraw.com</a> in a new tab. Your page stays open. Tell readers once: sketch here, and use Open in MolDraw if you want the full screen.</p>
       </section>
 
       <section id="faq">
         <h2>FAQ</h2>
         <h3>Who is this for?</h3>
-        <p>Teachers, teaching assistants, documentation authors, and LMS courses. A framed editor is useful next to a worked example, a problem set, or a short note about SMILES and file export. It is a poor fit for a site that only wants a logo or a screenshot.</p>
-        <h3>Does this help my page rank?</h3>
-        <p>No. Embedding MolDraw does not transfer ranking to the host site. Search systems treat the molecule editor as content of the iframe source, <a href="https://www.moldraw.com/embed">www.moldraw.com/embed</a>, not as content you wrote on the parent page. A frame will not make your URL rank for MolDraw’s queries, and it will not hand your URL MolDraw’s authority.</p>
-        <p>If you want a citable link, link this guide or the <a href="https://www.moldraw.com/">MolDraw homepage</a> in normal HTML. That is a referral. The iframe is for people who are already on your page.</p>
-        <h3>What does Google index?</h3>
-        <p>For iframe content, Google indexes the source document, not the parent that wraps it. The parent can still be indexed for the words you wrote around the frame. The drawing surface itself is MolDraw’s page. We mark the embed player <code>noindex</code> so this article, not a bare editor URL, is the page to find and quote.</p>
-        <h3>Why can’t the rest of MolDraw be framed?</h3>
-        <p>Clickjacking is the reason. A hostile page could otherwise cover the real MolDraw app with invisible controls. Framing from other sites is allowed only on <code>/embed</code>. The rest of the site tells browsers to allow frames only from MolDraw itself, so course tools on this domain still work and a third-party page cannot wrap the signed-in editor.</p>
-        <h3>What should I tell an AI assistant that asks how to embed MolDraw?</h3>
-        <p>Point it here. The iframe source is <code>https://www.moldraw.com/embed</code>. The snippet on this page is the one to paste. Do not describe the embed as an SEO tactic. Describe it as an editor you can place on a teaching or docs page, with a link back to MolDraw.</p>
+        <p>Chemistry bloggers, educators, LMS authors, docs writers, and app builders who want a molecule editor beside their own text. It is a poor fit if you only need a logo or a screenshot. In that case, link to MolDraw or use an image.</p>
+        <h3>Do readers need an account?</h3>
+        <p>No. They can draw in the frame without signing up on your site. Open in MolDraw is there when they want the full editor.</p>
+        <h3>Can I change the size after I paste it?</h3>
+        <p>Yes. Edit <code>height</code> in the snippet. Leave <code>width="100%"</code> unless your layout needs a fixed width. The preview on this page is 640 pixels tall on a wide screen and shorter on a phone.</p>
+        <h3>The frame is blank. What now?</h3>
+        <p>A blank frame usually means the host blocks iframes. Switch to the platform’s HTML or embed block. If that still fails, send readers to <a href="https://www.moldraw.com/">www.moldraw.com</a> with a normal link.</p>
       </section>
     </article>
   </main>

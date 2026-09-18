@@ -46,12 +46,6 @@ export interface HeaderSiteNavProps {
 
   onRequestFeature: () => void;
 
-  onSignIn: () => void;
-
-  onSignUp: () => void;
-
-  onSignOut: () => void;
-
   signedIn: boolean;
 
   authDisplayName: string;
@@ -67,12 +61,6 @@ export interface HeaderSiteNavProps {
 
   /** Select menu — rendered immediately right of File on desktop/web. */
   selectMenu?: ReactNode;
-
-  /**
-   * Desktop: the signed-in account (name + Sign out) lives in the right-hand
-   * "More" menu instead of this row. Compact rows keep it here, pushed right.
-   */
-  accountInMoreMenu?: boolean;
 
   /**
    * Phone/tablet site row: File stays next to the logo in AppTopBar.
@@ -714,7 +702,7 @@ export function HeaderInlineSearch({
 
 
 
-/** Row 2: Community, designs, copy, Request feature, Download, then auth. */
+/** Row 2: Community, designs, copy, Request feature, Download. Auth sits beside Tools. */
 
 export function HeaderSiteNav({
   onOpenMyDesigns,
@@ -726,15 +714,11 @@ export function HeaderSiteNav({
   svgCopied,
   svgCopyError,
   onRequestFeature,
-  onSignIn,
-  onSignUp,
-  onSignOut,
   signedIn,
   authDisplayName,
   downloadMenu,
   fileMenu,
   selectMenu,
-  accountInMoreMenu = false,
   compactLayout = false,
   onOpenAdvancedSearch,
   onOpenShortcuts,
@@ -889,33 +873,6 @@ export function HeaderSiteNav({
         )}
       </div>
       <span className="header-links__trailing">
-        {signedIn ? (
-          accountInMoreMenu ? null : (
-            <button
-              type="button"
-              className="tb-btn tb-btn-auth tb-btn-auth-signed tb-btn-auth-signed--right"
-              onClick={() => void onSignOut()}
-              title={t('nav.signedInTitle', { name: authDisplayName })}
-            >
-              {t('nav.signOut')}
-            </button>
-          )
-        ) : (
-          <>
-            <button type="button" className="tb-btn tb-btn-auth" onClick={onSignIn} title={t('nav.signInTitle')} data-piqo-event="sign_in">
-              {t('nav.signIn')}
-            </button>
-            <button
-              type="button"
-              className="tb-btn tb-btn-auth tb-btn-auth-cta"
-              onClick={onSignUp}
-              title={t('nav.signUpTitle')}
-              data-piqo-event="sign_up"
-            >
-              {t('nav.signUp')}
-            </button>
-          </>
-        )}
         {compactLayout ? downloadMenu : null}
         {compactLayout ? (
           <div className="tb-menu-dropdown viewer-toolbar-more">

@@ -308,6 +308,8 @@ export function useDefaultCanvasCommands({
         imageIds: opts.imageIds,
         dx: opts.dx,
         dy: opts.dy,
+        mergeSourceAtomId: opts.mergeSourceAtomId,
+        mergeTargetAtomId: opts.mergeTargetAtomId,
       });
     },
     [applyCommand],

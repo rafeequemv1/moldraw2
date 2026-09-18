@@ -815,6 +815,12 @@ export const schemas = {
     imageIds: z.array(z.string()).describe('Canvas image ids to move (may be empty).'),
     dx: dxPx,
     dy: dyPx,
+    mergeSourceAtomId: atomIdRef
+      .optional()
+      .describe('Dragged atom to merge into mergeTargetAtomId after the move (drop-to-attach).'),
+    mergeTargetAtomId: atomIdRef
+      .optional()
+      .describe('Stationary atom that absorbs mergeSourceAtomId when a selection is dropped on it.'),
   }),
   addReactionArrow: z.object({ arrow: reactionArrow.describe('Reaction arrow to add.') }),
   updateReactionArrow: z.object({

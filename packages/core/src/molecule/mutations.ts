@@ -1546,6 +1546,81 @@ export const translateCanvasImages = (
   };
 };
 
+const pairKey = (a: string, b: string): string => (a < b ? `${a}\0${b}` : `${b}\0${a}`);
+
+/**
+ * Join a dragged atom into a stationary one (ChemDraw drop-to-attach).
+ * Bonds on `sourceId` are retargeted to `targetId`; the source atom is removed.
+ * An existing bond between the same pair wins over the retargeted one.
+ */
+export const mergeDraggedAtomInto = (
+  prev: Molecule,
+  sourceId: string,
+  targetId: string,
+): Molecule => {
+  if (!sourceId || !targetId || sourceId === targetId) return prev;
+  if (!prev.atoms.some(a => a.id === sourceId)) return prev;
+  if (!prev.atoms.some(a => a.id === targetId)) return prev;
+
+  const remap = (id: string): string => (id === sourceId ? targetId : id);
+  const involvesSource = (b: Bond): boolean =>
+    b.fromAtomId === sourceId || b.toAtomId === sourceId;
+  const ordered = [
+    ...prev.bonds.filter(b => !involvesSource(b)),
+    ...prev.bonds.filter(involvesSource),
+  ];
+  const seen = new Set<string>();
+  const bonds: Bond[] = [];
+  for (const b of ordered) {
+    const fromAtomId = remap(b.fromAtomId);
+    const toAtomId = remap(b.toAtomId);
+    if (fromAtomId === toAtomId) continue;
+    const key = pairKey(fromAtomId, toAtomId);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    bonds.push(
+      fromAtomId === b.fromAtomId && toAtomId === b.toAtomId
+        ? b
+        : { ...b, fromAtomId, toAtomId },
+    );
+  }
+
+  const remapAnchor = (
+    anchor: ReactionArrow['fromAnchor'],
+  ): ReactionArrow['fromAnchor'] => {
+    if (!anchor) return anchor;
+    if ((anchor.type === 'atom' || anchor.type === 'lone_pair') && anchor.atomId === sourceId) {
+      return { ...anchor, atomId: targetId };
+    }
+    return anchor;
+  };
+
+  const sruBrackets = (prev.sruBrackets ?? []).map(b => ({
+    ...b,
+    atomIds: [...new Set(b.atomIds.map(remap))],
+  }));
+
+  const next: Molecule = {
+    ...prev,
+    atoms: prev.atoms.filter(a => a.id !== sourceId),
+    bonds,
+    sruBrackets: sruBrackets.length ? sruBrackets : prev.sruBrackets,
+    reactionArrows: prev.reactionArrows?.map(a => ({
+      ...a,
+      fromAnchor: remapAnchor(a.fromAnchor),
+      toAnchor: remapAnchor(a.toAnchor),
+    })),
+    orbitals: prev.orbitals?.map(o =>
+      o.atomId === sourceId ? { ...o, atomId: targetId } : o,
+    ),
+  };
+
+  return syncSruBracketsToAtoms(
+    pruneRingConformations(prunePerspectivePositions(pruneSruBrackets(next), new Set([sourceId]))),
+    [targetId],
+  );
+};
+
 /** Move atoms plus every marquee-selected annotation in one undo step. */
 export const translateMarqueeSelection = (
   prev: Molecule,
@@ -1558,12 +1633,16 @@ export const translateMarqueeSelection = (
     imageIds: string[];
     dx: number;
     dy: number;
+    /** Dragged atom to absorb into `mergeTargetAtomId` after the translate. */
+    mergeSourceAtomId?: string;
+    mergeTargetAtomId?: string;
   },
 ): Molecule => {
   const { atomIds, arrowIds, strokeIds, textIds, shapeIds, imageIds, dx, dy } = opts;
-  if (dx === 0 && dy === 0) return prev;
+  const merging = !!(opts.mergeSourceAtomId && opts.mergeTargetAtomId);
+  if (dx === 0 && dy === 0 && !merging) return prev;
   let m = prev;
-  if (atomIds.length > 0) {
+  if (atomIds.length > 0 && (dx !== 0 || dy !== 0)) {
     m = moveAtoms(m, atomIds, dx, dy);
   }
   m = translateReactionArrows(m, arrowIds, dx, dy);
@@ -1571,6 +1650,9 @@ export const translateMarqueeSelection = (
   m = translateCanvasTexts(m, textIds, dx, dy);
   m = translateCanvasShapes(m, shapeIds, dx, dy);
   m = translateCanvasImages(m, imageIds, dx, dy);
+  if (opts.mergeSourceAtomId && opts.mergeTargetAtomId) {
+    m = mergeDraggedAtomInto(m, opts.mergeSourceAtomId, opts.mergeTargetAtomId);
+  }
   return m;
 };
 

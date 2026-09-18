@@ -172,6 +172,17 @@ html.app-mobile-compact {
     border-radius: 8px;
   }
 
+  .app-top-bar--compact .app-top-bar__tools-row .app-top-bar__auth .tb-btn {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .app-top-bar--compact .app-top-bar__tools-row .app-top-bar__auth .tb-btn-auth-cta {
+    padding: 0 10px;
+  }
+
   .app-top-bar--compact .app-top-bar__select-trigger--icon {
     width: 32px;
     min-width: 32px;

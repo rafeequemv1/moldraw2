@@ -9,6 +9,11 @@ import { handleCanvasShapePointerDown, commitCanvasShapeDrag } from './canvasSha
 import { handleCanvasOrbitalPointerDown, commitCanvasOrbitalDrag } from './canvasOrbitalPointer';
 import { handleStrokePointerDown } from './toolStrokePointer';
 import {
+  dragAttachRadius,
+  dragDeltaToLandOnAtom,
+  findDragAttachPair,
+} from '../geometry/dragAttach';
+import {
   atomIdsForSelectionTransform,
   collectAtomIdsFromLasso,
   ARROW_ENDPOINT_AXIS_SNAP_WORLD,
@@ -309,11 +314,11 @@ const handleReactionArrowPointerDown = (
  *
  * Pointer-down branches (priority order):
  *   1. Existing selection: rotate / scale / move handles.
- *   2. Existing selection: click inside the box (any object) → move all together.
- *   3. Sole image/text/shape/arrow: per-object rotate / resize / curve handles.
- *   4. Hit on canvas text / image / shape / stroke / orbital / arrow.
- *   5. Hit on atom / bond / ring fill (atom disk + implicit H wins over bond).
- *   6. Empty canvas → clear and start marquee or lasso.
+ *   2. Charge mark, then atom / bond / condensed group (wins over the selection
+ *      box, text frames, and arrow shafts so a drop-to-attach drag can start).
+ *   3. Existing selection: click inside the box on empty space → move together.
+ *   4. Hit on canvas text / image / shape / stroke / orbital / arrow shaft.
+ *   5. Ring interior, then empty canvas → marquee or lasso.
  *
  * Whole connected molecules: Select menu → “Select connected”, or context menu
  * “Select connected fragment”, or marquee/lasso. Shift+click adds/toggles.
@@ -391,78 +396,8 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
     }
   }
 
-  const insideBox = isInsideSelectionTransformBox(
-    worldPos.x,
-    worldPos.y,
-    molecule,
-    transformAtomIds,
-    marqueeBounds,
-    canvasCtx,
-  );
-  if (hasSelection && canMoveMarquee && insideBox) {
-    if (exclusiveText) {
-      const textId = marqueeBounds.canvasTextIds?.[0];
-      const picked = textId ? molecule.canvasTexts?.find(t => t.id === textId) : undefined;
-      if (picked) {
-        const insideExact =
-          !!canvasCtx &&
-          hitCanvasTextBox(getCanvasTextBox(canvasCtx, picked), worldPos.x, worldPos.y, 0);
-        if (insideExact && ctx.canvasTextEditing) {
-          ctx.onRequestCanvasTextEdit?.(picked.id);
-          return true;
-        }
-        beginCanvasTextMove(ctx, picked, { clickOpensEdit: insideExact });
-        return true;
-      }
-    }
-    startStructureDrag(ctx, worldPos);
-    return true;
-  }
-
-  if (handleCanvasTextPointerDown(ctx)) return true;
-  if (handleCanvasImagePointerDown(ctx)) return true;
-  if (handleCanvasShapePointerDown(ctx)) return true;
-  if (handleStrokePointerDown(ctx)) return true;
-  if (handleCanvasOrbitalPointerDown(ctx)) return true;
-
-  const sruHit = pickSruBracketAt(molecule.sruBrackets, worldPos.x, worldPos.y);
-  if (sruHit && (ctx.setSelectedSruBracketId || ctx.setSelectedAtomIds)) {
-    const already = ctx.selectedSruBracketId === sruHit.bracket.id;
-    ctx.setSelectedSruBracketId?.(sruHit.bracket.id);
-    ctx.setSelectedCanvasTextId?.(null);
-    ctx.setColorEditCanvasShapeId?.(null);
-    ctx.setSelectedCanvasImageId?.(null);
-    ctx.setSelectedReactionArrowId?.(null);
-    ctx.setSelectedBondIds?.([]);
-    ctx.setSelectedAtomIds?.(sruHit.bracket.atomIds);
-    if (sruHit.onLabel) {
-      if (already) ctx.onEditSruBracketSubscript?.(sruHit.bracket.id);
-      return true;
-    }
-    if (ctx.onMoveAtoms) {
-      ctx.setDragAction({
-        type: 'move_selection',
-        startX: worldPos.x,
-        startY: worldPos.y,
-        currentX: worldPos.x,
-        currentY: worldPos.y,
-      });
-    }
-    return true;
-  }
-
-  if (handleReactionArrowPointerDown(ctx)) return true;
-
-  // Atoms (disk, label, implicit H) win; mid-shaft still selects the bond.
-  const { atom: clickedAtom, bond: clickedBond } = pickAtomOrBondForSelectTool(
-    molecule,
-    worldPos,
-    ctx.hit.atomHitRadius,
-    ctx.hit.selectBondTolerance,
-  );
-
-  // Formal / δ mark wins over atom/bond so drag never becomes move_selection
-  // (that was jumping the whole molecule / Pattern group).
+  // Formal / δ mark wins over the selection box and atom drag so the mark
+  // moves instead of the whole molecule / Pattern group.
   const chargeHit = pickChargeMarkAt(molecule, worldPos);
   if (chargeHit) {
     const { atom: chargeAtom, kind } = chargeHit;
@@ -499,6 +434,52 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
   }
   ctx.setSelectedChargeAtomIds?.([]);
   ctx.setSelectedChargeMarkKind?.(null);
+
+  // Atoms (disk, label, implicit H, condensed group) win over text frames,
+  // arrow shafts, and the selection box — otherwise a padded AABB steals the
+  // drag and the user cannot pick an atom or group to drop onto a structure.
+  const { atom: clickedAtom, bond: clickedBond } = pickAtomOrBondForSelectTool(
+    molecule,
+    worldPos,
+    ctx.hit.atomHitRadius,
+    ctx.hit.selectBondTolerance,
+  );
+  const movingSet = new Set(transformAtomIds);
+  const atomInSelection = !!clickedAtom && movingSet.has(clickedAtom.id);
+  const bondInSelection =
+    !!clickedBond &&
+    ((movingSet.has(clickedBond.fromAtomId) && movingSet.has(clickedBond.toAtomId)) ||
+      selectedBondIds.includes(clickedBond.id));
+  const foreignStructure =
+    (!!clickedAtom && !atomInSelection) || (!!clickedBond && !bondInSelection);
+
+  const insideBox = isInsideSelectionTransformBox(
+    worldPos.x,
+    worldPos.y,
+    molecule,
+    transformAtomIds,
+    marqueeBounds,
+    canvasCtx,
+  );
+  if (hasSelection && canMoveMarquee && insideBox && !foreignStructure) {
+    if (exclusiveText) {
+      const textId = marqueeBounds.canvasTextIds?.[0];
+      const picked = textId ? molecule.canvasTexts?.find(t => t.id === textId) : undefined;
+      if (picked) {
+        const insideExact =
+          !!canvasCtx &&
+          hitCanvasTextBox(getCanvasTextBox(canvasCtx, picked), worldPos.x, worldPos.y, 0);
+        if (insideExact && ctx.canvasTextEditing) {
+          ctx.onRequestCanvasTextEdit?.(picked.id);
+          return true;
+        }
+        beginCanvasTextMove(ctx, picked, { clickOpensEdit: insideExact });
+        return true;
+      }
+    }
+    startStructureDrag(ctx, worldPos);
+    return true;
+  }
 
   if (clickedAtom?.id) {
     ctx.setSelectedCanvasTextId?.(null);
@@ -597,6 +578,40 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
     startStructureDrag(ctx, worldPos);
     return true;
   }
+
+  if (handleCanvasTextPointerDown(ctx)) return true;
+  if (handleCanvasImagePointerDown(ctx)) return true;
+  if (handleCanvasShapePointerDown(ctx)) return true;
+  if (handleStrokePointerDown(ctx)) return true;
+  if (handleCanvasOrbitalPointerDown(ctx)) return true;
+
+  const sruHit = pickSruBracketAt(molecule.sruBrackets, worldPos.x, worldPos.y);
+  if (sruHit && (ctx.setSelectedSruBracketId || ctx.setSelectedAtomIds)) {
+    const already = ctx.selectedSruBracketId === sruHit.bracket.id;
+    ctx.setSelectedSruBracketId?.(sruHit.bracket.id);
+    ctx.setSelectedCanvasTextId?.(null);
+    ctx.setColorEditCanvasShapeId?.(null);
+    ctx.setSelectedCanvasImageId?.(null);
+    ctx.setSelectedReactionArrowId?.(null);
+    ctx.setSelectedBondIds?.([]);
+    ctx.setSelectedAtomIds?.(sruHit.bracket.atomIds);
+    if (sruHit.onLabel) {
+      if (already) ctx.onEditSruBracketSubscript?.(sruHit.bracket.id);
+      return true;
+    }
+    if (ctx.onMoveAtoms) {
+      ctx.setDragAction({
+        type: 'move_selection',
+        startX: worldPos.x,
+        startY: worldPos.y,
+        currentX: worldPos.x,
+        currentY: worldPos.y,
+      });
+    }
+    return true;
+  }
+
+  if (handleReactionArrowPointerDown(ctx)) return true;
 
   // Ring interior (e.g. benzene hole) — select that ring only (not whole molecule).
   const ringAtPoint = findSmallestRingAtPoint(molecule, worldPos.x, worldPos.y);
@@ -832,6 +847,44 @@ export const updateActiveDragAction = (ctx: InteractionContext): boolean => {
       return { ...prev, currentX: worldPos.x, currentY: worldPos.y, currentPointerAngle: ang };
     });
   } else {
+    let attachLand: { x: number; y: number } | null = null;
+    let attachPair: { sourceId: string; targetId: string } | null = null;
+    if (dragAction.type === 'move_selection') {
+      if (ctx.e.shiftKey) {
+        ctx.setHoveredAtomCircleId(null);
+      } else {
+        const moveIds = expandForGroupedMove(
+          ctx.molecule,
+          atomIdsForSelectionTransform(
+            ctx.molecule,
+            ctx.selectedAtomIds,
+            ctx.selectedBondIds ?? [],
+          ),
+        );
+        const rawDx = worldPos.x - dragAction.startX;
+        const rawDy = worldPos.y - dragAction.startY;
+        const pair = findDragAttachPair(
+          ctx.molecule,
+          moveIds,
+          rawDx,
+          rawDy,
+          dragAttachRadius(ctx.bondLengthPx),
+        );
+        const land = pair
+          ? dragDeltaToLandOnAtom(ctx.molecule, pair.sourceId, pair.targetId)
+          : null;
+        if (pair && land && Math.hypot(land.dx, land.dy) > 1) {
+          attachPair = pair;
+          attachLand = {
+            x: dragAction.startX + land.dx,
+            y: dragAction.startY + land.dy,
+          };
+          ctx.setHoveredAtomCircleId(pair.targetId);
+        } else {
+          ctx.setHoveredAtomCircleId(null);
+        }
+      }
+    }
     ctx.setDragAction(prev => {
       if (!prev) return null;
       if (prev.type === 'resize_reaction_arrow') {
@@ -854,6 +907,15 @@ export const updateActiveDragAction = (ctx: InteractionContext): boolean => {
         }
         return { ...prev, currentX: wx, currentY: wy };
       }
+      if (prev.type === 'move_selection' && attachLand && attachPair) {
+        return {
+          ...prev,
+          currentX: attachLand.x,
+          currentY: attachLand.y,
+          attachSourceId: attachPair.sourceId,
+          attachTargetId: attachPair.targetId,
+        };
+      }
       if (prev.type === 'move_selection' && !ctx.e.shiftKey) {
         const moveIds = atomIdsForSelectionTransform(
           ctx.molecule,
@@ -874,7 +936,13 @@ export const updateActiveDragAction = (ctx: InteractionContext): boolean => {
             disableAlignSnap: false,
           },
         );
-        return { ...prev, currentX: snapped.wx, currentY: snapped.wy };
+        return {
+          ...prev,
+          currentX: snapped.wx,
+          currentY: snapped.wy,
+          attachSourceId: undefined,
+          attachTargetId: undefined,
+        };
       }
       if (prev.type === 'move_reaction_arrow' && !ctx.e.shiftKey) {
         const snapped = snapReactionArrowMovePointer(
@@ -892,6 +960,15 @@ export const updateActiveDragAction = (ctx: InteractionContext): boolean => {
           },
         );
         return { ...prev, currentX: snapped.wx, currentY: snapped.wy };
+      }
+      if (prev.type === 'move_selection') {
+        return {
+          ...prev,
+          currentX: worldPos.x,
+          currentY: worldPos.y,
+          attachSourceId: undefined,
+          attachTargetId: undefined,
+        };
       }
       return { ...prev, currentX: worldPos.x, currentY: worldPos.y } as typeof prev;
     });
@@ -931,6 +1008,26 @@ export const commitDragAction = (ctx: InteractionContext): boolean => {
     const dy = dragAction.currentY - dragAction.startY;
     if (Math.hypot(dx, dy) > 1) {
       const atomIds = moveAtomIds;
+      const stored =
+        !ctx.e.shiftKey && dragAction.attachSourceId && dragAction.attachTargetId
+          ? { sourceId: dragAction.attachSourceId, targetId: dragAction.attachTargetId }
+          : null;
+      const pair =
+        stored ??
+        (ctx.e.shiftKey
+          ? null
+          : findDragAttachPair(
+              molecule,
+              atomIds,
+              dx,
+              dy,
+              dragAttachRadius(ctx.bondLengthPx),
+            ));
+      const land = pair
+        ? dragDeltaToLandOnAtom(molecule, pair.sourceId, pair.targetId)
+        : null;
+      const mdx = land?.dx ?? dx;
+      const mdy = land?.dy ?? dy;
       if (ctx.onTranslateMarqueeSelection) {
         ctx.onTranslateMarqueeSelection({
           atomIds,
@@ -939,13 +1036,25 @@ export const commitDragAction = (ctx: InteractionContext): boolean => {
           textIds: ctx.selectedCanvasTextIds ?? [],
           shapeIds: ctx.selectedCanvasShapeIds ?? [],
           imageIds: ctx.selectedCanvasImageIds ?? [],
-          dx,
-          dy,
+          dx: mdx,
+          dy: mdy,
+          mergeSourceAtomId: pair?.sourceId,
+          mergeTargetAtomId: pair?.targetId,
         });
+        if (pair) {
+          ctx.setSelectedAtomIds?.(atomIds.filter(id => id !== pair.sourceId));
+          ctx.setSelectedBondIds?.(
+            selectedBondIds.filter(id => {
+              const b = molecule.bonds.find(x => x.id === id);
+              return !!b && b.fromAtomId !== pair.sourceId && b.toAtomId !== pair.sourceId;
+            }),
+          );
+        }
       } else if (ctx.onMoveAtoms && atomIds.length > 0) {
-        ctx.onMoveAtoms(atomIds, dx, dy);
+        ctx.onMoveAtoms(atomIds, mdx, mdy);
       }
     }
+    ctx.setHoveredAtomCircleId(null);
     ctx.onCanvasTextTransforming?.(false);
   } else if (dragAction.type === 'rotate_selection' && ctx.onRotateSelectionCommit) {
     const d = shortestAngleDiff(dragAction.startPointerAngle, dragAction.currentPointerAngle);

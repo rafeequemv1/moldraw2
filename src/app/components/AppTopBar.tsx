@@ -539,6 +539,43 @@ export function AppTopBar(props: AppTopBarProps) {
     </>
   );
 
+  /** Same slot as Sign in: Sign up hides when signed in; Sign out does not jump right. */
+  const headerAuth = (
+    <span className="app-top-bar__auth">
+      {signedIn ? (
+        <button
+          type="button"
+          className="tb-btn tb-btn-auth tb-btn-auth-signed"
+          onClick={() => onSignOut?.()}
+          title={t('nav.signedInTitle', { name: authDisplayName })}
+        >
+          {t('nav.signOut')}
+        </button>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="tb-btn tb-btn-auth"
+            onClick={() => onSignIn?.()}
+            title={t('nav.signInTitle')}
+            data-piqo-event="sign_in"
+          >
+            {t('nav.signIn')}
+          </button>
+          <button
+            type="button"
+            className="tb-btn tb-btn-auth tb-btn-auth-cta"
+            onClick={() => onSignUp?.()}
+            title={t('nav.signUpTitle')}
+            data-piqo-event="sign_up"
+          >
+            {t('nav.signUp')}
+          </button>
+        </>
+      )}
+    </span>
+  );
+
   const selectMenu = (
     <TopBarSelectMenu
       activeTool={activeTool}
@@ -705,9 +742,6 @@ export function AppTopBar(props: AppTopBarProps) {
               svgCopied={Boolean(svgCopied)}
               svgCopyError={Boolean(svgCopyError)}
               onRequestFeature={() => onRequestFeature?.()}
-              onSignIn={() => onSignIn?.()}
-              onSignUp={() => onSignUp?.()}
-              onSignOut={() => onSignOut?.()}
               signedIn={Boolean(signedIn)}
               authDisplayName={authDisplayName ?? ''}
               onOpenAdvancedSearch={onOpenAdvancedSearch}
@@ -755,9 +789,6 @@ export function AppTopBar(props: AppTopBarProps) {
             svgCopied={Boolean(svgCopied)}
             svgCopyError={Boolean(svgCopyError)}
             onRequestFeature={() => onRequestFeature?.()}
-            onSignIn={() => onSignIn?.()}
-            onSignUp={() => onSignUp?.()}
-            onSignOut={() => onSignOut?.()}
             signedIn={Boolean(signedIn)}
             authDisplayName={authDisplayName ?? ''}
             downloadMenu={
@@ -1064,9 +1095,13 @@ export function AppTopBar(props: AppTopBarProps) {
           >
             {t('nav.tools')}
           </a>
+          {headerAuth}
         </ToolCluster>
         ) : (
-          <ToolCluster label={t('topBar.clusterZoom')}>{zoomButtons}</ToolCluster>
+          <ToolCluster label={t('topBar.clusterZoom')}>
+            {zoomButtons}
+            {headerAuth}
+          </ToolCluster>
         )}
         {isCompact ? (
           <button
