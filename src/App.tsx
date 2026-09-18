@@ -109,6 +109,7 @@ import {
   DocumentTabBar,
 } from './app/components';
 import { EmbedReturnBar } from './app/components/EmbedReturnBar';
+import { DelayedTooltip } from './app/components/DelayedTooltip';
 import { CofsPackingBar } from './app/cofs';
 import { rememberGrapheneSheet } from './app/graphene/grapheneSession';
 import { useReactionLibraryInsert } from './app/hooks/useReactionLibraryInsert';
@@ -1283,7 +1284,7 @@ function App() {
         const sel = editorStore.getSelection().atomIds;
         if (sel.length < 2) {
           setSmilesBarHint(
-            'Polymer (n): select ≥2 atoms then click, or drag a box over the repeat unit. Click n on the canvas to edit.',
+            'Polymer brackets: select two or more atoms and click, or drag a box over the monomer. Click the tool again for the repeat label. Click the subscript to type a number.',
           );
         }
         if (sel.length >= 2) {
@@ -3077,6 +3078,7 @@ function App() {
       />
 
       <ViewerLinkHint message={viewer3DLinkHint} />
+      <DelayedTooltip />
     </>
     </PluginHostProvider>
     </I18nProvider>

@@ -208,8 +208,8 @@ export const jaToolOverrides: Record<
   sru_bracket: {
     label: 'ポリマー',
     title:
-      'ポリマー (n)：断片を選ぶか反復単位上で枠をドラッグし、n を設定。キャンバス上の添字をクリックして編集。',
-    shortLabel: 'SRU',
+      'ポリマー括弧。1回クリックで描画、もう1回で繰り返しメニュー（ポリマー n、括弧、共重合体）。モノマー上で枠をドラッグするか、原子を2つ以上選んでクリック。添字をクリックして数を入力。',
+    shortLabel: '括弧',
   },
   image: {
     label: '画像',

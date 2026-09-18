@@ -310,6 +310,7 @@ const renderToolOrArrowRow = (
         onChangeValue={v => props.onSruBracketSubscriptChange?.(v)}
         menuAriaLabel={props.i18n.t('tools.sru_bracket.title')}
         menuHint={props.i18n.t('toolbar.sruHint')}
+        menuSize="wide"
         renderPreview={sruSubscriptPreview}
       />
     );
@@ -446,7 +447,7 @@ const renderToolOrArrowRow = (
       type="button"
       className={'tool-btn' + groupClass + activeClass}
       onClick={() => props.onSelect(tool.id)}
-      title={tool.id === 'pencil' ? undefined : tool.label + ': ' + tool.title + tooltipShortcutSuffix(tool.id)}
+      title={tool.label + ': ' + tool.title + tooltipShortcutSuffix(tool.id)}
       aria-label={tool.label}
       aria-pressed={props.activeTool === tool.id}
       data-piqo-event="toolbar"

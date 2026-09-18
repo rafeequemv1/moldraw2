@@ -488,7 +488,19 @@ export const en = {
     menuOrbitals: 'Atomic orbital tool',
     menuChargeTools: 'Charge and symbol tools',
     sruHint:
-      'Select ≥2 atoms and click, or drag a box over the chain. Pick n / m here. Click the on-canvas subscript to edit.',
+      'Drag a box over the monomer (at least two atoms), or select the atoms and click. This menu sets the repeat label. Click the subscript on the canvas to type a number.',
+    sruSubscripts: {
+      n: 'Polymer repeat (n)',
+      paren: 'Parenthesis (CH₂)n',
+      parenBond: 'Parenthesis -(CH₂)n-',
+      m: 'Copolymer (m)',
+    },
+    sruSubscriptHints: {
+      n: 'Square brackets with repeat count n. Click the subscript on the canvas to type the number of units.',
+      paren: 'Square brackets labeled (CH₂)n. Click the subscript on the canvas to edit.',
+      parenBond: 'Square brackets labeled -(CH₂)n-. Click the subscript on the canvas to edit.',
+      m: 'Square brackets with copolymer index m. Click the subscript on the canvas to type a number.',
+    },
     settingsAria: 'Settings',
     searchApparatus: 'Search apparatus',
     openLibrary: 'Open library',

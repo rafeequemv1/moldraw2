@@ -482,7 +482,19 @@ export const zh: LocaleMessages = {
     menuOrbitals: '原子轨道工具',
     menuChargeTools: '电荷与符号工具',
     sruHint:
-      '先选中至少 2 个原子再点击，或框选重复单元。在此选择 n / m。点击画布上的下标可编辑。',
+      '框选重复单元（至少 2 个原子），或先选中原子再点击。此菜单设置重复标记。点击画布上的下标可输入数字。',
+    sruSubscripts: {
+      n: '聚合物重复 (n)',
+      paren: '括号 (CH₂)n',
+      parenBond: '括号 -(CH₂)n-',
+      m: '共聚物 (m)',
+    },
+    sruSubscriptHints: {
+      n: '方括号，重复次数为 n。点击画布上的下标可输入单元个数。',
+      paren: '方括号，标记为 (CH₂)n。点击画布上的下标可编辑。',
+      parenBond: '方括号，标记为 -(CH₂)n-。点击画布上的下标可编辑。',
+      m: '方括号，共聚指数为 m。点击画布上的下标可输入数字。',
+    },
     settingsAria: '设置',
     searchApparatus: '搜索仪器',
     openLibrary: '打开库',

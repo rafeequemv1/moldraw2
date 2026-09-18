@@ -17,6 +17,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, LayoutGrid, Search } from 'lucide-react';
+import { tooltipShortcutSuffix } from '../keyboard/shortcutCatalog';
 import { renderToolIcon } from '../toolIcons';
 import {
   dropUpMenuStyle,
@@ -38,6 +39,8 @@ export interface ToolbarSplitToolOption<T extends string> {
   label: string;
   /** Extra tokens for searchable menus (aliases, kind ids, …). */
   keywords?: string;
+  /** What this option does. Shown in the delayed tooltip. */
+  hint?: string;
 }
 
 export interface ToolbarSplitToolOptionGroup<T extends string> {
@@ -326,6 +329,9 @@ export function ToolbarSplitTool<T extends string>({
     ) : (
       renderToolIcon(opt.value)
     );
+    const shortcut = tooltipShortcutSuffix(opt.value);
+    const body = opt.hint || opt.keywords || opt.label;
+    const tip = shortcut && !body.includes('Keyboard:') ? `${body}${shortcut}` : body;
     return (
     <button
       key={opt.value}
@@ -333,6 +339,7 @@ export function ToolbarSplitTool<T extends string>({
       role="menuitemradio"
       aria-checked={opt.value === value}
       className={`toolbar-split-tool__item${opt.value === value ? ' toolbar-split-tool__item--on' : ''}`}
+      data-delay-tip={tip}
       onClick={() => {
         onChangeValue(opt.value);
         closeMenu();
@@ -367,7 +374,7 @@ export function ToolbarSplitTool<T extends string>({
                   closeMenu();
                   onOpenLibrary();
                 }}
-                title={libraryButtonLabel}
+                data-delay-tip={libraryButtonLabel}
               >
                 <LayoutGrid size={12} strokeWidth={2} aria-hidden />
                 <span>{libraryButtonLabel}</span>
@@ -423,7 +430,7 @@ export function ToolbarSplitTool<T extends string>({
         type="button"
         className="toolbar-split-tool__icon"
         onClick={onControlClick}
-        title={`${toolTitle} (${currentLabel}). Click to use; click again for options.`}
+        data-delay-tip={`${toolTitle} (${currentLabel}). Click to use; click again for options.`}
         aria-label={toolLabel}
         aria-pressed={isActive}
         data-piqo-event="toolbar"
@@ -442,7 +449,7 @@ export function ToolbarSplitTool<T extends string>({
           e.stopPropagation();
           onControlClick();
         }}
-        title={`${toolLabel}: ${currentLabel}`}
+        data-delay-tip={`${toolLabel}: ${currentLabel}. Click again to open this menu.`}
         aria-label={menuAriaLabel}
         aria-expanded={open}
         aria-haspopup="menu"

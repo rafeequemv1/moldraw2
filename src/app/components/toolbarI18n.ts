@@ -15,6 +15,7 @@ import {
   SRU_BRACKET_SUBSCRIPT_OPTIONS,
   TOOL_DEFS,
   type ShapeMenuValue,
+  type SruBracketSubscript,
   type ToolDef,
 } from '../toolDefs';
 
@@ -154,10 +155,24 @@ export function useToolbarI18n() {
       },
     ] as const;
 
-    const sruSubscriptOptions = SRU_BRACKET_SUBSCRIPT_OPTIONS.map(o => ({
-      value: o.value,
-      label: o.label,
-    }));
+    const sruKey: Record<SruBracketSubscript, 'n' | 'paren' | 'parenBond' | 'm'> = {
+      n: 'n',
+      '(CH2)n': 'paren',
+      '-(CH2)n-': 'parenBond',
+      m: 'm',
+    };
+    const sruSubscriptOptions = SRU_BRACKET_SUBSCRIPT_OPTIONS.map(o => {
+      const key = sruKey[o.value];
+      const labelKey = `toolbar.sruSubscripts.${key}`;
+      const hintKey = `toolbar.sruSubscriptHints.${key}`;
+      const label = t(labelKey);
+      const hint = t(hintKey);
+      return {
+        value: o.value,
+        label: label === labelKey ? o.label : label,
+        hint: hint === hintKey ? o.hint : hint,
+      };
+    });
 
     const mobileCategoryLabel = (id: string): string => {
       const key = `toolbar.categories.${id}`;

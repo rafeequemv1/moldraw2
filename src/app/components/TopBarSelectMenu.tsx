@@ -301,6 +301,8 @@ export function TopBarSelectMenu({
     if (!id) return undefined;
     return formatPrimaryShortcut(id, bindings, isMac);
   };
+  const tipWithShortcut = (hint: string, shortcut?: string) =>
+    shortcut && !hint.includes(shortcut) ? `${hint} (${shortcut})` : hint;
   const closeMenu = () => {
     setOpen(false);
     setOpenSub(null);
@@ -416,7 +418,7 @@ export function TopBarSelectMenu({
         type="button"
         role="menuitem"
         className="app-top-bar__select-item"
-        title={item.hint}
+        title={tipWithShortcut(item.hint, shortcut)}
         disabled={disabledItem}
         onClick={() => runAction(item)}
       >
@@ -512,7 +514,7 @@ export function TopBarSelectMenu({
                       role="menuitemradio"
                       aria-checked={isActive}
                       className={`app-top-bar__select-item${isActive ? ' is-active' : ''}`}
-                      title={row.hint}
+                      title={tipWithShortcut(row.hint, toolShortcut)}
                       onClick={() => {
                         onSelectTool(row.id);
                         closeMenu();

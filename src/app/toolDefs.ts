@@ -11,14 +11,34 @@ export type ToolGroup = 'select_edit' | 'bond_types' | 'rings' | 'stereo' | 'ann
 /** Unified shape-menu values (annotation draw kinds). */
 export type ShapeMenuValue = CanvasShapeKind;
 
-/** SRU bracket repeat-label presets (subscript text). */
+/** SRU bracket repeat-label presets (subscript text). Brackets themselves stay square. */
 export type SruBracketSubscript = 'n' | 'm' | '(CH2)n' | '-(CH2)n-';
 
-export const SRU_BRACKET_SUBSCRIPT_OPTIONS: { value: SruBracketSubscript; label: string }[] = [
-  { value: 'n', label: 'Polymer (n)' },
-  { value: '(CH2)n', label: '(CH₂)n' },
-  { value: '-(CH2)n-', label: '-(CH₂)n-' },
-  { value: 'm', label: 'Copolymer (m)' },
+export const SRU_BRACKET_SUBSCRIPT_OPTIONS: {
+  value: SruBracketSubscript;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: 'n',
+    label: 'Polymer repeat (n)',
+    hint: 'Square brackets with repeat count n. Click the subscript on the canvas to type the number of units.',
+  },
+  {
+    value: '(CH2)n',
+    label: 'Parenthesis (CH₂)n',
+    hint: 'Square brackets labeled (CH₂)n. Click the subscript on the canvas to edit.',
+  },
+  {
+    value: '-(CH2)n-',
+    label: 'Parenthesis -(CH₂)n-',
+    hint: 'Square brackets labeled -(CH₂)n-. Click the subscript on the canvas to edit.',
+  },
+  {
+    value: 'm',
+    label: 'Copolymer (m)',
+    hint: 'Square brackets with copolymer index m. Click the subscript on the canvas to type a number.',
+  },
 ];
 
 export interface ToolDef {
@@ -322,9 +342,9 @@ export const TOOL_DEFS: ToolDef[] = [
   {
     id: 'sru_bracket',
     label: 'Polymer',
-    shortLabel: 'SRU',
+    shortLabel: 'Brackets',
     title:
-      'Polymer (n): select a fragment or drag a box over the repeat unit, then set n. Click the subscript on the canvas to edit.',
+      'Polymer brackets. Click once to draw; click again for the repeat menu (polymer n, parenthesis, copolymer). Drag a box over the monomer, or select two or more atoms and click. Click the subscript to type the number of units.',
     category: 'edit',
     group: 'annotate',
   },

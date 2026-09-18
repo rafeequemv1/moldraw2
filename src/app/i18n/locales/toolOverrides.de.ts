@@ -215,8 +215,8 @@ export const deToolOverrides: Record<
   sru_bracket: {
     label: 'Polymer',
     title:
-      'Polymer (n): Fragment wählen oder Kasten über die Wiederholeinheit ziehen, dann n setzen. Subskript auf der Leinwand anklicken zum Bearbeiten.',
-    shortLabel: 'SRU',
+      'Polymerklammern. Einmal klicken zum Zeichnen, erneut für das Wiederholungsmenü (Polymer n, Klammer, Copolymer). Kasten über das Monomer ziehen oder mindestens zwei Atome wählen und klicken. Subskript anklicken, um die Anzahl einzugeben.',
+    shortLabel: 'Klammern',
   },
   image: {
     label: 'Bild',

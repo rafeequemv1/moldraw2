@@ -490,7 +490,19 @@ export const de: LocaleMessages = {
     menuOrbitals: 'Atomorbital-Werkzeug',
     menuChargeTools: 'Ladungs- und Symbolwerkzeuge',
     sruHint:
-      '≥2 Atome wählen und klicken oder einen Kasten über die Kette ziehen. Hier n / m setzen. Subskript auf der Leinwand anklicken zum Bearbeiten.',
+      'Kasten über die Wiederholeinheit ziehen (mindestens 2 Atome) oder Atome wählen und klicken. Dieses Menü setzt die Beschriftung. Subskript auf der Leinwand anklicken, um eine Zahl einzugeben.',
+    sruSubscripts: {
+      n: 'Polymerwiederholung (n)',
+      paren: 'Klammer (CH₂)n',
+      parenBond: 'Klammer -(CH₂)n-',
+      m: 'Copolymer (m)',
+    },
+    sruSubscriptHints: {
+      n: 'Eckige Klammern mit Wiederholung n. Subskript anklicken, um die Anzahl einzugeben.',
+      paren: 'Eckige Klammern mit Beschriftung (CH₂)n. Subskript auf der Leinwand anklicken.',
+      parenBond: 'Eckige Klammern mit Beschriftung -(CH₂)n-. Subskript auf der Leinwand anklicken.',
+      m: 'Eckige Klammern mit Copolymer-Index m. Subskript anklicken, um eine Zahl einzugeben.',
+    },
     settingsAria: 'Einstellungen',
     searchApparatus: 'Apparat suchen',
     openLibrary: 'Bibliothek öffnen',

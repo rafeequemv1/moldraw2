@@ -590,8 +590,8 @@ html.app-mobile-compact .toolbar-split-tool__menu--drop-up {
 }
 
 .toolbar-split-tool__menu--compact.toolbar-split-tool__menu--wide:not(.toolbar-split-tool__menu--left-dock) {
-  min-width: 168px;
-  max-width: 200px;
+  min-width: 196px;
+  max-width: 240px;
   max-height: min(360px, calc(100vh - 64px));
 }
 
@@ -1031,4 +1031,26 @@ html.app-mobile-compact .toolbar-split-tool__menu--drop-up {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.delay-tip {
+  position: fixed;
+  z-index: 30000;
+  max-width: 220px;
+  margin: 0;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: var(--text-main);
+  color: var(--chrome-bg);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  transform: translate(-50%, 0);
+}
+
+.delay-tip--above {
+  transform: translate(-50%, -100%);
 }
