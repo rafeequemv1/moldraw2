@@ -3,12 +3,17 @@
  * the "select" tool. Also contains lasso → atom-id collection.
  */
 import type { Atom, Molecule } from '@moldraw/domain';
-import { orientFormulaLabel } from '@moldraw/domain';
+import {
+  condensedGroupLabelForAtom,
+  getEffectiveValencyForImplicitHydrogen,
+  isIsolatedWaterOxygen,
+  orientFormulaLabel,
+} from '@moldraw/domain';
 import { pointInPolygon, type Point } from './polygons';
 import { reactionArrowSelectionAabb } from './reactionArrow';
 import { getCanvasShapeBox } from './canvasShapeTransform';
 import { canvasTextBbox, estimateCanvasTextAabb } from './canvasText';
-import { hGoesLeft } from './hydrogenLayout';
+import { getHydrogenStubDirections, hGoesLeft, IMPLICIT_H_LABEL_DIST } from './hydrogenLayout';
 
 export type MarqueeSelectionBoundsInput = {
   atomIds: string[];
@@ -355,6 +360,67 @@ export const estimateAliasLabelAabb = (
 ): { minX: number; maxX: number; minY: number; maxY: number } | null =>
   estimateLabelTextAabb(atom, atom.alias, mol);
 
+/** Disk around an unlabeled vertex so the grab box matches the selection halo. */
+const ATOM_DISK_R = 12;
+const IMPLICIT_H_GLYPH_R = 12;
+
+const bondOrderSumForAtom = (mol: Molecule, atomId: string): number => {
+  let sum = 0;
+  for (const b of mol.bonds) {
+    if (b.fromAtomId === atomId || b.toAtomId === atomId) sum += b.order;
+  }
+  return sum;
+};
+
+/** Visual extent of one atom: disk + alias / condensed label + implicit-H glyphs. */
+const estimateAtomVisualAabb = (
+  atom: Atom,
+  mol: Molecule,
+): { minX: number; maxX: number; minY: number; maxY: number } => {
+  let minX = atom.x - ATOM_DISK_R;
+  let maxX = atom.x + ATOM_DISK_R;
+  let minY = atom.y - ATOM_DISK_R;
+  let maxY = atom.y + ATOM_DISK_R;
+  const grow = (box: { minX: number; maxX: number; minY: number; maxY: number }) => {
+    minX = Math.min(minX, box.minX);
+    maxX = Math.max(maxX, box.maxX);
+    minY = Math.min(minY, box.minY);
+    maxY = Math.max(maxY, box.maxY);
+  };
+  const aliasBox = estimateAliasLabelAabb(atom, mol);
+  if (aliasBox) {
+    grow(aliasBox);
+    return { minX, maxX, minY, maxY };
+  }
+  const v = bondOrderSumForAtom(mol, atom.id);
+  const condensed = condensedGroupLabelForAtom(atom, mol, v);
+  const labelBox = estimateLabelTextAabb(atom, condensed, mol);
+  if (labelBox) {
+    grow(labelBox);
+    return { minX, maxX, minY, maxY };
+  }
+  const water = isIsolatedWaterOxygen(atom, mol, v);
+  if (water || (atom.element === 'C' && !atom.showElementLabel)) {
+    const implicitH = Math.max(
+      0,
+      getEffectiveValencyForImplicitHydrogen(atom.element, atom.charge || 0) - v,
+    );
+    if (implicitH > 0) {
+      for (const dir of getHydrogenStubDirections(atom, mol, implicitH)) {
+        const hx = atom.x + dir.x * IMPLICIT_H_LABEL_DIST;
+        const hy = atom.y + dir.y * IMPLICIT_H_LABEL_DIST;
+        grow({
+          minX: hx - IMPLICIT_H_GLYPH_R,
+          maxX: hx + IMPLICIT_H_GLYPH_R,
+          minY: hy - IMPLICIT_H_GLYPH_R,
+          maxY: hy + IMPLICIT_H_GLYPH_R,
+        });
+      }
+    }
+  }
+  return { minX, maxX, minY, maxY };
+};
+
 /** Tight axis-aligned bbox covering all selected atoms (or null when empty). */
 export const getSelectionAabb = (mol: Molecule, ids: string[]): SelectionAabb | null => {
   const set = new Set(ids);
@@ -364,17 +430,11 @@ export const getSelectionAabb = (mol: Molecule, ids: string[]): SelectionAabb | 
   let maxY = -Infinity;
   for (const a of mol.atoms) {
     if (!set.has(a.id)) continue;
-    minX = Math.min(minX, a.x);
-    maxX = Math.max(maxX, a.x);
-    minY = Math.min(minY, a.y);
-    maxY = Math.max(maxY, a.y);
-    const labelBox = estimateAliasLabelAabb(a, mol);
-    if (labelBox) {
-      minX = Math.min(minX, labelBox.minX);
-      maxX = Math.max(maxX, labelBox.maxX);
-      minY = Math.min(minY, labelBox.minY);
-      maxY = Math.max(maxY, labelBox.maxY);
-    }
+    const box = estimateAtomVisualAabb(a, mol);
+    minX = Math.min(minX, box.minX);
+    maxX = Math.max(maxX, box.maxX);
+    minY = Math.min(minY, box.minY);
+    maxY = Math.max(maxY, box.maxY);
   }
   if (!Number.isFinite(minX)) return null;
   return { minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };

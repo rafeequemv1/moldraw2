@@ -51,7 +51,12 @@ import {
   molblock3DFromPerspectivePose,
   rotate3DPose,
 } from '@moldraw/core';
-import { pickAtomIdsInRect, pickAtomOrBondForBondTool, pickChargeMarkAt } from './hitTest';
+import {
+  pickAtomIdsInRect,
+  pickAtomOrBondForBondTool,
+  pickAtomOrBondForSelectTool,
+  pickChargeMarkAt,
+} from './hitTest';
 import { PERSPECTIVE_RAD_PER_PX } from './toolPerspective';
 import type { InteractionContext } from './types';
 import { isSelectTool } from './selectTools';
@@ -302,11 +307,10 @@ const handleReactionArrowPointerDown = (
  * Pointer-down branches (priority order):
  *   1. Existing selection: rotate / scale / move handles.
  *   2. Existing selection: click inside the box (any object) → move all together.
- *   3. Existing selection: click outside → clear only (drag then marquees).
- *   4. Sole image/text/shape/arrow: per-object rotate / resize / curve handles.
- *   5. Hit on canvas text / image / shape / stroke / orbital / arrow.
- *   6. Hit on atom / bond / ring fill.
- *   7. Empty canvas → marquee or lasso.
+ *   3. Sole image/text/shape/arrow: per-object rotate / resize / curve handles.
+ *   4. Hit on canvas text / image / shape / stroke / orbital / arrow.
+ *   5. Hit on atom / bond / ring fill (atom disk + implicit H wins over bond).
+ *   6. Empty canvas → clear and start marquee or lasso.
  *
  * Whole connected molecules: Select menu → “Select connected”, or context menu
  * “Select connected fragment”, or marquee/lasso. Shift+click adds/toggles.
@@ -405,27 +409,6 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
     return true;
   }
 
-  if (hasSelection && !e.shiftKey) {
-    clearMarqueeSelection(ctx);
-    if (activeTool === 'lasso_select') {
-      ctx.setDragAction({
-        type: 'lasso_select',
-        points: [worldPos],
-        currentX: worldPos.x,
-        currentY: worldPos.y,
-      });
-    } else {
-      ctx.setDragAction({
-        type: 'box_select',
-        startX: worldPos.x,
-        startY: worldPos.y,
-        currentX: worldPos.x,
-        currentY: worldPos.y,
-      });
-    }
-    return true;
-  }
-
   if (handleCanvasTextPointerDown(ctx)) return true;
   if (handleCanvasImagePointerDown(ctx)) return true;
   if (handleCanvasShapePointerDown(ctx)) return true;
@@ -460,11 +443,11 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
 
   if (handleReactionArrowPointerDown(ctx)) return true;
 
-  // Prefer bond shaft over atom for restyle/select (tighter atom disk than bond tools).
-  const { atom: clickedAtom, bond: clickedBond } = pickAtomOrBondForBondTool(
+  // Atoms (disk, label, implicit H) win; mid-shaft still selects the bond.
+  const { atom: clickedAtom, bond: clickedBond } = pickAtomOrBondForSelectTool(
     molecule,
     worldPos,
-    ctx.hit.selectAtomRadius,
+    ctx.hit.atomHitRadius,
     ctx.hit.selectBondTolerance,
   );
 
@@ -720,10 +703,10 @@ export function selectToolHasTargetAt(ctx: InteractionContext): boolean {
     }
   }
 
-  const { atom, bond } = pickAtomOrBondForBondTool(
+  const { atom, bond } = pickAtomOrBondForSelectTool(
     molecule,
     worldPos,
-    ctx.hit.selectAtomRadius,
+    ctx.hit.atomHitRadius,
     ctx.hit.selectBondTolerance,
   );
   if (atom?.id || bond) return true;

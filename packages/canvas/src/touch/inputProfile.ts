@@ -18,7 +18,7 @@ export interface HitMetrics {
   atomAttachRadius: number;
   /** Bond shaft pick tolerance. */
   bondHitTolerance: number;
-  /** Select tool prefers bond shaft over atom disk — tighter atom radius. */
+  /** Select-tool atom disk (same size as generic pick so vertices stay grabable). */
   selectAtomRadius: number;
   selectBondTolerance: number;
   /** Soft hover halo (atom / bond glow). */
@@ -38,7 +38,7 @@ const MOUSE_BASE: BaseMetrics = {
   atomHitRadius: 15,
   atomAttachRadius: 12,
   bondHitTolerance: 10,
-  selectAtomRadius: 10,
+  selectAtomRadius: 15,
   selectBondTolerance: 12,
   hoverAtomRadius: 34,
   hoverBondRadius: 12,
@@ -50,7 +50,7 @@ const PEN_BASE: BaseMetrics = {
   atomHitRadius: 18,
   atomAttachRadius: 14,
   bondHitTolerance: 12,
-  selectAtomRadius: 12,
+  selectAtomRadius: 18,
   selectBondTolerance: 14,
   hoverAtomRadius: 36,
   hoverBondRadius: 14,
@@ -62,7 +62,7 @@ const TOUCH_BASE: BaseMetrics = {
   atomHitRadius: 30,
   atomAttachRadius: 24,
   bondHitTolerance: 20,
-  selectAtomRadius: 22,
+  selectAtomRadius: 30,
   selectBondTolerance: 22,
   hoverAtomRadius: 44,
   hoverBondRadius: 22,

@@ -1,11 +1,17 @@
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
-import { condensedGroupLabelForAtom } from '@moldraw/domain';
+import {
+  condensedGroupLabelForAtom,
+  getEffectiveValencyForImplicitHydrogen,
+  isIsolatedWaterOxygen,
+} from '@moldraw/domain';
 import type { Point } from '../geometry';
 import {
   estimateAliasLabelAabb,
   estimateLabelTextAabb,
+  getHydrogenStubDirections,
   getMoleculeRevisionCache,
   getSpatialGridForMolecule,
+  IMPLICIT_H_LABEL_DIST,
   queryAtomIdsInRect,
   queryAtomIdsNear,
 } from '../geometry';
@@ -19,6 +25,8 @@ export const ATOM_HIT_RADIUS = 15;
 /** Tight center-only radius for bond / FG / chain attach (no label grab). */
 export const ATOM_ATTACH_HIT_RADIUS = 12;
 export const BOND_HIT_TOLERANCE = 10;
+/** Click radius around a drawn implicit-H glyph (CH₂ stubs, water). */
+const IMPLICIT_H_HIT_RADIUS = 14;
 
 export type PickAtomOptions = {
   /**
@@ -27,6 +35,12 @@ export type PickAtomOptions = {
    * FG attach, chain roots, so nearby OH/NH/Cl labels don't steal the snap.
    */
   includeLabels?: boolean;
+  /**
+   * When labels are included, also inflate a circular grab radius from the
+   * atom center (erase / label tools). Select must set this false so a CH₃
+   * disk does not steal the neighbouring bond shaft.
+   */
+  inflateLabelDisk?: boolean;
 };
 
 /** Visible alias or condensed FG label (OH, NH2, CH3, …) used for hit / edit. */
@@ -45,6 +59,24 @@ const hitRadiusForAtom = (a: Atom, mol: Molecule, base: number): number => {
   const label = displayGroupLabelForAtom(a, mol);
   if (!label) return base;
   return Math.max(base, 20 + label.length * 8);
+};
+
+/** True when pointer is over a drawn implicit-H stub glyph (not condensed CH₃). */
+const pointInImplicitHydrogen = (a: Atom, mol: Molecule, worldPos: Point): boolean => {
+  if (a.alias?.trim() || a.showElementLabel) return false;
+  const cache = getMoleculeRevisionCache(mol);
+  const v = cache.valencyMap.get(a.id) ?? 0;
+  if (condensedGroupLabelForAtom(a, mol, v)) return false;
+  const water = isIsolatedWaterOxygen(a, mol, v);
+  if (!water && a.element !== 'C') return false;
+  const implicitH = Math.max(0, getEffectiveValencyForImplicitHydrogen(a.element, a.charge || 0) - v);
+  if (implicitH <= 0) return false;
+  for (const dir of getHydrogenStubDirections(a, mol, implicitH)) {
+    const hx = a.x + dir.x * IMPLICIT_H_LABEL_DIST;
+    const hy = a.y + dir.y * IMPLICIT_H_LABEL_DIST;
+    if (Math.hypot(worldPos.x - hx, worldPos.y - hy) <= IMPLICIT_H_HIT_RADIUS) return true;
+  }
+  return false;
 };
 
 /** True when pointer is over the head-anchored alias / condensed FG text box. */
@@ -82,6 +114,7 @@ export const pickAtomAt = (
   opts?: PickAtomOptions,
 ): Atom | null => {
   const includeLabels = opts?.includeLabels !== false;
+  const inflateLabelDisk = includeLabels && opts?.inflateLabelDisk !== false;
   const cache = getMoleculeRevisionCache(molecule);
   const grid = getSpatialGridForMolecule(molecule, cache.atomById);
   const queryR = Math.max(radius, includeLabels ? 120 : radius + 8);
@@ -89,12 +122,13 @@ export const pickAtomAt = (
   let best: Atom | null = null;
   let bestScore = Infinity;
   const consider = (a: Atom) => {
-    const r = includeLabels ? hitRadiusForAtom(a, molecule, radius) : radius;
+    const r = inflateLabelDisk ? hitRadiusForAtom(a, molecule, radius) : radius;
     const d = Math.hypot(a.x - worldPos.x, a.y - worldPos.y);
     const inLabel = includeLabels && pointInGroupLabel(a, molecule, worldPos);
-    if (d > r && !inLabel) return;
-    // Prefer closer centers; label hits count as slightly farther than center hits.
-    const score = inLabel && d > r ? r + 0.5 : d;
+    const inImplicitH = includeLabels && pointInImplicitHydrogen(a, molecule, worldPos);
+    if (d > r && !inLabel && !inImplicitH) return;
+    // Prefer closer centers; label / implicit-H hits count as slightly farther.
+    const score = (inLabel || inImplicitH) && d > r ? r + 0.5 : d;
     if (score < bestScore) {
       bestScore = score;
       best = a;
@@ -213,6 +247,27 @@ export function pickAtomOrBondForBondTool(
     return { atom, bond: null };
   }
   return { atom: null, bond };
+}
+
+/**
+ * Select-tool pointer routing (ChemDraw / Ketcher): the atom disk, alias,
+ * condensed label, or implicit-H glyph wins whenever the pointer is on it.
+ * Bond shafts are only taken when the click misses every atom target.
+ * Do not reuse {@link pickAtomOrBondForBondTool} here — that prefers mid-shaft
+ * so bond-order cycling still works on short bonds.
+ */
+export function pickAtomOrBondForSelectTool(
+  molecule: Molecule,
+  worldPos: Point,
+  atomRadius = ATOM_HIT_RADIUS,
+  bondTol = BOND_HIT_TOLERANCE,
+): { atom: Atom | null; bond: Bond | null } {
+  const atom = pickAtomAt(molecule, worldPos, atomRadius, {
+    includeLabels: true,
+    inflateLabelDisk: false,
+  });
+  if (atom) return { atom, bond: null };
+  return { atom: null, bond: pickBondAt(molecule, worldPos, bondTol) };
 }
 
 /** Returns the bond whose closest point on its segment is within `tol` of `worldPos`. */

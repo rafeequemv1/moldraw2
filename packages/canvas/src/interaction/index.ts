@@ -11,6 +11,7 @@ export {
   pickChargeMarkAt,
   pickAtomIdsInRect,
   pickAtomOrBondForBondTool,
+  pickAtomOrBondForSelectTool,
   pickAtomOrBondForRingTool,
   pickBondAt,
   getAtomValency,

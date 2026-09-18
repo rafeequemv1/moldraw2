@@ -333,6 +333,7 @@ export function useKeyboardShortcuts({
       }
 
       if (match('delete')) {
+        e.preventDefault();
         cb.onDelete();
         return;
       }

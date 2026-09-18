@@ -26,15 +26,8 @@
 
   if (window.location.pathname.indexOf('/tools/') === 0 || window.location.pathname === '/tools') {
     document.body.classList.add('tools-page-sticky-nav');
-    Array.from(document.querySelectorAll('.top-nav')).forEach(function (nav) {
-      if (nav.querySelector('[data-site-signup-cta]')) return;
-      var signupLink = document.createElement('a');
-      signupLink.className = 'top-link site-tools-signup-cta';
-      signupLink.href = '/?signup=1';
-      signupLink.setAttribute('data-site-signup-cta', 'true');
-      signupLink.setAttribute('data-piqo-event', 'signup_cta');
-      signupLink.textContent = 'Sign up free';
-      nav.appendChild(signupLink);
+    Array.from(document.querySelectorAll('.top-nav [data-site-signup-cta]')).forEach(function (link) {
+      if (!link.closest('.site-signup-cta')) link.remove();
     });
     if (!document.querySelector('.site-scroll-top-btn')) {
       var scrollTopButton = document.createElement('button');
