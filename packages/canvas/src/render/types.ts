@@ -89,6 +89,8 @@ export type DragActionState =
       currentY: number;
       origX: number;
       origY: number;
+      /** Click (no drag) inside an already-selected box opens the editor. */
+      clickOpensEdit?: boolean;
     }
   | {
       /** Drag formal / δ charge mark around its parent atom. */

@@ -6,9 +6,9 @@ import {
   canvasTextResizePatch,
   canvasTextRotatePatch,
   getCanvasTextBox,
+  hitCanvasTextBox,
   measureCanvasTextContentSize,
   pickCanvasTextAt,
-  pickCanvasTextContentAt,
   pickCanvasTextResizeHandle,
   pickCanvasTextRotateHandle,
   type CanvasTextResizeHandle,
@@ -33,8 +33,8 @@ function beginResize(
 ): void {
   beginTextTransform(ctx);
   // Snapshot the *measured* box so auto-sized labels resize from their real
-  // extent (not the minimum box). The frame can shrink below wrapped
-  // content; draw clips overflow. Font size is unchanged.
+  // extent (not the minimum box). Corners scale font with the box; sides
+  // wrap and grow height to content so glyphs never clip.
   const box = getCanvasTextBox(canvasCtx, orig);
   const content = measureCanvasTextContentSize(canvasCtx, orig);
   ctx.setDragAction({
@@ -126,14 +126,18 @@ export function handleCanvasTextPointerDown(
   const picked = exactOrIdle ?? selectedGrab ?? null;
   if (!picked) return false;
 
-  // Second click on the letters of the already-selected box → edit, not drag.
-  // Empty interior / frame / first click still start a move.
-  if (
-    picked.id === selectedId &&
-    ctx.onRequestCanvasTextEdit &&
-    pickCanvasTextContentAt(canvasCtx, picked, ctx.worldPos.x, ctx.worldPos.y)
-  ) {
-    ctx.onRequestCanvasTextEdit(picked.id);
+  const alreadySelected = picked.id === selectedId;
+  const insideExact = hitCanvasTextBox(
+    getCanvasTextBox(canvasCtx, picked),
+    ctx.worldPos.x,
+    ctx.worldPos.y,
+    0,
+  );
+
+  // Already typing inside the box: a click on the letters stays in edit.
+  // Frame slop still starts a move.
+  if (alreadySelected && insideExact && ctx.canvasTextEditing) {
+    ctx.onRequestCanvasTextEdit?.(picked.id);
     return true;
   }
 
@@ -159,7 +163,9 @@ export function handleCanvasTextPointerDown(
     return true;
   }
 
-  beginCanvasTextMove(ctx, picked);
+  // Drag anywhere on the box/slop to move. Click (no drag) inside a
+  // already-selected box opens the editor on pointer-up.
+  beginCanvasTextMove(ctx, picked, { clickOpensEdit: alreadySelected && insideExact });
   return true;
 }
 
@@ -167,6 +173,7 @@ export function handleCanvasTextPointerDown(
 export function beginCanvasTextMove(
   ctx: InteractionContext,
   text: import('@moldraw/domain').CanvasText,
+  opts?: { clickOpensEdit?: boolean },
 ): void {
   beginTextTransform(ctx);
   ctx.setDragAction({
@@ -178,6 +185,7 @@ export function beginCanvasTextMove(
     currentY: ctx.worldPos.y,
     origX: text.x,
     origY: text.y,
+    clickOpensEdit: opts?.clickOpensEdit,
   });
 }
 
@@ -193,6 +201,7 @@ export function commitCanvasTextResize(ctx: InteractionContext): void {
       dragAction.currentY,
       dragAction.minW,
       dragAction.minH,
+      ctx.getCanvasContext(),
     );
     ctx.onUpdateCanvasText(dragAction.textId, patch);
     return;

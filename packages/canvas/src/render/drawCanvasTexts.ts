@@ -27,7 +27,11 @@ import type { CanvasText } from '@moldraw/domain';
 import type { RenderContext } from './types';
 import { drawTransformHandleSquare, transformChrome } from './transformChrome';
 
-function textWithDragPreview(t: CanvasText, R: RenderContext): CanvasText {
+function textWithDragPreview(
+  t: CanvasText,
+  R: RenderContext,
+  measureCtx?: CanvasRenderingContext2D | null,
+): CanvasText {
   const drag = R.dragAction;
   if (!drag) return t;
   if (drag.type === 'move_canvas_text' && drag.textId === t.id) {
@@ -47,6 +51,7 @@ function textWithDragPreview(t: CanvasText, R: RenderContext): CanvasText {
         drag.currentY,
         drag.minW,
         drag.minH,
+        measureCtx,
       ),
     };
   }
@@ -157,7 +162,7 @@ export const drawCanvasTexts = (ctx: CanvasRenderingContext2D, R: RenderContext)
   if (list.length === 0) return;
 
   for (const raw of list) {
-    const t = textWithDragPreview(raw, R);
+    const t = textWithDragPreview(raw, R, ctx);
     const box = getCanvasTextBox(ctx, t);
     const { lineHeight } = measureCanvasTextBox(ctx, t);
     const selected =

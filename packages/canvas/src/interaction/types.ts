@@ -95,6 +95,10 @@ export interface InteractionContext {
   selectedBondIds?: string[];
   selectedCanvasImageId?: string | null;
   selectedCanvasTextId?: string | null;
+  /** True while the host inline editor is live for a canvas text. */
+  canvasTextEditing?: boolean;
+  /** Switch the host toolbar tool (e.g. text → select after click-outside). */
+  onSetActiveTool?: (tool: string) => void;
   selectedSruBracketId?: string | null;
   /** Viewport zoom for handle hit sizes (optional). */
   viewport?: { zoom: number };

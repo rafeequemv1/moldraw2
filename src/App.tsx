@@ -2489,6 +2489,13 @@ function App() {
               }
               canvasTextEditing={canvasTextEditing}
               onRequestCanvasTextEdit={handleRequestCanvasTextEdit}
+              onSetActiveTool={tool => {
+                setActiveTool(tool);
+                if (tool !== 'text') {
+                  setCanvasTextEditing(false);
+                  setInlineEditorFocused(false);
+                }
+              }}
               onCanvasTextTransforming={active => {
                 setCanvasTextTransforming(active);
                 if (active) {

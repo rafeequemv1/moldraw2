@@ -60,6 +60,8 @@ const getCursorMeasureCtx = (): CanvasRenderingContext2D | null => {
 export interface InfiniteCanvasProps {
   onViewportChange?: (viewport: Viewport) => void;
   activeTool?: string;
+  /** Host toolbar switch (text tool click-outside → select). */
+  onSetActiveTool?: (tool: string) => void;
   molecule?: Molecule;
   showHydrogens?: boolean;
   /** Teaching-style CH₃ / NH₂ labels on terminal groups (see Settings → General). */
@@ -321,6 +323,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
     {
       onViewportChange,
       activeTool = 'select',
+      onSetActiveTool,
       molecule = { atoms: [], bonds: [] },
       showHydrogens = false,
       condensedGroupLabels = false,
@@ -568,6 +571,8 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       onUpdateReactionArrow,
       onRequestAtomAliasEdit,
       onRequestCanvasTextEdit,
+      canvasTextEditing,
+      onSetActiveTool,
       onRequestArrowReagentEdit,
       onContextMenu,
       onDismissChromeOverlays,

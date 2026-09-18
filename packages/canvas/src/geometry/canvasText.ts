@@ -20,14 +20,15 @@ const PAD_X = 10;
 const PAD_Y = 8;
 const MIN_BOX_W = 56;
 const MIN_BOX_H = 28;
+const MIN_FONT_SIZE = 8;
 /** Line box as a multiple of effective font size — enough that wrapped lines never collide. */
 const LINE_HEIGHT_RATIO = 1.35;
 const ROTATE_HANDLE_OFFSET = 26;
 const HANDLE_HIT_R = 8;
 /** Screen-px slop around an unselected box so small labels stay clickable. */
-export const CANVAS_TEXT_IDLE_GRAB_PAD_PX = 6;
+export const CANVAS_TEXT_IDLE_GRAB_PAD_PX = 16;
 /** Screen-px slop around a selected box — grab the frame without pixel-hunting. */
-export const CANVAS_TEXT_SELECTED_GRAB_PAD_PX = 14;
+export const CANVAS_TEXT_SELECTED_GRAB_PAD_PX = 32;
 
 /** World-space hit pad for a text box at the current camera zoom. */
 export const canvasTextHitPadWorld = (
@@ -285,10 +286,9 @@ export const getCanvasTextBox = (
 ): CanvasTextBox => {
   const content = measureCanvasTextContentSize(ctx, t);
   const width = Math.max(MIN_BOX_W, t.boxWidth ?? content.width);
-  // Honor an explicit frame so n/s / corner drags can shrink the box.
-  // Overflow is clipped in draw; wrap follows boxWidth. Unsized labels
-  // still fit their measured content.
-  const height = Math.max(MIN_BOX_H, t.boxHeight ?? content.height);
+  // Never shorter than wrapped content — side-handle width shrinks wrap and
+  // the frame grows down instead of clipping glyphs.
+  const height = Math.max(MIN_BOX_H, t.boxHeight ?? 0, content.height);
   const cx = t.x;
   const cy = t.y;
   return {
@@ -304,10 +304,17 @@ export const getCanvasTextBox = (
   };
 };
 
+/** Optional pin so wrap/height grow does not move a static resize handle. */
+export type CanvasTextFitContentOpts = {
+  /** World-fixed handle (usually the opposite corner/edge of a resize drag). */
+  staticHandle?: CanvasTextResizeHandle;
+};
+
 /** Grow box to fit content (used while typing / Enter for new lines). */
 export const canvasTextFitContentPatch = (
   ctx: CanvasRenderingContext2D,
   t: CanvasText,
+  opts?: CanvasTextFitContentOpts,
 ): Partial<CanvasText> => {
   const content = measureCanvasTextContentSize(ctx, t);
   const next: Partial<CanvasText> = {};
@@ -318,6 +325,34 @@ export const canvasTextFitContentPatch = (
   }
   const height = Math.max(t.boxHeight ?? 0, content.height);
   if (height !== t.boxHeight) next.boxHeight = height;
+
+  const staticHandle = opts?.staticHandle;
+  if (staticHandle && (next.boxWidth != null || next.boxHeight != null)) {
+    const width0 = Math.max(MIN_BOX_W, t.boxWidth ?? MIN_BOX_W);
+    const height0 = Math.max(MIN_BOX_H, t.boxHeight ?? MIN_BOX_H);
+    const width1 = next.boxWidth ?? width0;
+    const height1 = next.boxHeight ?? height0;
+    if (width1 !== width0 || height1 !== height0) {
+      const rot = t.rotationRad ?? 0;
+      const pinned = getCanvasTextHandleWorld(
+        {
+          width: width0,
+          height: height0,
+          left: t.x - width0 / 2,
+          right: t.x + width0 / 2,
+          top: t.y - height0 / 2,
+          bottom: t.y + height0 / 2,
+          cx: t.x,
+          cy: t.y,
+          rotationRad: rot,
+        },
+        staticHandle,
+      );
+      const center = centerWithHandlePinned(rot, staticHandle, width1, height1, pinned);
+      next.x = center.x;
+      next.y = center.y;
+    }
+  }
   return next;
 };
 
@@ -347,7 +382,7 @@ export const textLocalToWorld = (
 };
 
 const localHandle = (
-  box: CanvasTextBox,
+  box: Pick<CanvasTextBox, 'width' | 'height'>,
   handle: CanvasTextResizeHandle,
 ): { lx: number; ly: number } => {
   const hx = box.width / 2;
@@ -370,6 +405,18 @@ const localHandle = (
     case 'w':
       return { lx: -hx, ly: 0 };
   }
+};
+
+/** Box center that keeps `handle` at `pinned` in world space. */
+const centerWithHandlePinned = (
+  rotationRad: number,
+  handle: CanvasTextResizeHandle,
+  width: number,
+  height: number,
+  pinned: { x: number; y: number },
+): { x: number; y: number } => {
+  const { lx, ly } = localHandle({ width, height }, handle);
+  return textLocalToWorld({ cx: pinned.x, cy: pinned.y, rotationRad }, -lx, -ly);
 };
 
 export const getCanvasTextHandleWorld = (
@@ -576,12 +623,27 @@ export const canvasTextEditorLayout = (
   };
 };
 
+let sharedTextMeasureCtx: CanvasRenderingContext2D | null | undefined;
+const getSharedTextMeasureCtx = (): CanvasRenderingContext2D | null => {
+  if (sharedTextMeasureCtx !== undefined) return sharedTextMeasureCtx;
+  if (typeof document === 'undefined') {
+    sharedTextMeasureCtx = null;
+    return null;
+  }
+  sharedTextMeasureCtx = document.createElement('canvas').getContext('2d');
+  return sharedTextMeasureCtx;
+};
+
 /**
- * Resize the text *frame* from a corner or mid-edge handle. Opposite side
- * stays fixed in world (rotation-aware). Font size is never changed —
- * corners change width+height (text reflows/wraps); n/s change height only;
- * e/w change width only. `orig` should carry explicit `boxWidth` /
- * `boxHeight` (callers snapshot the measured box at drag start).
+ * Resize from a corner or mid-edge handle. The opposite corner (or opposite
+ * edge) stays world-fixed; the box grows/shrinks away from that pin
+ * (rotation-aware). Corners scale fontSize with the box (PowerPoint-style,
+ * aspect locked). Side handles change the frame only; if width shrinks, text
+ * wraps and height grows via `canvasTextFitContentPatch` so glyphs never clip
+ * — extra height grows away from the static edge, not by recentering.
+ * `orig` should carry explicit `boxWidth` / `boxHeight` (callers snapshot the
+ * measured box at drag start). Pass `measureCtx` for wrap+fit (or a shared
+ * browser measure surface is used when available).
  */
 export const canvasTextResizePatch = (
   orig: CanvasText,
@@ -590,11 +652,13 @@ export const canvasTextResizePatch = (
   pointerY: number,
   minW: number = MIN_BOX_W,
   minH: number = MIN_BOX_H,
+  measureCtx?: CanvasRenderingContext2D | null,
 ): Partial<CanvasText> => {
   const width0 = Math.max(MIN_BOX_W, orig.boxWidth ?? MIN_BOX_W);
   const height0 = Math.max(MIN_BOX_H, orig.boxHeight ?? MIN_BOX_H);
   const floorW = Math.max(MIN_BOX_W, minW);
   const floorH = Math.max(MIN_BOX_H, minH);
+  const rot = orig.rotationRad ?? 0;
   const box0: CanvasTextBox = {
     width: width0,
     height: height0,
@@ -604,7 +668,7 @@ export const canvasTextResizePatch = (
     bottom: orig.y + height0 / 2,
     cx: orig.x,
     cy: orig.y,
-    rotationRad: orig.rotationRad ?? 0,
+    rotationRad: rot,
   };
 
   const opp = oppositeHandle(handle);
@@ -612,28 +676,52 @@ export const canvasTextResizePatch = (
   const { lx: plx, ly: ply } = worldToTextLocal(box0, pointerX, pointerY);
   const { lx: flx, ly: fly } = worldToTextLocal(box0, fixed.x, fixed.y);
 
+  const edge = isCanvasTextResizeEdge(handle);
   const lockW = handle === 'n' || handle === 's';
   const lockH = handle === 'e' || handle === 'w';
-  const newW = lockW ? width0 : Math.max(floorW, Math.abs(plx - flx));
-  const newH = lockH ? height0 : Math.max(floorH, Math.abs(ply - fly));
 
-  const signX = handle.includes('e') ? 1 : handle.includes('w') ? -1 : 0;
-  const signY = handle.includes('s') ? 1 : handle.includes('n') ? -1 : 0;
-  const newLocalDrag = {
-    lx: lockW ? 0 : flx + signX * newW,
-    ly: lockH ? 0 : fly + signY * newH,
-  };
-  const midLocal = {
-    lx: lockW ? 0 : (flx + newLocalDrag.lx) / 2,
-    ly: lockH ? 0 : (fly + newLocalDrag.ly) / 2,
-  };
-  const center = textLocalToWorld(box0, midLocal.lx, midLocal.ly);
+  let newW: number;
+  let newH: number;
+  let fontSize: number | undefined;
+  if (!edge) {
+    const origSpan = Math.hypot(width0, height0);
+    const newSpan = Math.hypot(plx - flx, ply - fly);
+    const font0 = Math.max(1, orig.fontSize);
+    const minScale = Math.max(floorW / width0, floorH / height0, MIN_FONT_SIZE / font0);
+    const scale = Math.max(minScale, newSpan / Math.max(1e-6, origSpan));
+    newW = Math.max(floorW, width0 * scale);
+    newH = Math.max(floorH, height0 * scale);
+    fontSize = Math.max(MIN_FONT_SIZE, font0 * scale);
+  } else {
+    newW = lockW ? width0 : Math.max(floorW, Math.abs(plx - flx));
+    newH = lockH ? height0 : Math.max(floorH, Math.abs(ply - fly));
+  }
+
+  const pinCenter = (w: number, h: number) => centerWithHandlePinned(rot, opp, w, h, fixed);
+  let center = pinCenter(newW, newH);
+
+  const fitCtx = measureCtx === undefined ? getSharedTextMeasureCtx() : measureCtx;
+  if (edge && fitCtx) {
+    const trial: CanvasText = {
+      ...orig,
+      boxWidth: newW,
+      boxHeight: newH,
+      x: center.x,
+      y: center.y,
+    };
+    const fit = canvasTextFitContentPatch(fitCtx, trial, { staticHandle: opp });
+    if (fit.boxWidth != null) newW = fit.boxWidth;
+    if (fit.boxHeight != null) newH = Math.max(newH, fit.boxHeight);
+    // Grow away from the static edge — never recenter onto the pin.
+    center = fit.x != null && fit.y != null ? { x: fit.x, y: fit.y } : pinCenter(newW, newH);
+  }
 
   return {
     boxWidth: newW,
     boxHeight: newH,
     x: center.x,
     y: center.y,
+    ...(fontSize != null ? { fontSize } : {}),
   };
 };
 
@@ -671,7 +759,7 @@ export const canvasTextCursorAt = (
   wx: number,
   wy: number,
   zoom: number,
-  opts?: { editing?: boolean },
+  _opts?: { editing?: boolean },
 ): string | null => {
   if (!texts.length) return null;
   const selected = selectedId ? texts.find(t => t.id === selectedId) : undefined;
@@ -680,8 +768,9 @@ export const canvasTextCursorAt = (
     const corner = pickCanvasTextResizeHandle(ctx, selected, wx, wy, zoom);
     if (corner) return canvasTextCornerCursor(corner, selected.rotationRad ?? 0);
     const grabPad = canvasTextHitPadWorld(zoom, 'selected');
-    if (hitCanvasTextBox(getCanvasTextBox(ctx, selected), wx, wy, grabPad)) {
-      if (opts?.editing && pickCanvasTextContentAt(ctx, selected, wx, wy)) return 'text';
+    const box = getCanvasTextBox(ctx, selected);
+    if (hitCanvasTextBox(box, wx, wy, grabPad)) {
+      if (hitCanvasTextBox(box, wx, wy, 0)) return 'text';
       return 'grab';
     }
   }

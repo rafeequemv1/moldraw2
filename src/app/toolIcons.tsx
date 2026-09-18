@@ -452,25 +452,15 @@ export const renderToolIcon = (toolId: string) => {
       );
     case 'add_explicit_h':
       return (
-        <IconSvg>
-          <path
-            d="M3.4 15.2 V4.8 M9.2 15.2 V4.8 M3.4 10 H9.2"
-            {...stroke}
-            strokeWidth={1.7}
-          />
-          <path d="M14.2 6.2 V11.4 M11.6 8.8 H16.8" {...stroke} strokeWidth={1.55} />
-        </IconSvg>
+        <span className="app-top-bar__explicit-label" aria-hidden>
+          H+
+        </span>
       );
     case 'add_explicit_c':
       return (
-        <IconSvg>
-          <path
-            d="M9.6 5.1 C5.8 5.1 3.8 7.3 3.8 10 C3.8 12.7 5.8 14.9 9.6 14.9"
-            {...stroke}
-            strokeWidth={1.7}
-          />
-          <path d="M14.2 6.2 V11.4 M11.6 8.8 H16.8" {...stroke} strokeWidth={1.55} />
-        </IconSvg>
+        <span className="app-top-bar__explicit-label" aria-hidden>
+          C+
+        </span>
       );
     case 'lone_pair':
       // Two electron dots only (no atom circle)

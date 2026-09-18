@@ -226,6 +226,30 @@ function absUrl(pathname) {
   return `${SITE}${pathname}`;
 }
 
+function profilePath({ userId, name } = {}) {
+  const id = String(userId || '').trim();
+  if (!id || !isSafeId(id)) return null;
+  const slug = seoSlug(name, { max: 48, fallback: 'member' });
+  return `/community/u/${id}/${slug}`;
+}
+
+function personLd(name, { userId, fallbackUrl } = {}) {
+  const displayName = String(name || '').trim() || 'Community member';
+  const path = profilePath({ userId, name: displayName });
+  return {
+    '@type': 'Person',
+    name: displayName,
+    url: path ? absUrl(path) : (fallbackUrl || `${SITE}/community/`),
+  };
+}
+
+function authorNameLink(name, userId, { fallback = 'Community member' } = {}) {
+  const label = name || fallback;
+  const href = profilePath({ userId, name: label });
+  if (!href) return escapeHtml(label);
+  return `<a class="author-profile-link" href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+}
+
 function parseCommunityPath(pathname) {
   let raw = String(pathname || '/');
   try {
@@ -254,6 +278,9 @@ function parseCommunityPath(pathname) {
 
   match = path.match(/^\/community\/fc\/([^/]+)(?:\/([^/]+))?$/);
   if (match) return { view: 'feature-comment', id: match[1], slug: match[2] || '' };
+
+  match = path.match(/^\/community\/u\/([^/]+)(?:\/([^/]+))?$/);
+  if (match) return { view: 'profile', id: match[1], slug: match[2] || '' };
 
   return null;
 }
@@ -501,6 +528,46 @@ async function fetchFeatureComment(id) {
   }
 }
 
+async function fetchUserRow(id) {
+  try {
+    const { data } = await supabaseQuery(
+      'users',
+      `select=id,name,designation,avatar_key,is_admin,karma_score&id=eq.${encodeEq(id)}`,
+    );
+    return data[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPostsByUser(userId) {
+  try {
+    return await supabaseQuery(
+      'community_posts',
+      `select=${POST_SELECT}&user_id=eq.${encodeEq(userId)}&order=created_at.desc`,
+      { range: { from: 0, to: 19 } },
+    );
+  } catch {
+    return supabaseQuery(
+      'community_posts',
+      `select=${POST_SELECT_FALLBACK}&user_id=eq.${encodeEq(userId)}&order=created_at.desc`,
+      { range: { from: 0, to: 19 } },
+    );
+  }
+}
+
+async function fetchFeaturesByUser(userId) {
+  try {
+    return await supabaseQuery(
+      'community_feature_requests',
+      `select=${FEATURE_SELECT}&user_id=eq.${encodeEq(userId)}&order=created_at.desc`,
+      { range: { from: 0, to: 9 } },
+    );
+  } catch {
+    return { data: [] };
+  }
+}
+
 async function fetchAllRows(table, select, order) {
   const rows = [];
   let from = 0;
@@ -564,10 +631,10 @@ function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllRe
   return `
         <article class="comment${comment.parent_comment_id ? ' comment-reply' : ''}${highlighted ? ' is-highlight' : ''}${credited ? ' is-credited' : ''}" ${domId} data-comment-id="${escapeHtml(comment.id)}">
           <${heading} class="comment-heading">${escapeHtml(comment.author_name || 'Community member')}</${heading}>
-          <div class="author">
+          <div class="author"${highlighted ? ' id="author"' : ''}>
             <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
             <div>
-              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}${credited ? renderResolutionCredit(comment.author_name, { compact: true }) : ''}</strong>
+              <strong>${authorNameLink(comment.author_name, comment.user_id)} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}${credited ? renderResolutionCredit(comment.author_name, { compact: true }) : ''}</strong>
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · <a class="comment-time-link" href="${escapeHtml(permalink)}"><time datetime="${escapeHtml(isoDate(comment.created_at) || '')}">${escapeHtml(timeText(comment.created_at))}</time></a></div>
             </div>
           </div>
@@ -637,10 +704,10 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
   return `
           <article class="community-card${selected ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}" data-created-at="${escapeHtml(isoDate(post.created_at) || '')}">
             <div class="card-top">
-              <div class="author">
+              <div class="author"${includeComments && !highlightId ? ' id="author"' : ''}>
                 <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
                 <div>
-                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)} ${implementedCrown(post.user_id, post.author_name)}</div>
+                  <div class="author-name">${authorNameLink(post.author_name, post.user_id)} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)} ${implementedCrown(post.user_id, post.author_name)}</div>
                   <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · <time datetime="${escapeHtml(isoDate(post.created_at) || '')}">${escapeHtml(timeText(post.created_at))}</time></div>
                 </div>
               </div>
@@ -701,10 +768,10 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
   return `
           <article class="community-card${selected ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}" data-created-at="${escapeHtml(isoDate(request.created_at) || '')}">
             <div class="card-top">
-              <div class="author">
+              <div class="author"${includeComments && !highlightId ? ' id="author"' : ''}>
                 <span class="avatar">${escapeHtml(initials(request.name))}</span>
                 <div>
-                  <div class="author-name">${escapeHtml(request.name || 'MolDraw user')} ${implementedCrown(request.user_id, request.name)}</div>
+                  <div class="author-name">${authorNameLink(request.name, request.user_id, { fallback: 'MolDraw user' })} ${implementedCrown(request.user_id, request.name)}</div>
                   <div class="author-meta">Feature request · <time datetime="${escapeHtml(isoDate(request.created_at) || '')}">${escapeHtml(timeText(request.created_at))}</time></div>
                 </div>
               </div>
@@ -759,16 +826,17 @@ function organizationLd() {
 
 function commentLd(comment, { permalink, parentId }) {
   const href = permalink(comment);
+  const commentUrl = absUrl(href);
   const node = {
     '@type': 'Comment',
-    '@id': absUrl(href),
-    url: absUrl(href),
+    '@id': commentUrl,
+    url: commentUrl,
     text: comment.body || '',
     datePublished: isoDate(comment.created_at),
-    author: {
-      '@type': 'Person',
-      name: comment.author_name || 'Community member',
-    },
+    author: personLd(comment.author_name, {
+      userId: comment.user_id,
+      fallbackUrl: `${commentUrl}#author`,
+    }),
     parentItem: { '@id': parentId },
   };
   const images = Array.isArray(comment.image_urls) ? comment.image_urls.filter(isSafeRemoteUrl) : [];
@@ -788,10 +856,10 @@ function discussionLd(post, comments, canonical) {
     headline: post.title || 'MolDraw community post',
     text: post.body || '',
     datePublished: isoDate(post.created_at),
-    author: {
-      '@type': 'Person',
-      name: post.author_name || 'Community member',
-    },
+    author: personLd(post.author_name, {
+      userId: post.user_id,
+      fallbackUrl: `${canonical}#author`,
+    }),
     publisher: { '@id': `${SITE}/#organization` },
     isPartOf: { '@id': `${SITE}/community/#webpage` },
     commentCount: Number(post.comment_count || comments.length || 0),
@@ -816,10 +884,10 @@ function featureLd(request, comments, canonical) {
     headline: request.title || 'MolDraw feature request',
     text: request.description || '',
     datePublished: isoDate(request.created_at),
-    author: {
-      '@type': 'Person',
-      name: request.name || 'MolDraw user',
-    },
+    author: personLd(request.name || 'MolDraw user', {
+      userId: request.user_id,
+      fallbackUrl: `${canonical}#author`,
+    }),
     publisher: { '@id': `${SITE}/#organization` },
     isPartOf: { '@id': `${SITE}/community/#webpage` },
     keywords: 'feature request',
@@ -1309,12 +1377,96 @@ function notFoundPage(message, { accept } = {}) {
   };
 }
 
+async function renderProfilePage(route, { accept } = {}) {
+  if (!isSafeId(route.id)) return notFoundPage('Invalid profile URL.', { accept });
+  const [user, postsFetched, featuresFetched] = await Promise.all([
+    fetchUserRow(route.id),
+    fetchPostsByUser(route.id),
+    fetchFeaturesByUser(route.id),
+  ]);
+  const posts = postsFetched.data || [];
+  const features = featuresFetched.data || [];
+  const name = user?.name
+    || posts[0]?.author_name
+    || features[0]?.name
+    || (route.slug ? route.slug.replace(/-/g, ' ') : 'Community member');
+  const canonicalPath = profilePath({ userId: route.id, name }) || `/community/u/${route.id}`;
+  const canonical = absUrl(canonicalPath);
+  const title = `${name} | MolDraw Community`;
+  const description = excerpt(`${name} on the MolDraw Community. Public chemistry discussions, comments, and feature requests.`);
+  const person = personLd(name, { userId: route.id, fallbackUrl: canonical });
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      organizationLd(),
+      {
+        '@type': 'ProfilePage',
+        '@id': `${canonical}#webpage`,
+        url: canonical,
+        name: title,
+        description,
+        mainEntity: person,
+        publisher: { '@id': `${SITE}/#organization` },
+      },
+      breadcrumbLd([
+        { name: 'MolDraw', item: `${SITE}/` },
+        { name: 'Community', item: `${SITE}/community/` },
+        { name, item: canonical },
+      ]),
+    ],
+  };
+
+  if (wantsMarkdown(accept)) {
+    const lines = [
+      `# ${name}`,
+      '',
+      `URL: ${canonical}`,
+      '',
+      ...posts.map((post) => `- [${post.title}](${absUrl(discussionPath(post))})`),
+      ...features.map((request) => `- [${request.title}](${absUrl(featurePath(request))})`),
+    ];
+    return {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
+      },
+      body: `${lines.filter(Boolean).join('\n')}\n`,
+    };
+  }
+
+  const feedHtml = [
+    ...posts.map((post) => renderPostCard(post, [])),
+    ...features.map((request) => renderFeatureCard(request, [])),
+  ].join('') || `<p>No public posts from ${escapeHtml(name)} yet.</p>`;
+
+  return {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
+    },
+    body: applyDocument(loadTemplate(), {
+      title,
+      description,
+      canonical,
+      jsonLd,
+      pageHeading: name,
+      pageHeadingHtml: `<h1 class="community-page-title">${escapeHtml(name)}</h1>`,
+      feedHtml,
+      statusText: '',
+      discussionsActive: true,
+    }),
+  };
+}
+
 async function renderCommunityPage(pathname, options = {}) {
   const route = parseCommunityPath(pathname);
   if (!route) return notFoundPage('Unknown community URL.', options);
   await loadDoneFeatureIndex();
 
   if (route.view === 'list') return renderListPage(route, options);
+  if (route.view === 'profile') return renderProfilePage(route, options);
 
   if (route.view === 'post') {
     if (!isSafeId(route.id)) return notFoundPage('Invalid post URL.', options);
@@ -1398,16 +1550,30 @@ function sitemapUrl(loc, lastmod, changefreq, priority) {
 
 async function renderCommunitySitemap() {
   const [posts, features, comments, featureComments] = await Promise.all([
-    fetchAllRows('community_posts', 'id,title,created_at', 'created_at.desc'),
-    fetchAllRows('community_feature_requests', 'id,title,created_at', 'created_at.desc').catch(() => []),
-    fetchAllRows('community_comments', 'id,body,created_at', 'created_at.desc').catch(() => []),
-    fetchAllRows('feature_request_comments', 'id,body,created_at', 'created_at.desc').catch(() => []),
+    fetchAllRows('community_posts', 'id,title,user_id,author_name,created_at', 'created_at.desc'),
+    fetchAllRows('community_feature_requests', 'id,title,user_id,name,created_at', 'created_at.desc').catch(() => []),
+    fetchAllRows('community_comments', 'id,body,user_id,author_name,created_at', 'created_at.desc').catch(() => []),
+    fetchAllRows('feature_request_comments', 'id,body,user_id,author_name,created_at', 'created_at.desc').catch(() => []),
   ]);
 
   const urls = [
     sitemapUrl(`${SITE}/community/`, new Date().toISOString().slice(0, 10), 'hourly', '0.7'),
     sitemapUrl(`${SITE}/community/features`, new Date().toISOString().slice(0, 10), 'hourly', '0.64'),
   ];
+
+  const authors = new Map();
+  const rememberAuthor = (userId, name) => {
+    if (!userId || !isSafeId(userId) || authors.has(userId)) return;
+    authors.set(userId, name);
+  };
+  posts.forEach((post) => rememberAuthor(post.user_id, post.author_name));
+  features.forEach((request) => rememberAuthor(request.user_id, request.name));
+  comments.forEach((comment) => rememberAuthor(comment.user_id, comment.author_name));
+  featureComments.forEach((comment) => rememberAuthor(comment.user_id, comment.author_name));
+  authors.forEach((name, userId) => {
+    const path = profilePath({ userId, name });
+    if (path) urls.push(sitemapUrl(absUrl(path), new Date().toISOString().slice(0, 10), 'weekly', '0.4'));
+  });
 
   posts.forEach((post) => {
     urls.push(sitemapUrl(absUrl(discussionPath(post)), isoDate(post.created_at)?.slice(0, 10), 'weekly', '0.55'));
@@ -1443,6 +1609,8 @@ module.exports = {
   isCommunitySeoPath,
   discussionPath,
   featurePath,
+  profilePath,
+  personLd,
   loadStaticCommunityHtml,
   staticCommunityResponse,
   renderCommunityPage,

@@ -1254,6 +1254,17 @@ body,
     color: var(--text-main) !important;
   }
 
+  .text-style-range::-webkit-slider-runnable-track,
+  .text-style-range::-moz-range-track {
+    background: var(--chrome-border-strong) !important;
+  }
+
+  .text-style-range::-webkit-slider-thumb,
+  .text-style-range::-moz-range-thumb {
+    background: var(--text-main) !important;
+    border-color: var(--chrome-bg-elevated) !important;
+  }
+
   .theme-picker__btn,
   .spec-modal__btn {
     background: var(--chrome-input-bg) !important;

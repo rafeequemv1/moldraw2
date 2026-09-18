@@ -33,8 +33,9 @@ import {
   pickSruBracketAt,
   expandAtomIdsToConnectedFragments,
   canvasTextHitPadWorld,
+  getCanvasTextBox,
+  hitCanvasTextBox,
   pickCanvasTextAt,
-  pickCanvasTextContentAt,
   pickCanvasImageAt,
   collectAnnotationsInRect,
   collectAnnotationsInPolygon,
@@ -403,15 +404,14 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
       const textId = marqueeBounds.canvasTextIds?.[0];
       const picked = textId ? molecule.canvasTexts?.find(t => t.id === textId) : undefined;
       if (picked) {
-        if (
-          canvasCtx &&
-          ctx.onRequestCanvasTextEdit &&
-          pickCanvasTextContentAt(canvasCtx, picked, worldPos.x, worldPos.y)
-        ) {
-          ctx.onRequestCanvasTextEdit(picked.id);
+        const insideExact =
+          !!canvasCtx &&
+          hitCanvasTextBox(getCanvasTextBox(canvasCtx, picked), worldPos.x, worldPos.y, 0);
+        if (insideExact && ctx.canvasTextEditing) {
+          ctx.onRequestCanvasTextEdit?.(picked.id);
           return true;
         }
-        beginCanvasTextMove(ctx, picked);
+        beginCanvasTextMove(ctx, picked, { clickOpensEdit: insideExact });
         return true;
       }
     }
@@ -1049,6 +1049,8 @@ export const commitDragAction = (ctx: InteractionContext): boolean => {
         x: dragAction.origX + dx,
         y: dragAction.origY + dy,
       });
+    } else if (dragAction.clickOpensEdit) {
+      ctx.onRequestCanvasTextEdit?.(dragAction.textId);
     }
     ctx.onCanvasTextTransforming?.(false);
   } else if (dragAction.type === 'resize_canvas_text' || dragAction.type === 'rotate_canvas_text') {

@@ -288,6 +288,14 @@
     {
       "source": "/community/fc/:id/:slug",
       "destination": "/api/community?path=/community/fc/:id/:slug"
+    },
+    {
+      "source": "/community/u/:id",
+      "destination": "/api/community?path=/community/u/:id"
+    },
+    {
+      "source": "/community/u/:id/:slug",
+      "destination": "/api/community?path=/community/u/:id/:slug"
     }
   ]
 }

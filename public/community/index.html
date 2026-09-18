@@ -219,6 +219,14 @@
     .card-title-link:focus {
       text-decoration: underline;
     }
+    .author-profile-link {
+      color: inherit;
+      text-decoration: none;
+    }
+    .author-profile-link:hover,
+    .author-profile-link:focus {
+      text-decoration: underline;
+    }
     .comment-permalink,
     a.more-thread {
       font-size: 12px;
@@ -1394,35 +1402,49 @@
       position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 8px;
     }
     .comment-like {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      gap: 6px;
+      min-height: 32px;
+      padding: 3px 10px 3px 7px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .comment-like:hover {
+      color: #c53030;
+      background: #fff1f2;
     }
     .comment-like[aria-pressed="true"] {
       color: #c53030;
+      background: #ffe4e6;
     }
     .comment-like-heart {
-      font-size: 13px;
+      font-size: 22px;
       line-height: 1;
       font-weight: 400;
     }
-    .comment-like-count,
+    .comment-like .comment-like-count {
+      min-width: 1ch;
+      font-size: 15px;
+      font-weight: 700;
+      color: inherit;
+    }
     .comment-like-avatars {
       border: 0;
       background: transparent;
       color: #64748b;
       font: inherit;
-      font-size: 11px;
-      font-weight: 400;
+      font-size: 12px;
+      font-weight: 500;
       padding: 0;
       cursor: pointer;
     }
-    .comment-like-count:hover,
-    .comment-like-avatars:hover,
-    .comment-like-count:hover + .comment-like-avatars {
+    .comment-like-avatars:hover {
       color: #2C7A7B;
     }
     .comment-like-avatars {
@@ -2524,6 +2546,19 @@
       const slug = comment?.body ? seoSlug(comment.body, 56, 'comment') : 'comment';
       return `/community/fc/${encodeURIComponent(id)}/${slug}`;
     }
+    function profileUrl(user) {
+      const id = user?.user_id || (typeof user === 'object' ? '' : user);
+      const name = typeof user === 'object' ? (user.author_name || user.name || '') : '';
+      if (!id) return '';
+      return `/community/u/${encodeURIComponent(id)}/${seoSlug(name, 48, 'member')}`;
+    }
+    function authorNameLink(name, userId, fallback = 'Community member') {
+      const label = name || fallback;
+      const href = profileUrl({ user_id: userId, author_name: label });
+      return href
+        ? `<a class="author-profile-link" href="${escapeHtml(href)}">${escapeHtml(label)}</a>`
+        : escapeHtml(label);
+    }
     function parseCommunityRoute(loc = window.location) {
       let path = loc.pathname || '/';
       try { path = decodeURIComponent(path); } catch {}
@@ -2544,6 +2579,8 @@
       if (match) return { view: 'feature', id: match[1], slug: match[2] || '' };
       match = path.match(/^\/community\/fc\/([^/]+)(?:\/([^/]+))?$/);
       if (match) return { view: 'feature-comment', id: match[1], slug: match[2] || '' };
+      match = path.match(/^\/community\/u\/([^/]+)(?:\/([^/]+))?$/);
+      if (match) return { view: 'profile', id: match[1], slug: match[2] || '' };
       return { view: 'list', page: 1 };
     }
     function feedCursorOf(items) {
@@ -2697,7 +2734,7 @@
             <div class="author">
               <span class="avatar ${isFeature ? '' : escapeHtml(safeAvatarKey(item.author_avatar_key))}">${escapeHtml(initials(isFeature ? item.name : item.author_name))}</span>
               <div>
-                <div class="author-name">${escapeHtml((isFeature ? item.name : item.author_name) || 'Community member')} ${isFeature ? '' : `${adminBadge(item.author_is_admin)} ${karmaBadge(item.author_karma_score)}`} ${implementedCrown(item.user_id, isFeature ? item.name : item.author_name)}</div>
+                <div class="author-name">${authorNameLink(isFeature ? item.name : item.author_name, item.user_id)} ${isFeature ? '' : `${adminBadge(item.author_is_admin)} ${karmaBadge(item.author_karma_score)}`} ${implementedCrown(item.user_id, isFeature ? item.name : item.author_name)}</div>
                 <div class="author-meta">${isFeature ? 'Feature request' : escapeHtml(item.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(item.created_at))}</div>
               </div>
             </div>
@@ -3334,6 +3371,7 @@
     }
 
     function canManageComment(comment) {
+      if (!comment) return false;
       return isOwn(comment.user_id) || isAdmin();
     }
 
@@ -4209,8 +4247,8 @@
         syncCommentViewsForSource(source, parentId);
       }
       const { error } = currentlyLiked
-        ? await client.from('community_comment_likes').delete().eq('source', source).eq('comment_id', commentId)
-        : await client.from('community_comment_likes').insert({ source, comment_id: commentId });
+        ? await client.from('community_comment_likes').delete().eq('source', source).eq('comment_id', commentId).eq('user_id', session.user.id)
+        : await client.from('community_comment_likes').insert({ source, comment_id: commentId, user_id: session.user.id });
       if (error) {
         if (comment) {
           comment.likers = previousLikers;
@@ -4276,13 +4314,13 @@
       const likers = comment.likers || [];
       const count = Number(comment.like_count ?? likers.length) || 0;
       const whoLiked = count > 0
-        ? `<button class="comment-like-count" type="button" data-open-likers="${escapeHtml(comment.id)}" aria-expanded="false" aria-label="See who liked this comment">${count}</button>
-           <button class="comment-like-avatars" type="button" data-open-likers="${escapeHtml(comment.id)}" aria-label="See who liked this comment">${likers.slice(0, 3).map((liker) => `<span class="avatar ${escapeHtml(safeAvatarKey(liker.liker_avatar_key))}">${escapeHtml(initials(liker.liker_name))}</span>`).join('')}</button>
+        ? `<button class="comment-like-avatars" type="button" data-open-likers="${escapeHtml(comment.id)}" aria-expanded="false" aria-label="See who liked this comment">${likers.slice(0, 3).map((liker) => `<span class="avatar ${escapeHtml(safeAvatarKey(liker.liker_avatar_key))}">${escapeHtml(initials(liker.liker_name))}</span>`).join('') || 'Who'}</button>
            <ul class="comment-likers" hidden data-likers-panel="${escapeHtml(comment.id)}">${likers.map((liker) => `<li class="comment-liker"><span class="avatar ${escapeHtml(safeAvatarKey(liker.liker_avatar_key))}">${escapeHtml(initials(liker.liker_name))}</span><span>${escapeHtml(liker.liker_name || 'Community member')}</span></li>`).join('')}</ul>`
         : '';
       return `<span class="comment-like-wrap">
         <button class="comment-tool comment-like" type="button" data-toggle-like="${escapeHtml(comment.id)}" data-like-source="${escapeHtml(source)}" aria-pressed="${liked ? 'true' : 'false'}" aria-label="${liked ? 'Unlike comment' : 'Like comment'}">
           <span class="comment-like-heart" aria-hidden="true">${liked ? '♥' : '♡'}</span>
+          <span class="comment-like-count">${count}</span>
         </button>
         ${whoLiked}
       </span>`;
@@ -4365,12 +4403,20 @@
     const isOwn = (userId) => Boolean(session?.user?.id && userId === session.user.id);
 
     async function updateComment(commentId, postId, body) {
+      if (!requireAuth()) return;
       const cleanBody = String(body || '').trim();
       if (!cleanBody) return;
-      const { error } = await client
+      const comment = cachedCommentById('community_comments', commentId);
+      if (!canManageComment(comment)) {
+        statusEl.textContent = 'You can only edit your own comments.';
+        return;
+      }
+      let query = client
         .from('community_comments')
         .update({ body: cleanBody })
         .eq('id', commentId);
+      if (!isAdmin()) query = query.eq('user_id', session.user.id);
+      const { error } = await query;
       if (error) {
         statusEl.textContent = error.message || 'Could not update reply.';
         return;
@@ -4443,7 +4489,7 @@
           <div class="author">
             <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
             <div>
-              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}${credited ? renderResolutionCredit({ resolved_by_name: comment.author_name || parentItem?.resolved_by_name }, { compact: true }) : ''}</strong>
+              <strong>${authorNameLink(comment.author_name, comment.user_id)} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}${credited ? renderResolutionCredit({ resolved_by_name: comment.author_name || parentItem?.resolved_by_name }, { compact: true }) : ''}</strong>
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · ${timeHtml}</div>
             </div>
           </div>
@@ -4562,9 +4608,9 @@
           if (!requireAuth()) return;
           const commentId = editButton.getAttribute('data-edit-comment');
           const comments = commentCache.get(postId) || [];
-          const comment = comments.find((item) => item.id === commentId);
+          const comment = cachedCommentById('community_comments', commentId) || comments.find((item) => item.id === commentId);
           const slot = list.querySelector(`[data-comment-slot="${commentId}"]`);
-          if (!slot || !comment) return;
+          if (!slot || !comment || !canManageComment(comment)) return;
           slot.innerHTML = `
             <div class="comment-edit-form">
               <textarea>${escapeHtml(comment.body)}</textarea>
@@ -4698,12 +4744,20 @@
     }
 
     async function updateFeatureComment(commentId, requestId, body) {
+      if (!requireAuth()) return;
       const cleanBody = String(body || '').trim();
       if (!cleanBody) return;
-      const { error } = await client
+      const comment = cachedCommentById('feature_request_comments', commentId);
+      if (!canManageComment(comment)) {
+        statusEl.textContent = 'You can only edit your own comments.';
+        return;
+      }
+      let query = client
         .from('feature_request_comments')
         .update({ body: cleanBody })
         .eq('id', commentId);
+      if (!isAdmin()) query = query.eq('user_id', session.user.id);
+      const { error } = await query;
       if (error) {
         statusEl.textContent = error.message || 'Could not update reply.';
         return;
@@ -4758,9 +4812,9 @@
           if (!requireAuth()) return;
           const commentId = editButton.getAttribute('data-edit-comment');
           const comments = featureCommentCache.get(requestId) || [];
-          const comment = comments.find((item) => item.id === commentId);
+          const comment = cachedCommentById('feature_request_comments', commentId) || comments.find((item) => item.id === commentId);
           const slot = list.querySelector(`[data-comment-slot="${commentId}"]`);
-          if (!slot || !comment) return;
+          if (!slot || !comment || !canManageComment(comment)) return;
           slot.innerHTML = `
             <div class="comment-edit-form">
               <textarea>${escapeHtml(comment.body)}</textarea>
@@ -4856,7 +4910,7 @@
               <div class="author">
                 <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
                 <div>
-                  <div class="author-name">${escapeHtml(post.author_name || 'Community member')} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)} ${implementedCrown(post.user_id, post.author_name)}</div>
+                  <div class="author-name">${authorNameLink(post.author_name, post.user_id)} ${adminBadge(post.author_is_admin)} ${karmaBadge(post.author_karma_score)} ${implementedCrown(post.user_id, post.author_name)}</div>
                   <div class="author-meta">${escapeHtml(post.author_designation || 'MolDraw user')} · ${escapeHtml(timeText(post.created_at))}</div>
                 </div>
               </div>
@@ -4954,7 +5008,7 @@
               <div class="author">
                 <span class="avatar">${escapeHtml(initials(request.name))}</span>
                 <div>
-                  <div class="author-name">${escapeHtml(request.name || 'MolDraw user')} ${implementedCrown(request.user_id, request.name)}</div>
+                  <div class="author-name">${authorNameLink(request.name, request.user_id, 'MolDraw user')} ${implementedCrown(request.user_id, request.name)}</div>
                   <div class="author-meta">Feature request · ${escapeHtml(timeText(request.created_at))}</div>
                 </div>
               </div>
@@ -5013,6 +5067,7 @@
 
     async function loadDiscussions(setLoading = true) {
       const route = parseCommunityRoute();
+      if (route.view === 'profile') return;
       if (route.view === 'features' || route.view === 'feature' || route.view === 'feature-comment') {
         return loadFeatureRequests(setLoading);
       }
@@ -5438,6 +5493,10 @@
 
     async function loadActiveTab() {
       const route = parseCommunityRoute();
+      if (route.view === 'profile') {
+        hideThreadPanel();
+        return;
+      }
       if (route.view === 'features' || route.view === 'feature' || route.view === 'feature-comment') {
         return loadFeatureRequests();
       }

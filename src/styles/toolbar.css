@@ -382,13 +382,15 @@ html:not(.app-mobile-compact) .workspace-2d-with-overlay:has(.canvas-document-ta
   display: none;
 }
 
-.hydrogen-toggle-glyph {
-  font-size: 14px;
+.hydrogen-toggle-glyph,
+.app-top-bar__explicit-label {
+  font-size: 16px;
   font-weight: 500;
   font-family: var(--font-ui);
   line-height: 1;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   color: inherit;
+  white-space: nowrap;
 }
 
 .text-tool-glyph {

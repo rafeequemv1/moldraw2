@@ -77,11 +77,15 @@ ok(
 );
 ok(
   canvasTextCursorAt(ctx, [label], 't1', -box.width / 2 + 20, 0, 1, { editing: true }) === 'text',
-  'editing over glyphs shows I-beam',
+  'inside a selected box shows I-beam',
 );
 ok(
-  canvasTextCursorAt(ctx, [label], 't1', 0, 0, 1, { editing: true }) === 'grab',
-  'editing over empty interior stays grab',
+  canvasTextCursorAt(ctx, [label], 't1', 0, 0, 1, { editing: true }) === 'text',
+  'selected interior (empty padding) is still I-beam — click edits',
+);
+ok(
+  canvasTextCursorAt(ctx, [label], 't1', 0, 0, 1) === 'text',
+  'selected box interior shows I-beam even before edit',
 );
 
 console.log('canvasTextHitSmoke: ok');

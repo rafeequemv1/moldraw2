@@ -196,6 +196,8 @@ export interface UseCanvasInputOptions {
   onRequestAtomAliasEdit?: InteractionContext['onRequestAtomAliasEdit'];
   onRequestCanvasTextEdit?: InteractionContext['onRequestCanvasTextEdit'];
   onRequestArrowReagentEdit?: InteractionContext['onRequestArrowReagentEdit'];
+  canvasTextEditing?: boolean;
+  onSetActiveTool?: (tool: string) => void;
   selectedReactionArrowId?: string | null;
 
   onContextMenu?: (e: React.MouseEvent | React.PointerEvent, worldPos: Point) => void;
@@ -625,6 +627,8 @@ export const useCanvasInput = (opts: UseCanvasInputOptions): UseCanvasInputResul
       selectedBondIds,
       selectedCanvasImageId: opts.selectedCanvasImageId ?? null,
       selectedCanvasTextId: opts.selectedCanvasTextId ?? null,
+      canvasTextEditing: opts.canvasTextEditing,
+      onSetActiveTool: opts.onSetActiveTool,
       selectedSruBracketId: opts.selectedSruBracketId ?? null,
       viewport: { zoom: opts.viewportZoom ?? 1 },
       drawingBond: drawingBondRef.current,

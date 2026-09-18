@@ -262,9 +262,25 @@ html.app-mobile-compact {
   }
 
   .app-top-bar--compact .app-top-bar__ai-label,
-  .app-top-bar--compact .app-top-bar__3d-label {
-    font-size: 15px;
-    font-weight: 650;
+  .app-top-bar--compact .app-top-bar__3d-label,
+  .app-top-bar--compact .app-top-bar__explicit-label {
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .app-top-bar--compact .app-top-bar__tools-row .tool-btn--add_explicit_h,
+  .app-top-bar--compact .app-top-bar__tools-row .tool-btn--add_explicit_c {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    padding: 0;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
   }
 
   .toolbar-mobile-categories {
@@ -449,9 +465,10 @@ html.app-mobile-compact {
   }
 
   .app-top-bar__3d-label,
-  .app-top-bar__ai-label {
-    font-size: 13px;
-    font-weight: 500;
+  .app-top-bar__ai-label,
+  .app-top-bar__explicit-label {
+    font-size: 18px;
+    font-weight: 400;
   }
 
   /* ── Workspace: category dock; tool strip only when open ─ */
@@ -801,7 +818,23 @@ html.app-mobile-compact {
     min-width: 36px;
     height: 36px;
     min-height: 36px;
-    padding: 0 8px !important;
+    padding: 0 10px !important;
+    font-weight: 400;
+  }
+
+  html.app-mobile-compact .app-top-bar__tools-row .tool-btn--add_explicit_h,
+  html.app-mobile-compact .app-top-bar__tools-row .tool-btn--add_explicit_c {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    padding: 0;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
   }
 }
 

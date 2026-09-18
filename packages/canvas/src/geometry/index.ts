@@ -92,6 +92,7 @@ export {
   CANVAS_TEXT_RESIZE_EDGES,
   CANVAS_TEXT_RESIZE_HANDLES,
   type CanvasTextBox,
+  type CanvasTextFitContentOpts,
   type CanvasTextResizeCorner,
   type CanvasTextResizeEdge,
   type CanvasTextResizeHandle,

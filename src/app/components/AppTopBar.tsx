@@ -35,7 +35,7 @@ import { MobileBottomSheet } from './MobileBottomSheet';
 import { InstallWindowsLink } from './InstallWindowsLink';
 import { ThemeToggleButton } from './ThemeToggleButton';
 import { MolDrawLogoMark } from './MolDrawLogoMark';
-import { AromatizeIcon, DearomatizeIcon, renderToolIcon } from '../toolIcons';
+import { AromatizeIcon, DearomatizeIcon } from '../toolIcons';
 import type { UiThemeId } from '../theme';
 import { useI18n } from '../i18n';
 import { useChromeOverlay } from '../chromeDismiss';
@@ -405,25 +405,29 @@ export function AppTopBar(props: AppTopBarProps) {
       {onAddExplicitHydrogen ? (
         <button
           type="button"
-          className={`tool-btn${activeTool === 'add_explicit_h' ? ' active' : ''}`}
+          className={`tool-btn tool-btn--add_explicit_h${activeTool === 'add_explicit_h' ? ' active' : ''}`}
           onClick={onAddExplicitHydrogen}
           title={t('topBar.addExplicitHFullTitle')}
           aria-label={t('topBar.addExplicitH')}
           aria-pressed={activeTool === 'add_explicit_h'}
         >
-          {renderToolIcon('add_explicit_h')}
+          <span className="app-top-bar__explicit-label" aria-hidden>
+            H+
+          </span>
         </button>
       ) : null}
       {onAddExplicitCarbon ? (
         <button
           type="button"
-          className={`tool-btn${activeTool === 'add_explicit_c' ? ' active' : ''}`}
+          className={`tool-btn tool-btn--add_explicit_c${activeTool === 'add_explicit_c' ? ' active' : ''}`}
           onClick={onAddExplicitCarbon}
           title={t('topBar.addExplicitCFullTitle')}
           aria-label={t('topBar.addExplicitC')}
           aria-pressed={activeTool === 'add_explicit_c'}
         >
-          {renderToolIcon('add_explicit_c')}
+          <span className="app-top-bar__explicit-label" aria-hidden>
+            C+
+          </span>
         </button>
       ) : null}
     </>
