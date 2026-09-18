@@ -58,7 +58,7 @@ export const zhToolOverrides: Record<
     title: '自由基负离子（•−）：点击原子设置单电子 + 形式电荷 −1；再次点击清除',
     shortLabel: '•−',
   },
-  lone_pair: { label: '孤对电子', title: '孤对电子：点击原子添加孤对', shortLabel: 'LP' },
+  lone_pair: { label: '孤对电子', title: '孤对电子：点击逐个添加，满后再点击逐个删除', shortLabel: 'LP' },
   orbital_p: {
     label: 'p 轨道',
     title: 'p 轨道（对角线）：点击原子或空白画布放置',

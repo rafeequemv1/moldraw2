@@ -189,7 +189,7 @@ export const TOOL_DEFS: ToolDef[] = [
     category: 'edit',
     group: 'select_edit',
   },
-  { id: 'lone_pair', label: 'Lone Pair', shortLabel: 'LP', title: 'Lone Pair: click atom to add lone pair', category: 'edit', group: 'select_edit' },
+  { id: 'lone_pair', label: 'Lone Pair', shortLabel: 'LP', title: 'Lone pair: click to add one at a time; after the atom is full, further clicks remove one at a time', category: 'edit', group: 'select_edit' },
   {
     id: 'orbital_p',
     label: 'p orbital',

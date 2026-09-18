@@ -121,22 +121,105 @@ const IDENTITY_2X2: Mat2 = { a: 1, b: 0, c: 0, d: 1 };
  * Each is a single atan2 to find the angle. Whichever yields the larger trace
  * (= smaller residual) wins, subject to `allowReflection`.
  */
+const wrapPi = (a: number): number => {
+  let x = a;
+  while (x > Math.PI) x -= 2 * Math.PI;
+  while (x < -Math.PI) x += 2 * Math.PI;
+  return x;
+};
+
+const rotationMat = (theta: number): Mat2 => {
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+  return { a: c, b: -s, c: s, d: c };
+};
+
+const applyMat = (R: Mat2, p: Point): Point => ({
+  x: R.a * p.x + R.b * p.y,
+  y: R.c * p.x + R.d * p.y,
+});
+
+const rotationAngleOf = (R: Mat2): number => Math.atan2(R.c, R.a);
+
+/** Peripheral atoms weigh more so substituents, not a circular core, set heading. */
+const radiusWeights = (pts: ReadonlyArray<Point>): number[] => {
+  let acc = 0;
+  for (const p of pts) acc += p.x * p.x + p.y * p.y;
+  const rms = Math.sqrt(acc / Math.max(pts.length, 1));
+  const denom = Math.max(rms, 1);
+  return pts.map(p => {
+    const r = Math.hypot(p.x, p.y) / denom;
+    return 0.35 + r * r;
+  });
+};
+
+const principalAxis = (
+  pts: ReadonlyArray<Point>,
+): { angle: number; anisotropy: number } => {
+  let xx = 0;
+  let xy = 0;
+  let yy = 0;
+  for (const p of pts) {
+    xx += p.x * p.x;
+    xy += p.x * p.y;
+    yy += p.y * p.y;
+  }
+  const angle = 0.5 * Math.atan2(2 * xy, xx - yy);
+  const trace = xx + yy;
+  const disc = Math.hypot(xx - yy, 2 * xy);
+  const anisotropy = trace > 1e-9 ? disc / trace : 0;
+  return { angle, anisotropy };
+};
+
+const weightedRmsd = (
+  R: Mat2,
+  source: ReadonlyArray<Point>,
+  target: ReadonlyArray<Point>,
+  weights: ReadonlyArray<number>,
+): number => {
+  let s = 0;
+  let wsum = 0;
+  for (let i = 0; i < source.length; i++) {
+    const p = applyMat(R, source[i]!);
+    const q = target[i]!;
+    const w = weights[i] ?? 1;
+    const dx = p.x - q.x;
+    const dy = p.y - q.y;
+    s += w * (dx * dx + dy * dy);
+    wsum += w;
+  }
+  return Math.sqrt(s / Math.max(wsum, 1e-9));
+};
+
+/**
+ * Closed-form orthogonal Procrustes for 2D point sets that share a centroid
+ * at the origin.
+ *
+ * For the optimal rotation R (det = +1) and reflection F (det = -1) we want:
+ *   R that maximizes Σ (R·pᵢ)·qᵢ = a·(Sxx+Syy) + b·(Sxy−Syx)  with R = [[a,−b],[b, a]]
+ *   F that maximizes Σ (F·pᵢ)·qᵢ = a·(Sxx−Syy) + b·(Sxy+Syx)  with F = [[a, b],[b,−a]]
+ *
+ * Each is a single atan2 to find the angle. Whichever yields the larger trace
+ * (= smaller residual) wins, subject to `allowReflection`.
+ */
 const computeOptimalOrthogonal = (
   source: ReadonlyArray<Point>,
   target: ReadonlyArray<Point>,
   allowReflection: boolean,
+  weights?: ReadonlyArray<number>,
 ): Mat2 => {
   let Sxx = 0;
   let Sxy = 0;
   let Syx = 0;
   let Syy = 0;
   for (let i = 0; i < source.length; i++) {
-    const p = source[i];
-    const q = target[i];
-    Sxx += p.x * q.x;
-    Sxy += p.x * q.y;
-    Syx += p.y * q.x;
-    Syy += p.y * q.y;
+    const p = source[i]!;
+    const q = target[i]!;
+    const w = weights?.[i] ?? 1;
+    Sxx += w * p.x * q.x;
+    Sxy += w * p.x * q.y;
+    Syx += w * p.y * q.x;
+    Syy += w * p.y * q.y;
   }
 
   const Arot = Sxx + Syy;
@@ -210,6 +293,14 @@ export interface AlignCleanedOptions {
  * reflection). Returned points are in the SAME order as the input `cleaned`,
  * so callers can splice positions back by index.
  *
+ * Full cleanup often returns a canonical heading (rings start upright). A
+ * least-squares overlay of chairs onto regular polygons can keep that spin
+ * because the circular core dominates. We therefore:
+ *   1. weight peripheral atoms so substituents set the frame
+ *   2. also try principal-axis (PCA) heading lock ±180°
+ *   3. pick the rigid pose with the best weighted RMSD, penalizing leftover
+ *      heading error so the drawing does not tumble
+ *
  * Returns `null` if the inputs are empty or have mismatched lengths — the
  * caller should treat that as "leave the molecule untouched".
  */
@@ -233,13 +324,43 @@ export const alignCleanedPoints = (
     y: (p.y - cy) * ratio,
   }));
   const oCentered: Point[] = originals.map(p => ({ x: p.x - ox, y: p.y - oy }));
+  const weights = radiusWeights(oCentered);
+  let radius = 0;
+  for (const p of oCentered) radius += Math.hypot(p.x, p.y);
+  radius /= Math.max(oCentered.length, 1);
 
-  const R = computeOptimalOrthogonal(cCentered, oCentered, allowReflection);
+  const origAxis = principalAxis(oCentered);
+  const cleanAxis = principalAxis(cCentered);
+  const headingDelta = origAxis.angle - cleanAxis.angle;
+  const hasHeading = origAxis.anisotropy > 0.12 && cleanAxis.anisotropy > 0.12;
 
-  return cCentered.map(p => ({
-    x: ox + R.a * p.x + R.b * p.y,
-    y: oy + R.c * p.x + R.d * p.y,
-  }));
+  const candidates: Mat2[] = [
+    computeOptimalOrthogonal(cCentered, oCentered, allowReflection, weights),
+    computeOptimalOrthogonal(cCentered, oCentered, allowReflection),
+  ];
+  if (hasHeading) {
+    candidates.push(rotationMat(headingDelta), rotationMat(headingDelta + Math.PI));
+  }
+
+  let best = candidates[0]!;
+  let bestScore = Infinity;
+  for (const R of candidates) {
+    const rmsd = weightedRmsd(R, cCentered, oCentered, weights);
+    const aligned = principalAxis(cCentered.map(p => applyMat(R, p)));
+    const headingErr = hasHeading ? Math.abs(wrapPi(aligned.angle - origAxis.angle)) : 0;
+    // ~0.22·radius extra cost for a 90° leftover spin — enough to prefer the
+    // original heading when chairs vs hexagons make RMSDs similar.
+    const score = rmsd + 0.22 * radius * headingErr + 0.04 * radius * Math.abs(rotationAngleOf(R));
+    if (score < bestScore) {
+      bestScore = score;
+      best = R;
+    }
+  }
+
+  return cCentered.map(p => {
+    const q = applyMat(best, p);
+    return { x: ox + q.x, y: oy + q.y };
+  });
 };
 
 export const spliceLocalCleanup = (
@@ -385,33 +506,14 @@ export const alignCleanupCoordsPerComponent = (
     for (let i = 0; i < ids.length; i++) updates.set(ids[i]!, aligned[i]!);
   }
 
-  if (updates.size === 0) return applyCenteredChargeSeats(prev);
-  return applyCenteredChargeSeats({
+  if (updates.size === 0) return prev;
+  return {
     ...prev,
     atoms: prev.atoms.map(a => {
       const u = updates.get(a.id);
       return u ? { ...a, x: u.x, y: u.y } : a;
     }),
-  });
-};
-
-const CENTERED_CHARGE_OFFSET = { x: 0, y: -16 };
-
-/** ± marks sit on the atom midline (12 o'clock) after cleanup, not leftover drag seats. */
-const applyCenteredChargeSeats = (mol: Molecule): Molecule => {
-  let changed = false;
-  const atoms = mol.atoms.map(a => {
-    const q = a.charge ?? 0;
-    const dq = a.deltaCharge ?? 0;
-    if (!q && !dq) return a;
-    changed = true;
-    return {
-      ...a,
-      ...(q ? { chargeOffset: CENTERED_CHARGE_OFFSET } : {}),
-      ...(dq ? { deltaChargeOffset: CENTERED_CHARGE_OFFSET } : {}),
-    };
-  });
-  return changed ? { ...mol, atoms } : mol;
+  };
 };
 
 /**

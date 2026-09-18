@@ -158,6 +158,7 @@ export {
 export {
   getLonePairPlacements,
   labelBoxFromExtents,
+  distBeyondLabelBox,
   resolveLonePairWorldPoint,
   defaultChargeSeatAngle,
   defaultChargeSeatDirection,
@@ -365,6 +366,7 @@ export {
   medianBondLength,
   spliceLocalCleanup,
   alignCleanupCoordsPerComponent,
+  alignCleanedPoints,
   listConnectedComponents,
   collectConnectedComponent,
   buildCleanupWorkerPayload,

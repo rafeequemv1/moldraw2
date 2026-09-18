@@ -18,25 +18,6 @@ export type CleanupMoleculeResult = CleanupStructureResult & {
   source: 'native';
 };
 
-/** After layout, sit ± marks on the atom midline (12 o'clock), not leftover drag seats. */
-const CENTERED_CHARGE_OFFSET = { x: 0, y: -16 };
-
-const recenterChargeMarks = (mol: Molecule): Molecule => {
-  let changed = false;
-  const atoms = mol.atoms.map(a => {
-    const q = a.charge ?? 0;
-    const dq = a.deltaCharge ?? 0;
-    if (!q && !dq) return a;
-    changed = true;
-    return {
-      ...a,
-      ...(q ? { chargeOffset: CENTERED_CHARGE_OFFSET } : {}),
-      ...(dq ? { deltaChargeOffset: CENTERED_CHARGE_OFFSET } : {}),
-    };
-  });
-  return changed ? { ...mol, atoms } : mol;
-};
-
 /**
  * Native-first cleanup: soft clean2d when coords are reasonable; full rebuild
  * when collapsed or soft path fails quality gates.
@@ -71,7 +52,7 @@ export const cleanupMolecule = (
       passesSoftGate(soft)
     ) {
       return {
-        molecule: recenterChargeMarks(soft),
+        molecule: soft,
         status: passesHardGate(soft) ? 'certified' : 'degraded',
         source: 'native',
       };
@@ -83,7 +64,7 @@ export const cleanupMolecule = (
     preserveOrientation: options.preserveOrientation ?? true,
     maxRestarts: options.maxRestarts,
   });
-  return { ...full, molecule: recenterChargeMarks(full.molecule), source: 'native' };
+  return { ...full, source: 'native' };
 };
 
 export const cleanupMoleculeCoords = (

@@ -82,7 +82,7 @@ export const deToolOverrides: Record<
   },
   lone_pair: {
     label: 'Freies Elektronenpaar',
-    title: 'Freies Elektronenpaar: Atom anklicken, um Elektronenpaar hinzuzufügen',
+    title: 'Freies Elektronenpaar: Klick fügt eines hinzu; nach Maximum entfernt jeder weitere Klick eines',
     shortLabel: 'EP',
   },
   orbital_p: {

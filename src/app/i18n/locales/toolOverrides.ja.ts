@@ -76,7 +76,7 @@ export const jaToolOverrides: Record<
   },
   lone_pair: {
     label: '孤立電子対',
-    title: '孤立電子対：原子をクリックして孤立電子対を追加',
+    title: '孤立電子対：クリックで1つずつ追加、上限のあとクリックで1つずつ削除',
     shortLabel: 'LP',
   },
   orbital_p: {

@@ -5,8 +5,13 @@
  * Coordinates come from Indigo WASM; IDs/aliases/charges are preserved via merge.
  */
 import type { Molecule } from '@moldraw/domain';
-import { moleculeToMolblock, parseMolblock } from '@moldraw/core';
-import { mergeGlobalCleanup, resolveCleanupBondLength } from '@moldraw/core';
+import {
+  alignCleanupCoordsPerComponent,
+  mergeGlobalCleanup,
+  moleculeToMolblock,
+  parseMolblock,
+  resolveCleanupBondLength,
+} from '@moldraw/core';
 import { indigoLayoutMolblock, type IndigoLayoutOptions } from './layout2d';
 import { getIndigoOrNull, loadIndigo, isIndigoReady } from './loadIndigo';
 import type { IndigoKetcher } from './types';
@@ -66,33 +71,21 @@ const applyIndigoMolblock = (
   // sometimes expands/contracts explicit H vs our canvas graph.
   const laid = parseMolblock(laidMb);
   if (laid.atoms.length === 0) return null;
+  const cleanedById = new Map<string, { x: number; y: number }>();
   if (laid.atoms.length === mol.atoms.length) {
-    const next = {
-      ...mol,
-      atoms: mol.atoms.map((a, i) => ({
-        ...a,
-        x: laid.atoms[i]!.x,
-        y: laid.atoms[i]!.y,
-      })),
-    };
-    return scaleMoleculeBonds(next, bondLen);
+    for (let i = 0; i < mol.atoms.length; i++) {
+      cleanedById.set(mol.atoms[i]!.id, { x: laid.atoms[i]!.x, y: laid.atoms[i]!.y });
+    }
+    return scaleMoleculeBonds(alignCleanupCoordsPerComponent(mol, cleanedById), bondLen);
   }
   // Match by element sequence ignoring H on both sides.
   const heavyPrev = mol.atoms.filter(a => a.element !== 'H' && a.element !== 'D');
   const heavyLaid = laid.atoms.filter(a => a.element !== 'H' && a.element !== 'D');
   if (heavyPrev.length === 0 || heavyPrev.length !== heavyLaid.length) return null;
-  const coordById = new Map<string, { x: number; y: number }>();
   for (let i = 0; i < heavyPrev.length; i++) {
-    coordById.set(heavyPrev[i]!.id, { x: heavyLaid[i]!.x, y: heavyLaid[i]!.y });
+    cleanedById.set(heavyPrev[i]!.id, { x: heavyLaid[i]!.x, y: heavyLaid[i]!.y });
   }
-  const next = {
-    ...mol,
-    atoms: mol.atoms.map(a => {
-      const c = coordById.get(a.id);
-      return c ? { ...a, x: c.x, y: c.y } : a;
-    }),
-  };
-  return scaleMoleculeBonds(next, bondLen);
+  return scaleMoleculeBonds(alignCleanupCoordsPerComponent(mol, cleanedById), bondLen);
 };
 
 /**

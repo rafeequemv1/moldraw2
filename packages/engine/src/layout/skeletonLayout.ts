@@ -575,6 +575,29 @@ const closeRingGaps = (
   }
 };
 
+/** First-ring start angle from the user's drawing, not a fixed upright pose. */
+const originalRingStartAngle = (
+  ids: string[],
+  orig: Map<string, Vec> | undefined,
+  fallbackCenter: Vec,
+): number => {
+  if (!orig) return -Math.PI / 2;
+  let cx = 0;
+  let cy = 0;
+  let n = 0;
+  for (const id of ids) {
+    const p = orig.get(id);
+    if (!p) continue;
+    cx += p.x;
+    cy += p.y;
+    n += 1;
+  }
+  const center = n >= 3 ? { x: cx / n, y: cy / n } : fallbackCenter;
+  const p0 = orig.get(ids[0]!);
+  if (!p0) return -Math.PI / 2;
+  return Math.atan2(p0.y - center.y, p0.x - center.x);
+};
+
 const layoutRing = (
   ring: Ring,
   bondLen: number,
@@ -585,6 +608,7 @@ const layoutRing = (
   anchorCenter: Vec,
   g?: MoleculeGraph,
   ringAtomSet?: Set<string>,
+  orig?: Map<string, Vec>,
 ): void => {
   const ids = ring.atomIds;
   const n = ids.length;
@@ -595,7 +619,10 @@ const layoutRing = (
       return;
     }
     const center = preserveOrientation ? anchorCenter : cursor;
-    placeRegularPolygon(ids, center, bondLen, -Math.PI / 2, pos, placed);
+    const startAngle = preserveOrientation
+      ? originalRingStartAngle(ids, orig, center)
+      : -Math.PI / 2;
+    placeRegularPolygon(ids, center, bondLen, startAngle, pos, placed);
     return;
   }
   if (alreadyPlaced.length === n) return;
@@ -1345,6 +1372,11 @@ export interface SkeletonLayoutContext {
    * geometry (scaled to bondLen) instead of rebuilding as regular polygons.
    */
   lockedAtomIds?: Set<string>;
+  /**
+   * Full rebuild: seed the first ring from the existing heading instead of
+   * a canonical upright regular polygon.
+   */
+  preserveOrientation?: boolean;
 }
 
 /**
@@ -1394,8 +1426,19 @@ const freezeLockedConformationRings = (
 
 /** Layout one connected component via carbon-skeleton graph traversal. */
 export const layoutComponentSkeleton = (ctx: SkeletonLayoutContext): Map<string, Vec> => {
-  const { g, comp, rings, bondLen, origin, orig, mode, preferRingSize, ringOrder, lockedAtomIds } =
-    ctx;
+  const {
+    g,
+    comp,
+    rings,
+    bondLen,
+    origin,
+    orig,
+    mode,
+    preferRingSize,
+    ringOrder,
+    lockedAtomIds,
+    preserveOrientation: preserveOrientationOpt,
+  } = ctx;
   const pos = new Map<string, Vec>();
   const placed = new Set<string>();
   const compSet = new Set(comp);
@@ -1441,7 +1484,7 @@ export const layoutComponentSkeleton = (ctx: SkeletonLayoutContext): Map<string,
     compRings = [...ringsInComp].sort((a, b) => a.size - b.size);
   }
   const anchorCenter = mode === 'correct' ? centroidOf(comp, orig) : origin;
-  const preserveOrientation = mode === 'correct';
+  const preserveOrientation = mode === 'correct' || preserveOrientationOpt === true;
   let cursor = { ...origin };
 
   if (compRings.length > 0) {
@@ -1465,6 +1508,7 @@ export const layoutComponentSkeleton = (ctx: SkeletonLayoutContext): Map<string,
           anchorCenter,
           g,
           ringAtomSet,
+          orig,
         );
       }
       if (mode === 'full' && !preserveOrientation) {

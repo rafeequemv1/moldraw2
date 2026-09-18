@@ -106,7 +106,7 @@ const cleanupOne = async (
   const native = runNative(subset, bondLen, preserveOrientation, selectedAtomIds, forceFullRebuild);
   if (!preferIndigo || hasLockedRingConformations(subset)) return native;
   const indigoMol = await tryIndigo(subset, bondLen, indigoOpts);
-  if (indigoMol) return { molecule: indigoMol, source: 'indigo' };
+  if (indigoMol) return { molecule: rematchLaid(subset, indigoMol), source: 'indigo' };
   return native;
 };
 

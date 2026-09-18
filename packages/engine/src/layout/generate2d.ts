@@ -78,6 +78,7 @@ const layoutMolecule = (
       orig,
       mode,
       lockedAtomIds,
+      preserveOrientation: preserveOrientation && mode === 'full',
     });
     for (const [id, p] of compPos) pos.set(id, p);
     if (mode === 'full' && !preserveOrientation) {
