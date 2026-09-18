@@ -62,6 +62,7 @@ https://www.moldraw.com/
 - User dashboard: https://www.moldraw.com/dashboard/
 - Interactive course: https://www.moldraw.com/course/index.html
 - Blog: https://www.moldraw.com/blog/
+- Embed MolDraw (iframe for courses, docs, and LMS pages): https://www.moldraw.com/blog/embed-moldraw.html
 - Ketcher online molecule editor guide: https://www.moldraw.com/blog/ketcher-online-molecule-editor-guide.html
 - Free chemistry tools and calculators blog: https://www.moldraw.com/blog/free-chemistry-tools-and-calculators.html
 - Complete MolDraw tools guide (all tools with links): https://www.moldraw.com/blog/moldraw-all-free-chemistry-tools-guide.html
@@ -109,6 +110,7 @@ https://www.moldraw.com/sitemap.xml
 - Pricing: MolDraw is free for core browser-based drawing and viewing as described on the site; see FAQ and Terms for limitations.
 - Community: public reading is available at /community/ without signing in. Each public discussion has a keyword-rich permalink at `/community/p/{id}/{slug}`. Comments are indexed on their own permalinks at `/community/c/{id}/{slug}` with comment text in HTML and JSON-LD. Feature requests use `/community/f/{id}/{slug}` and `/community/fc/{id}/{slug}`. Those URLs are listed in `/community/sitemap.xml` and included from the sitemap index at `/sitemap.xml`. Signed-in users can post, reply, upload images, and upvote. Admins may mark feature requests as New, Under review, Under progress, or Done.
 - Ketcher guide: `/blog/ketcher-online-molecule-editor-guide.html` is the standalone SEO/GEO guide for Ketcher, Ketcher online, molecule editor, chemical structure editor, browser molecule drawing, file formats, and alternatives. It links high-intent readers toward MolDraw editor and tools pages without describing internal implementation details.
+- Embed guide: `/blog/embed-moldraw.html` explains the MolDraw iframe at `https://www.moldraw.com/embed`, with a one-click copy snippet. Embedding is a teaching and referral channel. It does not transfer rankings to the host page. Cross-site framing is allowed only on `/embed`.
 - Tools article: `/blog/free-chemistry-tools-and-calculators.html` is the standalone SEO/GEO guide to MolDraw converters, calculators, structure utilities, TLC diagram tool, periodic table, and file-format helpers with internal links to the tools hub.
 - Drawing SEO cluster: `/`, `/blog/chemistry-drawing-keyword-guide.html`, `/blog/chemical-structure-drawing-app-seo-optimized.html`, `/blog/free-chemical-drawing-software-iupac-guide.html`, and `/blog/chemdraw-vs-moldraw-free-alternative-guide.html` target chemical draw, chemistry drawing, draw chemical structures online, free chemical drawing software, and ChemDraw online alternative queries.
 - ChemSketch acquisition cluster: `/chemsketch` (what is ChemSketch, ACD/ChemSketch, ChemSketch software, free online chemical structure editor), `/chemsketch-free` (ChemSketch free, ACD ChemSketch freeware), and `/chemsketch-download` (ChemSketch download queries; states ChemSketch is no longer available to new users and CTAs to MolDraw in the browser).

@@ -108,6 +108,7 @@ import {
   ProjectLibraryModal,
   DocumentTabBar,
 } from './app/components';
+import { EmbedReturnBar } from './app/components/EmbedReturnBar';
 import { CofsPackingBar } from './app/cofs';
 import { rememberGrapheneSheet } from './app/graphene/grapheneSession';
 import { useReactionLibraryInsert } from './app/hooks/useReactionLibraryInsert';
@@ -2185,6 +2186,7 @@ function App() {
       ) : null}
 
       <div className="app-frame">
+      <EmbedReturnBar />
       <div className="app-shell">
       <WorkspaceSplit
         showChatPanel={showChatPanel}

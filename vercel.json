@@ -107,6 +107,45 @@
           "value": "Accept"
         }
       ]
+    },
+    {
+      "source": "/((?!embed).*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self'"
+        }
+      ]
+    },
+    {
+      "source": "/embed",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors *"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    },
+    {
+      "source": "/embed/",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors *"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
     }
   ],
   "redirects": [
@@ -233,6 +272,14 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/embed",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/embed/",
+      "destination": "/index.html"
+    },
     {
       "source": "/community/sitemap.xml",
       "destination": "/api/community-sitemap"

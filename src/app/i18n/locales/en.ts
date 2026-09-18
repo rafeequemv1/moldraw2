@@ -106,7 +106,7 @@ export const en = {
     ai: 'AI',
     requestFeature: 'Request feature',
     signIn: 'Sign in',
-    signUp: 'Sign up',
+    signUp: 'Sign up free',
     signOut: 'Sign out',
     tools: 'Tools',
     addons: 'Addons',
@@ -155,7 +155,7 @@ export const en = {
     toolsTitle: 'Open MolDraw chemistry tools, calculators, and converters',
     addonsTitle: 'MolDraw addons for PowerPoint and Word',
     signInTitle: 'Sign in to MolDraw',
-    signUpTitle: 'Create a MolDraw account',
+    signUpTitle: 'Create a free MolDraw account and save your drawings',
     signedInTitle: 'Signed in as {{name}}. Click to sign out.',
   },
   file: {

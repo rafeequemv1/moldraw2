@@ -92,6 +92,34 @@ html.app-mobile-compact body {
   z-index: 1;
 }
 
+.embed-return-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  background: #0f766e;
+  color: #fff;
+  font-family: Inter, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.embed-return-bar a {
+  color: #fff;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-weight: 800;
+}
+
+.embed-return-bar a:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 .app-site-footer-slot,
 body > .site-footer-root {
   display: block;
