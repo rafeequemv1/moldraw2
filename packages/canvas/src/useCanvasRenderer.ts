@@ -633,6 +633,7 @@ export const useCanvasRenderer = (opts: UseCanvasRendererOptions): { render: () 
       errorAtomId: o.errorAtomId,
       stereoWarningAtomIds,
       overValentAtoms,
+      showValenceWarnings: true,
       cipAtomLabels: o.cipAtomLabels ?? null,
       cipBondLabels: o.cipBondLabels ?? null,
       showCipLabels: o.showCipLabels ?? false,

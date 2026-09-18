@@ -269,15 +269,8 @@ export const ringToolMouseUp = (ctx: InteractionContext): boolean => {
     const attachedViaBond = !isClick;
     const kind: AtomRootedRingKind = isBoat ? 'boat' : isChair ? 'chair' : 'regular';
 
-    const currentValency = getAtomValency(startAtom.id, molecule);
-    const maxValency = getMaxValencyForElement(startAtom.element, startAtom.charge);
-    // Click adds two ring bonds to the shared vertex; drag adds one linker.
-    const extraValence = attachedViaBond ? 1 : 2;
-    if (currentValency + extraValence > maxValency) {
-      ctx.flashAtomError(startAtom.id);
-      ctx.setDrawingRing(null);
-      return true;
-    }
+    // Over-valent carbons (Texas carbon, five bonds) are allowed. The editor
+    // shows an orange surplus badge after the edit; the gesture is never refused.
 
     let growAngle: number;
     if (isClick) {

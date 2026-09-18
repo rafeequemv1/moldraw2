@@ -652,7 +652,8 @@ export const reflectAtoms = (
  *   are in the middle of (e.g. converting a Kekulé ring bond by bond).
  * - `strict`: legacy behaviour — chemically undefined results are refused.
  *   Used where the result must be well-defined (agents / API with
- *   `strict: true`, fragment auto-attach, explicit-H placement).
+ *   `strict: true`, explicit-H placement). Canvas drawing and fragment
+ *   attach stay relaxed so a pentavalent carbon is never refused.
  */
 export type BondChemistryMode = 'relaxed' | 'strict';
 

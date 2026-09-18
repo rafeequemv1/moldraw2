@@ -498,6 +498,8 @@ export const drawOverValentMarkers = (
   ctx: CanvasRenderingContext2D,
   R: RenderContext,
 ): void => {
+  // Export / preview paint paths must not set this. The badges are editor chrome.
+  if (!R.showValenceWarnings) return;
   const over = R.overValentAtoms;
   if (!over || over.size === 0) return;
   const z = R.viewport.zoom || 1;

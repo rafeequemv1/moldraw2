@@ -452,8 +452,14 @@ export interface RenderContext {
   /**
    * Octet / valence warnings: atom id → bond-order surplus over max valency.
    * Soft marker only — drawing never blocks on valency.
+   * Live editor overlay only. Export contexts leave this unset.
    */
   overValentAtoms?: ReadonlyMap<string, number>;
+  /**
+   * Paint the orange "+n" valence badges. True only on the live editor overlay.
+   * PNG / SVG / PDF / copy-image leave this false so exports stay clean structures.
+   */
+  showValenceWarnings?: boolean;
 
   /** Indigo CIP R/S labels keyed by atom id (when showCipLabels). */
   cipAtomLabels: ReadonlyMap<string, string> | null;

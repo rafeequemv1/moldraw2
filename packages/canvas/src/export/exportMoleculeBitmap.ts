@@ -396,6 +396,9 @@ function buildExportRenderContext(
     mouseWorldPos: null,
     errorAtomId: null,
     stereoWarningAtomIds: topology.stereoWarningAtomIds,
+    // Orange valence "+n" badges are editor overlay only — never exported.
+    overValentAtoms: undefined,
+    showValenceWarnings: false,
     cipAtomLabels: opts.cipAtomLabels ?? null,
     cipBondLabels: opts.cipBondLabels ?? null,
     showCipLabels: opts.showCipLabels ?? false,

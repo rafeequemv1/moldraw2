@@ -3143,7 +3143,23 @@
       window.setTimeout(closePostMenus, 1200);
     }
 
-    const timeText = (value) => value ? new Date(value).toLocaleString() : '';
+    function timeText(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      const ms = date.getTime();
+      if (!Number.isFinite(ms)) return '';
+      const seconds = Math.floor((Date.now() - ms) / 1000);
+      if (seconds < 60) return 'just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return days === 1 ? '1 day ago' : `${days} days ago`;
+      const opts = { month: 'short', day: 'numeric' };
+      if (date.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+      return date.toLocaleDateString(undefined, opts);
+    }
     const initials = (name) => String(name || 'M').trim().slice(0, 1).toUpperCase() || 'M';
     const safeAvatarKey = (key) => ['avatar-teal', 'avatar-blue', 'avatar-purple', 'avatar-amber'].includes(key) ? key : 'avatar-teal';
     const PROFILE_SELECT_BASE = 'id,name,email,designation,avatar_key,role,is_admin,karma_score';

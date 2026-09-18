@@ -108,11 +108,15 @@ function canAttachFragmentToTarget(
     atoms: [...parent.atoms, ...placed.atoms],
     bonds: [...parent.bonds, ...placed.bonds],
   };
-  return canAddBond(mergedForBondCheck, {
-    fromAtomId: targetAtomId,
-    toAtomId: connectionAtomId,
-    order: 1,
-  });
+  return canAddBond(
+    mergedForBondCheck,
+    {
+      fromAtomId: targetAtomId,
+      toAtomId: connectionAtomId,
+      order: 1,
+    },
+    { strict: false },
+  );
 }
 
 /**

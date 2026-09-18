@@ -49,7 +49,7 @@ export function prepareFunctionalGroupFragment(mol: Molecule): {
   };
 }
 
-/** Place fragment so `connectionAtomId` bonds to `targetAtomId` (if valency allows). */
+/** Place fragment so `connectionAtomId` bonds to `targetAtomId`. Over-valence is allowed (Texas carbon). */
 export function mergeFunctionalGroupOntoAtom(
   prev: Molecule,
   fragment: Molecule,
@@ -91,10 +91,10 @@ export function mergeFunctionalGroupOntoAtom(
     toAtomId: connectionAtomId,
     order: 1 as const,
   };
-  if (!canAddBond(merged, linkBond)) return prev;
+  if (!canAddBond(merged, linkBond, { strict: false })) return prev;
 
   return joinAtomsIntoPerspectivePose(
-    addBondSafe(merged, linkBond),
+    addBondSafe(merged, linkBond, { strict: false }),
     positioned.atoms.map(a => a.id),
     [targetAtomId],
   );

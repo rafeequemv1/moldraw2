@@ -25,6 +25,10 @@ import { drawBallStickStructure } from '../themes';
  * Committed chemistry + annotations (no grid, selection, hover, or ghosts).
  * Shared by the live canvas, PNG/JPEG/PDF raster export, and vector SVG export
  * so downloads cannot drift from what the editor paints.
+ *
+ * Do not draw octet / valence "+n" badges here. Those are editor-only overlay
+ * chrome (`drawOverValentMarkers`, `showValenceWarnings`). Exports and copied
+ * images call this function and must stay clean structures.
  */
 export function paintStructureLayers(ctx: CanvasRenderingContext2D, R: RenderContext): void {
   drawCanvasImages(ctx, R);
