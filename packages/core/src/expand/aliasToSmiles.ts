@@ -41,13 +41,18 @@ const ABBREV_TO_SMILES: Record<string, AliasSmilesSpec> = {
   SPH: { smiles: 'c1ccccc1', attach: 'bond-to-labeled' },
 
   OH: { smiles: '', attach: 'clear' },
+  HO: { smiles: '', attach: 'clear' },
   NH2: { smiles: '', attach: 'clear' },
+  H2N: { smiles: '', attach: 'clear' },
   SH: { smiles: '', attach: 'clear' },
+  HS: { smiles: '', attach: 'clear' },
 
   CHO: { smiles: 'C=O', attach: 'merge-first' },
+  OHC: { smiles: 'C=O', attach: 'merge-first' },
   AC: { smiles: 'C(=O)C', attach: 'merge-first' },
   COCH3: { smiles: 'C(=O)C', attach: 'merge-first' },
   COOH: { smiles: 'C(=O)O', attach: 'merge-first' },
+  HOOC: { smiles: 'C(=O)O', attach: 'merge-first' },
   CO2H: { smiles: 'C(=O)O', attach: 'merge-first' },
   COONA: { smiles: 'C(=O)[O-]', attach: 'merge-first', nearbyIon: { element: 'Na', charge: 1 } },
   CO2NA: { smiles: 'C(=O)[O-]', attach: 'merge-first', nearbyIon: { element: 'Na', charge: 1 } },
@@ -64,6 +69,7 @@ const ABBREV_TO_SMILES: Record<string, AliasSmilesSpec> = {
   CCL3: { smiles: 'C(Cl)(Cl)Cl', attach: 'merge-first' },
   CCL2: { smiles: 'C(Cl)Cl', attach: 'merge-first' },
   NO2: { smiles: 'N(=O)=O', attach: 'merge-first' },
+  O2N: { smiles: 'N(=O)=O', attach: 'merge-first' },
   NO: { smiles: 'N=O', attach: 'merge-first' },
 
   OME: { smiles: 'C', attach: 'bond-to-labeled' },
@@ -160,11 +166,11 @@ export const resolveAliasToSmiles = (
   const abbrev = ABBREV_TO_SMILES[key];
   if (abbrev) {
     if (abbrev.attach === 'clear') {
-      if (key === 'OH' && el === 'C') return { smiles: 'O', attach: 'bond-to-labeled' };
-      if (key === 'NH2' && el === 'C') return { smiles: 'N', attach: 'bond-to-labeled' };
-      if (key === 'SH' && el === 'C') return { smiles: 'S', attach: 'bond-to-labeled' };
+      if ((key === 'OH' || key === 'HO') && el === 'C') return { smiles: 'O', attach: 'bond-to-labeled' };
+      if ((key === 'NH2' || key === 'H2N') && el === 'C') return { smiles: 'N', attach: 'bond-to-labeled' };
+      if ((key === 'SH' || key === 'HS') && el === 'C') return { smiles: 'S', attach: 'bond-to-labeled' };
     }
-    if (key === 'NO2' && el === 'C') {
+    if ((key === 'NO2' || key === 'O2N') && el === 'C') {
       return { smiles: 'N(=O)=O', attach: 'bond-to-labeled' };
     }
     if (key === 'NO' && el === 'C') {

@@ -12,6 +12,7 @@ import {
   duplicateProjectRecord,
   duplicateProjectName,
   getProject,
+  isStorageQuotaError,
   listFolders,
   listProjectMetas,
   moleculeHasProjectContent,
@@ -171,8 +172,14 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
         await saveProjectRecord(record);
       } catch (err) {
         console.warn('[useProjectPersistence] saveProjectRecord failed', err);
-        setSaveNotice('Could not save locally in this browser (private window, blocked storage, or quota).');
-        throw err;
+        if (opts?.announce) {
+          setSaveNotice(
+            isStorageQuotaError(err)
+              ? 'Could not save locally — this browser is out of storage space. Free disk space or delete old designs in My Designs.'
+              : 'Could not save locally in this browser (private window or blocked storage).',
+          );
+        }
+        return;
       }
       rememberMeta(record);
       savedOnceByTabRef.current.set(id, true);
@@ -328,8 +335,7 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
           await saveProjectRecords(records);
         } catch (err) {
           console.warn('[useProjectPersistence] saveProjectRecords failed', err);
-          setSaveNotice('Could not save locally in this browser (private window, blocked storage, or quota).');
-          throw err;
+          return;
         }
         for (const record of records) {
           rememberMeta(record);
@@ -368,6 +374,7 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
       await persistProjectById(id, name, {
         announce: opts?.announce,
         savedOnce: savedOnceRef.current,
+        skipThumbnail: opts?.announce !== true,
       });
     },
     [persistProjectById],

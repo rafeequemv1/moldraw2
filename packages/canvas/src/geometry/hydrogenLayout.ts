@@ -102,6 +102,9 @@ export const groupLabelTailGoesLeft = (
 ): boolean => {
   const cos = Math.cos(counterRad);
   const sin = Math.sin(counterRad);
+  // Parent bond on the right → write H2N / HOOC so N or C sits on that bond.
+  // Ignore explicit H. A mid-chain carbon still flips when any heavy neighbor
+  // is on the right (the label is a side group, not an interior CH₂).
   for (const n of neighborsOf(atom, mol)) {
     if (n.element === 'H') continue;
     const dx = n.x - atom.x;

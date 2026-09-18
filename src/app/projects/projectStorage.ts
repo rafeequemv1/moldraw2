@@ -45,11 +45,26 @@ function normalizeProject(raw: SavedProject): SavedProject {
   };
 }
 
+const MAX_THUMB_CHARS = 48_000;
+
+/** Drop display-only 3D pose so a sketch still fits in browser storage. */
+export function compactMoleculeForStorage(mol: Molecule): Molecule {
+  const copy = JSON.parse(JSON.stringify(mol)) as Molecule;
+  if (copy.perspective3D) delete copy.perspective3D;
+  return copy;
+}
+
+function capThumbnail(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  return url.length > MAX_THUMB_CHARS ? undefined : url;
+}
+
 /** IndexedDB structured-clone can fail on live editor objects; JSON is the durable form. */
 function storableProject(project: SavedProject): SavedProject {
   const normalized = normalizeProject(project);
   return {
     ...normalized,
+    thumbnailDataUrl: capThumbnail(normalized.thumbnailDataUrl),
     molecule: JSON.parse(JSON.stringify(normalized.molecule)),
   };
 }
@@ -202,19 +217,71 @@ export async function saveProjectRecord(project: SavedProject): Promise<void> {
 }
 
 /** One transaction for every open tab — used by unload / visibility flush. */
+export function isStorageQuotaError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return /quota/i.test(String(err));
+  const e = err as { name?: string; code?: number; message?: string };
+  return (
+    e.name === 'QuotaExceededError' ||
+    e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+    e.code === 22 ||
+    e.code === 1014 ||
+    /quota|disk|enospc|full/i.test(e.message ?? String(err))
+  );
+}
+
+async function putProjects(projects: SavedProject[]): Promise<void> {
+  const db = await openDb();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(PROJECT_STORE, 'readwrite');
+      const store = tx.objectStore(PROJECT_STORE);
+      for (const project of projects) {
+        store.put(storableProject(project), project.id);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error('IndexedDB write failed'));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function stripAllThumbnails(): Promise<void> {
+  const all = await listAllProjects();
+  const withThumbs = all.filter(p => p.thumbnailDataUrl);
+  if (withThumbs.length === 0) return;
+  await putProjects(withThumbs.map(p => ({ ...p, thumbnailDataUrl: undefined })));
+}
+
 export async function saveProjectRecords(projects: SavedProject[]): Promise<void> {
   if (projects.length === 0) return;
-  const db = await openDb();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(PROJECT_STORE, 'readwrite');
-    const store = tx.objectStore(PROJECT_STORE);
-    for (const project of projects) {
-      store.put(storableProject(project), project.id);
-    }
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error('IndexedDB write failed'));
-  });
-  db.close();
+  const capped = projects.map(p => ({
+    ...p,
+    thumbnailDataUrl: capThumbnail(p.thumbnailDataUrl),
+  }));
+  try {
+    await putProjects(capped);
+    return;
+  } catch (err) {
+    if (!isStorageQuotaError(err)) throw err;
+  }
+  const slim = capped.map(p => ({
+    ...p,
+    thumbnailDataUrl: undefined,
+    molecule: compactMoleculeForStorage(p.molecule),
+  }));
+  try {
+    await putProjects(slim);
+    return;
+  } catch (err) {
+    if (!isStorageQuotaError(err)) throw err;
+  }
+  try {
+    await stripAllThumbnails();
+  } catch {
+    /* still try the compact write */
+  }
+  await putProjects(slim);
 }
 
 export async function saveFolderRecord(folder: ProjectFolder): Promise<void> {

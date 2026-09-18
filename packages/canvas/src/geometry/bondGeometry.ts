@@ -21,7 +21,7 @@ import {
   labelBoxBondGapTowardPartnerPx,
   measureHeadAnchoredLabelSize,
 } from './aliasLabelMetrics';
-import { carbonLabelHGoesLeft, hGoesLeft } from './hydrogenLayout';
+import { carbonLabelHGoesLeft, groupLabelTailGoesLeft } from './hydrogenLayout';
 
 /** Gap at carbon ends when the partner is a heteroatom (skeletal chain). */
 export const BOND_TRIM_GAP_C = 6;
@@ -138,7 +138,7 @@ function condensedGroupLabelBondGapTowardPartnerPx(
   };
   const rad = trimCtx.labelRadForAtom(atom.id);
   const m = measureHeadAnchoredLabelSize(trimCtx.ctx, prefs, label, atom.charge ?? 0, {
-    tailGoesLeft: hGoesLeft(atom, trimCtx.molecule),
+    tailGoesLeft: groupLabelTailGoesLeft(atom, trimCtx.molecule),
     attachmentElement: atom.element,
   });
   if (m.w < 2) return 0;

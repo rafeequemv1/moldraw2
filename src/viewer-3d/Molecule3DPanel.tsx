@@ -114,7 +114,7 @@ export function Molecule3DPanel({
   energyKcal,
   computeStatus = 'idle',
   heavyAtomCount,
-  stereoHints = [],
+  stereoHints: _stereoHints = [],
   stereoIssues = [],
   selectedAtomIndices = [],
   onAtomPick,
@@ -296,21 +296,8 @@ export function Molecule3DPanel({
         onAtomPick,
       });
 
-      // Stereo cues from 2D wedges/dashes: overlay line hints in 3D.
       if (models.length === 1) {
         const atoms = models[0]?.selectedAtoms?.({}) ?? [];
-        for (const s of stereoHints) {
-          const a = atoms[s.fromAtomIdx];
-          const b = atoms[s.toAtomIdx];
-          if (!a || !b) continue;
-          viewer.addLine({
-            start: { x: a.x, y: a.y, z: a.z },
-            end: { x: b.x, y: b.y, z: b.z },
-            color: s.stereo === 'wedge' ? '#7c3aed' : '#0ea5e9',
-            dashed: s.stereo === 'dash',
-            linewidth: s.stereo === 'wedge' ? 3.2 : 2.6,
-          });
-        }
         for (const issue of stereoIssues) {
           for (const idx of issue.atomIndices) {
             const a = atoms[idx];
@@ -341,7 +328,7 @@ export function Molecule3DPanel({
     displayMolblock,
     displaySettings.mode,
     displaySettings.showHydrogens,
-    stereoHints,
+    _stereoHints,
     stereoIssues,
     selectedAtomIndices,
     onAtomPick,

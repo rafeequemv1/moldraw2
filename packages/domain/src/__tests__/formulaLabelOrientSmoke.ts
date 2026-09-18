@@ -45,6 +45,8 @@ eq(left('NH2', 'N').text, 'H2N', 'left amine is H2N');
 eq(right('NH2', 'N').text, 'NH2', 'right amine is NH2');
 eq(left('NH2', 'C').text, 'H2N', 'NH2 written on carbon still flips to H2N');
 eq(right('NH2', 'C').text, 'NH2', 'NH2 on carbon stays NH2 when the bond is on the left');
+eq(left('H2N', 'C').text, 'H2N', 'already-left H2N stays H2N');
+eq(right('H2N', 'C').text, 'NH2', 'right-side H2N flips so N stays on the bond');
 eq(left('NO2', 'C').text, 'O2N', 'NO2 on carbon flips to O2N');
 eq(right('NO2', 'C').text, 'NO2', 'NO2 on carbon stays NO2 on the right');
 eq(left('CHO', 'C').text, 'OHC', 'left aldehyde is OHC');

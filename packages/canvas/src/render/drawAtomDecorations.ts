@@ -21,7 +21,6 @@ import { condensedGroupLabelForAtom, isIsolatedWaterOxygen } from '@moldraw/doma
 import {
   carbonLabelHGoesLeft,
   groupLabelTailGoesLeft,
-  hGoesLeft,
   getHydrogenStubDirections,
   implicitHydrogenBondEnd,
   implicitHydrogenLabelDist,
@@ -187,9 +186,7 @@ export const drawAtomLabels = (ctx: CanvasRenderingContext2D, R: RenderContext):
           ? R.labelCounterRad
           : 0;
       const metrics = measureHeadAnchoredLabelSize(ctx, { ...P, ...fonts }, rawLabel, charge, {
-        tailGoesLeft: aliasLabel
-          ? groupLabelTailGoesLeft(atom, R.renderedMolecule, counter)
-          : hGoesLeft(atom, R.renderedMolecule),
+        tailGoesLeft: groupLabelTailGoesLeft(atom, R.renderedMolecule, counter),
         attachmentElement: atom.element,
       });
       if (!metrics.text) return;
@@ -407,7 +404,7 @@ export function measureDeltaLabelExtents(
     const condensed = condensedGroupLabelForAtom(atom, mol, bondSum);
     if (condensed) {
       const m = measureHeadAnchoredLabelSize(ctx, P, condensed, charge, {
-        tailGoesLeft: hGoesLeft(atom, mol),
+        tailGoesLeft: groupLabelTailGoesLeft(atom, mol),
         attachmentElement: atom.element,
       });
       return { left: m.left, right: m.right };
@@ -612,7 +609,7 @@ function resolveLonePairLabelLayout(
     if (condensed) {
       return fromHeadAnchored(
         measureHeadAnchoredLabelSize(ctx, P, condensed, charge, {
-          tailGoesLeft: hGoesLeft(atom, mol),
+          tailGoesLeft: groupLabelTailGoesLeft(atom, mol),
           attachmentElement: atom.element,
         }),
       );

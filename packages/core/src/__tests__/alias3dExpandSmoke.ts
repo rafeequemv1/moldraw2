@@ -294,11 +294,15 @@ const bondedTo = (m: Molecule, id: string, el: string) =>
     const other = b.fromAtomId === id ? b.toAtomId : b.toAtomId === id ? b.fromAtomId : '';
     return other && m.atoms.find(a => a.id === other)?.element === el;
   });
-for (const alias of ['NH2', 'NH₂']) {
+for (const alias of ['NH2', 'NH₂', 'H2N', 'H₂N']) {
   const ex = expandAliasesFor3D(aminoCarbon(alias));
   if (ex.atoms.find(a => a.id === 'c2')?.alias) throw new Error(`${alias}: alias not cleared`);
   if (!bondedTo(ex, 'c2', 'N')) throw new Error(`${alias}: carbon should be bonded to N`);
   if (count(ex, 'N') !== 1) throw new Error(`${alias}: expected 1 N, got ${count(ex, 'N')}`);
+}
+if (normalizeCondensedKey('H2N') !== 'NH2') throw new Error('H2N key should be NH2');
+if (resolveAliasToSmiles('H2N', 'C')?.attach !== 'bond-to-labeled') {
+  throw new Error('H2N on carbon must bond through N');
 }
 const terminalN = expandAliasesFor3D({
   atoms: [

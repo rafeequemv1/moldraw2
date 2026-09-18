@@ -249,23 +249,10 @@ const unloadModelsKeepCamera = (viewer: Viewer3DHandle, hasSurface: boolean): vo
 const applyStereoOverlays = (
   viewer: Viewer3DHandle,
   models: OverlayModel[],
-  stereoHints: Array<{ fromAtomIdx: number; toAtomIdx: number; stereo: 'wedge' | 'dash' }>,
   stereoIssues: Array<{ atomIndices: number[]; label: string }>,
 ): void => {
   if (models.length !== 1) return;
   const atoms = models[0]?.selectedAtoms?.({}) ?? [];
-  for (const s of stereoHints) {
-    const a = atoms[s.fromAtomIdx];
-    const b = atoms[s.toAtomIdx];
-    if (!a || !b) continue;
-    viewer.addLine({
-      start: { x: a.x, y: a.y, z: a.z },
-      end: { x: b.x, y: b.y, z: b.z },
-      color: s.stereo === 'wedge' ? '#7c3aed' : '#0ea5e9',
-      dashed: s.stereo === 'dash',
-      linewidth: s.stereo === 'wedge' ? 3.2 : 2.6,
-    });
-  }
   for (const issue of stereoIssues) {
     for (const idx of issue.atomIndices) {
       const a = atoms[idx];
@@ -289,7 +276,6 @@ function Molecule3DPanelInner({
   energyKcal,
   computeStatus = 'idle',
   heavyAtomCount,
-  stereoHints = [],
   stereoIssues = [],
   selectedAtomIndices = [],
   onAtomPick,
@@ -347,7 +333,6 @@ function Molecule3DPanelInner({
   const lastLoadedMolblockRef = useRef('');
   const lastStyleKeyRef = useRef('');
   const onAtomPickRef = useRef(onAtomPick);
-  const stereoHintsRef = useRef(stereoHints);
   const stereoIssuesRef = useRef(stereoIssues);
   const selectedAtomIndicesRef = useRef(selectedAtomIndices);
   selectedAtomIndicesRef.current = selectedAtomIndices;
@@ -381,7 +366,6 @@ function Molecule3DPanelInner({
   useEffect(() => {
     backgroundColorRef.current = backgroundColor;
     onAtomPickRef.current = onAtomPick;
-    stereoHintsRef.current = stereoHints;
     stereoIssuesRef.current = stereoIssues;
   });
 
@@ -562,25 +546,18 @@ function Molecule3DPanelInner({
           } catch {
             /* ignore */
           }
-          const customSticks =
-            displaySettings.mode === 'stick' || displaySettings.mode === 'toonish';
-          if (customSticks || styleKey !== lastStyleKeyRef.current) {
-            applyAtomDisplayStyle({
-              viewer,
-              models: modelsRef.current,
-              mode: displaySettings.mode,
-              showHydrogens: displaySettings.showHydrogens,
-              selectedAtomIndices,
-              onAtomPick: pick => onAtomPickRef.current?.(pick),
-            });
-            applyOutlineViewStyle(viewer, displaySettings.mode === 'toonish');
-          }
-          applyStereoOverlays(
+          // 3Dmol bakes sphere and stick meshes when the style is applied.
+          // Patching atom.x/y/z alone leaves a wedge↔dash flip invisible.
+          applyAtomDisplayStyle({
             viewer,
-            modelsRef.current,
-            stereoHintsRef.current,
-            stereoIssuesRef.current,
-          );
+            models: modelsRef.current,
+            mode: displaySettings.mode,
+            showHydrogens: displaySettings.showHydrogens,
+            selectedAtomIndices,
+            onAtomPick: pick => onAtomPickRef.current?.(pick),
+          });
+          applyOutlineViewStyle(viewer, displaySettings.mode === 'toonish');
+          applyStereoOverlays(viewer, modelsRef.current, stereoIssuesRef.current);
           lastStyleKeyRef.current = styleKey;
           retargetViewerToAtomCentroid(viewer, existingAtoms);
           viewer.render();
@@ -615,7 +592,7 @@ function Molecule3DPanelInner({
           onAtomPick: pick => onAtomPickRef.current?.(pick),
         });
         applyOutlineViewStyle(viewer, displaySettings.mode === 'toonish');
-        applyStereoOverlays(viewer, models, stereoHintsRef.current, stereoIssuesRef.current);
+        applyStereoOverlays(viewer, models, stereoIssuesRef.current);
         if (savedView) restoreViewerView(viewer, savedView);
         if (!hadModelRef.current) {
           applyViewer3DCameraPolicy(viewer, atomsFromViewerModels(models));
@@ -1058,7 +1035,6 @@ export const Molecule3DPanel = memo(Molecule3DPanelInner, (prev, next) => {
   if (prev.heavyAtomCount !== next.heavyAtomCount) return false;
   if (prev.rebuildBusy !== next.rebuildBusy) return false;
   if (prev.backgroundColor !== next.backgroundColor) return false;
-  if (prev.stereoHints !== next.stereoHints) return false;
   if (prev.stereoIssues !== next.stereoIssues) return false;
   const prevSel = (prev.selectedAtomIndices ?? []).join(',');
   const nextSel = (next.selectedAtomIndices ?? []).join(',');

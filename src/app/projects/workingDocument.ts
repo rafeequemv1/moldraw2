@@ -35,7 +35,12 @@ function writeStorageItem(storage: Storage, key: string, value: string): void {
   try {
     storage.setItem(key, value);
   } catch {
-    /* private mode / quota — IndexedDB remains the durable store */
+    try {
+      storage.removeItem(key);
+      storage.setItem(key, value);
+    } catch {
+      /* private mode / quota — IndexedDB remains the durable store */
+    }
   }
 }
 

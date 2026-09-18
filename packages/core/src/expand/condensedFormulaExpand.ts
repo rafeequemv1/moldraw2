@@ -253,7 +253,10 @@ export const normalizeCondensedKey = (raw: string): string => {
   s = s.replace(/^CH3OOC|^CH3O2C/, 'COOME');
   s = s.replace(/^CH3CH2OOC/, 'COOET');
   s = s.replace(/^HO(?=[A-Z(=])/, 'OH');
+  // Left-side ACS writing (H2N—, HOOC—, O2N—, OHC—) is the same group.
   s = s.replace(/^H2N/, 'NH2');
+  s = s.replace(/^O2N/, 'NO2');
+  s = s.replace(/^OHC(?![A-Z])/, 'CHO');
   s = s.replace(/^HS(?=[A-Z(=])/, 'SH');
 
   // Terminal-first → attachment-first (HOOCCH2 → CH2COOH)

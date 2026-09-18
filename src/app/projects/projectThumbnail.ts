@@ -38,16 +38,16 @@ export function renderProjectThumbnailDataUrl(mol: Molecule): string | undefined
     });
     if (!canvas) return undefined;
     const scale = Math.min(1, MAX_THUMB_WIDTH / canvas.width);
-    if (scale >= 1) return canvas.toDataURL('image/jpeg', 0.72);
+    if (scale >= 1) return canvas.toDataURL('image/jpeg', 0.55);
     const small = document.createElement('canvas');
     small.width = Math.max(1, Math.round(canvas.width * scale));
     small.height = Math.max(1, Math.round(canvas.height * scale));
     const ctx = small.getContext('2d');
-    if (!ctx) return canvas.toDataURL('image/jpeg', 0.72);
+    if (!ctx) return canvas.toDataURL('image/jpeg', 0.55);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, small.width, small.height);
     ctx.drawImage(canvas, 0, 0, small.width, small.height);
-    return small.toDataURL('image/jpeg', 0.72);
+    return small.toDataURL('image/jpeg', 0.55);
   } catch {
     return undefined;
   }

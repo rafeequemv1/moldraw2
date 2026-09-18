@@ -175,8 +175,8 @@ const COMMON_GROUP_ABBREVIATIONS = new Set<string>([
   'R', 'R1', 'R2', 'R3', 'AR', 'X',
   'ME', 'ET', 'NPR', 'IPR', 'NBU', 'TBU',
   'PH', 'BN', 'AC', 'CHO', 'CF3',
-  'OH', 'OME', 'OET', 'NH2', 'NME2', 'NO2', 'CN', 'HCN',
-  'COOH', 'COONA', 'CO2NA', 'NABH4', 'CO2ME', 'CO2ET', 'SO3H', 'SO2ME',
+  'OH', 'HO', 'OME', 'OET', 'NH2', 'H2N', 'NME2', 'NO2', 'O2N', 'CN', 'HCN',
+  'COOH', 'HOOC', 'CHO', 'OHC', 'COONA', 'CO2NA', 'NABH4', 'CO2ME', 'CO2ET', 'SO3H', 'SO2ME',
   'CH2OH', 'HOCH2', 'CH2OME', 'CH2NH2', 'CH2CL', 'CH2BR', 'CH2F', 'CH2CN',
   'BOC', 'CBZ', 'FMOC', 'TS', 'MS',
 ]);
