@@ -25,6 +25,7 @@ import type { ColorTargetPrefs } from '../settings/types';
 import { FormatPanelAccordion } from './FormatPanelAccordion';
 import { useI18n } from '../i18n';
 import { useChromeOverlay } from '../chromeDismiss';
+import { useLeftDockExclusive } from '../leftDockExclusive';
 
 export interface TopBarColorMenuProps {
   activeColor: string;
@@ -36,6 +37,9 @@ export interface TopBarColorMenuProps {
   selectedBondIds?: string[];
   selectedCanvasText: CanvasText | null;
   selectedReactionArrow: ReactionArrow | null;
+  /** Left-dock Text appearance panel (canvas text, not molecule Color). */
+  showTextStylePanel?: boolean;
+  onToggleTextStylePanel?: () => void;
   selectedStrokeId?: string | null;
   selectedCanvasShapeId?: string | null;
   ringPaintActive?: boolean;
@@ -143,6 +147,8 @@ export function TopBarColorMenu({
   selectedBondIds = [],
   selectedCanvasText,
   selectedReactionArrow,
+  showTextStylePanel = false,
+  onToggleTextStylePanel,
   selectedStrokeId = null,
   selectedCanvasShapeId = null,
   ringPaintActive = false,
@@ -167,7 +173,23 @@ export function TopBarColorMenu({
   const panelRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const ringOpacity = colorTargets.ringFillOpacity;
-  useChromeOverlay(open, () => setOpen(false), 'dock');
+  const textStyleMode = Boolean(selectedCanvasText && onToggleTextStylePanel);
+  const styleOpen = textStyleMode ? showTextStylePanel : open;
+  useChromeOverlay(open && !textStyleMode, () => setOpen(false), 'dock');
+  useLeftDockExclusive('style', open && !isCompact && !textStyleMode, () => setOpen(false));
+
+  useEffect(() => {
+    if (selectedCanvasText && open) setOpen(false);
+  }, [selectedCanvasText, open]);
+
+  const handleStyleClick = () => {
+    if (textStyleMode && onToggleTextStylePanel) {
+      setOpen(false);
+      if (!showTextStylePanel) onToggleTextStylePanel();
+      return;
+    }
+    setOpen(v => !v);
+  };
 
   const caps = getSelectionColorCapabilities(
     molecule,
@@ -365,13 +387,13 @@ export function TopBarColorMenu({
     <div ref={wrapRef} className="app-top-bar__color-wrap">
       <button
         type="button"
-        className={`app-top-bar__color-trigger${open ? ' is-open' : ''}`}
-        onClick={() => setOpen(v => !v)}
+        className={`app-top-bar__color-trigger${styleOpen ? ' is-open' : ''}`}
+        onClick={handleStyleClick}
         title={t('colorPanel.triggerTitle')}
         aria-label={t('colorPanel.colorAndStyleAria')}
-        aria-expanded={open}
+        aria-expanded={styleOpen}
         aria-haspopup="dialog"
-        aria-controls={menuId}
+        aria-controls={textStyleMode ? undefined : menuId}
       >
         <Palette size={16} strokeWidth={2} aria-hidden />
         <span
@@ -380,7 +402,7 @@ export function TopBarColorMenu({
           aria-hidden
         />
       </button>
-      {open && typeof document !== 'undefined'
+      {open && !textStyleMode && typeof document !== 'undefined'
         ? createPortal(
             <div
               id={menuId}

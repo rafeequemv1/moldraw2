@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const SITE = 'https://www.moldraw.com';
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 const COMMENT_LIMIT = 100;
 const LIST_COMMENT_PREVIEW = 3;
 const SITEMAP_PAGE = 1000;
@@ -583,7 +583,7 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
     totalCount: replies,
   });
   return `
-          <article class="community-card${selected ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}">
+          <article class="community-card${selected ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}" data-created-at="${escapeHtml(isoDate(post.created_at) || '')}">
             <div class="card-top">
               <div class="author">
                 <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
@@ -637,7 +637,7 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
     totalCount: replies,
   });
   return `
-          <article class="community-card${selected ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}">
+          <article class="community-card${selected ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}" data-created-at="${escapeHtml(isoDate(request.created_at) || '')}">
             <div class="card-top">
               <div class="author">
                 <span class="avatar">${escapeHtml(initials(request.name))}</span>
@@ -825,6 +825,12 @@ function applyDocument(template, {
   if (!/<link[^>]+rel=["']icon["']/i.test(html)) {
     html = html.replace(/<head[^>]*>/i, (match) => `${match}\n  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />`);
   }
+  if (!/data-site=["']i9cwwugh["']/.test(html) && !html.includes('data.moldraw.com/piqo.js')) {
+    html = html.replace(
+      /<head[^>]*>/i,
+      (match) => `${match}\n  <script defer src="https://data.moldraw.com/piqo.js" data-site="i9cwwugh"><\/script>`,
+    );
+  }
 
   const extraLinks = [
     prevHref ? `<link rel="prev" href="${escapeHtml(absUrl(prevHref))}">` : '',
@@ -853,8 +859,12 @@ function applyDocument(template, {
     `<div id="feed" class="feed">${feedHtml}</div>`,
   );
   html = html.replace(
+    /<div id="community-feed-more"[\s\S]*?<\/div>/,
+    paginationHtml || '<div id="community-feed-more" class="community-feed-more" aria-live="polite"></div>',
+  );
+  html = html.replace(
     /<nav id="community-pagination"[\s\S]*?<\/nav>/,
-    paginationHtml || '<nav id="community-pagination" class="community-pagination" aria-label="Community pagination"></nav>',
+    '',
   );
 
   if (threadHtml) {
@@ -1035,7 +1045,8 @@ async function renderListPage(route, { accept } = {}) {
     url: absUrl(isFeatures ? featurePath(row) : discussionPath(row)),
     name: row.title || 'Community post',
   }));
-  const { prevHref, nextHref } = paginationHrefs(isFeatures ? 'features' : 'discussions', page, total);
+  const prevHref = '';
+  const nextHref = '';
   const jsonLd = listJsonLd({
     canonical,
     title,
@@ -1045,7 +1056,7 @@ async function renderListPage(route, { accept } = {}) {
       { name: 'MolDraw', item: `${SITE}/` },
       { name: 'Community', item: `${SITE}/community/` },
       ...(isFeatures ? [{ name: 'Feature requests', item: `${SITE}/community/features` }] : []),
-      ...(page > 1 ? [{ name: `Page ${page}`, item: canonical }] : []),
+      ...(page > 1 ? [{ name: 'Community', item: canonical }] : []),
     ],
   });
 
@@ -1056,9 +1067,6 @@ async function renderListPage(route, { accept } = {}) {
       description,
       '',
       ...items.map((item) => `- [${item.name}](${item.url})`),
-      '',
-      prevHref ? `Previous: ${absUrl(prevHref)}` : '',
-      nextHref ? `Next: ${absUrl(nextHref)}` : '',
     ].filter(Boolean).join('\n');
     return {
       status: 200,
@@ -1083,7 +1091,7 @@ async function renderListPage(route, { accept } = {}) {
       jsonLd,
       pageHeading: isFeatures ? 'MolDraw feature requests' : 'MolDraw Community',
       feedHtml,
-      paginationHtml: renderPagination(isFeatures ? 'features' : 'discussions', page, total),
+      paginationHtml: '',
       statusText: rows.length ? '' : (isFeatures ? 'No feature requests yet.' : 'No discussions yet. Start the first one.'),
       discussionsActive: !isFeatures,
       prevHref,
@@ -1334,19 +1342,10 @@ async function renderCommunitySitemap() {
     fetchAllRows('feature_request_comments', 'id,body,created_at', 'created_at.desc').catch(() => []),
   ]);
 
-  const discussionPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
-  const featurePages = Math.max(1, Math.ceil(features.length / PAGE_SIZE));
   const urls = [
     sitemapUrl(`${SITE}/community/`, new Date().toISOString().slice(0, 10), 'hourly', '0.7'),
     sitemapUrl(`${SITE}/community/features`, new Date().toISOString().slice(0, 10), 'hourly', '0.64'),
   ];
-
-  for (let page = 2; page <= discussionPages; page += 1) {
-    urls.push(sitemapUrl(`${SITE}/community/page/${page}`, new Date().toISOString().slice(0, 10), 'hourly', '0.5'));
-  }
-  for (let page = 2; page <= featurePages; page += 1) {
-    urls.push(sitemapUrl(`${SITE}/community/features/page/${page}`, new Date().toISOString().slice(0, 10), 'hourly', '0.45'));
-  }
 
   posts.forEach((post) => {
     urls.push(sitemapUrl(absUrl(discussionPath(post)), isoDate(post.created_at)?.slice(0, 10), 'weekly', '0.55'));

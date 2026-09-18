@@ -78,6 +78,7 @@ export function ExportMenu({ open, onToggle, onSaveAs, preferSheet }: ExportMenu
         aria-haspopup={useSheet ? 'dialog' : 'menu'}
         aria-label={useSheet ? t('export.download') : undefined}
         title={t('export.download')}
+        data-piqo-event="download_menu"
       >
         <Download size={12} strokeWidth={2.4} aria-hidden />
         {useSheet ? null : (
@@ -105,6 +106,8 @@ export function ExportMenu({ open, onToggle, onSaveAs, preferSheet }: ExportMenu
                 className="mobile-sheet-list__btn"
                 role="menuitem"
                 onClick={() => pickFormat(key)}
+                data-piqo-event="download"
+                data-piqo-format={key}
               >
                 {icon(14)}
                 <span className="app-top-bar__file-menu-flyout-label">{compactDownloadLabel(key, label)}</span>
@@ -130,6 +133,8 @@ export function ExportMenu({ open, onToggle, onSaveAs, preferSheet }: ExportMenu
                 className="tb-menu-item"
                 role="menuitem"
                 onClick={() => pickFormat(key)}
+                data-piqo-event="download"
+                data-piqo-format={key}
               >
                 {compactDownloadLabel(key, label)}
               </button>

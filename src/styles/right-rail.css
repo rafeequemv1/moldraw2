@@ -296,6 +296,48 @@
   padding: 4px 8px;
 }
 
+.text-style-left-dock .text-style-panel-body {
+  padding: 0;
+}
+
+.text-style-left-dock .text-style-type-row {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-top: 0;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.format-left-panel.text-style-left-dock .text-style-chip,
+.mol-color-side-panel .text-style-chip {
+  min-width: 24px;
+  height: 26px;
+  padding: 0 5px;
+  border-radius: var(--radius-control);
+  font-size: 0.7rem;
+}
+
+.format-left-panel.text-style-left-dock .text-style-chip-on,
+.mol-color-side-panel .text-style-chip-on {
+  background: var(--chrome-active);
+  border-color: var(--chrome-border-strong);
+}
+
+.format-left-panel.text-style-left-dock .text-style-color-native,
+.mol-color-side-panel .text-style-color-native {
+  width: 28px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+
+.format-left-panel.text-style-left-dock .app-top-bar__color-style-row {
+  margin-top: 4px;
+}
+
+.format-left-panel.text-style-left-dock .app-top-bar__color-style-row:first-child {
+  margin-top: 0;
+}
+
 .text-style-font-select {
   width: 100%;
   min-width: 108px;

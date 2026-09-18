@@ -196,10 +196,33 @@ async function claimEvent(eventKey) {
   return true;
 }
 
+async function releaseEvent(eventKey) {
+  await supabaseRequest('DELETE', 'community_notify_log', {
+    search: `event_key=eq.${encodeURIComponent(String(eventKey).slice(0, 240))}`,
+    extraHeaders: { Prefer: 'return=minimal' },
+  });
+}
+
+async function emailFromAuthUser(userId) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!key || !uuidParam(userId)) return '';
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+    },
+  });
+  if (!response.ok) return '';
+  const user = await response.json().catch(() => null);
+  return String(user?.email || '').trim().toLowerCase();
+}
+
 async function emailForUser(userId) {
   if (!uuidParam(userId)) return '';
   const row = await supabaseGet('users', `select=email&id=eq.${encodeURIComponent(userId)}`);
-  return String(row?.email || '').trim().toLowerCase();
+  const fromProfile = String(row?.email || '').trim().toLowerCase();
+  if (fromProfile) return fromProfile;
+  return emailFromAuthUser(userId);
 }
 
 async function sendResend({ to, subject, html, text, idempotencyKey, unsubUrl }) {
@@ -263,7 +286,7 @@ async function deliver({ userId, email, subject, heading, preview, href, cta, ev
   const token = await ensureUnsubToken({ userId, email: to });
   if (!token && await isUnsubscribed({ userId, email: to })) return { skipped: 'unsubscribed' };
   const unsubUrl = token ? `${SITE}/community/unsubscribe?token=${encodeURIComponent(token)}` : '';
-  return sendResend({
+  const result = await sendResend({
     to,
     subject,
     text: `${preview}\n\n${href}${unsubUrl ? `\n\nUnsubscribe: ${unsubUrl}` : ''}`,
@@ -271,6 +294,13 @@ async function deliver({ userId, email, subject, heading, preview, href, cta, ev
     idempotencyKey: eventKey,
     unsubUrl,
   });
+  if (result?.error || result?.skipped) {
+    await releaseEvent(eventKey);
+    console.error('community notify send failed', { eventKey, result });
+  } else {
+    console.log('community notify sent', { eventKey, id: result?.id });
+  }
+  return result;
 }
 
 async function getAuthUser(token) {
@@ -330,7 +360,10 @@ async function notifyFeatureStatus(record, oldRecord, auth) {
     'feature_requests',
     `select=id,user_id,email,title,status&id=eq.${encodeURIComponent(id)}`,
   );
-  if (!current) return { skipped: 'missing_row' };
+  if (!current) {
+    console.warn('community notify missing feature_requests row', { id });
+    return { skipped: 'missing_row' };
+  }
   if (oldRecord && String(oldRecord.status || '') === String(current.status || '')) {
     return { skipped: 'status_unchanged' };
   }
@@ -338,8 +371,8 @@ async function notifyFeatureStatus(record, oldRecord, auth) {
     return { skipped: 'not_admin' };
   }
   const to = String(current.email || '').trim().toLowerCase() || await emailForUser(current.user_id);
-  if (current.user_id && auth?.via === 'jwt' && auth.user.id === current.user_id) {
-    return { skipped: 'self_update' };
+  if (!to) {
+    console.warn('community notify no author email', { id, userId: current.user_id || null });
   }
   const href = permalink('feature', current.id, current.title);
   const label = statusLabel(current.status);
@@ -355,6 +388,43 @@ async function notifyFeatureStatus(record, oldRecord, auth) {
     href,
     cta: 'Open the request',
     eventKey: `feature-status/${current.id}/${current.status || 'updated'}`,
+  });
+}
+
+async function notifyPostRequestStatus(record, oldRecord, auth) {
+  const id = uuidParam(record?.id);
+  if (!id) return { skipped: 'no_post' };
+  const current = await supabaseGet(
+    'community_posts',
+    `select=id,user_id,title,request_status&id=eq.${encodeURIComponent(id)}`,
+  );
+  if (!current) {
+    console.warn('community notify missing community_posts row', { id });
+    return { skipped: 'missing_row' };
+  }
+  const nextStatus = String(current.request_status || '');
+  const prevStatus = oldRecord ? String(oldRecord.request_status || '') : '';
+  if (oldRecord && prevStatus === nextStatus) {
+    return { skipped: 'status_unchanged' };
+  }
+  if (!nextStatus) return { skipped: 'status_cleared' };
+  if (auth?.via === 'jwt' && !(await isAdminUser(auth.user.id))) {
+    return { skipped: 'not_admin' };
+  }
+  const href = permalink('post', current.id, current.title);
+  const label = statusLabel(nextStatus);
+  const already = nextStatus === 'already_implemented';
+  return deliver({
+    userId: current.user_id,
+    email: await emailForUser(current.user_id),
+    subject: `Your feature request is now “${label}”`,
+    heading: `Your request is now “${label}”`,
+    preview: already
+      ? `${current.title || 'This request'} is already available in MolDraw.`
+      : (current.title || 'A MolDraw discussion you submitted has a new status.'),
+    href,
+    cta: 'Open the discussion',
+    eventKey: `post-request-status/${current.id}/${nextStatus || 'updated'}`,
   });
 }
 
@@ -588,6 +658,14 @@ module.exports = async function handler(req, res) {
     if (table === 'community_posts' && type === 'INSERT') {
       return json(res, 200, await notifyPost(record, auth));
     }
+    if (table === 'community_posts' && type === 'UPDATE') {
+      if (!viaSecret && !(jwtUser && await isAdminUser(jwtUser.id))) {
+        return json(res, 401, { error: 'unauthorized' });
+      }
+      const result = await notifyPostRequestStatus(record, oldRecord, auth);
+      if (result?.error) return json(res, 502, result);
+      return json(res, 200, result);
+    }
     if (table === 'community_comment_mentions' && type === 'INSERT') {
       return json(res, 200, await notifyMention(record, auth));
     }
@@ -598,11 +676,13 @@ module.exports = async function handler(req, res) {
       if (!viaSecret && !(jwtUser && await isAdminUser(jwtUser.id))) {
         return json(res, 401, { error: 'unauthorized' });
       }
-      return json(res, 200, await notifyFeatureStatus(record, oldRecord, auth));
+      const result = await notifyFeatureStatus(record, oldRecord, auth);
+      if (result?.error) return json(res, 502, result);
+      return json(res, 200, result);
     }
     return json(res, 202, { skipped: 'unhandled_event', table, type });
   } catch (error) {
     console.error('community notify failed', error);
-    return json(res, 200, { skipped: 'handler_error' });
+    return json(res, 500, { skipped: 'handler_error' });
   }
 };

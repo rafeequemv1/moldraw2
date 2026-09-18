@@ -16,6 +16,7 @@ import {
   type AnchoredMenuPos,
   type SideFlyoutPos,
 } from '../menuPlacement';
+import { trackEvent } from '../../lib/trackEvent';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { MobileSheetAccordion } from './MobileSheetAccordion';
 
@@ -111,7 +112,7 @@ type MoreMenuItem =
 
   | { kind: 'link'; href: string; label: string; title: string }
 
-  | { kind: 'action'; label: string; title: string; onClick: () => void; className?: string }
+  | { kind: 'action'; label: string; title: string; onClick: () => void; className?: string; piqoEvent?: string }
 
   | { kind: 'disabled'; label: string; title: string; hint: string }
 
@@ -158,6 +159,7 @@ function buildMoreItems(
               label: t('nav.signIn'),
               title: t('nav.signInTitle'),
               onClick: account.onSignIn,
+              piqoEvent: 'sign_in',
             },
             {
               kind: 'action',
@@ -165,6 +167,7 @@ function buildMoreItems(
               title: t('nav.signUpTitle'),
               onClick: account.onSignUp,
               className: 'tb-menu-item--auth-cta',
+              piqoEvent: 'sign_up',
             },
           ]
         : [];
@@ -308,6 +311,7 @@ function MoreMenuBody({
               }`}
               title={item.title}
               role={variant === 'sheet' ? 'menuitem' : undefined}
+              data-piqo-event={item.piqoEvent}
               onClick={() => {
                 onDismiss();
                 item.onClick();
@@ -675,6 +679,7 @@ export function HeaderInlineSearch({
           onClick={onQuickSearch}
           title={searchAriaLabel}
           aria-label={searchAriaLabel}
+          data-piqo-event="search"
         >
           <Search size={13} color="#64748b" aria-hidden />
         </button>
@@ -692,7 +697,10 @@ export function HeaderInlineSearch({
             setQuickSearchError('');
           }}
           onKeyDown={e => {
-            if (e.key === 'Enter') onQuickSearch();
+            if (e.key === 'Enter') {
+              trackEvent('search');
+              onQuickSearch();
+            }
           }}
           placeholder={searchPlaceholder}
           aria-label={searchAriaLabel}
@@ -804,6 +812,7 @@ export function HeaderSiteNav({
             label: t('nav.requestFeature'),
             title: t('nav.requestFeatureTitle'),
             onClick: onRequestFeature,
+            piqoEvent: 'feature_request_open',
           },
         ],
       )
@@ -871,6 +880,7 @@ export function HeaderSiteNav({
               className="tb-btn tb-btn-feature-request"
               onClick={onRequestFeature}
               title={t('nav.requestFeatureTitle')}
+              data-piqo-event="feature_request_open"
             >
               {t('nav.requestFeature')}
             </button>
@@ -892,7 +902,7 @@ export function HeaderSiteNav({
           )
         ) : (
           <>
-            <button type="button" className="tb-btn tb-btn-auth" onClick={onSignIn} title={t('nav.signInTitle')}>
+            <button type="button" className="tb-btn tb-btn-auth" onClick={onSignIn} title={t('nav.signInTitle')} data-piqo-event="sign_in">
               {t('nav.signIn')}
             </button>
             <button
@@ -900,6 +910,7 @@ export function HeaderSiteNav({
               className="tb-btn tb-btn-auth tb-btn-auth-cta"
               onClick={onSignUp}
               title={t('nav.signUpTitle')}
+              data-piqo-event="sign_up"
             >
               {t('nav.signUp')}
             </button>

@@ -89,7 +89,7 @@ const drawReagentLabels = (ctx: CanvasRenderingContext2D, a: ReactionArrow): voi
   const ny = dx / len;
   const mx = (a.x1 + a.x2) / 2;
   const my = (a.y1 + a.y2) / 2;
-  const fs = a.reagentFontSize ?? 14;
+  const fs = a.reagentFontSize ?? 22;
   const lineGap = fs * 1.18;
   const baseOff = 18 + fs * 0.45;
   const weight = a.reagentFontWeight === 'bold' ? 700 : 500;

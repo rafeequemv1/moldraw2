@@ -4,9 +4,12 @@
  */
 import {
   buildCanvasTextFont,
+  buildCanvasTextFontAtSize,
   canvasTextEffectiveFontSize,
   canvasTextResizePatch,
   canvasTextRotatePatch,
+  canvasTextScriptDy,
+  CANVAS_TEXT_SCRIPT_SCALE,
   getCanvasTextBox,
   getCanvasTextCornerWorld,
   getCanvasTextRotateHandleWorld,
@@ -14,6 +17,9 @@ import {
   measureCanvasTextBox,
   pickCanvasTextAt,
   resolveCanvasTextInk,
+  resolveCanvasTextScripts,
+  scriptAtIndex,
+  wrapCanvasTextLinesIndexed,
   type CanvasTextResizeCorner,
 } from '../geometry';
 import type { CanvasText } from '@moldraw/domain';
@@ -153,7 +159,7 @@ export const drawCanvasTexts = (ctx: CanvasRenderingContext2D, R: RenderContext)
   for (const raw of list) {
     const t = textWithDragPreview(raw, R);
     const box = getCanvasTextBox(ctx, t);
-    const { lineHeight, lines } = measureCanvasTextBox(ctx, t);
+    const { lineHeight } = measureCanvasTextBox(ctx, t);
     const selected =
       (R.selectedCanvasTextIds?.includes(raw.id) ?? false) ||
       R.selectedCanvasTextId === raw.id;
@@ -169,31 +175,57 @@ export const drawCanvasTexts = (ctx: CanvasRenderingContext2D, R: RenderContext)
     if (editing) continue;
 
     const fs = canvasTextEffectiveFontSize(t);
-    const script = t.textScript ?? 'normal';
-    const scriptDy =
-      script === 'super' ? -fs * 0.35 : script === 'sub' ? fs * 0.28 : 0;
+    const ranges = resolveCanvasTextScripts(t);
 
+    // One object color only — never CPK / Color-menu / per-glyph atom paint.
     const ink = resolveCanvasTextInk(t, R.structureTheme.ink);
+    const align = t.textAlign ?? 'left';
+    const innerLeft = -box.width / 2 + 10;
+    const innerRight = box.width / 2 - 10;
+    const innerMax = t.boxWidth != null ? Math.max(8, t.boxWidth - 20) : Infinity;
     ctx.save();
     ctx.translate(box.cx, box.cy);
     ctx.rotate(box.rotationRad);
-    ctx.textAlign = 'center';
+    ctx.beginPath();
+    ctx.rect(-box.width / 2, -box.height / 2, box.width, box.height);
+    ctx.clip();
     ctx.textBaseline = 'middle';
     ctx.fillStyle = ink;
     ctx.font = buildCanvasTextFont(t);
+    const indexed = wrapCanvasTextLinesIndexed(ctx, t.text ?? '', innerMax);
     const und = t.textDecoration === 'underline';
-    lines.forEach((line, li) => {
-      const ly = (li - (lines.length - 1) / 2) * lineHeight + scriptDy;
-      ctx.fillText(line, 0, ly);
+    const count = Math.max(1, indexed.length);
+    indexed.forEach((line, li) => {
+      const ly = (li - (count - 1) / 2) * lineHeight;
+      ctx.font = buildCanvasTextFont(t);
+      const tw = ctx.measureText(line.text || ' ').width;
+      let x = align === 'right' ? innerRight - tw : align === 'center' ? -tw / 2 : innerLeft;
+      ctx.textAlign = 'left';
+      let gi = line.start;
+      for (const ch of line.text) {
+        ctx.font = buildCanvasTextFont(t);
+        const slotW = ctx.measureText(ch).width;
+        const script = scriptAtIndex(ranges, gi);
+        if (script === 'normal') {
+          ctx.fillText(ch, x, ly);
+        } else {
+          const small = Math.max(8, fs * CANVAS_TEXT_SCRIPT_SCALE);
+          ctx.font = buildCanvasTextFontAtSize(t, small);
+          ctx.fillText(ch, x, ly + canvasTextScriptDy(fs, script));
+        }
+        x += slotW;
+        gi += ch.length;
+      }
       if (!und) return;
-      const tw = ctx.measureText(line || ' ').width;
+      ctx.font = buildCanvasTextFont(t);
       ctx.strokeStyle = ink;
       ctx.lineWidth = Math.max(1, fs * 0.07);
       ctx.lineCap = 'round';
-      const uy = ly + fs * 0.38;
+      const uy = ly + fs * 0.48;
+      const x0 = align === 'right' ? innerRight - tw : align === 'center' ? -tw / 2 : innerLeft;
       ctx.beginPath();
-      ctx.moveTo(-tw / 2, uy);
-      ctx.lineTo(tw / 2, uy);
+      ctx.moveTo(x0, uy);
+      ctx.lineTo(x0 + tw, uy);
       ctx.stroke();
     });
     ctx.restore();

@@ -1,7 +1,8 @@
 /**
  * UI overlays for the "select" tool:
  *  - rotate handle above the selection
- *  - slim grey dotted AABB (no scale handles on molecules)
+ *  - slim grey dotted AABB (no scale handles on molecules; omitted for
+ *    exclusive text / exclusive reaction-arrow selections)
  *  - marquee + lasso while selecting
  *  - protractor while rotating
  */
@@ -249,7 +250,14 @@ export const drawSelectionTransformHandle = (
     (R.selectedStrokeIds?.length ?? 0) === 0 &&
     (R.selectedCanvasShapeIds?.length ?? 0) === 0 &&
     (R.selectedCanvasImageIds?.length ?? 0) === 0;
-  if (exclusiveText) return;
+  const exclusiveArrow =
+    transformIds.length === 0 &&
+    (R.selectedReactionArrowIds?.length ?? 0) > 0 &&
+    (R.selectedCanvasTextIds?.length ?? 0) === 0 &&
+    (R.selectedStrokeIds?.length ?? 0) === 0 &&
+    (R.selectedCanvasShapeIds?.length ?? 0) === 0 &&
+    (R.selectedCanvasImageIds?.length ?? 0) === 0;
+  if (exclusiveText || exclusiveArrow) return;
 
   const L = getMarqueeSelectionTransformLayout(R.renderedMolecule, marqueeBounds, null);
   if (!L) return;

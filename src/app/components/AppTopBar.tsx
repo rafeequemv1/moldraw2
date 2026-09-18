@@ -23,6 +23,9 @@ import {
   Grid3x3,
   X,
   Search,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
 } from 'lucide-react';
 import { FileMenu } from './FileMenu';
 import { ExportMenu } from './ExportMenu';
@@ -32,7 +35,7 @@ import { MobileBottomSheet } from './MobileBottomSheet';
 import { InstallWindowsLink } from './InstallWindowsLink';
 import { ThemeToggleButton } from './ThemeToggleButton';
 import { MolDrawLogoMark } from './MolDrawLogoMark';
-import { AromatizeIcon, DearomatizeIcon } from '../toolIcons';
+import { AromatizeIcon, DearomatizeIcon, renderToolIcon } from '../toolIcons';
 import type { UiThemeId } from '../theme';
 import { useI18n } from '../i18n';
 import { useChromeOverlay } from '../chromeDismiss';
@@ -43,6 +46,10 @@ import type { ColorApplyFlags } from '@moldraw/core/color/selectionColor';
 import type { ColorTargetPrefs } from '../settings/types';
 import type { CopyAsFormat, DownloadFormat } from '../types';
 import type { QuickSelectActionId, QuickSelectOptions } from '../selection/quickSelect';
+
+function ToolsVsep() {
+  return <span className="app-top-bar__vsep" aria-hidden />;
+}
 
 /** Compact tool cluster in the second header row (no section labels). */
 function ToolCluster({
@@ -164,6 +171,10 @@ export interface AppTopBarProps {
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  /** Viewport — right-side tools-row cluster (lens zoom + fit drawing), near Tools. */
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onFitView?: () => void;
 
   /** AI chat dock (Panels group with 3D view). */
   showChatPanel?: boolean;
@@ -303,14 +314,17 @@ export function AppTopBar(props: AppTopBarProps) {
     selectedAtomCount,
     showInfoPanel,
     onToggleInfoPanel,
-    showTextStylePanel: _showTextStylePanel,
-    onToggleTextStylePanel: _onToggleTextStylePanel,
+    showTextStylePanel,
+    onToggleTextStylePanel,
     show3DViewer,
     onToggle3DViewer,
     canUndo = false,
     canRedo = false,
     onUndo,
     onRedo,
+    onZoomIn,
+    onZoomOut,
+    onFitView,
     showChatPanel = false,
     onToggleChatPanel,
     showObjectsPanel = false,
@@ -391,29 +405,25 @@ export function AppTopBar(props: AppTopBarProps) {
       {onAddExplicitHydrogen ? (
         <button
           type="button"
-          className={`action-btn icon-only${activeTool === 'add_explicit_h' ? ' active' : ''}`}
+          className={`tool-btn${activeTool === 'add_explicit_h' ? ' active' : ''}`}
           onClick={onAddExplicitHydrogen}
           title={t('topBar.addExplicitHFullTitle')}
           aria-label={t('topBar.addExplicitH')}
           aria-pressed={activeTool === 'add_explicit_h'}
         >
-          <span className="hydrogen-toggle-glyph" aria-hidden>
-            H+
-          </span>
+          {renderToolIcon('add_explicit_h')}
         </button>
       ) : null}
       {onAddExplicitCarbon ? (
         <button
           type="button"
-          className={`action-btn icon-only${activeTool === 'add_explicit_c' ? ' active' : ''}`}
+          className={`tool-btn${activeTool === 'add_explicit_c' ? ' active' : ''}`}
           onClick={onAddExplicitCarbon}
           title={t('topBar.addExplicitCFullTitle')}
           aria-label={t('topBar.addExplicitC')}
           aria-pressed={activeTool === 'add_explicit_c'}
         >
-          <span className="hydrogen-toggle-glyph" aria-hidden>
-            C+
-          </span>
+          {renderToolIcon('add_explicit_c')}
         </button>
       ) : null}
     </>
@@ -488,6 +498,42 @@ export function AppTopBar(props: AppTopBarProps) {
   }, [quickSearchLoading, quickSearchError, searchSheetOpen]);
 
   const ribbonMode: 'draw' | 'home' = !isCompact && drawToolsOpen ? 'draw' : 'home';
+
+  const zoomButtons = (
+    <>
+      <button
+        type="button"
+        className="action-btn icon-only"
+        onClick={onZoomIn}
+        disabled={!onZoomIn}
+        title={t('topBar.zoomInTitle')}
+        aria-label={t('topBar.zoomIn')}
+      >
+        <ZoomIn size={16} strokeWidth={2} aria-hidden />
+      </button>
+      <button
+        type="button"
+        className="action-btn icon-only"
+        onClick={onZoomOut}
+        disabled={!onZoomOut}
+        title={t('topBar.zoomOutTitle')}
+        aria-label={t('topBar.zoomOut')}
+      >
+        <ZoomOut size={16} strokeWidth={2} aria-hidden />
+      </button>
+      <ToolsVsep />
+      <button
+        type="button"
+        className="action-btn icon-only"
+        onClick={onFitView}
+        disabled={!onFitView}
+        title={t('topBar.fitViewTitle')}
+        aria-label={t('topBar.fitView')}
+      >
+        <Maximize2 size={16} strokeWidth={2} aria-hidden />
+      </button>
+    </>
+  );
 
   const selectMenu = (
     <TopBarSelectMenu
@@ -588,18 +634,15 @@ export function AppTopBar(props: AppTopBarProps) {
             </button>
           ) : null}
           {isCompact ? (
-            <>
-              <button
-                type="button"
-                className="app-top-bar__delete-btn"
-                onClick={onClearAll}
-                title={t('topBar.fullClearTitle')}
-                aria-label={t('topBar.clearCanvas')}
-              >
-                <Trash2 size={18} strokeWidth={2} aria-hidden />
-              </button>
-              {explicitAtomButtons}
-            </>
+            <button
+              type="button"
+              className="app-top-bar__delete-btn"
+              onClick={onClearAll}
+              title={t('topBar.fullClearTitle')}
+              aria-label={t('topBar.clearCanvas')}
+            >
+              <Trash2 size={18} strokeWidth={2} aria-hidden />
+            </button>
           ) : null}
         </div>
         <div className="app-top-bar__fill" aria-hidden />
@@ -736,10 +779,11 @@ export function AppTopBar(props: AppTopBarProps) {
         <ToolCluster label={isCompact ? t('topBar.clusterArrange') : t('topBar.clusterPanels')}>
           {isCompact ? (
             <>
-              {selectMenu}
               {contextRow}
+              <ToolsVsep />
             </>
-          ) : onToggleObjectsPanel ? (
+          ) : null}
+          {onToggleObjectsPanel ? (
             <button
               type="button"
               className={`action-btn icon-only${showObjectsPanel ? ' active' : ''}`}
@@ -773,20 +817,6 @@ export function AppTopBar(props: AppTopBarProps) {
           >
             <span className="app-top-bar__3d-label">{t('topBar.threeD')}</span>
           </button>
-          {isCompact ? (
-            <button
-              type="button"
-              className={`action-btn icon-only${showInfoPanel ? ' active' : ''}`}
-              title={showInfoPanel ? t('topBar.infoCloseTitle') : t('topBar.infoCompactTitle')}
-              aria-label={t('topBar.selectionInfo')}
-              aria-pressed={showInfoPanel}
-              onClick={onToggleInfoPanel}
-            >
-              <span className="app-top-bar__info-symbol" aria-hidden>
-                ⌬
-              </span>
-            </button>
-          ) : null}
           {onUndo ? (
             <button
               type="button"
@@ -855,7 +885,12 @@ export function AppTopBar(props: AppTopBarProps) {
           >
             <Box size={18} strokeWidth={2} />
           </button>
-          {isCompact ? aromatizeButtons : null}
+          {isCompact ? (
+            <>
+              {aromatizeButtons}
+              {aromatizeButtons ? <ToolsVsep /> : null}
+            </>
+          ) : null}
           {perspectiveActive ? (
             <>
               <button
@@ -897,6 +932,8 @@ export function AppTopBar(props: AppTopBarProps) {
             selectedBondIds={selectedBondIds}
             selectedCanvasText={selectedCanvasText}
             selectedReactionArrow={selectedReactionArrow}
+            showTextStylePanel={showTextStylePanel}
+            onToggleTextStylePanel={onToggleTextStylePanel}
             onApplyColor={onApplyColor}
             onClearAtomColors={onClearAtomColors}
             onUpdateCanvasShape={onUpdateCanvasShape}
@@ -958,7 +995,7 @@ export function AppTopBar(props: AppTopBarProps) {
         </ToolCluster>
         ) : null}
 
-        {toolsRow ? (
+        {toolsRow || isCompact ? (
           <ToolCluster label={t('topBar.clusterAnnotate')}>
             {toolsRow}
             {onOpenSettings ? (
@@ -1002,10 +1039,17 @@ export function AppTopBar(props: AppTopBarProps) {
             {explicitAtomButtons}
           </ToolCluster>
         ) : null}
-        {!isCompact && ribbonMode === 'home' ? (
+        {ribbonMode === 'home' ? (
         <ToolCluster label={t('topBar.clusterArrange')}>
-          {contextRow}
-          {aromatizeButtons}
+          {isCompact ? null : (
+            <>
+              {contextRow}
+              <ToolsVsep />
+              {aromatizeButtons}
+              {aromatizeButtons ? <ToolsVsep /> : null}
+            </>
+          )}
+          {zoomButtons}
           <a
             className="app-top-bar__select-trigger app-top-bar__tools-link"
             href="/tools/"
@@ -1017,6 +1061,22 @@ export function AppTopBar(props: AppTopBarProps) {
             {t('nav.tools')}
           </a>
         </ToolCluster>
+        ) : (
+          <ToolCluster label={t('topBar.clusterZoom')}>{zoomButtons}</ToolCluster>
+        )}
+        {isCompact ? (
+          <button
+            type="button"
+            className={`action-btn icon-only app-top-bar__info-end${showInfoPanel ? ' active' : ''}`}
+            title={showInfoPanel ? t('topBar.infoCloseTitle') : t('topBar.infoCompactTitle')}
+            aria-label={t('topBar.selectionInfo')}
+            aria-pressed={showInfoPanel}
+            onClick={onToggleInfoPanel}
+          >
+            <span className="app-top-bar__info-symbol" aria-hidden>
+              ⌬
+            </span>
+          </button>
         ) : null}
       </div>
       {isCompact ? (
@@ -1052,6 +1112,7 @@ export function AppTopBar(props: AppTopBarProps) {
                 className="mobile-sheet-search__go md-btn md-btn--primary"
                 onClick={onQuickSearch}
                 disabled={quickSearchLoading || !quickSearch.trim()}
+                data-piqo-event="search"
               >
                 {t('topBar.search')}
               </button>

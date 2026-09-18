@@ -43,8 +43,8 @@ function beginResize(
     currentY: ctx.worldPos.y,
     origText: { ...orig, boxWidth: box.width, boxHeight: box.height },
     corner,
-    minW: content.width,
-    minH: content.height,
+    minW: 56,
+    minH: Math.min(content.height, 28),
   });
 }
 

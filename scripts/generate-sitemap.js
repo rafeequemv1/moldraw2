@@ -10,8 +10,8 @@ const OUT_INDEX = path.join(PUBLIC, "sitemap.xml");
 const BASE = "https://www.moldraw.com";
 const TODAY = new Date().toISOString().slice(0, 10);
 
-const SKIP_DIRS = new Set(["ketcher", "dashboard"]);
-const SKIP_FILES = new Set(["ketcher-editor.html", "ketcher-bridge.html"]);
+const SKIP_DIRS = new Set(["ketcher", "dashboard", "community"]);
+const SKIP_FILES = new Set(["ketcher-editor.html", "ketcher-bridge.html", "_legacy-cra-index.html"]);
 
 function walk(dir) {
   const entries = [];
@@ -76,6 +76,11 @@ function changefreqFor(url) {
 
 const files = walk(PUBLIC).filter((file) => !SKIP_FILES.has(path.basename(file)));
 const urlSet = new Map();
+
+const homeHtml = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+if (!isNoindex(homeHtml)) {
+  urlSet.set(`${BASE}/`, { url: `${BASE}/`, file: "index.html" });
+}
 
 for (const file of files) {
   const rel = path.relative(PUBLIC, file).split(path.sep).join("/");

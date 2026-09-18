@@ -1,3 +1,4 @@
+import { DEFAULT_ATOM_INK } from '@moldraw/domain';
 import { handleCanvasTextPointerDown } from './canvasTextPointer';
 import { pickAtomAt } from './hitTest';
 import type { InteractionContext } from './types';
@@ -25,10 +26,14 @@ export const textToolMouseDown = (ctx: InteractionContext): boolean => {
       y: worldPos.y,
       text: '',
       fontSize: 22,
-      color: '#0f172a',
+      // Document default ink — never the Color-menu / atom–bond paint color.
+      color: DEFAULT_ATOM_INK,
       fontWeight: 'normal',
       fontStyle: 'normal',
       textDecoration: 'none',
+      textAlign: 'left',
+      boxWidth: 200,
+      boxHeight: 40,
     });
   }
   return true;

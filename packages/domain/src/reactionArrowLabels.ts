@@ -13,7 +13,7 @@ export const reactionArrowSupportsReagentLabels = (kind?: ReactionArrowKind): bo
   !REAGENT_LABEL_EXCLUDED_KINDS.has(kind ?? 'straight');
 
 /** Default canvas px for reagent / condition text when no size is stored. */
-export const DEFAULT_REAGENT_FONT_SIZE = 16;
+export const DEFAULT_REAGENT_FONT_SIZE = 22;
 
 export const REAGENT_FONT_SIZE_MIN = 8;
 export const REAGENT_FONT_SIZE_MAX = 36;

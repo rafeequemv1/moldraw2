@@ -47,6 +47,10 @@ export interface KeyboardShortcutsOptions {
   aliasEditorOpen?: boolean;
   /** Synchronous open flag (atom id) so keys before React re-render are not stolen. */
   aliasEditorOpenRef?: { current: string | null };
+  /** Canvas text box is selected / inline editor is up. */
+  canvasTextEditorOpen?: boolean;
+  /** Sync flag so Space is not stolen as hand-pan before React re-renders. */
+  canvasTextEditorOpenRef?: { current: boolean };
   onOpenShortcuts?: () => void;
   on3DCleanUp?: () => void;
   onTogglePerspective?: () => void;
@@ -86,6 +90,8 @@ export function useKeyboardShortcuts({
   onTypeAtomLabel,
   aliasEditorOpen,
   aliasEditorOpenRef,
+  canvasTextEditorOpen,
+  canvasTextEditorOpenRef,
   onOpenShortcuts,
   on3DCleanUp,
   onTogglePerspective,
@@ -115,6 +121,8 @@ export function useKeyboardShortcuts({
     onTypeAtomLabel,
     aliasEditorOpen,
     aliasEditorOpenRef,
+    canvasTextEditorOpen,
+    canvasTextEditorOpenRef,
     onOpenShortcuts,
     on3DCleanUp,
     onTogglePerspective,
@@ -145,6 +153,8 @@ export function useKeyboardShortcuts({
       onTypeAtomLabel,
       aliasEditorOpen,
       aliasEditorOpenRef,
+      canvasTextEditorOpen,
+      canvasTextEditorOpenRef,
       onOpenShortcuts,
       on3DCleanUp,
       onTogglePerspective,
@@ -164,7 +174,10 @@ export function useKeyboardShortcuts({
       const bindings = resolveShortcutBindings(cb.shortcutOverrides);
       const match = (id: Parameters<typeof eventMatchesAction>[1]) =>
         eventMatchesAction(e, id, bindings);
-      const inText = isTextInputTarget(e.target);
+      const editingCanvasText = Boolean(
+        cb.canvasTextEditorOpenRef?.current || cb.canvasTextEditorOpen,
+      );
+      const inText = isTextInputTarget(e.target) || editingCanvasText;
 
       if (e.key === 'Escape' || (!inText && match('cancel'))) {
         if (e.key !== 'Escape') e.preventDefault();
@@ -406,6 +419,10 @@ export function useKeyboardShortcuts({
     const onKeyUp = (e: KeyboardEvent) => {
       const cb = cbRef.current;
       const bindings = resolveShortcutBindings(cb.shortcutOverrides);
+      const editingCanvasText = Boolean(
+        cb.canvasTextEditorOpenRef?.current || cb.canvasTextEditorOpen,
+      );
+      if (isTextInputTarget(e.target) || editingCanvasText) return;
       if (eventMatchesAction(e, 'tempSelect', bindings) || e.code === 'Space') {
         e.preventDefault();
         cb.setActiveTool(previousToolRef.current);

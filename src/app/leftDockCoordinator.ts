@@ -1,9 +1,11 @@
 import { claimLeftDock, type LeftDockId } from './leftDockExclusive';
 
-const STYLE_CLOSE = '.format-left-panel.mol-color-side-panel .format-left-panel__close';
+const STYLE_CLOSE =
+  '.format-left-panel.mol-color-side-panel:not(.text-style-left-dock) .format-left-panel__close';
 const PARAMS_CLOSE = '.left-params-dock .format-left-panel__close';
 const OBJECTS_CLOSE =
   '.objects-panel:not(.objects-panel--sheet) [aria-label="Close objects panel"]';
+const TEXT_CLOSE = '.text-style-left-dock .format-left-panel__close';
 
 let active: LeftDockId | null = null;
 let closing = false;
@@ -20,6 +22,7 @@ function closeExcept(keep: LeftDockId): void {
     if (keep !== 'style') clickAll(STYLE_CLOSE);
     if (keep !== 'params') clickAll(PARAMS_CLOSE);
     if (keep !== 'objects') clickAll(OBJECTS_CLOSE);
+    if (keep !== 'text') clickAll(TEXT_CLOSE);
   } finally {
     queueMicrotask(() => {
       closing = false;
@@ -51,6 +54,9 @@ function nodeOpensPanel(node: Node): LeftDockId | null {
   ) {
     return 'apparatus';
   }
+  if (node.matches?.('.text-style-left-dock') || node.querySelector?.('.text-style-left-dock')) {
+    return 'text';
+  }
   return null;
 }
 
@@ -71,7 +77,9 @@ function installLeftDockCoordinator(): void {
         }
       }
     }
-    if (!opened && root.classList.contains('format-left-panel-open')) {
+    if (!opened && document.querySelector('.text-style-left-dock')) {
+      opened = 'text';
+    } else if (!opened && root.classList.contains('format-left-panel-open')) {
       opened = 'style';
     }
     if (opened) setActive(opened);
@@ -80,7 +88,8 @@ function installLeftDockCoordinator(): void {
       !root.classList.contains('format-left-panel-open') &&
       !document.querySelector('.left-params-dock:not(:empty) .left-params-panel') &&
       !document.querySelector('.objects-panel:not(.objects-panel--sheet)') &&
-      !document.querySelector('.toolbar-split-tool__menu--left-dock')
+      !document.querySelector('.toolbar-split-tool__menu--left-dock') &&
+      !document.querySelector('.text-style-left-dock')
     ) {
       active = null;
     }

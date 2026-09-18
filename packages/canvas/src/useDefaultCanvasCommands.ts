@@ -15,6 +15,7 @@ import type {
   ReactionArrowUpdatePatch,
   Stroke,
 } from '@moldraw/domain';
+import { DEFAULT_ATOM_INK } from '@moldraw/domain';
 import type { MoleculeEditor } from '@moldraw/core';
 import { CMD } from '@moldraw/core';
 import { normalizeHexColor, sruBracketBoxForAtoms } from '@moldraw/core';
@@ -420,8 +421,10 @@ export function useDefaultCanvasCommands({
         fontStyle: 'normal',
         textDecoration: 'none',
         fontFamily,
+        textAlign: t.textAlign ?? 'left',
         ...t,
         fontSize: t.fontSize ?? fontSizePt,
+        color: t.color?.trim() ? t.color : DEFAULT_ATOM_INK,
       };
       applyCommand(CMD.AddCanvasText, { text: full });
       store.setSelection({ canvasTextId: full.id });

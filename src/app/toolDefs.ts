@@ -368,7 +368,7 @@ export const TOOL_IDS_LEFT_SELECT: readonly string[] = [
 /** Select split menu (Ketcher two-click: first click Select, second click opens). */
 export const SELECT_MENU_TOOL_IDS = ['select', 'lasso_select', 'fragment_select'] as const;
 
-/** Left rail: charge / overflow / lone pair, after the erase divider. H+ / C+ live on the top bar after Clear. */
+/** Left rail: charge / overflow / lone pair, after the erase divider. H+ / C+ live on the AI/3D tools row after Clear. */
 export const TOOL_IDS_LEFT_MARKS: readonly string[] = [
   'charge_plus',
   'charge_minus',
@@ -427,7 +427,7 @@ export const MOBILE_TOOL_CATEGORIES: {
   { id: 'rings', label: 'Rings' },
   { id: 'annotate', label: 'Bonds' },
   // 'objects' is a valid category id (header objects-list button) but is not a
-  // dock tab: on compact the list icon lives in the header, like desktop.
+  // dock tab: on compact the list icon lives in the AI/3D tools row, like desktop.
   { id: 'more', label: 'More' },
 ];
 
@@ -440,7 +440,10 @@ export const MOBILE_CATEGORY_TOOL_IDS: Record<MobileToolCategory, readonly strin
     'smart_draw',
     'charge_plus',
     'charge_minus',
+    'oplus',
     'lone_pair',
+    'add_explicit_h',
+    'add_explicit_c',
     'single_bond',
     'chain',
   ],

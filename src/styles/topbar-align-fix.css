@@ -16,13 +16,15 @@
 }
 
 /* Beat later toolbar.css `.tool-btn` 34×30 so Draw matches AI / 3D / Objects. */
-.app-top-bar .app-top-bar__tools-row .action-btn.icon-only {
+.app-top-bar .app-top-bar__tools-row .action-btn.icon-only,
+.app-top-bar .app-top-bar__tools-row > .app-top-bar__tools-cluster > .tool-btn {
   width: 28px;
   height: 28px;
   padding: 0;
 }
 
-.app-top-bar .app-top-bar__tools-row .action-btn.icon-only svg {
+.app-top-bar .app-top-bar__tools-row .action-btn.icon-only svg,
+.app-top-bar .app-top-bar__tools-row > .app-top-bar__tools-cluster > .tool-btn svg {
   width: 18px;
   height: 18px;
 }
@@ -32,7 +34,9 @@
   width: auto;
   min-width: 28px;
   height: 28px;
-  padding: 0 4px !important;
+  min-height: 28px;
+  padding: 0 8px !important;
+  box-sizing: border-box;
 }
 
 .app-top-bar .app-top-bar__tools-row .app-top-bar__history-btn {

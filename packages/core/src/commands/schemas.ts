@@ -297,7 +297,21 @@ const canvasText = z.object({
   textDecoration: z.enum(['none', 'underline']).describe('Underline the whole text: none or underline.').optional(),
   textScript: z
     .enum(['normal', 'super', 'sub'])
-    .describe('Whole-box script style: normal, super (superscript), sub (subscript).')
+    .describe('Legacy whole-box script style: normal, super, sub. Prefer textScripts ranges.')
+    .optional(),
+  textScripts: z
+    .array(
+      z.object({
+        start: z.number().int().nonnegative().describe('UTF-16 start index (inclusive).'),
+        end: z.number().int().nonnegative().describe('UTF-16 end index (exclusive).'),
+        script: z.enum(['super', 'sub']).describe('Script applied to [start, end).'),
+      }),
+    )
+    .describe('Per-character superscript / subscript ranges.')
+    .optional(),
+  textAlign: z
+    .enum(['left', 'center', 'right'])
+    .describe('Horizontal alignment inside the text box.')
     .optional(),
 });
 

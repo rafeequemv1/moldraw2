@@ -50,7 +50,6 @@ export function InlineArrowReagentEditor({
         type="text"
         className="arrow-reagent-inline__input"
         spellCheck={false}
-        placeholder={slot === 'above' ? 'H2SO4' : 'Conditions'}
         value={draft}
         style={{ fontSize: `${Math.max(11, fontSize * position.zoom)}px` }}
         onPointerDown={e => e.stopPropagation()}

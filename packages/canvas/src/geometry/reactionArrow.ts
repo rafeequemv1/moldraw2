@@ -609,17 +609,100 @@ export const reactionArrowReagentLabelAnchor = (
 
 export type ReactionArrowReagentSlot = 'above' | 'below';
 
+/** Matches `drawReagentLabels` / plus-chip layout (world px). */
+const REAGENT_SLOT_BASE_OFF = 18;
+const REAGENT_FONT_OFF_FACTOR = 0.45;
+const REAGENT_LINE_GAP_FACTOR = 1.18;
+const REAGENT_CHAR_W_FACTOR = 0.56;
+const ARROW_SHAFT_AABB_PAD = 8;
+/** World radius so empty “+” chips sit inside the selection box (not on the edge). */
+const REAGENT_CHIP_AABB_R = 14;
+
+const reagentSlotOffset = (fontSize: number): number =>
+  REAGENT_SLOT_BASE_OFF + fontSize * REAGENT_FONT_OFF_FACTOR;
+
+const reagentLines = (text: string | undefined): string[] =>
+  (text ?? '')
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean);
+
 /** World positions for reagent label slots (above / below the shaft). */
 export const reactionArrowReagentSlotPositions = (
   a: ReactionArrow,
 ): Record<ReactionArrowReagentSlot, { x: number; y: number }> => {
   const { mx, my, nx, ny } = reactionArrowReagentLabelAnchor(a);
-  const aboveOff = 18 + resolveReagentFontSize(a, 'above') * 0.45;
-  const belowOff = 18 + resolveReagentFontSize(a, 'below') * 0.45;
+  const aboveOff = reagentSlotOffset(resolveReagentFontSize(a, 'above'));
+  const belowOff = reagentSlotOffset(resolveReagentFontSize(a, 'below'));
   return {
     above: { x: mx + nx * aboveOff, y: my + ny * aboveOff },
     below: { x: mx - nx * belowOff, y: my - ny * belowOff },
   };
+};
+
+/**
+ * Visible AABB for a selected reaction arrow: shaft plus reagent text and
+ * empty “+” chip loci so the transform box grows when labels are added.
+ */
+export const reactionArrowSelectionAabb = (
+  a: ReactionArrow,
+): { minX: number; maxX: number; minY: number; maxY: number } => {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  const include = (x: number, y: number, pad = 0) => {
+    minX = Math.min(minX, x - pad);
+    maxX = Math.max(maxX, x + pad);
+    minY = Math.min(minY, y - pad);
+    maxY = Math.max(maxY, y + pad);
+  };
+  const includeRotatedRect = (cx: number, cy: number, hw: number, hh: number, angle: number) => {
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    for (const [dx, dy] of [
+      [-hw, -hh],
+      [hw, -hh],
+      [-hw, hh],
+      [hw, hh],
+    ] as const) {
+      include(cx + dx * c - dy * s, cy + dx * s + dy * c);
+    }
+  };
+
+  for (const p of sampleReactionArrowPolyline(a)) {
+    include(p.x, p.y, ARROW_SHAFT_AABB_PAD);
+  }
+
+  if (reactionArrowSupportsReagentLabels(a.kind)) {
+    const { mx, my, nx, ny, angle } = reactionArrowReagentLabelAnchor(a);
+    const slots = reactionArrowReagentSlotPositions(a);
+    for (const slot of ['above', 'below'] as const) {
+      const lines = reagentLines(slot === 'above' ? a.reagentAbove : a.reagentBelow);
+      const fs = resolveReagentFontSize(a, slot);
+      if (lines.length === 0) {
+        const p = slots[slot];
+        include(p.x, p.y, REAGENT_CHIP_AABB_R);
+        continue;
+      }
+      const sign = slot === 'above' ? 1 : -1;
+      const lineGap = fs * REAGENT_LINE_GAP_FACTOR;
+      const baseOff = reagentSlotOffset(fs);
+      lines.forEach((line, li) => {
+        const off = baseOff + li * lineGap;
+        const px = mx + sign * nx * off;
+        const py = my + sign * ny * off;
+        const hw = Math.max(fs * 0.6, line.length * fs * REAGENT_CHAR_W_FACTOR) / 2;
+        const hh = fs * 0.62;
+        includeRotatedRect(px, py, hw, hh, angle);
+      });
+    }
+  }
+
+  if (!Number.isFinite(minX)) {
+    return { minX: a.x1, maxX: a.x2, minY: a.y1, maxY: a.y2 };
+  }
+  return { minX, maxX, minY, maxY };
 };
 
 const REAGENT_SLOT_HIT_R = 18;

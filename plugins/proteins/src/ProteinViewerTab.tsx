@@ -5,6 +5,7 @@ import {
   useState,
 } from 'react';
 import {
+  applyViewer3DCameraPolicy,
   create3DmolViewer,
   disposeViewerHost,
   type Viewer3DExportViewer,
@@ -135,7 +136,22 @@ export function ProteinViewerTab({ backgroundColor = '#f8fafc' }: ProteinViewerT
       return;
     }
     viewerRef.current = viewer;
+    const resizeIfNeeded = () => {
+      const v = viewerRef.current;
+      if (!v) return;
+      if (el.clientWidth < 8 || el.clientHeight < 8) return;
+      try {
+        v.resize();
+        v.render();
+      } catch {
+        /* ignore */
+      }
+    };
+    const ro =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resizeIfNeeded) : null;
+    ro?.observe(el);
     return () => {
+      ro?.disconnect();
       viewerRef.current = null;
       modelLoadedRef.current = false;
       disposeViewerHost(el);
@@ -153,8 +169,29 @@ export function ProteinViewerTab({ backgroundColor = '#f8fafc' }: ProteinViewerT
     }
     viewer.clear();
     viewer.addModel(pdbText, 'pdb');
-    viewer.zoomTo();
+    try {
+      viewer.resize();
+    } catch {
+      /* host may still be settling */
+    }
+    applyViewer3DCameraPolicy(viewer);
     modelLoadedRef.current = true;
+    const id = requestAnimationFrame(() => {
+      const v = viewerRef.current;
+      if (!v || !modelLoadedRef.current) return;
+      try {
+        v.resize();
+      } catch {
+        /* ignore */
+      }
+      applyViewer3DCameraPolicy(v);
+      try {
+        v.render();
+      } catch {
+        /* ignore */
+      }
+    });
+    return () => cancelAnimationFrame(id);
   }, [pdbText]);
 
   useEffect(() => {

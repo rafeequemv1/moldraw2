@@ -54,7 +54,12 @@ export {
 } from './lonePairLayout';
 export {
   buildCanvasTextFont,
+  buildCanvasTextFontAtSize,
   canvasTextEffectiveFontSize,
+  canvasTextLineHeight,
+  canvasTextAlign,
+  wrapCanvasTextLines,
+  wrapCanvasTextLinesIndexed,
   measureCanvasTextBox,
   measureCanvasTextContentSize,
   getCanvasTextBox,
@@ -78,7 +83,21 @@ export {
   textLocalToWorld,
   type CanvasTextBox,
   type CanvasTextResizeCorner,
+  type WrappedCanvasTextLine,
 } from './canvasText';
+export {
+  CANVAS_TEXT_SCRIPT_SCALE,
+  canvasTextScriptDy,
+  normalizeTextScriptRanges,
+  resolveCanvasTextScripts,
+  scriptAtIndex,
+  selectionHasUniformScript,
+  toggleTextScriptRange,
+  remapTextScriptRanges,
+  inferTextEdit,
+  type CanvasTextScriptKind,
+  type CanvasTextScriptRange,
+} from './canvasTextScripts';
 export { bestSproutAngle, bestRingAttachGrowAngle } from './sproutAngle';
 export {
   pickSruBracketAt,
@@ -198,6 +217,7 @@ export {
   resolvePathPoints,
   reactionArrowReagentLabelAnchor,
   reactionArrowReagentSlotPositions,
+  reactionArrowSelectionAabb,
   pickReactionArrowReagentSlot,
   type ReactionArrowReagentSlot,
   type ReactionArrowEndpoint,

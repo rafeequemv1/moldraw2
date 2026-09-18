@@ -18,10 +18,10 @@ import {
 import { Viewer3DExportBar } from './export';
 import type { Viewer3DExportViewer } from './export';
 import {
+  applyViewer3DCameraPolicy,
   atomsFromViewerModels,
   create3DmolViewer,
   disposeViewerHost,
-  frameViewerSelection,
   retargetViewerToAtomCentroid,
   type Viewer3DHandle,
 } from './create3DmolViewer';
@@ -618,9 +618,10 @@ function Molecule3DPanelInner({
         applyStereoOverlays(viewer, models, stereoHintsRef.current, stereoIssuesRef.current);
         if (savedView) restoreViewerView(viewer, savedView);
         if (!hadModelRef.current) {
-          frameViewerSelection(viewer, {}, true);
+          applyViewer3DCameraPolicy(viewer, atomsFromViewerModels(models));
+        } else {
+          retargetViewerToAtomCentroid(viewer, atomsFromViewerModels(models));
         }
-        retargetViewerToAtomCentroid(viewer, atomsFromViewerModels(models));
         hadModelRef.current = true;
         if (surfaceSettings.kind) {
           applyViewerSurface({
@@ -755,8 +756,7 @@ function Molecule3DPanelInner({
         viewer.render();
         return;
       }
-      frameViewerSelection(viewer, {}, true);
-      retargetViewerToAtomCentroid(viewer, atomsFromViewerModels(modelsRef.current));
+      applyViewer3DCameraPolicy(viewer, atomsFromViewerModels(modelsRef.current));
       viewer.render();
     };
 

@@ -36,7 +36,6 @@ export const COLOR_TARGET_GROUPS = {
     { key: 'ringFill' as const, label: 'Ring fill' },
   ],
   annotation: [
-    { key: 'text' as const, label: 'Text / font' },
     { key: 'arrowLine' as const, label: 'Arrow line' },
     { key: 'arrowReagent' as const, label: 'Reagent label' },
     { key: 'strokes' as const, label: 'Pencil stroke' },
@@ -282,7 +281,11 @@ export function getSelectionColorCapabilities(
   const canAtoms = selectedAtomIds.length > 0;
   const canBonds = bondIds.length > 0;
   const canRingFill = ringPaths.length > 0;
-  const canText = selectedCanvasText != null;
+  // Canvas text color is owned by the left-dock TextStylePanel, never the
+  // molecule Color menu / atom–bond paint. Keep canText false so picking a
+  // swatch cannot recolor a label (or individual glyphs) while typing.
+  const canText = false;
+  void selectedCanvasText;
   const canArrowLine = selectedReactionArrow != null;
   const canArrowReagent = selectedReactionArrow != null;
   const strokeId = opts?.selectedStrokeId ?? null;

@@ -426,6 +426,8 @@ export function ToolbarSplitTool<T extends string>({
         title={`${toolTitle} (${currentLabel}). Click to use; click again for options.`}
         aria-label={toolLabel}
         aria-pressed={isActive}
+        data-piqo-event="toolbar"
+        data-piqo-tool={toolId}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}

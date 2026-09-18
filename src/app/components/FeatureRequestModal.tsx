@@ -1,5 +1,6 @@
 import { useState, type ClipboardEvent, type FormEvent } from 'react';
 import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
+import { trackEvent } from '../../lib/trackEvent';
 import { useChromeOverlay } from '../chromeDismiss';
 
 export interface FeatureRequestModalProps {
@@ -93,14 +94,17 @@ export function FeatureRequestModal({ open, defaultEmail, onClose }: FeatureRequ
         const { data } = supabase.storage.from('feature-request-images').getPublicUrl(path);
         if (data?.publicUrl) imageUrls.push(data.publicUrl);
       }
+      const { data: authData } = await supabase.auth.getUser();
       const { error: insertError } = await supabase.from('feature_requests').insert({
         email: nextEmail,
         name: displayNameFromEmail(nextEmail),
         title: nextTitle,
         description: nextDescription,
         image_urls: imageUrls,
+        ...(authData?.user?.id ? { user_id: authData.user.id } : {}),
       });
       if (insertError) throw insertError;
+      trackEvent('feature_request_submit');
       setNotice('Thanks — your request was sent.');
       setTitle('');
       setDescription('');
@@ -114,7 +118,7 @@ export function FeatureRequestModal({ open, defaultEmail, onClose }: FeatureRequ
 
   return (
     <div className="feature-request-backdrop">
-      <form className="feature-request-modal" onSubmit={onSubmit} onPaste={onPasteImages}>
+      <form className="feature-request-modal" onSubmit={onSubmit} onPaste={onPasteImages} data-piqo-event="feature_request">
         <div className="feature-request-header">
           <div>
             <div className="feature-request-title">Request a feature</div>

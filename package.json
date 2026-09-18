@@ -6,7 +6,7 @@
     "packageManager":  "pnpm@10.11.0",
     "scripts":  {
                     "dev":  "vite",
-                    "build":  "node scripts/generate-sitemap.js \u0026\u0026 vite build",
+                    "build":  "node scripts/ensure-piqo-snippet.js && node scripts/generate-sitemap.js && vite build",
                     "sitemap":  "node scripts/generate-sitemap.js",
                     "preview":  "vite preview"
                 },

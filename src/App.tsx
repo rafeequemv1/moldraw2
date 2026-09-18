@@ -1681,12 +1681,21 @@ function App() {
     );
   }, [editingAtomAliasId, selectedCanvasTextId, editingArrowReagent]);
 
+  useEffect(() => {
+    setShowRightFontPanel(Boolean(selectedCanvasTextId));
+  }, [selectedCanvasTextId]);
+
+  const canvasTextEditorOpenRef = useRef(false);
+  canvasTextEditorOpenRef.current = Boolean(selectedCanvasTextId && !canvasTextTransforming);
+
   useKeyboardShortcuts({
     activeTool,
     setActiveTool,
     onPickTool: handleToolbarSelectWithPerspective,
     selectedAtomId: selectedAtomIds.length === 1 ? selectedAtomIds[0] : null,
     hoverAtomIdRef,
+    canvasTextEditorOpen: Boolean(selectedCanvasTextId && !canvasTextTransforming),
+    canvasTextEditorOpenRef,
     onEscape: () => {
       canvasRef.current?.discardSmartDrawSession();
       handleEscape();
@@ -2222,7 +2231,7 @@ function App() {
               ) : null
             }
             toolsRow={
-              !isCompactViewport && !showDrawTools ? (
+              isCompactViewport || !showDrawTools ? (
                 <ToolbarTopStrip
                   activeTool={activeTool}
                   onSelect={handleToolbarSelectWithPerspective}
@@ -2251,15 +2260,6 @@ function App() {
             }
             contextRow={
               <>
-                {selectedCanvasText ? (
-                  <TextStylePanel
-                    variant="topbar"
-                    selectedCanvasText={selectedCanvasText}
-                    onUpdate={handleUpdateCanvasText}
-                    onInsertSymbol={handleInsertChemSymbol}
-                    onClose={() => setSelectedCanvasTextId(null)}
-                  />
-                ) : null}
                 {!selectedReactionArrow ? (
                   <CofsPackingBar
                     molecule={molecule}
@@ -2321,13 +2321,16 @@ function App() {
             showInfoPanel={showInfoPanel}
             onToggleInfoPanel={toggleInfoPanel}
             showTextStylePanel={showRightFontPanel}
-            onToggleTextStylePanel={() => setShowRightFontPanel(v => !v)}
+            onToggleTextStylePanel={() => setShowRightFontPanel(true)}
             show3DViewer={show3DViewer}
             onToggle3DViewer={() => setShow3DViewer(v => !v)}
             canUndo={canUndo}
             canRedo={canRedo}
             onUndo={handleUndo}
             onRedo={handleRedo}
+            onZoomIn={() => zoomCanvasAtCenter(1.2)}
+            onZoomOut={() => zoomCanvasAtCenter(1 / 1.2)}
+            onFitView={fitAllObjectsOnCanvas}
             showChatPanel={showChatPanel}
             onToggleChatPanel={() => setShowChatPanel(v => !v)}
             showObjectsPanel={showObjectsPanel}
@@ -2470,9 +2473,17 @@ function App() {
               omitCanvasTextBodyId={
                 // The HTML editor renders the letters whenever a text is
                 // selected (not just focused); drawing them on canvas too would
-                // double the glyphs. During move/resize/rotate the overlay is
+                // double the glyphs. Super/sub ranges are painted on canvas,
+                // so keep the body when any script spans exist (editor glyphs
+                // go transparent). During move/resize/rotate the overlay is
                 // unmounted and the canvas takes over with the drag preview.
-                canvasTextTransforming || !inlineEditorPos ? null : selectedCanvasTextId
+                canvasTextTransforming ||
+                !inlineEditorPos ||
+                (selectedCanvasText?.textScripts?.length ?? 0) > 0 ||
+                selectedCanvasText?.textScript === 'super' ||
+                selectedCanvasText?.textScript === 'sub'
+                  ? null
+                  : selectedCanvasTextId
               }
               onCanvasTextTransforming={setCanvasTextTransforming}
               reactionArrowKind={reactionArrowKind}
@@ -2771,6 +2782,15 @@ function App() {
         />
       )}
 
+      {selectedCanvasText && showRightFontPanel ? (
+        <TextStylePanel
+          selectedCanvasText={selectedCanvasText}
+          onUpdate={handleUpdateCanvasText}
+          onInsertSymbol={handleInsertChemSymbol}
+          onClose={() => setShowRightFontPanel(false)}
+        />
+      ) : null}
+
       {selectedCanvasText && inlineEditorPos && !canvasTextTransforming && (
         <InlineTextEditor
           ref={inlineTextareaRef}
@@ -2779,7 +2799,10 @@ function App() {
           onUpdate={handleUpdateCanvasText}
           onMount={handleInlineEditorMount}
           themeInk={structureTheme.ink}
-          onFocus={() => setInlineEditorFocused(true)}
+          onFocus={() => {
+            setInlineEditorFocused(true);
+            setShowRightFontPanel(true);
+          }}
           onBlur={() => setInlineEditorFocused(false)}
           onEscape={() => {
             setInlineEditorFocused(false);

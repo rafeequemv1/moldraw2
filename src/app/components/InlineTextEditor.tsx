@@ -1,27 +1,23 @@
 /**
  * In-place editor for a selected `CanvasText`.
  *
- * The textarea is laid out with the *same* geometry the canvas uses
- * (`canvasTextEditorLayout`): identical box, font, line-height and vertical
- * centring, rotated about the box centre. The canvas keeps drawing the
- * transform frame + handles underneath; only the letters are swapped for the
- * live textarea, so what you type is exactly where the label renders.
- *
- * The textarea is inset from the frame by the handle size so the corner /
- * edge strip stays on the canvas — drag the frame to move, corners to
- * resize, the knob above to rotate — even while typing.
- *
- * Formatting (bold / italic / sub / super / symbols) lives in the top toolbar.
+ * Geometry matches the canvas (`canvasTextEditorLayout`). Formatting lives in
+ * the left-dock TextStylePanel — not the molecule Color menu or top bar.
  */
-import { forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, type ForwardedRef } from 'react';
 import type { CanvasText } from '@moldraw/domain';
 import {
   buildCanvasTextFont,
+  canvasTextAlign,
   canvasTextEditorLayout,
   canvasTextEffectiveFontSize,
   canvasTextFitContentPatch,
+  inferTextEdit,
+  remapTextScriptRanges,
   resolveCanvasTextInk,
+  resolveCanvasTextScripts,
 } from '@moldraw/canvas/geometry';
+import { bindInlineTextCaretEl, getInlineTextCaret, setInlineTextCaret } from '../inlineTextCaret';
 
 export interface InlineTextEditorProps {
   selectedCanvasText: CanvasText;
@@ -49,6 +45,11 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
 /** Handle half-size in screen px — mirrors `drawCanvasTexts` (`max(4.5, 5.5/zoom)` world). */
 const handleInsetPx = (zoom: number): number => Math.max(4.5 * zoom, 5.5) + 1;
 
+function assignRef<T>(ref: ForwardedRef<T>, value: T | null): void {
+  if (typeof ref === 'function') ref(value);
+  else if (ref) ref.current = value;
+}
+
 export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditorProps>(
   function InlineTextEditor(
     { selectedCanvasText, position, onUpdate, onFocus, onBlur, onEscape, onMount, themeInk },
@@ -57,7 +58,13 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
     const t = selectedCanvasText;
     const ink = resolveCanvasTextInk(t, themeInk ?? t.color);
     const blurTimer = useRef<number | null>(null);
+    const innerRef = useRef<HTMLTextAreaElement | null>(null);
+    const tRef = useRef(t);
+    tRef.current = t;
+    const onUpdateRef = useRef(onUpdate);
+    onUpdateRef.current = onUpdate;
     const z = position.zoom;
+    const align = canvasTextAlign(t);
 
     const onMountRef = useRef(onMount);
     onMountRef.current = onMount;
@@ -78,15 +85,108 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
       }
     };
 
+    const syncCaretFromEl = (el: HTMLTextAreaElement) => {
+      // Ignore select/collapse that fires after focus has already left (toolbar).
+      if (typeof document !== 'undefined' && document.activeElement !== el) return;
+      setInlineTextCaret(el.selectionStart ?? 0, el.selectionEnd ?? 0);
+    };
+
+    useEffect(() => () => bindInlineTextCaretEl(null), []);
+
     const handleChange = useCallback(
       (value: string) => {
         const ctx = getMeasureCtx();
-        const next: CanvasText = { ...t, text: value };
+        const edit = inferTextEdit(t.text, value, getInlineTextCaret());
+        const nextScripts = remapTextScriptRanges(
+          resolveCanvasTextScripts(t),
+          edit.start,
+          edit.end,
+          edit.insertLen,
+          value.length,
+        );
+        const next: CanvasText = {
+          ...t,
+          text: value,
+          textScripts: nextScripts,
+          textScript: 'normal',
+        };
         const fit = ctx ? canvasTextFitContentPatch(ctx, next) : {};
-        onUpdate(t.id, { text: value, ...fit });
+        onUpdate(t.id, { text: value, textScripts: nextScripts, textScript: 'normal', ...fit });
       },
       [onUpdate, t],
     );
+
+    // Capture-phase: Space / letters must reach this editor even if the canvas
+    // still has focus. Global hand-pan / tool shortcuts must not eat them.
+    useEffect(() => {
+      const onKeyDown = (e: KeyboardEvent) => {
+        const ta = innerRef.current;
+        if (!ta) return;
+        if (e.isComposing) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        const isSpace = e.key === ' ' || e.code === 'Space';
+        const isPrintable = isSpace || (e.key.length === 1 && e.key !== 'Enter');
+        if (!isPrintable) return;
+
+        const ae = document.activeElement as HTMLElement | null;
+        const inField =
+          ae &&
+          (ae === ta ||
+            ae.tagName === 'INPUT' ||
+            ae.tagName === 'TEXTAREA' ||
+            ae.tagName === 'SELECT' ||
+            ae.isContentEditable);
+        if (inField) {
+          if (ae === ta && isSpace) e.stopPropagation();
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        const ch = isSpace ? ' ' : e.key;
+        const cur = tRef.current;
+        const start = ta.selectionStart ?? cur.text.length;
+        const end = ta.selectionEnd ?? start;
+        const next = cur.text.slice(0, start) + ch + cur.text.slice(end);
+        const nextScripts = remapTextScriptRanges(
+          resolveCanvasTextScripts(cur),
+          start,
+          end,
+          ch.length,
+          next.length,
+        );
+        const ctx = getMeasureCtx();
+        const fitted = ctx
+          ? canvasTextFitContentPatch(ctx, { ...cur, text: next, textScripts: nextScripts })
+          : {};
+        onUpdateRef.current(cur.id, {
+          text: next,
+          textScripts: nextScripts,
+          textScript: 'normal',
+          ...fitted,
+        });
+        ta.focus({ preventScroll: true });
+        requestAnimationFrame(() => {
+          const pos = start + ch.length;
+          ta.setSelectionRange(pos, pos);
+          setInlineTextCaret(pos, pos);
+        });
+      };
+      const onKeyUp = (e: KeyboardEvent) => {
+        if (e.code === 'Space' || e.key === ' ') {
+          e.stopPropagation();
+          if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        }
+      };
+      window.addEventListener('keydown', onKeyDown, true);
+      window.addEventListener('keyup', onKeyUp, true);
+      return () => {
+        window.removeEventListener('keydown', onKeyDown, true);
+        window.removeEventListener('keyup', onKeyUp, true);
+      };
+    }, []);
 
     if (!layout) return null;
 
@@ -98,6 +198,7 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
     const fsPx = canvasTextEffectiveFontSize(t) * z;
     const font = buildCanvasTextFont(t);
     const fontFamily = font.slice(font.indexOf('px ') + 3);
+    const hideGlyphs = resolveCanvasTextScripts(t).length > 0;
 
     return (
       <div
@@ -115,17 +216,26 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
         }}
       >
         <textarea
-          ref={ref}
+          ref={el => {
+            innerRef.current = el;
+            assignRef(ref, el);
+            bindInlineTextCaretEl(el);
+          }}
           className="canvas-inline-text"
           value={t.text}
           placeholder="Text"
-          wrap="off"
+          wrap="soft"
           onChange={e => handleChange(e.target.value)}
+          onSelect={e => syncCaretFromEl(e.currentTarget)}
+          onClick={e => syncCaretFromEl(e.currentTarget)}
+          onPointerUp={e => syncCaretFromEl(e.currentTarget)}
           onPointerDown={e => e.stopPropagation()}
           onMouseDown={e => e.stopPropagation()}
           onFocus={() => {
             clearBlurTimer();
             onFocus();
+            const el = innerRef.current;
+            if (el) syncCaretFromEl(el);
           }}
           onBlur={() => {
             clearBlurTimer();
@@ -133,12 +243,16 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
           }}
           onKeyDown={e => {
             e.stopPropagation();
-            // Esc or Ctrl/Cmd+Enter finishes editing (Enter alone = new line).
+            syncCaretFromEl(e.currentTarget);
             if (e.key === 'Escape' || (e.key === 'Enter' && (e.ctrlKey || e.metaKey))) {
               e.preventDefault();
               (e.currentTarget as HTMLTextAreaElement).blur();
               onEscape?.();
             }
+          }}
+          onKeyUp={e => {
+            e.stopPropagation();
+            syncCaretFromEl(e.currentTarget);
           }}
           spellCheck={false}
           style={{
@@ -150,7 +264,6 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
             display: 'block',
             boxSizing: 'border-box',
             margin: 0,
-            // Vertical centring identical to the canvas: line block centred on cy.
             padding: `${Math.max(0, blockTop * z - inset)}px 0 0 0`,
             border: 'none',
             borderRadius: 0,
@@ -159,15 +272,18 @@ export const InlineTextEditor = forwardRef<HTMLTextAreaElement, InlineTextEditor
             outline: 'none',
             resize: 'none',
             overflow: 'hidden',
-            whiteSpace: 'pre',
-            textAlign: 'center',
+            whiteSpace: 'pre-wrap',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
+            textAlign: align,
             fontSize: `${fsPx}px`,
             lineHeight: `${lineHeight * z}px`,
             fontWeight: t.fontWeight === 'bold' ? 700 : 400,
             fontStyle: t.fontStyle === 'italic' ? 'italic' : 'normal',
             textDecoration: t.textDecoration === 'underline' ? 'underline' : 'none',
             fontFamily,
-            color: ink,
+            color: hideGlyphs ? 'transparent' : ink,
+            WebkitTextFillColor: hideGlyphs ? 'transparent' : undefined,
             caretColor: ink,
             userSelect: 'text',
             pointerEvents: 'auto',

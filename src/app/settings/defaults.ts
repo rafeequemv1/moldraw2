@@ -14,7 +14,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
       atomLabels: false,
       bonds: true,
       ringFill: false,
-      text: true,
+      text: false,
       arrowLine: true,
       arrowReagent: false,
       strokes: true,

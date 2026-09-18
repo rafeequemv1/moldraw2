@@ -7,5 +7,13 @@ export { Molecule3DPanel, type Viewer3DComputeStatus } from './Molecule3DPanel';
 export type { Molecule3DPanelProps } from './Molecule3DPanel';
 export { Viewer3DExportBar, exportViewer3D, captureViewerImage } from './export';
 export type { Viewer3DExportFormat, Viewer3DExportViewer } from './export';
-export { create3DmolViewer, disposeViewerHost } from './create3DmolViewer';
+export {
+  VIEWER_3D_CAMERA_LIMITS,
+  applyViewer3DCameraPolicy,
+  atomsFromViewerModels,
+  create3DmolViewer,
+  disposeViewerHost,
+  frameViewerSelection,
+  retargetViewerToAtomCentroid,
+} from './create3DmolViewer';
 export type { Viewer3DHandle } from './create3DmolViewer';

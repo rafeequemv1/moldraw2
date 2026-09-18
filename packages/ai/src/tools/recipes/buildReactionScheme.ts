@@ -18,7 +18,7 @@ const newId = () => `t-${Math.random().toString(36).slice(2, 10)}`;
 /** Canvas text sizes for reaction schemes inserted from the library / AI tool. */
 const REACTION_TITLE_FONT_SIZE = 18;
 const REACTION_LABEL_FONT_SIZE = 16;
-const REACTION_REAGENT_FONT_SIZE = 16;
+const REACTION_REAGENT_FONT_SIZE = 22;
 
 type Compound = { smiles: string; labelBelow?: string };
 type ArrowSpec = {

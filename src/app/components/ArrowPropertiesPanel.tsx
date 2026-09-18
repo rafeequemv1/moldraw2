@@ -133,7 +133,6 @@ export function ArrowPropertiesPanel({
               ref={aboveRef}
               type="text"
               spellCheck={false}
-              placeholder="H2SO4"
               value={arrow.reagentAbove ?? ''}
               aria-label="Reagent above arrow"
               title="Click above the arrow or type here"
@@ -151,7 +150,6 @@ export function ArrowPropertiesPanel({
               ref={belowRef}
               type="text"
               spellCheck={false}
-              placeholder="Conditions"
               value={arrow.reagentBelow ?? ''}
               aria-label="Reagent below arrow"
               onChange={e => patch({ reagentBelow: e.target.value })}

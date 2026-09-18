@@ -656,8 +656,19 @@ export interface CanvasText {
   fontWeight?: 'normal' | 'bold';
   fontStyle?: 'normal' | 'italic';
   textDecoration?: 'none' | 'underline';
-  /** Whole-box script style (PowerPoint-like). */
+  /** Whole-box script style (legacy). Prefer `textScripts` ranges. */
   textScript?: 'normal' | 'super' | 'sub';
+  /** Per-character script ranges (UTF-16 indices into `text`). */
+  textScripts?: CanvasTextScriptRange[];
+  /** Horizontal alignment inside the box. Missing = left. */
+  textAlign?: 'left' | 'center' | 'right';
+}
+
+/** Superscript / subscript span on a canvas label. */
+export interface CanvasTextScriptRange {
+  start: number;
+  end: number;
+  script: 'super' | 'sub';
 }
 
 /**

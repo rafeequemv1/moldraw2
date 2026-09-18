@@ -5,7 +5,7 @@
 import type { Atom, Molecule } from '@moldraw/domain';
 import { orientFormulaLabel } from '@moldraw/domain';
 import { pointInPolygon, type Point } from './polygons';
-import { sampleReactionArrowPolyline } from './reactionArrow';
+import { reactionArrowSelectionAabb } from './reactionArrow';
 import { getCanvasShapeBox } from './canvasShapeTransform';
 import { canvasTextBbox, estimateCanvasTextAabb } from './canvasText';
 import { hGoesLeft } from './hydrogenLayout';
@@ -62,19 +62,11 @@ export const getMarqueeSelectionAabb = (
   const arrowSet = new Set(sel.reactionArrowIds ?? []);
   for (const a of mol.reactionArrows ?? []) {
     if (!arrowSet.has(a.id)) continue;
-    const pts = sampleReactionArrowPolyline(a);
-    for (const p of pts) {
-      const grown = growAabb(minX, maxX, minY, maxY, {
-        minX: p.x - 8,
-        maxX: p.x + 8,
-        minY: p.y - 8,
-        maxY: p.y + 8,
-      });
-      minX = grown.minX;
-      maxX = grown.maxX;
-      minY = grown.minY;
-      maxY = grown.maxY;
-    }
+    const grown = growAabb(minX, maxX, minY, maxY, reactionArrowSelectionAabb(a));
+    minX = grown.minX;
+    maxX = grown.maxX;
+    minY = grown.minY;
+    maxY = grown.maxY;
   }
 
   const strokeSet = new Set(sel.strokeIds ?? []);

@@ -449,6 +449,8 @@ const renderToolOrArrowRow = (
       title={tool.id === 'pencil' ? undefined : tool.label + ': ' + tool.title + tooltipShortcutSuffix(tool.id)}
       aria-label={tool.label}
       aria-pressed={props.activeTool === tool.id}
+      data-piqo-event="toolbar"
+      data-piqo-tool={tool.id}
     >
       {renderToolIcon(tool.id)}
     </button>

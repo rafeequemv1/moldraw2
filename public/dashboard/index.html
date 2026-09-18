@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script defer src="https://data.moldraw.com/piqo.js" data-site="i9cwwugh"></script>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1029,7 +1030,7 @@
       try {
         const { data: sessionData } = await client.auth.getSession();
         const accessToken = sessionData?.session?.access_token || '';
-        await fetch('/api/community-notify', {
+        const response = await fetch('/api/community-notify', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1042,8 +1043,12 @@
             old_record: { status: previous?.status }
           })
         });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || body.error || (body.skipped && body.skipped !== 'already_sent' && body.skipped !== 'status_unchanged')) {
+          alert(body.error || (body.skipped ? `Status saved, but email was not sent (${body.skipped}).` : 'Status saved, but email notify failed.'));
+        }
       } catch {
-        /* notification delivery is best-effort */
+        alert('Status saved, but the email notify request failed.');
       }
 
       const request = latestFeatureRequests.find((item) => item.id === requestId);

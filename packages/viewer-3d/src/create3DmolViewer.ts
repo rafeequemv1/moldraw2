@@ -233,6 +233,19 @@ const resetCameraLookAtOrigin = (viewer: Viewer3DHandle): void => {
 };
 
 /**
+ * Same framing used by the molecule and protein viewers: zoom to the current
+ * structure, then orbit around its bounding-box center (not world origin).
+ * Zoom limits and pan lock come from `create3DmolViewer`.
+ */
+export const applyViewer3DCameraPolicy = (
+  viewer: Viewer3DHandle,
+  atoms?: ReadonlyArray<ViewerAtomXyz>,
+): void => {
+  frameViewerSelection(viewer, {}, true);
+  retargetViewerToAtomCentroid(viewer, atoms);
+};
+
+/**
  * Point the camera at the current structure's bounding-box center and make that
  * the rotate/orbit pivot. Keeps zoom and orientation (no framing jump).
  */

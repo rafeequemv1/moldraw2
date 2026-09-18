@@ -20,6 +20,8 @@ const PAD_X = 10;
 const PAD_Y = 8;
 const MIN_BOX_W = 56;
 const MIN_BOX_H = 28;
+/** Line box as a multiple of effective font size — enough that wrapped lines never collide. */
+const LINE_HEIGHT_RATIO = 1.35;
 const ROTATE_HANDLE_OFFSET = 26;
 const HANDLE_HIT_R = 8;
 
@@ -38,23 +40,148 @@ export type CanvasTextBox = {
 /** Corner ids for transform handles. */
 export type CanvasTextResizeCorner = 'nw' | 'ne' | 'sw' | 'se';
 
-/** Effective font size after superscript / subscript scaling. */
-export const canvasTextEffectiveFontSize = (t: CanvasText): number => {
-  const script = t.textScript ?? 'normal';
-  if (script === 'super' || script === 'sub') return Math.max(8, t.fontSize * 0.72);
-  return t.fontSize;
-};
+/**
+ * Font size used for wrap / editor / slot width.
+ * Super / sub are drawn smaller *inside* these full-size slots.
+ */
+export const canvasTextEffectiveFontSize = (t: CanvasText): number => t.fontSize;
 
-/** Build a CSS font shorthand from a `CanvasText`'s style fields. */
-export const buildCanvasTextFont = (t: CanvasText): string => {
+/** Build a CSS font shorthand at an explicit pixel size. */
+export const buildCanvasTextFontAtSize = (t: CanvasText, sizePx: number): string => {
   const italic = t.fontStyle === 'italic' ? 'italic ' : '';
   const w = t.fontWeight === 'bold' ? 'bold ' : '';
   const family = t.fontFamily?.trim() || 'Inter';
-  return `${italic}${w}${canvasTextEffectiveFontSize(t)}px ${family}, sans-serif`;
+  return `${italic}${w}${sizePx}px ${family}, sans-serif`;
+};
+
+/** Build a CSS font shorthand from a `CanvasText`'s style fields. */
+export const buildCanvasTextFont = (t: CanvasText): string =>
+  buildCanvasTextFontAtSize(t, canvasTextEffectiveFontSize(t));
+
+export const canvasTextLineHeight = (t: CanvasText): number =>
+  canvasTextEffectiveFontSize(t) * LINE_HEIGHT_RATIO;
+
+export const canvasTextAlign = (t: Pick<CanvasText, 'textAlign'>): CanvasText['textAlign'] =>
+  t.textAlign ?? 'left';
+
+export type WrappedCanvasTextLine = { text: string; start: number };
+
+const splitParagraphs = (source: string): WrappedCanvasTextLine[] => {
+  const paragraphs: WrappedCanvasTextLine[] = [];
+  let start = 0;
+  for (let i = 0; i < source.length; i++) {
+    if (source[i] === '\r' && source[i + 1] === '\n') {
+      paragraphs.push({ text: source.slice(start, i), start });
+      start = i + 2;
+      i++;
+    } else if (source[i] === '\n') {
+      paragraphs.push({ text: source.slice(start, i), start });
+      start = i + 1;
+    }
+  }
+  paragraphs.push({ text: source.slice(start), start });
+  return paragraphs;
 };
 
 /**
- * Measure a multi-line `CanvasText` block.
+ * Wrap `text` to `maxInnerWidth` (world px), keeping each line's UTF-16 start
+ * in the original string. Hard line breaks are kept.
+ */
+export const wrapCanvasTextLinesIndexed = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxInnerWidth: number,
+): WrappedCanvasTextLine[] => {
+  const source = text ?? '';
+  const paragraphs = splitParagraphs(source);
+  const unlimited = !(maxInnerWidth > 8) || !Number.isFinite(maxInnerWidth);
+
+  const breakToken = (token: string, tokenStart: number): WrappedCanvasTextLine[] => {
+    if (!token) return [{ text: '', start: tokenStart }];
+    if (unlimited || ctx.measureText(token).width <= maxInnerWidth) {
+      return [{ text: token, start: tokenStart }];
+    }
+    const parts: WrappedCanvasTextLine[] = [];
+    let chunk = '';
+    let chunkStart = tokenStart;
+    let i = 0;
+    for (const ch of token) {
+      const next = chunk + ch;
+      if (chunk && ctx.measureText(next).width > maxInnerWidth) {
+        parts.push({ text: chunk, start: chunkStart });
+        chunk = ch;
+        chunkStart = tokenStart + i;
+      } else {
+        chunk = next;
+      }
+      i += ch.length;
+    }
+    if (chunk) parts.push({ text: chunk, start: chunkStart });
+    return parts.length ? parts : [{ text: '', start: tokenStart }];
+  };
+
+  const out: WrappedCanvasTextLine[] = [];
+  for (const para of paragraphs) {
+    if (unlimited) {
+      out.push({ text: para.text, start: para.start });
+      continue;
+    }
+    if (para.text.length === 0) {
+      out.push({ text: '', start: para.start });
+      continue;
+    }
+    const tokens = para.text.split(/(\s+)/);
+    let line = '';
+    let lineStart = para.start;
+    let cursor = para.start;
+    const flush = () => {
+      out.push({ text: line, start: lineStart });
+      line = '';
+    };
+    for (const tok of tokens) {
+      if (!tok) continue;
+      const tokStart = cursor;
+      cursor += tok.length;
+      const pieces = /\s/.test(tok[0] ?? '')
+        ? [{ text: tok, start: tokStart }]
+        : breakToken(tok, tokStart);
+      for (const piece of pieces) {
+        const trial = line + piece.text;
+        if (line && ctx.measureText(trial).width > maxInnerWidth) {
+          flush();
+          if (/^\s+$/.test(piece.text)) continue;
+          const lead = (piece.text.match(/^\s*/) ?? [''])[0].length;
+          const startText = piece.text.slice(lead);
+          if (!startText) continue;
+          for (const sub of breakToken(startText, piece.start + lead)) {
+            if (line && ctx.measureText(line + sub.text).width > maxInnerWidth) flush();
+            if (!line) lineStart = sub.start;
+            line += sub.text;
+          }
+        } else {
+          if (!line) lineStart = piece.start;
+          line = trial;
+        }
+      }
+    }
+    flush();
+  }
+  return out.length ? out : [{ text: '', start: 0 }];
+};
+
+/**
+ * Wrap `text` to `maxInnerWidth` (world px). Hard line breaks are kept.
+ * Long tokens are split by character so glyphs never share an x,y.
+ * Note: mutates `ctx.font` only if the caller already set it.
+ */
+export const wrapCanvasTextLines = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxInnerWidth: number,
+): string[] => wrapCanvasTextLinesIndexed(ctx, text, maxInnerWidth).map(l => l.text);
+
+/**
+ * Measure a multi-line `CanvasText` block, wrapping to `boxWidth` when set.
  * Note: mutates `ctx.font`.
  */
 export const measureCanvasTextBox = (
@@ -62,9 +189,9 @@ export const measureCanvasTextBox = (
   t: CanvasText,
 ): { maxW: number; totalH: number; lineHeight: number; lines: string[] } => {
   ctx.font = buildCanvasTextFont(t);
-  const lines = t.text.split(/\r?\n/);
-  const fs = canvasTextEffectiveFontSize(t);
-  const lineHeight = fs * 1.3;
+  const lineHeight = canvasTextLineHeight(t);
+  const innerMax = t.boxWidth != null ? Math.max(8, t.boxWidth - PAD_X * 2) : Infinity;
+  const lines = wrapCanvasTextLines(ctx, t.text ?? '', innerMax);
   let maxW = 8;
   for (const line of lines) {
     const tw = ctx.measureText(line || ' ').width;
@@ -82,7 +209,11 @@ export const estimateCanvasTextAabb = (
   const lines = (t.text ?? '').split('\n');
   const maxLineLen = lines.reduce((m, line) => Math.max(m, line.length), 0);
   const width = Math.max(MIN_BOX_W, t.boxWidth ?? maxLineLen * fs * 0.58 + PAD_X * 2);
-  const height = Math.max(MIN_BOX_H, t.boxHeight ?? lines.length * fs * 1.3 + PAD_Y * 2);
+  const approxLines =
+    t.boxWidth != null && maxLineLen > 0
+      ? Math.max(1, Math.ceil((maxLineLen * fs * 0.58) / Math.max(8, t.boxWidth - PAD_X * 2)))
+      : Math.max(1, lines.length);
+  const height = Math.max(MIN_BOX_H, t.boxHeight ?? 0, approxLines * fs * LINE_HEIGHT_RATIO + PAD_Y * 2);
   return {
     minX: t.x - width / 2,
     maxX: t.x + width / 2,
@@ -110,7 +241,8 @@ export const getCanvasTextBox = (
 ): CanvasTextBox => {
   const content = measureCanvasTextContentSize(ctx, t);
   const width = Math.max(MIN_BOX_W, t.boxWidth ?? content.width);
-  const height = Math.max(MIN_BOX_H, t.boxHeight ?? content.height);
+  // Always tall enough for wrapped lines so glyphs never paint on top of each other.
+  const height = Math.max(MIN_BOX_H, t.boxHeight ?? 0, content.height);
   const cx = t.x;
   const cy = t.y;
   return {
@@ -132,10 +264,13 @@ export const canvasTextFitContentPatch = (
   t: CanvasText,
 ): Partial<CanvasText> => {
   const content = measureCanvasTextContentSize(ctx, t);
-  const width = Math.max(t.boxWidth ?? 0, content.width);
-  const height = Math.max(t.boxHeight ?? 0, content.height);
   const next: Partial<CanvasText> = {};
-  if (width !== t.boxWidth) next.boxWidth = width;
+  // Do not persist an auto width — that would lock wrap to the first glyph.
+  // A user-resized (or created) box wraps; grow width only for an unbreakable run.
+  if (t.boxWidth != null && content.width > t.boxWidth + 0.5) {
+    next.boxWidth = content.width;
+  }
+  const height = Math.max(t.boxHeight ?? 0, content.height);
   if (height !== t.boxHeight) next.boxHeight = height;
   return next;
 };
@@ -327,15 +462,12 @@ export const canvasTextEditorLayout = (
   const { lineHeight, lines } = measureCanvasTextBox(ctx, t);
   const lineCount = Math.max(1, lines.length);
   const blockH = lineCount * lineHeight;
-  const fs = canvasTextEffectiveFontSize(t);
-  const script = t.textScript ?? 'normal';
-  const scriptDy = script === 'super' ? -fs * 0.35 : script === 'sub' ? fs * 0.28 : 0;
   return {
     box,
     lineHeight,
     lineCount,
     blockTop: Math.max(0, (box.height - blockH) / 2),
-    scriptDy,
+    scriptDy: 0,
   };
 };
 

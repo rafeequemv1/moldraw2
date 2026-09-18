@@ -453,34 +453,22 @@ export const renderToolIcon = (toolId: string) => {
     case 'add_explicit_h':
       return (
         <IconSvg>
-          <text
-            x="8.2"
-            y="13.6"
-            textAnchor="middle"
-            fontSize="10.5"
-            fontWeight="700"
-            fontFamily="Arial, Helvetica, sans-serif"
-            fill="currentColor"
-          >
-            H
-          </text>
+          <path
+            d="M3.4 15.2 V4.8 M9.2 15.2 V4.8 M3.4 10 H9.2"
+            {...stroke}
+            strokeWidth={1.7}
+          />
           <path d="M14.2 6.2 V11.4 M11.6 8.8 H16.8" {...stroke} strokeWidth={1.55} />
         </IconSvg>
       );
     case 'add_explicit_c':
       return (
         <IconSvg>
-          <text
-            x="8.2"
-            y="13.6"
-            textAnchor="middle"
-            fontSize="10.5"
-            fontWeight="700"
-            fontFamily="Arial, Helvetica, sans-serif"
-            fill="currentColor"
-          >
-            C
-          </text>
+          <path
+            d="M9.6 5.1 C5.8 5.1 3.8 7.3 3.8 10 C3.8 12.7 5.8 14.9 9.6 14.9"
+            {...stroke}
+            strokeWidth={1.7}
+          />
           <path d="M14.2 6.2 V11.4 M11.6 8.8 H16.8" {...stroke} strokeWidth={1.55} />
         </IconSvg>
       );

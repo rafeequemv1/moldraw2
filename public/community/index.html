@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script defer src="https://data.moldraw.com/piqo.js" data-site="i9cwwugh"></script>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -239,31 +240,59 @@
       display: inline-flex;
       align-items: center;
     }
-    .community-pagination {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin: 14px 0 8px;
-      font-size: 12px;
-      font-weight: 700;
+    .community-feed-more {
+      min-height: 1px;
+      margin: 8px 0 28px;
     }
-    .community-pagination a,
-    .community-pagination span {
-      display: inline-flex;
+    .feed-more-skeleton {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .feed-skeleton-card {
+      height: 92px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      background: linear-gradient(90deg, #f8fafc 15%, #eef2f6 40%, #f8fafc 65%);
+      background-size: 400% 100%;
+      animation: feed-skeleton 1.3s ease infinite;
+    }
+    @keyframes feed-skeleton {
+      0% { background-position: 100% 0; }
+      100% { background-position: 0 0; }
+    }
+    .feed-more-spinner {
+      display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 32px;
-      padding: 0 10px;
-      border: 1px solid #dbe4ea;
-      border-radius: 10px;
-      background: #fff;
-      color: #1a5a5b;
-      text-decoration: none;
+      gap: 8px;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 0 4px;
     }
-    .community-pagination span[aria-current="page"] {
-      border-color: #2C7A7B;
-      background: #eefafa;
+    .feed-more-spinner::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border: 2px solid #dbe4ea;
+      border-top-color: #2C7A7B;
+      border-radius: 50%;
+      animation: feed-more-spin 0.7s linear infinite;
+    }
+    @keyframes feed-more-spin {
+      to { transform: rotate(360deg); }
+    }
+    .feed-more-end,
+    .feed-more-error {
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 12px 0 4px;
+    }
+    .feed-more-error button {
+      margin-left: 8px;
     }
     .community-card.is-selected {
       border-color: #2C7A7B;
@@ -1918,7 +1947,7 @@
         <p>Public community posts, comments, and feature requests are included in this HTML. JavaScript is only required to sign in and write.</p>
       </noscript>
       <div id="feed" class="feed"></div>
-      <nav id="community-pagination" class="community-pagination" aria-label="Community pagination"></nav>
+      <div id="community-feed-more" class="community-feed-more" aria-live="polite"></div>
     </section>
 
     <aside class="community-right-rail" id="community-right-rail" aria-label="Community sidebar">
@@ -2015,7 +2044,7 @@
       </div>
       <div class="post-modal-body">
         <p>Share the MolDraw improvement you want others to vote on.</p>
-        <form id="community-feature-request-form" class="feature-request-form">
+        <form id="community-feature-request-form" class="feature-request-form" data-piqo-event="feature_request">
           <label>
             Feature title
             <input id="feature-request-title" type="text" maxlength="160" placeholder="Example: Save molecules to cloud dashboard" required>
@@ -2166,9 +2195,9 @@
         ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === current ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
       </select>`;
     }
-    const COMMUNITY_PAGE_SIZE = 20;
+    const COMMUNITY_BATCH_SIZE = 10;
     const FEED_COMMENT_PREVIEW = 3;
-    const FEED_CACHE_VERSION = 4;
+    const FEED_CACHE_VERSION = 5;
     const FEED_CACHE_PREFIX = 'moldraw.community.feed.v2';
     const DISCUSSION_LIST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,request_status,created_at';
     const DISCUSSION_HEAD_SELECT = 'id,created_at,comment_count,upvote_count,request_status';
@@ -2309,29 +2338,71 @@
       if (match) return { view: 'feature-comment', id: match[1], slug: match[2] || '' };
       return { view: 'list', page: 1 };
     }
-    function renderPaginationNav(kind, page, total) {
-      const nav = document.getElementById('community-pagination');
-      if (!nav) return;
-      const pages = Math.max(1, Math.ceil((Number(total) || 0) / COMMUNITY_PAGE_SIZE));
-      if (pages <= 1) {
-        nav.innerHTML = '';
+    function feedCursorOf(items) {
+      const sorted = sortNewestFirst(items);
+      return sorted[sorted.length - 1]?.created_at || null;
+    }
+    function mergeFeedItems(existing, incoming) {
+      const byId = new Map();
+      [...(existing || []), ...(incoming || [])].forEach((item) => {
+        if (!item?.id) return;
+        const prev = byId.get(item.id);
+        byId.set(item.id, prev ? { ...prev, ...item } : item);
+      });
+      return sortNewestFirst([...byId.values()]);
+    }
+    function setFeedMoreState(state) {
+      const el = document.getElementById('community-feed-more');
+      if (!el) return;
+      if (state === 'loading') {
+        el.innerHTML = `
+          <div class="feed-more-skeleton" aria-hidden="true">
+            <div class="feed-skeleton-card"></div>
+            <div class="feed-skeleton-card"></div>
+          </div>
+          <div class="feed-more-spinner" role="status">Loading more…</div>`;
         return;
       }
-      const hrefFor = (n) => {
-        if (kind === 'features') return n <= 1 ? '/community/features' : `/community/features/page/${n}`;
-        return n <= 1 ? '/community/' : `/community/page/${n}`;
-      };
-      const items = [];
-      if (page > 1) items.push(`<a rel="prev" href="${hrefFor(page - 1)}">Previous</a>`);
-      const start = Math.max(1, page - 2);
-      const end = Math.min(pages, page + 2);
-      for (let n = start; n <= end; n += 1) {
-        items.push(n === page
-          ? `<span aria-current="page">${n}</span>`
-          : `<a href="${hrefFor(n)}">${n}</a>`);
+      if (state === 'error') {
+        el.innerHTML = `<div class="feed-more-error">Could not load more. <button type="button" class="btn btn-light" id="feed-more-retry">Retry</button></div>`;
+        document.getElementById('feed-more-retry')?.addEventListener('click', () => {
+          if (activeTab === 'features') loadMoreFeatures();
+          else loadMoreDiscussions();
+        });
+        return;
       }
-      if (page < pages) items.push(`<a rel="next" href="${hrefFor(page + 1)}">Next</a>`);
-      nav.innerHTML = items.join('');
+      if (state === 'end') {
+        el.innerHTML = `<p class="feed-more-end">${activeTab === 'features' ? 'No more feature requests' : 'No more discussions'}</p>`;
+        return;
+      }
+      el.innerHTML = '';
+    }
+    function ensureFeedMoreObserver() {
+      const el = document.getElementById('community-feed-more');
+      if (!el || feedMoreObserver) return;
+      feedMoreObserver = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        if (activeTab === 'features') loadMoreFeatures();
+        else if (activeTab === 'discussions') loadMoreDiscussions();
+      }, { root: null, rootMargin: '640px 0px', threshold: 0 });
+      feedMoreObserver.observe(el);
+    }
+    function maybeLoadMoreFeed() {
+      const el = document.getElementById('community-feed-more');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.top < (window.innerHeight || 0) + 640) {
+        if (activeTab === 'features') loadMoreFeatures();
+        else if (activeTab === 'discussions') loadMoreDiscussions();
+      }
+    }
+    function canonicalizeListUrl(route) {
+      if (route.view === 'list' && (route.page || 1) > 1) {
+        window.history.replaceState({ community: true }, '', '/community/');
+      }
+      if (route.view === 'features' && (route.page || 1) > 1) {
+        window.history.replaceState({ community: true }, '', '/community/features');
+      }
     }
 
     const threadModal = document.getElementById('thread-modal');
@@ -2341,6 +2412,17 @@
     let lastDiscussionItems = [];
     let lastFeatureItems = [];
     let activeThread = null;
+    let discussionCursor = null;
+    let discussionHasMore = true;
+    let discussionLoadingMore = false;
+    let discussionHydrating = false;
+    let discussionVotes = new Set();
+    let featureCursor = null;
+    let featureHasMore = true;
+    let featureLoadingMore = false;
+    let featureHydrating = false;
+    let featureVotes = new Set();
+    let feedMoreObserver = null;
 
     function isModifiedClick(event) {
       return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
@@ -2512,8 +2594,8 @@
       await loadDoneFeatureIndex();
       renderThreadPanel('feature', request, comments || [], highlightId);
     }
-    function bindFeedOpeners(kind, items) {
-      feed.querySelectorAll('article.community-card').forEach((card) => {
+    function bindFeedOpeners(kind, items, root = feed) {
+      (root || feed).querySelectorAll('article.community-card').forEach((card) => {
         const id = card.getAttribute(kind === 'feature' ? 'data-feature-id' : 'data-post-id');
         const item = items.find((entry) => entry.id === id);
         const open = (event, href) => {
@@ -2829,7 +2911,7 @@
       try {
         const { data } = await client.auth.getSession();
         const accessToken = data?.session?.access_token || session?.access_token || '';
-        await fetch('/api/community-notify', {
+        const response = await fetch('/api/community-notify', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2837,9 +2919,26 @@
           },
           body: JSON.stringify(payload)
         });
-      } catch {
-        /* notification delivery is best-effort */
+        const body = await response.json().catch(() => ({}));
+        return { ok: response.ok, status: response.status, body };
+      } catch (error) {
+        return { ok: false, status: 0, body: { error: error instanceof Error ? error.message : 'notify_failed' } };
       }
+    }
+
+    function notifyStatusNote(result, savedLabel) {
+      if (result?.body?.id || (typeof result?.body?.sent === 'number' && result.body.sent > 0)) {
+        return `${savedLabel} Email sent.`;
+      }
+      const skipped = result?.body?.skipped;
+      if (skipped === 'no_email') return `${savedLabel} No author email was found, so no email was sent.`;
+      if (skipped === 'missing_resend_key') return `${savedLabel} Email is not configured on the server.`;
+      if (skipped === 'already_sent') return `${savedLabel} Email was already sent for this status.`;
+      if (skipped === 'unsubscribed') return `${savedLabel} Author is unsubscribed from community email.`;
+      if (result?.body?.error) return `${savedLabel} Email failed: ${result.body.error}`;
+      if (!result?.ok) return `${savedLabel} Email notify request failed.`;
+      if (skipped) return `${savedLabel} Email skipped (${skipped}).`;
+      return savedLabel;
     }
 
     function hideMentionMenu(input) {
@@ -3064,18 +3163,18 @@
       await Promise.all(parentIds.map(async (id) => {
         const query = client
           .from(table)
-          .select(select, { count: 'exact' })
+          .select(select)
           .eq(parentKey, id)
           .order('created_at', { ascending: false })
           .limit(FEED_COMMENT_PREVIEW);
-        const { data, count, error } = await query;
+        const { data, error } = await query;
         if (error) {
           if (table === 'feature_request_comments') featureCommentsAvailable = false;
           return;
         }
         const newestFirst = data || [];
         byParent.set(id, [...newestFirst].reverse());
-        totals.set(id, Number.isFinite(count) ? count : (Number(knownTotals?.get(id)) || newestFirst.length));
+        totals.set(id, Number(knownTotals?.get(id)) || newestFirst.length);
       }));
       return { byParent, totals };
     }
@@ -3088,27 +3187,30 @@
       });
     }
 
-    async function loadDiscussionRowsIncremental(page, cached) {
-      const from = (page - 1) * COMMUNITY_PAGE_SIZE;
-      if (page !== 1 || !cached?.items?.length) {
-        const { data, error, count } = await client
+    async function loadDiscussionRowsIncremental(cached) {
+      if (!cached?.items?.length) {
+        const { data, error } = await client
           .from('community_posts')
-          .select(DISCUSSION_LIST_SELECT, { count: 'exact' })
+          .select(DISCUSSION_LIST_SELECT)
           .order('created_at', { ascending: false })
-          .range(from, from + COMMUNITY_PAGE_SIZE - 1);
-        if (error) return { error, posts: [], count: 0 };
-        const posts = data || [];
+          .limit(COMMUNITY_BATCH_SIZE + 1);
+        if (error) return { error, posts: [], hasMore: false };
+        const rows = data || [];
+        const hasMore = rows.length > COMMUNITY_BATCH_SIZE;
+        const posts = rows.slice(0, COMMUNITY_BATCH_SIZE);
         const knownTotals = new Map(posts.map((post) => [post.id, Number(post.comment_count) || 0]));
         const previews = await fetchLatestCommentsByParent('community_comments', 'post_id', posts.map((post) => post.id), COMMENT_PREVIEW_SELECT, knownTotals);
-        return { posts: attachCommentPreviews(posts, 'post_id', previews), count: count || posts.length };
+        return { posts: attachCommentPreviews(posts, 'post_id', previews), hasMore };
       }
 
-      const { data: head, error: headError, count } = await client
+      const { data: head, error: headError } = await client
         .from('community_posts')
-        .select(DISCUSSION_HEAD_SELECT, { count: 'exact' })
+        .select(DISCUSSION_HEAD_SELECT)
         .order('created_at', { ascending: false })
-        .range(0, COMMUNITY_PAGE_SIZE - 1);
-      if (headError) return { error: headError, posts: [], count: 0 };
+        .limit(COMMUNITY_BATCH_SIZE + 1);
+      if (headError) return { error: headError, posts: [], hasMore: false };
+      const hasMore = (head || []).length > COMMUNITY_BATCH_SIZE;
+      const headRows = (head || []).slice(0, COMMUNITY_BATCH_SIZE);
 
       const cachedById = new Map(cached.items.map((item) => [item.id, item]));
       const newestCached = cached.newestCreatedAt || newestCreatedAtOf(cached.items);
@@ -3118,10 +3220,10 @@
           .select(DISCUSSION_LIST_SELECT)
           .gt('created_at', newestCached)
           .order('created_at', { ascending: false })
-          .limit(COMMUNITY_PAGE_SIZE)
+          .limit(COMMUNITY_BATCH_SIZE)
         : { data: [] };
       const newById = new Map((newer || []).map((row) => [row.id, row]));
-      const missingIds = (head || []).filter((row) => !cachedById.has(row.id) && !newById.has(row.id)).map((row) => row.id);
+      const missingIds = headRows.filter((row) => !cachedById.has(row.id) && !newById.has(row.id)).map((row) => row.id);
       if (missingIds.length) {
         const { data: extra } = await client.from('community_posts').select(DISCUSSION_LIST_SELECT).in('id', missingIds);
         (extra || []).forEach((row) => newById.set(row.id, row));
@@ -3129,7 +3231,7 @@
 
       const dirty = [...dirtyDiscussionPreviewIds];
       dirtyDiscussionPreviewIds.clear();
-      const commentChangedIds = (head || []).filter((row) => {
+      const commentChangedIds = headRows.filter((row) => {
         const prev = cachedById.get(row.id);
         if (!prev) return false;
         if (dirty.includes(row.id)) return true;
@@ -3139,12 +3241,12 @@
         return Number(prev.comment_count ?? prev.commentTotal ?? 0) !== count;
       }).map((row) => row.id);
       const commentFetchIds = [...new Set([...newById.keys(), ...commentChangedIds, ...dirty])];
-      const knownTotals = new Map((head || []).map((row) => [row.id, Number(row.comment_count) || 0]));
+      const knownTotals = new Map(headRows.map((row) => [row.id, Number(row.comment_count) || 0]));
       const previews = commentFetchIds.length
         ? await fetchLatestCommentsByParent('community_comments', 'post_id', commentFetchIds, COMMENT_PREVIEW_SELECT, knownTotals)
         : { byParent: new Map(), totals: new Map() };
 
-      const posts = (head || []).map((row) => {
+      const posts = headRows.map((row) => {
         const fresh = newById.get(row.id);
         const prev = cachedById.get(row.id);
         const base = fresh || prev;
@@ -3162,34 +3264,54 @@
           commentTotal
         };
       }).filter(Boolean);
-      return { posts, count: count || cached.totalCount || posts.length };
+      return { posts, hasMore };
     }
 
-    async function loadFeatureRowsIncremental(page, cached) {
-      const from = (page - 1) * COMMUNITY_PAGE_SIZE;
-      if (page !== 1 || !cached?.items?.length || !featureCommentsAvailable) {
-        const { data, error, count } = await client
+    async function loadDiscussionRowsBefore(beforeCreatedAt) {
+      let query = client
+        .from('community_posts')
+        .select(DISCUSSION_LIST_SELECT)
+        .order('created_at', { ascending: false })
+        .limit(COMMUNITY_BATCH_SIZE + 1);
+      if (beforeCreatedAt) query = query.lt('created_at', beforeCreatedAt);
+      const { data, error } = await query;
+      if (error) return { error, posts: [], hasMore: false };
+      const rows = data || [];
+      const hasMore = rows.length > COMMUNITY_BATCH_SIZE;
+      const posts = rows.slice(0, COMMUNITY_BATCH_SIZE);
+      const knownTotals = new Map(posts.map((post) => [post.id, Number(post.comment_count) || 0]));
+      const previews = await fetchLatestCommentsByParent('community_comments', 'post_id', posts.map((post) => post.id), COMMENT_PREVIEW_SELECT, knownTotals);
+      return { posts: attachCommentPreviews(posts, 'post_id', previews), hasMore };
+    }
+
+    async function loadFeatureRowsIncremental(cached) {
+      if (!cached?.items?.length || !featureCommentsAvailable) {
+        const { data, error } = await client
           .from('community_feature_requests')
-          .select(FEATURE_LIST_SELECT, { count: 'exact' })
+          .select(FEATURE_LIST_SELECT)
           .order('created_at', { ascending: false })
-          .range(from, from + COMMUNITY_PAGE_SIZE - 1);
-        if (error) return { error, requests: [], count: 0 };
-        const requests = data || [];
+          .limit(COMMUNITY_BATCH_SIZE + 1);
+        if (error) return { error, requests: [], hasMore: false };
+        const rows = data || [];
+        const hasMore = rows.length > COMMUNITY_BATCH_SIZE;
+        const requests = rows.slice(0, COMMUNITY_BATCH_SIZE);
         const previews = featureCommentsAvailable
           ? await fetchLatestCommentsByParent('feature_request_comments', 'feature_request_id', requests.map((item) => item.id), FEATURE_COMMENT_PREVIEW_SELECT)
           : { byParent: new Map(), totals: new Map() };
         if (!featureCommentsAvailable) {
-          return { requests: requests.map((item) => ({ ...item, commentsPreview: [], commentTotal: 0 })), count: count || requests.length };
+          return { requests: requests.map((item) => ({ ...item, commentsPreview: [], commentTotal: 0 })), hasMore };
         }
-        return { requests: attachCommentPreviews(requests, 'feature_request_id', previews), count: count || requests.length };
+        return { requests: attachCommentPreviews(requests, 'feature_request_id', previews), hasMore };
       }
 
-      const { data: head, error: headError, count } = await client
+      const { data: head, error: headError } = await client
         .from('community_feature_requests')
-        .select(FEATURE_HEAD_SELECT, { count: 'exact' })
+        .select(FEATURE_HEAD_SELECT)
         .order('created_at', { ascending: false })
-        .range(0, COMMUNITY_PAGE_SIZE - 1);
-      if (headError) return { error: headError, requests: [], count: 0 };
+        .limit(COMMUNITY_BATCH_SIZE + 1);
+      if (headError) return { error: headError, requests: [], hasMore: false };
+      const hasMore = (head || []).length > COMMUNITY_BATCH_SIZE;
+      const headRows = (head || []).slice(0, COMMUNITY_BATCH_SIZE);
 
       const cachedById = new Map(cached.items.map((item) => [item.id, item]));
       const newestCached = cached.newestCreatedAt || newestCreatedAtOf(cached.items);
@@ -3199,10 +3321,10 @@
           .select(FEATURE_LIST_SELECT)
           .gt('created_at', newestCached)
           .order('created_at', { ascending: false })
-          .limit(COMMUNITY_PAGE_SIZE)
+          .limit(COMMUNITY_BATCH_SIZE)
         : { data: [] };
       const newById = new Map((newer || []).map((row) => [row.id, row]));
-      const missingIds = (head || []).filter((row) => !cachedById.has(row.id) && !newById.has(row.id)).map((row) => row.id);
+      const missingIds = headRows.filter((row) => !cachedById.has(row.id) && !newById.has(row.id)).map((row) => row.id);
       if (missingIds.length) {
         const { data: extra } = await client.from('community_feature_requests').select(FEATURE_LIST_SELECT).in('id', missingIds);
         (extra || []).forEach((row) => newById.set(row.id, row));
@@ -3210,7 +3332,7 @@
 
       const dirty = [...dirtyFeaturePreviewIds];
       dirtyFeaturePreviewIds.clear();
-      const headIds = (head || []).map((row) => row.id);
+      const headIds = headRows.map((row) => row.id);
       let commentTouched = new Set(dirty);
       if (headIds.length) {
         const { data: recentComments, error: recentError } = await client
@@ -3235,7 +3357,7 @@
         });
       }
 
-      const updatedIds = (head || []).filter((row) => {
+      const updatedIds = headRows.filter((row) => {
         const prev = cachedById.get(row.id);
         if (!prev) return false;
         return commentTouched.has(row.id)
@@ -3247,7 +3369,7 @@
         ? await fetchLatestCommentsByParent('feature_request_comments', 'feature_request_id', commentFetchIds, FEATURE_COMMENT_PREVIEW_SELECT)
         : { byParent: new Map(), totals: new Map() };
 
-      const requests = (head || []).map((row) => {
+      const requests = headRows.map((row) => {
         const fresh = newById.get(row.id);
         const prev = cachedById.get(row.id);
         const base = fresh || prev;
@@ -3266,7 +3388,28 @@
           commentTotal
         };
       }).filter(Boolean);
-      return { requests, count: count || cached.totalCount || requests.length };
+      return { requests, hasMore };
+    }
+
+    async function loadFeatureRowsBefore(beforeCreatedAt) {
+      let query = client
+        .from('community_feature_requests')
+        .select(FEATURE_LIST_SELECT)
+        .order('created_at', { ascending: false })
+        .limit(COMMUNITY_BATCH_SIZE + 1);
+      if (beforeCreatedAt) query = query.lt('created_at', beforeCreatedAt);
+      const { data, error } = await query;
+      if (error) return { error, requests: [], hasMore: false };
+      const rows = data || [];
+      const hasMore = rows.length > COMMUNITY_BATCH_SIZE;
+      const requests = rows.slice(0, COMMUNITY_BATCH_SIZE);
+      const previews = featureCommentsAvailable
+        ? await fetchLatestCommentsByParent('feature_request_comments', 'feature_request_id', requests.map((item) => item.id), FEATURE_COMMENT_PREVIEW_SELECT)
+        : { byParent: new Map(), totals: new Map() };
+      if (!featureCommentsAvailable) {
+        return { requests: requests.map((item) => ({ ...item, commentsPreview: [], commentTotal: 0 })), hasMore };
+      }
+      return { requests: attachCommentPreviews(requests, 'feature_request_id', previews), hasMore };
     }
 
     function requireAuth() {
@@ -3711,7 +3854,7 @@
       } else {
         await client.from('community_post_votes').insert({ post_id: postId });
       }
-      await loadDiscussions();
+      await loadDiscussions(false);
     }
 
     async function submitReport(event) {
@@ -4266,25 +4409,24 @@
       });
     }
 
-    function paintDiscussionCards(posts, myVotes, selectedPostId) {
-      feed.innerHTML = posts.map((post) => {
-        const voted = myVotes.has(post.id);
-        const comments = post.commentsPreview || [];
-        const commentTotal = post.commentTotal ?? post.comment_count ?? comments.length;
-        const ownerActions = isOwn(post.user_id)
-          ? `<button class="pill" type="button" data-edit-post="${escapeHtml(post.id)}">Edit post</button>
-             <button class="pill" type="button" data-delete-post="${escapeHtml(post.id)}">Delete post</button>`
-          : '';
-        const url = discussionUrl(post);
-        if (!commentCache.has(post.id) && comments.length) commentCache.set(post.id, comments);
-        const commentsHtml = renderCommentThread(post.id, comments, commentTotal, {
-          includeComposer: false,
-          allowEmptyMessage: false,
-          useCommentDomId: false,
-          threadUrl: url
-        });
-        return `
-          <article class="community-card${selectedPostId === post.id ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}">
+    function discussionCardHtml(post, myVotes, selectedPostId) {
+      const voted = myVotes.has(post.id);
+      const comments = post.commentsPreview || [];
+      const commentTotal = post.commentTotal ?? post.comment_count ?? comments.length;
+      const ownerActions = isOwn(post.user_id)
+        ? `<button class="pill" type="button" data-edit-post="${escapeHtml(post.id)}">Edit post</button>
+           <button class="pill" type="button" data-delete-post="${escapeHtml(post.id)}">Delete post</button>`
+        : '';
+      const url = discussionUrl(post);
+      if (!commentCache.has(post.id) && comments.length) commentCache.set(post.id, comments);
+      const commentsHtml = renderCommentThread(post.id, comments, commentTotal, {
+        includeComposer: false,
+        allowEmptyMessage: false,
+        useCommentDomId: false,
+        threadUrl: url
+      });
+      return `
+          <article class="community-card${selectedPostId === post.id ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}" data-created-at="${escapeHtml(post.created_at || '')}">
             <div class="card-top">
               <div class="author">
                 <span class="avatar ${escapeHtml(safeAvatarKey(post.author_avatar_key))}">${escapeHtml(initials(post.author_name))}</span>
@@ -4308,77 +4450,86 @@
             ${renderCardReplyComposer()}
           </article>
         `;
-      }).join('') || '<p>No discussions yet. Start the first one.</p>';
-      feed.querySelectorAll('[data-vote-post]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          togglePostVote(btn.getAttribute('data-vote-post'), btn.getAttribute('data-voted') === '1');
-        });
+    }
+    function bindDiscussionCard(card, post, posts) {
+      if (!card || card.dataset.bound === '1') return;
+      card.dataset.bound = '1';
+      card.querySelector('[data-vote-post]')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const btn = event.currentTarget;
+        togglePostVote(btn.getAttribute('data-vote-post'), btn.getAttribute('data-voted') === '1');
       });
-      feed.querySelectorAll('[data-edit-post]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          const post = posts.find((item) => item.id === btn.getAttribute('data-edit-post'));
-          if (post) openPostModal(null, post);
-        });
+      card.querySelector('[data-edit-post]')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const item = posts.find((entry) => entry.id === event.currentTarget.getAttribute('data-edit-post')) || post;
+        if (item) openPostModal(null, item);
       });
-      feed.querySelectorAll('[data-delete-post]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          deletePost(btn.getAttribute('data-delete-post'));
-        });
+      card.querySelector('[data-delete-post]')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        deletePost(event.currentTarget.getAttribute('data-delete-post'));
       });
-      feed.querySelectorAll('[data-report-type="post"]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          openReportModal(
-            btn.getAttribute('data-report-type'),
-            btn.getAttribute('data-report-id'),
-            btn.getAttribute('data-report-label')
-          );
-        });
+      card.querySelector('[data-report-type="post"]')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const btn = event.currentTarget;
+        openReportModal(btn.getAttribute('data-report-type'), btn.getAttribute('data-report-id'), btn.getAttribute('data-report-label'));
       });
-      feed.querySelectorAll('[data-post-request-status]').forEach((select) => {
-        select.addEventListener('change', (event) => {
-          event.stopPropagation();
-          updateDiscussionRequestStatus(select.getAttribute('data-post-request-status'), select.value);
-        });
+      card.querySelector('[data-post-request-status]')?.addEventListener('change', (event) => {
+        event.stopPropagation();
+        updateDiscussionRequestStatus(event.currentTarget.getAttribute('data-post-request-status'), event.currentTarget.value);
       });
-      posts.forEach((post) => {
-        const card = document.getElementById(`post-${post.id}`);
-        if (!card) return;
-        bindCommentThread(card, post.id);
-        card.querySelector('[data-focus-reply]')?.addEventListener('click', (event) => {
-          event.stopPropagation();
-          card.querySelector('[data-comment-form="main"] textarea')?.focus();
-        });
+      bindCommentThread(card, post.id);
+      card.querySelector('[data-focus-reply]')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        card.querySelector('[data-comment-form="main"] textarea')?.focus();
       });
-      bindFeedOpeners('post', posts);
+      bindFeedOpeners('post', posts, card);
+    }
+    function paintDiscussionCards(posts, myVotes, selectedPostId, { append = false } = {}) {
+      if (append) {
+        posts.forEach((post) => {
+          if (document.getElementById(`post-${post.id}`)) return;
+          feed.insertAdjacentHTML('beforeend', discussionCardHtml(post, myVotes, selectedPostId));
+          bindDiscussionCard(document.getElementById(`post-${post.id}`), post, lastDiscussionItems);
+        });
+        return;
+      }
+      feed.innerHTML = posts.map((post) => discussionCardHtml(post, myVotes, selectedPostId)).join('')
+        || '<p>No discussions yet. Start the first one.</p>';
+      posts.forEach((post) => bindDiscussionCard(document.getElementById(`post-${post.id}`), post, posts));
     }
 
-    function paintFeatureCards(requests, myVotes, selectedRequestId) {
-      const requestCards = requests.map((request) => {
-        const images = Array.isArray(request.image_urls) ? request.image_urls.filter(isSafeRemoteUrl) : [];
-        const voted = myVotes.has(request.id);
-        const comments = request.commentsPreview || [];
-        const commentTotal = request.commentTotal ?? comments.length;
-        const currentStatus = request.status || 'new';
-        const statusControl = renderFeatureStatusControl(request);
-        const url = featureUrl(request);
-        if (!featureCommentCache.has(request.id) && comments.length) featureCommentCache.set(request.id, comments);
-        const commentsHtml = renderCommentThread(request.id, comments, commentTotal, {
-          includeComposer: false,
-          allowEmptyMessage: false,
-          useCommentDomId: false,
-          expandedCommentThreads: expandedFeatureCommentThreads,
-          expandedReplyThreads: expandedFeatureReplyThreads,
-          reportType: 'feature_request_comment',
-          reportLabel: 'feature request reply',
-          permalinkHref: featureCommentPermalink,
-          threadUrl: url
-        });
-        return `
-          <article class="community-card${selectedRequestId === request.id ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}">
+    function featureCtaHtml() {
+      return `
+        <section class="feature-cta-card">
+          <div>
+            <h2>Have an idea for MolDraw?</h2>
+            <p>Request a feature here so the community can vote and track progress.</p>
+          </div>
+          <button id="open-community-feature-request" class="btn btn-primary" type="button" data-piqo-event="feature_request_open">Request feature</button>
+        </section>`;
+    }
+    function featureCardHtml(request, myVotes, selectedRequestId) {
+      const images = Array.isArray(request.image_urls) ? request.image_urls.filter(isSafeRemoteUrl) : [];
+      const voted = myVotes.has(request.id);
+      const comments = request.commentsPreview || [];
+      const commentTotal = request.commentTotal ?? comments.length;
+      const currentStatus = request.status || 'new';
+      const statusControl = renderFeatureStatusControl(request);
+      const url = featureUrl(request);
+      if (!featureCommentCache.has(request.id) && comments.length) featureCommentCache.set(request.id, comments);
+      const commentsHtml = renderCommentThread(request.id, comments, commentTotal, {
+        includeComposer: false,
+        allowEmptyMessage: false,
+        useCommentDomId: false,
+        expandedCommentThreads: expandedFeatureCommentThreads,
+        expandedReplyThreads: expandedFeatureReplyThreads,
+        reportType: 'feature_request_comment',
+        reportLabel: 'feature request reply',
+        permalinkHref: featureCommentPermalink,
+        threadUrl: url
+      });
+      return `
+          <article class="community-card${selectedRequestId === request.id ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}" data-created-at="${escapeHtml(request.created_at || '')}">
             <div class="card-top">
               <div class="author">
                 <span class="avatar">${escapeHtml(initials(request.name))}</span>
@@ -4401,63 +4552,77 @@
             ${renderCardReplyComposer()}
           </article>
         `;
-      }).join('');
+    }
+    function bindFeatureCard(card, request, requests) {
+      if (!card || card.dataset.bound === '1') return;
+      card.dataset.bound = '1';
+      card.querySelector('[data-vote-feature]')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const btn = event.currentTarget;
+        toggleFeatureVote(btn.getAttribute('data-vote-feature'), btn.getAttribute('data-voted') === '1');
+      });
+      card.querySelector('[data-feature-status]')?.addEventListener('change', (event) => {
+        event.stopPropagation();
+        updateFeatureStatus(event.currentTarget.getAttribute('data-feature-status'), event.currentTarget.value);
+      });
+      card.querySelector('[data-report-type="feature_request"]')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const btn = event.currentTarget;
+        openReportModal(btn.getAttribute('data-report-type'), btn.getAttribute('data-report-id'), btn.getAttribute('data-report-label'));
+      });
+      bindFeatureCommentThread(card, request.id);
+      card.querySelector('[data-focus-reply]')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        card.querySelector('[data-comment-form="main"] textarea')?.focus();
+      });
+      bindFeedOpeners('feature', requests, card);
+    }
+    function paintFeatureCards(requests, myVotes, selectedRequestId, { append = false } = {}) {
+      if (append) {
+        requests.forEach((request) => {
+          if (document.getElementById(`feature-${request.id}`)) return;
+          feed.insertAdjacentHTML('beforeend', featureCardHtml(request, myVotes, selectedRequestId));
+          bindFeatureCard(document.getElementById(`feature-${request.id}`), request, lastFeatureItems);
+        });
+        return;
+      }
+      const requestCards = requests.map((request) => featureCardHtml(request, myVotes, selectedRequestId)).join('');
       feed.innerHTML = `
-        <section class="feature-cta-card">
-          <div>
-            <h2>Have an idea for MolDraw?</h2>
-            <p>Request a feature here so the community can vote and track progress.</p>
-          </div>
-          <button id="open-community-feature-request" class="btn btn-primary" type="button">Request feature</button>
-        </section>
+        ${featureCtaHtml()}
         ${requestCards || '<p>No feature requests yet.</p>'}
       `;
       document.getElementById('open-community-feature-request')?.addEventListener('click', openFeatureRequestModal);
-      feed.querySelectorAll('[data-vote-feature]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          toggleFeatureVote(btn.getAttribute('data-vote-feature'), btn.getAttribute('data-voted') === '1');
-        });
-      });
-      feed.querySelectorAll('[data-feature-status]').forEach((select) => {
-        select.addEventListener('change', (event) => {
-          event.stopPropagation();
-          updateFeatureStatus(select.getAttribute('data-feature-status'), select.value);
-        });
-      });
-      feed.querySelectorAll('[data-report-type="feature_request"]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          openReportModal(
-            btn.getAttribute('data-report-type'),
-            btn.getAttribute('data-report-id'),
-            btn.getAttribute('data-report-label')
-          );
-        });
-      });
-      requests.forEach((request) => {
-        const card = document.getElementById(`feature-${request.id}`);
-        if (!card) return;
-        bindFeatureCommentThread(card, request.id);
-        card.querySelector('[data-focus-reply]')?.addEventListener('click', (event) => {
-          event.stopPropagation();
-          card.querySelector('[data-comment-form="main"] textarea')?.focus();
-        });
-      });
-      bindFeedOpeners('feature', requests);
+      requests.forEach((request) => bindFeatureCard(document.getElementById(`feature-${request.id}`), request, requests));
     }
 
     async function loadDiscussions(setLoading = true) {
       const route = parseCommunityRoute();
       if (route.view === 'features' || route.view === 'feature' || route.view === 'feature-comment') {
-        return loadFeatureRequests();
+        return loadFeatureRequests(setLoading);
       }
+      canonicalizeListUrl(route);
+      discussionHydrating = true;
       activeTab = 'discussions';
       tabDiscussions.classList.add('active');
       tabFeatures.classList.remove('active');
       composer.style.display = 'block';
-      const hasSsr = Boolean(feed.querySelector('article.community-card'));
+      const hasSsr = Boolean(feed.querySelector('article.community-card[data-post-id]'));
+      if (setLoading) {
+        lastDiscussionItems = [];
+        discussionCursor = null;
+        discussionHasMore = true;
+        discussionLoadingMore = false;
+        discussionVotes = new Set();
+        setFeedMoreState('');
+      }
       if (setLoading && !hasSsr) statusEl.textContent = 'Loading discussions...';
+      if (setLoading && hasSsr) {
+        const ssrCards = [...feed.querySelectorAll('article.community-card[data-post-id][data-created-at]')];
+        discussionCursor = ssrCards[ssrCards.length - 1]?.getAttribute('data-created-at') || null;
+        discussionHasMore = ssrCards.length >= COMMUNITY_BATCH_SIZE;
+        setFeedMoreState(discussionHasMore ? '' : (ssrCards.length ? 'end' : ''));
+        ensureFeedMoreObserver();
+      }
 
       let highlightCommentId = null;
       let selectedPostId = route.view === 'post' ? route.id : null;
@@ -4470,8 +4635,9 @@
         if (!comment?.post_id) {
           statusEl.textContent = 'Comment not found.';
           hideThreadPanel();
-          renderPaginationNav('discussions', 1, 0);
+          setFeedMoreState('');
           if (!hasSsr) feed.innerHTML = '<p>This comment is unavailable. <a href="/community/">Back to community</a></p>';
+          discussionHydrating = false;
           return;
         }
         selectedPostId = comment.post_id;
@@ -4479,16 +4645,18 @@
         expandedCommentThreads.add(comment.post_id);
       }
 
-      const page = route.view === 'list' ? (route.page || 1) : 1;
-      const cached = readFeedCache('discussions', page);
-      if (cached?.items?.length && !hasSsr) {
+      const cached = readFeedCache('discussions', 1);
+      if (cached?.items?.length && !hasSsr && !feed.querySelector('article.community-card[data-post-id]')) {
         await loadDoneFeatureIndex();
         lastDiscussionItems = cached.items;
+        discussionCursor = feedCursorOf(cached.items);
+        discussionHasMore = cached.items.length >= COMMUNITY_BATCH_SIZE;
         paintDiscussionCards(cached.items, new Set(), selectedPostId);
+        setFeedMoreState(discussionHasMore ? '' : (cached.items.length ? 'end' : ''));
       }
-      const { posts: fetchedPosts, error, count } = await loadDiscussionRowsIncremental(page, cached);
-      let posts = sortNewestFirst(fetchedPosts || []);
-      if (selectedPostId && !posts.some((post) => post.id === selectedPostId)) {
+      const { posts: fetchedPosts, error, hasMore } = await loadDiscussionRowsIncremental(cached);
+      let firstBatch = sortNewestFirst(fetchedPosts || []);
+      if (selectedPostId && !firstBatch.some((post) => post.id === selectedPostId)) {
         const { data: selected } = await client
           .from('community_posts')
           .select(DISCUSSION_LIST_SELECT)
@@ -4502,32 +4670,42 @@
             COMMENT_PREVIEW_SELECT,
             new Map([[selected.id, Number(selected.comment_count) || 0]])
           );
-          posts = [attachCommentPreviews([selected], 'post_id', preview)[0], ...posts];
+          firstBatch = [attachCommentPreviews([selected], 'post_id', preview)[0], ...firstBatch];
         }
       }
       if (error) {
-        statusEl.textContent = error.message;
+        if (!lastDiscussionItems.length && !hasSsr) statusEl.textContent = error.message;
+        else setFeedMoreState('error');
+        discussionHydrating = false;
         return;
       }
-      const postIds = posts.map((post) => post.id);
-      let myVotes = new Set();
-      if (session?.user && postIds.length) {
-        const { data: votes } = await client.from('community_post_votes').select('post_id').eq('user_id', session.user.id).in('post_id', postIds);
-        myVotes = new Set((votes || []).map((vote) => vote.post_id));
+      const firstIds = new Set(firstBatch.map((post) => post.id));
+      const floor = feedCursorOf(firstBatch.filter((post) => post.id !== selectedPostId) || firstBatch);
+      const older = lastDiscussionItems.filter((post) => !firstIds.has(post.id) && (!floor || (post.created_at || '') < floor));
+      const posts = sortNewestFirst([...firstBatch, ...older]);
+      const voteIds = firstBatch.map((post) => post.id);
+      if (session?.user && voteIds.length) {
+        const { data: votes } = await client.from('community_post_votes').select('post_id').eq('user_id', session.user.id).in('post_id', voteIds);
+        (votes || []).forEach((vote) => discussionVotes.add(vote.post_id));
       }
       statusEl.textContent = posts.length ? '' : 'No discussions yet. Start the first one.';
       lastDiscussionItems = posts;
       posts.forEach((post) => commentTotalCache.set(post.id, post.commentTotal ?? post.comment_count ?? (post.commentsPreview || []).length));
-      const fetchedIds = new Set((fetchedPosts || []).map((post) => post.id));
       writeFeedCache(
         'discussions',
-        page,
-        posts.filter((post) => fetchedIds.has(post.id) || post.id !== selectedPostId).slice(0, COMMUNITY_PAGE_SIZE),
-        count || posts.length
+        1,
+        firstBatch.filter((post) => post.id !== selectedPostId || firstIds.has(post.id)).slice(0, COMMUNITY_BATCH_SIZE),
+        posts.length
       );
+      discussionCursor = feedCursorOf(firstBatch.filter((post) => fetchedPosts?.some((row) => row.id === post.id)));
+      if (!discussionCursor) discussionCursor = feedCursorOf(firstBatch);
+      discussionHasMore = Boolean(hasMore);
       await loadDoneFeatureIndex();
-      paintDiscussionCards(posts, myVotes, selectedPostId);
-      renderPaginationNav('discussions', page, count || 0);
+      const scrollY = window.scrollY;
+      paintDiscussionCards(posts, discussionVotes, selectedPostId);
+      if (!setLoading) window.scrollTo(0, scrollY);
+      setFeedMoreState(posts.length ? (discussionHasMore ? '' : 'end') : '');
+      ensureFeedMoreObserver();
       const selectedPost = posts.find((post) => post.id === selectedPostId);
       if (selectedPost) {
         const comment = highlightCommentId
@@ -4541,6 +4719,37 @@
       } else if (!isThreadRoute(route)) {
         hideThreadPanel();
       }
+      discussionHydrating = false;
+      maybeLoadMoreFeed();
+    }
+
+    async function loadMoreDiscussions() {
+      if (discussionHydrating || discussionLoadingMore || !discussionHasMore || !discussionCursor) return;
+      discussionLoadingMore = true;
+      setFeedMoreState('loading');
+      const { posts, error, hasMore } = await loadDiscussionRowsBefore(discussionCursor);
+      if (error) {
+        discussionLoadingMore = false;
+        setFeedMoreState('error');
+        return;
+      }
+      const existingIds = new Set(lastDiscussionItems.map((post) => post.id));
+      const fresh = sortNewestFirst((posts || []).filter((post) => !existingIds.has(post.id)));
+      if (fresh.length) {
+        const voteIds = fresh.map((post) => post.id);
+        if (session?.user && voteIds.length) {
+          const { data: votes } = await client.from('community_post_votes').select('post_id').eq('user_id', session.user.id).in('post_id', voteIds);
+          (votes || []).forEach((vote) => discussionVotes.add(vote.post_id));
+        }
+        lastDiscussionItems = mergeFeedItems(lastDiscussionItems, fresh);
+        fresh.forEach((post) => commentTotalCache.set(post.id, post.commentTotal ?? post.comment_count ?? (post.commentsPreview || []).length));
+        paintDiscussionCards(fresh, discussionVotes, null, { append: true });
+        discussionCursor = feedCursorOf(fresh) || discussionCursor;
+      }
+      discussionHasMore = Boolean(hasMore) && fresh.length > 0;
+      discussionLoadingMore = false;
+      setFeedMoreState(discussionHasMore ? '' : 'end');
+      if (discussionHasMore) maybeLoadMoreFeed();
     }
 
     async function toggleFeatureVote(featureRequestId, active) {
@@ -4550,7 +4759,7 @@
       } else {
         await client.from('feature_request_votes').insert({ feature_request_id: featureRequestId });
       }
-      await loadFeatureRequests();
+      await loadFeatureRequests(false);
     }
 
     async function updateFeatureStatus(featureRequestId, status) {
@@ -4568,14 +4777,15 @@
         statusEl.textContent = error.message || 'Could not update status.';
         return;
       }
-      await pingCommunityNotify({
+      const notify = await pingCommunityNotify({
         table: 'feature_requests',
         type: 'UPDATE',
         record: { id: featureRequestId, status },
         old_record: { status: previous?.status }
       });
       resetDoneFeatureIndex();
-      await loadFeatureRequests();
+      await loadFeatureRequests(false);
+      statusEl.textContent = notifyStatusNote(notify, 'Request status updated.');
     }
 
     async function updateDiscussionRequestStatus(postId, requestStatus) {
@@ -4584,6 +4794,7 @@
         return;
       }
       statusEl.textContent = 'Updating discussion status...';
+      const previous = lastDiscussionItems?.find((item) => item.id === postId);
       const nextStatus = requestStatus || null;
       const { error } = await client
         .from('community_posts')
@@ -4593,8 +4804,19 @@
         statusEl.textContent = error.message || 'Could not update discussion status.';
         return;
       }
+      const notify = nextStatus
+        ? await pingCommunityNotify({
+          table: 'community_posts',
+          type: 'UPDATE',
+          record: { id: postId, request_status: nextStatus },
+          old_record: { request_status: previous?.request_status || '' }
+        })
+        : null;
       resetDoneFeatureIndex();
       await loadDiscussions(false);
+      statusEl.textContent = notify
+        ? notifyStatusNote(notify, 'Discussion status updated.')
+        : 'Discussion status updated.';
     }
 
     async function submitCommunityFeatureRequest(event) {
@@ -4616,12 +4838,17 @@
           selectedFeatureFiles.length ? selectedFeatureFiles : Array.from(imageInput?.files || []),
           requestId
         );
+        const authorEmail = String(session?.user?.email || profile?.email || '').trim();
         const { error } = await client.from('feature_requests').insert({
           title,
           description,
-          image_urls: imageUrls
+          image_urls: imageUrls,
+          name: profile?.name || displayNameFromEmail(authorEmail) || 'Community member',
+          ...(authorEmail ? { email: authorEmail } : {}),
+          ...(session?.user?.id ? { user_id: session.user.id } : {})
         });
         if (error) throw error;
+        if (typeof window.trackPiqo === 'function') window.trackPiqo('feature_request_submit');
         titleInput.value = '';
         descriptionInput.value = '';
         clearFeatureImagePreviews();
@@ -4632,14 +4859,31 @@
       }
     }
 
-    async function loadFeatureRequests() {
+    async function loadFeatureRequests(setLoading = true) {
       const route = parseCommunityRoute();
+      canonicalizeListUrl(route);
+      featureHydrating = true;
       activeTab = 'features';
       tabFeatures.classList.add('active');
       tabDiscussions.classList.remove('active');
       composer.style.display = 'none';
-      const hasSsr = Boolean(feed.querySelector('article.community-card'));
-      if (!hasSsr) statusEl.textContent = 'Loading feature requests...';
+      const hasSsr = Boolean(feed.querySelector('article.community-card[data-feature-id]'));
+      if (setLoading) {
+        lastFeatureItems = [];
+        featureCursor = null;
+        featureHasMore = true;
+        featureLoadingMore = false;
+        featureVotes = new Set();
+        setFeedMoreState('');
+      }
+      if (setLoading && !hasSsr) statusEl.textContent = 'Loading feature requests...';
+      if (setLoading && hasSsr) {
+        const ssrCards = [...feed.querySelectorAll('article.community-card[data-feature-id][data-created-at]')];
+        featureCursor = ssrCards[ssrCards.length - 1]?.getAttribute('data-created-at') || null;
+        featureHasMore = ssrCards.length >= COMMUNITY_BATCH_SIZE;
+        setFeedMoreState(featureHasMore ? '' : (ssrCards.length ? 'end' : ''));
+        ensureFeedMoreObserver();
+      }
 
       let highlightCommentId = null;
       let selectedRequestId = route.view === 'feature' ? route.id : null;
@@ -4652,8 +4896,9 @@
         if (!comment?.feature_request_id) {
           statusEl.textContent = 'Comment not found.';
           hideThreadPanel();
-          renderPaginationNav('features', 1, 0);
+          setFeedMoreState('');
           if (!hasSsr) feed.innerHTML = '<p>This comment is unavailable. <a href="/community/features">Back to feature requests</a></p>';
+          featureHydrating = false;
           return;
         }
         selectedRequestId = comment.feature_request_id;
@@ -4661,16 +4906,18 @@
         expandedFeatureCommentThreads.add(comment.feature_request_id);
       }
 
-      const page = route.view === 'features' ? (route.page || 1) : 1;
-      const cached = readFeedCache('features', page);
-      if (cached?.items?.length && !hasSsr) {
+      const cached = readFeedCache('features', 1);
+      if (cached?.items?.length && !hasSsr && !feed.querySelector('article.community-card[data-feature-id]')) {
         await loadDoneFeatureIndex();
         lastFeatureItems = cached.items;
+        featureCursor = feedCursorOf(cached.items);
+        featureHasMore = cached.items.length >= COMMUNITY_BATCH_SIZE;
         paintFeatureCards(cached.items, new Set(), selectedRequestId);
+        setFeedMoreState(featureHasMore ? '' : (cached.items.length ? 'end' : ''));
       }
-      const { requests: fetchedRequests, error, count } = await loadFeatureRowsIncremental(page, cached);
-      let requests = sortNewestFirst(fetchedRequests || []);
-      if (selectedRequestId && !requests.some((request) => request.id === selectedRequestId)) {
+      const { requests: fetchedRequests, error, hasMore } = await loadFeatureRowsIncremental(cached);
+      let firstBatch = sortNewestFirst(fetchedRequests || []);
+      if (selectedRequestId && !firstBatch.some((request) => request.id === selectedRequestId)) {
         const { data: selected } = await client
           .from('community_feature_requests')
           .select(FEATURE_LIST_SELECT)
@@ -4680,32 +4927,36 @@
           const preview = featureCommentsAvailable
             ? await fetchLatestCommentsByParent('feature_request_comments', 'feature_request_id', [selected.id], FEATURE_COMMENT_PREVIEW_SELECT)
             : { byParent: new Map(), totals: new Map() };
-          requests = [attachCommentPreviews([selected], 'feature_request_id', preview)[0], ...requests];
+          firstBatch = [attachCommentPreviews([selected], 'feature_request_id', preview)[0], ...firstBatch];
         }
       }
       if (error) {
-        statusEl.textContent = error.message;
+        if (!lastFeatureItems.length && !hasSsr) statusEl.textContent = error.message;
+        else setFeedMoreState('error');
+        featureHydrating = false;
         return;
       }
-      const requestIds = requests.map((request) => request.id);
-      let myVotes = new Set();
-      if (session?.user && requestIds.length) {
-        const { data: votes } = await client.from('feature_request_votes').select('feature_request_id').eq('user_id', session.user.id).in('feature_request_id', requestIds);
-        myVotes = new Set((votes || []).map((vote) => vote.feature_request_id));
+      const firstIds = new Set(firstBatch.map((request) => request.id));
+      const floor = feedCursorOf(firstBatch.filter((request) => request.id !== selectedRequestId));
+      const older = lastFeatureItems.filter((request) => !firstIds.has(request.id) && (!floor || (request.created_at || '') < floor));
+      const requests = sortNewestFirst([...firstBatch, ...older]);
+      const voteIds = firstBatch.map((request) => request.id);
+      if (session?.user && voteIds.length) {
+        const { data: votes } = await client.from('feature_request_votes').select('feature_request_id').eq('user_id', session.user.id).in('feature_request_id', voteIds);
+        (votes || []).forEach((vote) => featureVotes.add(vote.feature_request_id));
       }
       statusEl.textContent = requests.length ? '' : 'No feature requests yet.';
       lastFeatureItems = requests;
       requests.forEach((request) => featureCommentTotalCache.set(request.id, request.commentTotal ?? (request.commentsPreview || []).length));
-      const fetchedIds = new Set((fetchedRequests || []).map((request) => request.id));
-      writeFeedCache(
-        'features',
-        page,
-        requests.filter((request) => fetchedIds.has(request.id) || request.id !== selectedRequestId).slice(0, COMMUNITY_PAGE_SIZE),
-        count || requests.length
-      );
+      writeFeedCache('features', 1, firstBatch.slice(0, COMMUNITY_BATCH_SIZE), requests.length);
+      featureCursor = feedCursorOf((fetchedRequests || []).length ? fetchedRequests : firstBatch);
+      featureHasMore = Boolean(hasMore);
       await loadDoneFeatureIndex();
-      paintFeatureCards(requests, myVotes, selectedRequestId);
-      renderPaginationNav('features', page, count || 0);
+      const scrollY = window.scrollY;
+      paintFeatureCards(requests, featureVotes, selectedRequestId);
+      if (!setLoading) window.scrollTo(0, scrollY);
+      setFeedMoreState(requests.length ? (featureHasMore ? '' : 'end') : '');
+      ensureFeedMoreObserver();
       const selectedRequest = requests.find((request) => request.id === selectedRequestId);
       if (selectedRequest) {
         const comment = highlightCommentId
@@ -4719,6 +4970,37 @@
       } else if (!isThreadRoute(route)) {
         hideThreadPanel();
       }
+      featureHydrating = false;
+      maybeLoadMoreFeed();
+    }
+
+    async function loadMoreFeatures() {
+      if (featureHydrating || featureLoadingMore || !featureHasMore || !featureCursor) return;
+      featureLoadingMore = true;
+      setFeedMoreState('loading');
+      const { requests, error, hasMore } = await loadFeatureRowsBefore(featureCursor);
+      if (error) {
+        featureLoadingMore = false;
+        setFeedMoreState('error');
+        return;
+      }
+      const existingIds = new Set(lastFeatureItems.map((request) => request.id));
+      const fresh = sortNewestFirst((requests || []).filter((request) => !existingIds.has(request.id)));
+      if (fresh.length) {
+        const voteIds = fresh.map((request) => request.id);
+        if (session?.user && voteIds.length) {
+          const { data: votes } = await client.from('feature_request_votes').select('feature_request_id').eq('user_id', session.user.id).in('feature_request_id', voteIds);
+          (votes || []).forEach((vote) => featureVotes.add(vote.feature_request_id));
+        }
+        lastFeatureItems = mergeFeedItems(lastFeatureItems, fresh);
+        fresh.forEach((request) => featureCommentTotalCache.set(request.id, request.commentTotal ?? (request.commentsPreview || []).length));
+        paintFeatureCards(fresh, featureVotes, null, { append: true });
+        featureCursor = feedCursorOf(fresh) || featureCursor;
+      }
+      featureHasMore = Boolean(hasMore) && fresh.length > 0;
+      featureLoadingMore = false;
+      setFeedMoreState(featureHasMore ? '' : 'end');
+      if (featureHasMore) maybeLoadMoreFeed();
     }
 
     async function loadActiveTab() {

@@ -21,7 +21,12 @@ import type {
   Molecule,
   ReactionArrowUpdatePatch,
 } from '@moldraw/domain';
-import { getSelectionAabb, offsetReactionArrowForDrag } from '@moldraw/canvas/geometry';
+import {
+  getSelectionAabb,
+  offsetReactionArrowForDrag,
+  remapTextScriptRanges,
+  resolveCanvasTextScripts,
+} from '@moldraw/canvas/geometry';
 import { resetRingPickCycle } from '@moldraw/canvas/interaction';
 import type { InfiniteCanvasHandle } from '@moldraw/canvas/InfiniteCanvas';
 import { cipTagsById, type CipStereoTags } from '@moldraw/engine-2d';
@@ -42,6 +47,7 @@ import {
   type ColorApplyFlags,
 } from '@moldraw/core/color/selectionColor';
 import type { ColorTargetPrefs, GeneralSettings } from '../settings/types';
+import { setInlineTextCaret } from '../inlineTextCaret';
 import type { CanvasContextMenuState } from '../components/CanvasContextMenu';
 import type { InfoPanelData } from '../components/MoleculeInfoPanel';
 import type { UseMoleculeClipboard } from './useMoleculeClipboard';
@@ -368,27 +374,31 @@ export function useMoleculeCanvasCommands({
       const t = selectedCanvasText;
       if (!t || !symbol) return;
       const el = inlineTextareaRef.current;
-      let nextText: string;
-      let caret = t.text.length + symbol.length;
-      if (el && document.activeElement === el) {
-        const start = el.selectionStart ?? t.text.length;
-        const end = el.selectionEnd ?? start;
-        nextText = t.text.slice(0, start) + symbol + t.text.slice(end);
-        caret = start + symbol.length;
-      } else if (el) {
-        const start = el.selectionStart ?? t.text.length;
-        const end = el.selectionEnd ?? start;
-        nextText = t.text.slice(0, start) + symbol + t.text.slice(end);
-        caret = start + symbol.length;
-      } else {
-        nextText = `${t.text}${symbol}`;
+      let start = t.text.length;
+      let end = t.text.length;
+      if (el) {
+        start = el.selectionStart ?? t.text.length;
+        end = el.selectionEnd ?? start;
       }
-      applyCommand(CMD.UpdateCanvasText, { id: t.id, patch: { text: nextText } });
+      const nextText = t.text.slice(0, start) + symbol + t.text.slice(end);
+      const caret = start + symbol.length;
+      const nextScripts = remapTextScriptRanges(
+        resolveCanvasTextScripts(t),
+        start,
+        end,
+        symbol.length,
+        nextText.length,
+      );
+      applyCommand(CMD.UpdateCanvasText, {
+        id: t.id,
+        patch: { text: nextText, textScripts: nextScripts, textScript: 'normal' },
+      });
       requestAnimationFrame(() => {
         const ta = inlineTextareaRef.current;
         if (!ta) return;
         ta.focus({ preventScroll: true });
         ta.setSelectionRange(caret, caret);
+        setInlineTextCaret(caret, caret);
       });
     },
     [applyCommand, selectedCanvasText],
@@ -452,7 +462,7 @@ export function useMoleculeCanvasCommands({
   ]);
 
   const canvasTextLayoutKey = selectedCanvasText
-    ? `${selectedCanvasText.x}:${selectedCanvasText.y}:${selectedCanvasText.fontSize}:${selectedCanvasText.boxWidth ?? 0}:${selectedCanvasText.boxHeight ?? 0}:${selectedCanvasText.rotationRad ?? 0}:${selectedCanvasText.text.length}:${selectedCanvasText.textScript ?? ''}:${selectedCanvasText.fontWeight ?? ''}:${selectedCanvasText.fontStyle ?? ''}`
+    ? `${selectedCanvasText.x}:${selectedCanvasText.y}:${selectedCanvasText.fontSize}:${selectedCanvasText.boxWidth ?? 0}:${selectedCanvasText.boxHeight ?? 0}:${selectedCanvasText.rotationRad ?? 0}:${selectedCanvasText.text.length}:${selectedCanvasText.textScript ?? ''}:${JSON.stringify(selectedCanvasText.textScripts ?? [])}:${selectedCanvasText.fontWeight ?? ''}:${selectedCanvasText.fontStyle ?? ''}`
     : '';
 
   useLayoutEffect(() => {
@@ -758,7 +768,7 @@ export function useMoleculeCanvasCommands({
             strokes: false,
             canvasShapes: flags.canvasShapes,
           }
-        : flags;
+        : { ...flags, text: false };
       applyCommand(CMD.ApplySelectionColor, {
         color,
         flags: safeFlags,

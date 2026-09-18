@@ -1,11 +1,28 @@
 (function () {
-  if (!document.querySelector('script[data-site="i9cwwugh"]')) {
+  // Fallback only: prefer the static <script defer src="…/piqo.js" data-site="i9cwwugh">
+  // in each HTML document. Never insert a second tag (that would double pageviews).
+  if (!document.querySelector('script[src*="data.moldraw.com/piqo.js"], script[data-site="i9cwwugh"]')) {
     var piqoScript = document.createElement('script');
     piqoScript.defer = true;
     piqoScript.setAttribute('data-site', 'i9cwwugh');
     piqoScript.src = 'https://data.moldraw.com/piqo.js';
     document.head.appendChild(piqoScript);
   }
+
+  // Custom events only — do not call this with "pageview".
+  window.trackPiqo = function (name, props) {
+    if (!name || name === 'pageview') return;
+    function fire() {
+      if (typeof window.piqo !== 'function') return false;
+      window.piqo(name, props ? { props: props } : undefined);
+      return true;
+    }
+    if (fire()) return;
+    var n = 0;
+    var id = setInterval(function () {
+      if (fire() || ++n > 40) clearInterval(id);
+    }, 50);
+  };
 
   if (window.location.pathname.indexOf('/tools/') === 0 || window.location.pathname === '/tools') {
     document.body.classList.add('tools-page-sticky-nav');
@@ -15,6 +32,7 @@
       signupLink.className = 'top-link site-tools-signup-cta';
       signupLink.href = '/?signup=1';
       signupLink.setAttribute('data-site-signup-cta', 'true');
+      signupLink.setAttribute('data-piqo-event', 'signup_cta');
       signupLink.textContent = 'Sign up free';
       nav.appendChild(signupLink);
     });

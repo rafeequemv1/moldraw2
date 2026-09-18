@@ -28,6 +28,7 @@ export const stampSymbolToolMouseDown = (ctx: InteractionContext): boolean => {
       text: symbol,
       fontSize: symbol.length > 2 ? 18 : 22,
       color: '#0f172a',
+      textAlign: 'left',
       fontWeight: 'normal',
       fontStyle: 'normal',
       textDecoration: 'none',

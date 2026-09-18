@@ -941,7 +941,6 @@ body,
   .app-top-bar__file-submenu,
   .app-top-bar__export-menu,
   .style-toolbar__menu,
-  .text-style-symbols-dd__menu,
   .pencil-options-floating,
   .alias-inline-editor__panel,
   .mol-color-compact,
@@ -1273,7 +1272,8 @@ body,
     background: transparent !important;
     color: var(--text-main) !important;
     border-color: transparent !important;
-    caret-color: #5eead4;
+    box-shadow: none !important;
+    caret-color: color-mix(in srgb, var(--text-main) 42%, transparent);
   }
 
   .alias-inline-editor__input {

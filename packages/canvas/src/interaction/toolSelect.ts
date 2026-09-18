@@ -175,10 +175,35 @@ const startStructureDrag = (ctx: InteractionContext, worldPos: Point): void => {
   });
 };
 
+/** Reagent “+” chips must beat the selection translate box / click-outside clear. */
+const handleReactionArrowReagentSlotDown = (ctx: InteractionContext): boolean => {
+  const { worldPos, molecule } = ctx;
+  if (!ctx.selectedReactionArrowId || !ctx.onRequestArrowReagentEdit) return false;
+  const selArrow = molecule.reactionArrows?.find(a => a.id === ctx.selectedReactionArrowId);
+  if (!selArrow || !reactionArrowSupportsReagentLabels(selArrow.kind)) return false;
+  const zoom = ctx.viewport?.zoom ?? 1;
+  const slotHit = pickReactionArrowReagentSlot(
+    selArrow,
+    worldPos.x,
+    worldPos.y,
+    reagentSlotChipHitTolWorld(zoom),
+  );
+  if (!slotHit) return false;
+  ctx.setSelectedReactionArrowId(selArrow.id);
+  ctx.setSelectedCanvasTextId?.(null);
+  ctx.setColorEditCanvasShapeId?.(null);
+  ctx.setSelectedCanvasImageId?.(null);
+  ctx.setSelectedSruBracketId?.(null);
+  ctx.setSelectedAtomIds?.([]);
+  ctx.setSelectedBondIds?.([]);
+  ctx.onRequestArrowReagentEdit(selArrow.id, slotHit.slot);
+  return true;
+};
+
 /**
  * Tail / head / curve handle hit → resize_reaction_arrow.
  * When `handlesOnly`, shaft hits are ignored (exclusive arrow still uses the
- * selection box to translate).
+ * selection box to translate). Reagent “+” chips are treated as handles.
  */
 const handleReactionArrowPointerDown = (
   ctx: InteractionContext,
@@ -242,30 +267,9 @@ const handleReactionArrowPointerDown = (
     }
   }
 
-  if (opts?.handlesOnly) return false;
+  if (handleReactionArrowReagentSlotDown(ctx)) return true;
 
-  if (ctx.selectedReactionArrowId && ctx.onRequestArrowReagentEdit) {
-    const selArrow = molecule.reactionArrows?.find(a => a.id === ctx.selectedReactionArrowId);
-    if (selArrow && reactionArrowSupportsReagentLabels(selArrow.kind)) {
-      const slotHit = pickReactionArrowReagentSlot(
-        selArrow,
-        worldPos.x,
-        worldPos.y,
-        reagentSlotChipHitTolWorld(zoom),
-      );
-      if (slotHit) {
-        ctx.setSelectedReactionArrowId(selArrow.id);
-        ctx.setSelectedCanvasTextId?.(null);
-        ctx.setColorEditCanvasShapeId?.(null);
-        ctx.setSelectedCanvasImageId?.(null);
-        ctx.setSelectedSruBracketId?.(null);
-        ctx.setSelectedAtomIds?.([]);
-        ctx.setSelectedBondIds?.([]);
-        ctx.onRequestArrowReagentEdit(selArrow.id, slotHit.slot);
-        return true;
-      }
-    }
-  }
+  if (opts?.handlesOnly) return false;
 
   const hitArrow = pickReactionArrowAt(arrows, worldPos.x, worldPos.y, handleTol);
   if (hitArrow) {
@@ -339,6 +343,9 @@ export const selectToolMouseDown = (ctx: InteractionContext): boolean => {
     // Curly-arrow tail / mid / head must win over the selection translate box.
     if (exclusiveArrow && handleReactionArrowPointerDown(ctx, { handlesOnly: true })) return true;
   }
+
+  // Plus chips sit in/near the box; they must not start a translate or deselect.
+  if (handleReactionArrowReagentSlotDown(ctx)) return true;
 
   if (
     transformAtomIds.length > 0 &&
