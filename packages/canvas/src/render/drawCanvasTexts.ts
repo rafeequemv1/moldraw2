@@ -11,7 +11,8 @@ import {
   canvasTextScriptDy,
   CANVAS_TEXT_SCRIPT_SCALE,
   getCanvasTextBox,
-  getCanvasTextCornerWorld,
+  CANVAS_TEXT_RESIZE_HANDLES,
+  getCanvasTextHandleWorld,
   getCanvasTextRotateHandleWorld,
   getCanvasTextTopMidWorld,
   measureCanvasTextBox,
@@ -21,13 +22,10 @@ import {
   resolveCanvasTextScripts,
   scriptAtIndex,
   wrapCanvasTextLinesIndexed,
-  type CanvasTextResizeCorner,
 } from '../geometry';
 import type { CanvasText } from '@moldraw/domain';
 import type { RenderContext } from './types';
-import { transformChrome } from './transformChrome';
-
-const CORNERS: CanvasTextResizeCorner[] = ['nw', 'ne', 'sw', 'se'];
+import { drawTransformHandleSquare, transformChrome } from './transformChrome';
 
 function textWithDragPreview(t: CanvasText, R: RenderContext): CanvasText {
   const drag = R.dragAction;
@@ -69,8 +67,9 @@ function drawTransformChrome(
   editing: boolean,
 ): void {
   const chrome = transformChrome(R);
-  const lw = 1.25 / zoom;
-  const hs = Math.max(4.5, 5.5 / zoom);
+  const lw = 1 / zoom;
+  const hs = Math.max(2.55, 3.1 / zoom);
+  const rotateR = Math.max(3.4, 4.1 / zoom);
 
   // Frame: rotated with the text. While the inline editor is live the frame
   // picks up the accent so it reads as "typing here".
@@ -94,21 +93,15 @@ function drawTransformChrome(
   ctx.lineTo(rh.x, rh.y);
   ctx.stroke();
   ctx.beginPath();
-  ctx.arc(rh.x, rh.y, hs, 0, Math.PI * 2);
+  ctx.arc(rh.x, rh.y, rotateR, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = chrome.handleStroke;
   ctx.stroke();
   ctx.restore();
 
-  for (const c of CORNERS) {
-    const p = getCanvasTextCornerWorld(box, c);
-    ctx.save();
-    ctx.fillStyle = chrome.handleFill;
-    ctx.strokeStyle = chrome.handleStroke;
-    ctx.lineWidth = lw;
-    ctx.fillRect(p.x - hs, p.y - hs, hs * 2, hs * 2);
-    ctx.strokeRect(p.x - hs, p.y - hs, hs * 2, hs * 2);
-    ctx.restore();
+  for (const h of CANVAS_TEXT_RESIZE_HANDLES) {
+    const p = getCanvasTextHandleWorld(box, h);
+    drawTransformHandleSquare(ctx, p.x, p.y, hs, lw, chrome);
   }
 }
 

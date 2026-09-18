@@ -939,6 +939,30 @@
     .implemented-crown:focus-visible .implemented-crown-tip {
       display: block;
     }
+    .resolution-credit {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      height: 18px;
+      margin: 0;
+      padding: 0 6px 0 4px;
+      border: 1px solid #ead7a2;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fffaf0, #f8efd6);
+      color: #8a6a12;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .resolution-credit .implemented-crown-icon {
+      width: 11px;
+      height: 11px;
+    }
+    .comment.is-credited {
+      box-shadow: inset 3px 0 0 #e8c85a;
+    }
     .implemented-panel-root {
       display: none;
       position: fixed;
@@ -2227,7 +2251,7 @@
       <div class="implemented-panel-head">
         <div>
           <h2 id="implemented-panel-title">Implemented features</h2>
-          <p id="implemented-panel-subtitle" class="implemented-panel-sub">Features they requested that are now done</p>
+          <p id="implemented-panel-subtitle" class="implemented-panel-sub">Features they requested or reports they were credited for that are now done</p>
         </div>
         <button type="button" id="implemented-panel-close" class="thread-close" aria-label="Close implemented features">×</button>
       </div>
@@ -2302,22 +2326,38 @@
     function renderPostRequestStatus(status) {
       return status ? renderFeatureStatus(status) : '';
     }
+    function renderResolutionCredit(item, { compact = false } = {}) {
+      const name = item?.resolved_by_name;
+      if (!name && !compact) return '';
+      const label = compact ? 'Credit' : `Credit: ${name}`;
+      const tip = name
+        ? `Crown credit for the comment that was marked done. ${name}`
+        : 'Crown credit for the comment that was marked done.';
+      return `<span class="resolution-credit" title="${escapeHtml(tip)}">${CROWN_ICON}<span>${escapeHtml(label)}</span></span>`;
+    }
+    function parentItemForComments(parentId, options = {}) {
+      const isFeature = options.statusKind === 'feature' || options.likeSource === 'feature_request_comments';
+      if (isFeature) return lastFeatureItems.find((item) => item.id === parentId) || null;
+      return lastDiscussionItems.find((item) => item.id === parentId) || null;
+    }
     function renderFeatureStatusControl(request, { compact = false } = {}) {
-      if (!isAdmin()) return compact ? '' : renderFeatureStatus(request?.status);
+      const credit = compact ? '' : renderResolutionCredit(request);
+      if (!isAdmin()) return compact ? '' : `${renderFeatureStatus(request?.status)}${credit}`;
       const current = request?.status || 'new';
       const aria = compact ? 'Change request status from this reply' : 'Change request status';
       return `<select class="status-select" data-feature-status="${escapeHtml(request.id)}" aria-label="${aria}">
         ${Object.keys(featureStatusLabels).map((key) => `<option value="${key}"${key === current ? ' selected' : ''}>${featureStatusLabels[key]}</option>`).join('')}
-      </select>`;
+      </select>${credit}`;
     }
     function renderPostStatusControl(post, { compact = false } = {}) {
-      if (!isAdmin()) return compact ? '' : renderPostRequestStatus(post?.request_status);
+      const credit = compact ? '' : renderResolutionCredit(post);
+      if (!isAdmin()) return compact ? '' : `${renderPostRequestStatus(post?.request_status)}${credit}`;
       const current = post?.request_status || '';
       const aria = compact ? 'Change discussion status from this reply' : 'Change discussion request status';
       return `<select class="status-select" data-post-request-status="${escapeHtml(post.id)}" aria-label="${aria}">
         <option value=""${current ? '' : ' selected'}>No status</option>
         ${Object.keys(statusLabels).map((key) => `<option value="${key}"${key === current ? ' selected' : ''}>${statusLabels[key]}</option>`).join('')}
-      </select>`;
+      </select>${credit}`;
     }
     function renderCommentParentStatusControl(parentId, options = {}) {
       if (!isAdmin()) return '';
@@ -2336,7 +2376,8 @@
         select.dataset.statusBound = '1';
         select.addEventListener('change', (event) => {
           event.stopPropagation();
-          updateDiscussionRequestStatus(select.getAttribute('data-post-request-status'), select.value);
+          const commentId = select.closest('[data-comment-id]')?.getAttribute('data-comment-id') || '';
+          updateDiscussionRequestStatus(select.getAttribute('data-post-request-status'), select.value, { commentId });
         });
       });
       root.querySelectorAll('[data-feature-status]').forEach((select) => {
@@ -2344,18 +2385,32 @@
         select.dataset.statusBound = '1';
         select.addEventListener('change', (event) => {
           event.stopPropagation();
-          updateFeatureStatus(select.getAttribute('data-feature-status'), select.value);
+          const commentId = select.closest('[data-comment-id]')?.getAttribute('data-comment-id') || '';
+          updateFeatureStatus(select.getAttribute('data-feature-status'), select.value, { commentId });
         });
       });
     }
     const COMMUNITY_BATCH_SIZE = 10;
     const FEED_COMMENT_PREVIEW = 3;
-    const FEED_CACHE_VERSION = 5;
+    const FEED_CACHE_VERSION = 6;
     const FEED_CACHE_PREFIX = 'moldraw.community.feed.v2';
-    const DISCUSSION_LIST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,request_status,created_at';
-    const DISCUSSION_HEAD_SELECT = 'id,created_at,comment_count,upvote_count,request_status';
-    const FEATURE_LIST_SELECT = 'id,user_id,name,title,description,image_urls,status,upvote_count,created_at';
-    const FEATURE_HEAD_SELECT = 'id,created_at,upvote_count,status';
+    const DISCUSSION_LIST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,request_status,resolved_by_user_id,credited_comment_id,resolved_by_name,created_at';
+    const DISCUSSION_HEAD_SELECT = 'id,created_at,comment_count,upvote_count,request_status,resolved_by_user_id,credited_comment_id,resolved_by_name';
+    const FEATURE_LIST_SELECT = 'id,user_id,name,title,description,image_urls,status,upvote_count,resolved_by_user_id,credited_comment_id,resolved_by_name,created_at';
+    const FEATURE_HEAD_SELECT = 'id,created_at,upvote_count,status,resolved_by_user_id,credited_comment_id,resolved_by_name';
+    let resolutionCreditAvailable = true;
+    function selectCols(spec) {
+      if (resolutionCreditAvailable) return spec;
+      return spec.replace(/,?resolved_by_user_id|,?credited_comment_id|,?resolved_by_name/g, '');
+    }
+    function disableCreditIfMissing(error) {
+      const text = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`;
+      if (/resolved_by_|credited_comment_id/i.test(text)) {
+        resolutionCreditAvailable = false;
+        return true;
+      }
+      return false;
+    }
     const COMMENT_PREVIEW_SELECT = 'id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
     const FEATURE_COMMENT_PREVIEW_SELECT = 'id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
     const dirtyDiscussionPreviewIds = new Set();
@@ -2850,7 +2905,7 @@
       const count = doneFeatureCount(userId, name);
       if (count < 1) return '';
       const label = count === 1 ? '1 feature implemented' : `${count} features implemented`;
-      const tip = `${label}. Features they requested that are now done.`;
+      const tip = `${label}. Features they requested or reports they were credited for that are now done.`;
       return `<button type="button" class="implemented-crown" data-done-features data-done-user="${escapeHtml(userId || '')}" data-done-name="${escapeHtml(name || '')}" aria-label="${escapeHtml(label)}" title="${escapeHtml(tip)}">${CROWN_ICON}<span class="implemented-crown-count">${count}</span><span class="implemented-crown-tip">${escapeHtml(tip)}</span></button>`;
     }
     function resetDoneFeatureIndex() {
@@ -2878,24 +2933,40 @@
         const [features, posts] = await Promise.all([
           client
             .from('community_feature_requests')
-            .select('id,user_id,name,title,created_at')
+            .select('id,user_id,name,title,created_at,resolved_by_user_id,resolved_by_name')
             .eq('status', 'done')
             .order('created_at', { ascending: false })
             .limit(1000),
           client
             .from('community_posts')
-            .select('id,user_id,title,author_name,created_at')
+            .select('id,user_id,title,author_name,created_at,resolved_by_user_id,resolved_by_name')
             .eq('request_status', 'done')
             .order('created_at', { ascending: false })
             .limit(1000)
         ]);
         const byUser = new Map();
         const byName = new Map();
+        const addDoneRow = (row) => {
+          pushDoneItem(byUser, byName, row);
+          if (row.resolved_by_user_id && row.resolved_by_user_id !== row.user_id) {
+            pushDoneItem(byUser, byName, {
+              ...row,
+              user_id: row.resolved_by_user_id,
+              name: row.resolved_by_name || row.name
+            });
+          } else if (!row.resolved_by_user_id && row.resolved_by_name && row.resolved_by_name !== row.name) {
+            pushDoneItem(byUser, byName, {
+              ...row,
+              user_id: '',
+              name: row.resolved_by_name
+            });
+          }
+        };
         if (!features.error) {
-          (features.data || []).forEach((row) => pushDoneItem(byUser, byName, { ...row, kind: 'feature' }));
+          (features.data || []).forEach((row) => addDoneRow({ ...row, kind: 'feature' }));
         }
         if (!posts.error) {
-          (posts.data || []).forEach((row) => pushDoneItem(byUser, byName, {
+          (posts.data || []).forEach((row) => addDoneRow({
             ...row,
             kind: 'post',
             name: row.author_name
@@ -2927,7 +2998,7 @@
       const label = count === 1 ? '1 feature implemented' : `${count} features implemented`;
       if (implementedPanelTitle) implementedPanelTitle.textContent = name ? `${name}` : 'Implemented features';
       if (implementedPanelSubtitle) {
-        implementedPanelSubtitle.textContent = `${label}. Features they requested that are now done.`;
+        implementedPanelSubtitle.textContent = `${label}. Features they requested or reports they were credited for that are now done.`;
       }
       implementedPanelList.innerHTML = rows.map((row) => `
         <a class="implemented-panel-item" href="${escapeHtml(implementedItemUrl(row))}">
@@ -3338,10 +3409,13 @@
       if (!cached?.items?.length) {
         const { data, error } = await client
           .from('community_posts')
-          .select(DISCUSSION_LIST_SELECT)
+          .select(selectCols(DISCUSSION_LIST_SELECT))
           .order('created_at', { ascending: false })
           .limit(COMMUNITY_BATCH_SIZE + 1);
-        if (error) return { error, posts: [], hasMore: false };
+        if (error) {
+          if (disableCreditIfMissing(error)) return loadDiscussionRowsIncremental(cached);
+          return { error, posts: [], hasMore: false };
+        }
         const rows = data || [];
         const hasMore = rows.length > COMMUNITY_BATCH_SIZE;
         const posts = rows.slice(0, COMMUNITY_BATCH_SIZE);
@@ -3352,10 +3426,13 @@
 
       const { data: head, error: headError } = await client
         .from('community_posts')
-        .select(DISCUSSION_HEAD_SELECT)
+        .select(selectCols(DISCUSSION_HEAD_SELECT))
         .order('created_at', { ascending: false })
         .limit(COMMUNITY_BATCH_SIZE + 1);
-      if (headError) return { error: headError, posts: [], hasMore: false };
+      if (headError) {
+        if (disableCreditIfMissing(headError)) return loadDiscussionRowsIncremental(cached);
+        return { error: headError, posts: [], hasMore: false };
+      }
       const hasMore = (head || []).length > COMMUNITY_BATCH_SIZE;
       const headRows = (head || []).slice(0, COMMUNITY_BATCH_SIZE);
 
@@ -3364,7 +3441,7 @@
       const { data: newer } = newestCached
         ? await client
           .from('community_posts')
-          .select(DISCUSSION_LIST_SELECT)
+          .select(selectCols(DISCUSSION_LIST_SELECT))
           .gt('created_at', newestCached)
           .order('created_at', { ascending: false })
           .limit(COMMUNITY_BATCH_SIZE)
@@ -3372,7 +3449,7 @@
       const newById = new Map((newer || []).map((row) => [row.id, row]));
       const missingIds = headRows.filter((row) => !cachedById.has(row.id) && !newById.has(row.id)).map((row) => row.id);
       if (missingIds.length) {
-        const { data: extra } = await client.from('community_posts').select(DISCUSSION_LIST_SELECT).in('id', missingIds);
+        const { data: extra } = await client.from('community_posts').select(selectCols(DISCUSSION_LIST_SELECT)).in('id', missingIds);
         (extra || []).forEach((row) => newById.set(row.id, row));
       }
 
@@ -3406,6 +3483,9 @@
           ...base,
           upvote_count: row.upvote_count ?? base.upvote_count,
           request_status: row.request_status ?? base.request_status,
+          resolved_by_user_id: 'resolved_by_user_id' in row ? row.resolved_by_user_id : base.resolved_by_user_id,
+          credited_comment_id: 'credited_comment_id' in row ? row.credited_comment_id : base.credited_comment_id,
+          resolved_by_name: 'resolved_by_name' in row ? row.resolved_by_name : base.resolved_by_name,
           comment_count: commentTotal,
           commentsPreview: latestChronological(comments, FEED_COMMENT_PREVIEW),
           commentTotal
@@ -3417,7 +3497,7 @@
     async function loadDiscussionRowsBefore(beforeCreatedAt) {
       let query = client
         .from('community_posts')
-        .select(DISCUSSION_LIST_SELECT)
+        .select(selectCols(DISCUSSION_LIST_SELECT))
         .order('created_at', { ascending: false })
         .limit(COMMUNITY_BATCH_SIZE + 1);
       if (beforeCreatedAt) query = query.lt('created_at', beforeCreatedAt);
@@ -3435,10 +3515,13 @@
       if (!cached?.items?.length || !featureCommentsAvailable) {
         const { data, error } = await client
           .from('community_feature_requests')
-          .select(FEATURE_LIST_SELECT)
+          .select(selectCols(FEATURE_LIST_SELECT))
           .order('created_at', { ascending: false })
           .limit(COMMUNITY_BATCH_SIZE + 1);
-        if (error) return { error, requests: [], hasMore: false };
+        if (error) {
+          if (disableCreditIfMissing(error)) return loadFeatureRowsIncremental(cached);
+          return { error, requests: [], hasMore: false };
+        }
         const rows = data || [];
         const hasMore = rows.length > COMMUNITY_BATCH_SIZE;
         const requests = rows.slice(0, COMMUNITY_BATCH_SIZE);
@@ -3453,10 +3536,13 @@
 
       const { data: head, error: headError } = await client
         .from('community_feature_requests')
-        .select(FEATURE_HEAD_SELECT)
+        .select(selectCols(FEATURE_HEAD_SELECT))
         .order('created_at', { ascending: false })
         .limit(COMMUNITY_BATCH_SIZE + 1);
-      if (headError) return { error: headError, requests: [], hasMore: false };
+      if (headError) {
+        if (disableCreditIfMissing(headError)) return loadFeatureRowsIncremental(cached);
+        return { error: headError, requests: [], hasMore: false };
+      }
       const hasMore = (head || []).length > COMMUNITY_BATCH_SIZE;
       const headRows = (head || []).slice(0, COMMUNITY_BATCH_SIZE);
 
@@ -3465,7 +3551,7 @@
       const { data: newer } = newestCached
         ? await client
           .from('community_feature_requests')
-          .select(FEATURE_LIST_SELECT)
+          .select(selectCols(FEATURE_LIST_SELECT))
           .gt('created_at', newestCached)
           .order('created_at', { ascending: false })
           .limit(COMMUNITY_BATCH_SIZE)
@@ -3473,7 +3559,7 @@
       const newById = new Map((newer || []).map((row) => [row.id, row]));
       const missingIds = headRows.filter((row) => !cachedById.has(row.id) && !newById.has(row.id)).map((row) => row.id);
       if (missingIds.length) {
-        const { data: extra } = await client.from('community_feature_requests').select(FEATURE_LIST_SELECT).in('id', missingIds);
+        const { data: extra } = await client.from('community_feature_requests').select(selectCols(FEATURE_LIST_SELECT)).in('id', missingIds);
         (extra || []).forEach((row) => newById.set(row.id, row));
       }
 
@@ -3509,7 +3595,9 @@
         if (!prev) return false;
         return commentTouched.has(row.id)
           || Number(prev.upvote_count || 0) !== Number(row.upvote_count || 0)
-          || String(prev.status || 'new') !== String(row.status || 'new');
+          || String(prev.status || 'new') !== String(row.status || 'new')
+          || String(prev.credited_comment_id || '') !== String(row.credited_comment_id || '')
+          || String(prev.resolved_by_user_id || '') !== String(row.resolved_by_user_id || '');
       }).map((row) => row.id);
       const commentFetchIds = [...new Set([...newById.keys(), ...updatedIds, ...dirty])];
       const previews = commentFetchIds.length && featureCommentsAvailable
@@ -3531,6 +3619,9 @@
           ...base,
           upvote_count: row.upvote_count ?? base.upvote_count,
           status: row.status ?? base.status,
+          resolved_by_user_id: 'resolved_by_user_id' in row ? row.resolved_by_user_id : base.resolved_by_user_id,
+          credited_comment_id: 'credited_comment_id' in row ? row.credited_comment_id : base.credited_comment_id,
+          resolved_by_name: 'resolved_by_name' in row ? row.resolved_by_name : base.resolved_by_name,
           commentsPreview: latestChronological(comments, FEED_COMMENT_PREVIEW),
           commentTotal
         };
@@ -3541,7 +3632,7 @@
     async function loadFeatureRowsBefore(beforeCreatedAt) {
       let query = client
         .from('community_feature_requests')
-        .select(FEATURE_LIST_SELECT)
+        .select(selectCols(FEATURE_LIST_SELECT))
         .order('created_at', { ascending: false })
         .limit(COMMUNITY_BATCH_SIZE + 1);
       if (beforeCreatedAt) query = query.lt('created_at', beforeCreatedAt);
@@ -4341,16 +4432,18 @@
       const permalink = (options.permalinkHref || commentPermalink)(comment);
       const highlighted = options.highlightId && comment.id === options.highlightId;
       const pending = Boolean(comment.pending);
+      const parentItem = parentItemForComments(postId, options);
+      const credited = Boolean(parentItem?.credited_comment_id && parentItem.credited_comment_id === comment.id);
       const domId = pending || options.useCommentDomId === false ? '' : `id="comment-${escapeHtml(comment.id)}"`;
       const timeHtml = pending
         ? escapeHtml(timeText(comment.created_at))
         : `<a class="comment-time-link" data-open-thread href="${escapeHtml(permalink)}">${escapeHtml(timeText(comment.created_at))}</a>`;
       return `
-        <div class="comment ${isReply ? 'comment-reply' : ''}${highlighted ? ' is-highlight' : ''}${pending ? ' is-pending' : ''}" ${domId} data-comment-id="${escapeHtml(comment.id)}">
+        <div class="comment ${isReply ? 'comment-reply' : ''}${highlighted ? ' is-highlight' : ''}${pending ? ' is-pending' : ''}${credited ? ' is-credited' : ''}" ${domId} data-comment-id="${escapeHtml(comment.id)}">
           <div class="author">
             <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
             <div>
-              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}</strong>
+              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}${credited ? renderResolutionCredit({ resolved_by_name: comment.author_name || parentItem?.resolved_by_name }, { compact: true }) : ''}</strong>
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · ${timeHtml}</div>
             </div>
           </div>
@@ -4982,7 +5075,7 @@
       if (selectedPostId && !firstBatch.some((post) => post.id === selectedPostId)) {
         const { data: selected } = await client
           .from('community_posts')
-          .select(DISCUSSION_LIST_SELECT)
+          .select(selectCols(DISCUSSION_LIST_SELECT))
           .eq('id', selectedPostId)
           .maybeSingle();
         if (selected) {
@@ -5085,16 +5178,23 @@
       await loadFeatureRequests(false);
     }
 
-    async function updateFeatureStatus(featureRequestId, status) {
+    async function updateFeatureStatus(featureRequestId, status, { commentId } = {}) {
       if (!isAdmin()) {
         openAuthModal('Admin access required');
         return;
       }
       statusEl.textContent = 'Updating request status...';
       const previous = lastFeatureItems.find((item) => item.id === featureRequestId);
+      const payload = { status };
+      if (status === 'done' && commentId && resolutionCreditAvailable) {
+        const comment = (featureCommentCache.get(featureRequestId) || []).find((item) => item.id === commentId);
+        payload.credited_comment_id = commentId;
+        if (comment?.user_id) payload.resolved_by_user_id = comment.user_id;
+        if (comment?.author_name) payload.resolved_by_name = comment.author_name;
+      }
       const { error } = await client
         .from('feature_requests')
-        .update({ status })
+        .update(payload)
         .eq('id', featureRequestId);
       if (error) {
         statusEl.textContent = error.message || 'Could not update status.';
@@ -5111,7 +5211,7 @@
       statusEl.textContent = notifyStatusNote(notify, 'Request status updated.');
     }
 
-    async function updateDiscussionRequestStatus(postId, requestStatus) {
+    async function updateDiscussionRequestStatus(postId, requestStatus, { commentId } = {}) {
       if (!isAdmin()) {
         openAuthModal('Admin access required');
         return;
@@ -5119,9 +5219,16 @@
       statusEl.textContent = 'Updating discussion status...';
       const previous = lastDiscussionItems?.find((item) => item.id === postId);
       const nextStatus = requestStatus || null;
+      const payload = { request_status: nextStatus };
+      if (nextStatus === 'done' && commentId && resolutionCreditAvailable) {
+        const comment = (commentCache.get(postId) || []).find((item) => item.id === commentId);
+        payload.credited_comment_id = commentId;
+        if (comment?.user_id) payload.resolved_by_user_id = comment.user_id;
+        if (comment?.author_name) payload.resolved_by_name = comment.author_name;
+      }
       const { error } = await client
         .from('community_posts')
-        .update({ request_status: nextStatus })
+        .update(payload)
         .eq('id', postId);
       if (error) {
         statusEl.textContent = error.message || 'Could not update discussion status.';
@@ -5246,7 +5353,7 @@
       if (selectedRequestId && !firstBatch.some((request) => request.id === selectedRequestId)) {
         const { data: selected } = await client
           .from('community_feature_requests')
-          .select(FEATURE_LIST_SELECT)
+          .select(selectCols(FEATURE_LIST_SELECT))
           .eq('id', selectedRequestId)
           .maybeSingle();
         if (selected) {

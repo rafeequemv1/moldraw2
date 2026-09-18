@@ -370,10 +370,65 @@ function statusLabel(value) {
   return labels[key] || key.replace(/_/g, ' ') || 'updated';
 }
 
+async function notifyStatusRecipients({
+  id,
+  status,
+  title,
+  href,
+  cta,
+  authorUserId,
+  authorEmail,
+  creditedUserId,
+  authorEventKey,
+  creditEventKey,
+  authorSubject,
+  authorHeading,
+  authorPreview,
+}) {
+  const results = [];
+  const credited = uuidParam(creditedUserId);
+  const author = uuidParam(authorUserId);
+  if (status === 'done' && credited) {
+    results.push(await deliver({
+      userId: credited,
+      email: await emailForUser(credited),
+      subject: 'Your report was marked done',
+      heading: 'Your report was marked done',
+      preview: `${title || 'A report you commented on'} is now Done.`,
+      href,
+      cta,
+      eventKey: creditEventKey,
+    }));
+  }
+  const authorIsCredited = status === 'done' && credited && credited === author;
+  if (!authorIsCredited) {
+    results.push(await deliver({
+      userId: authorUserId,
+      email: authorEmail,
+      subject: authorSubject,
+      heading: authorHeading,
+      preview: authorPreview,
+      href,
+      cta,
+      eventKey: authorEventKey,
+    }));
+  }
+  const sent = results.filter((row) => row && row.id && !row.skipped && !row.error).length;
+  if (!sent) {
+    const skipped = results.find((row) => row?.skipped)?.skipped
+      || results.find((row) => row?.error)?.error;
+    if (skipped) return { skipped, results };
+  }
+  return { sent, results };
+}
+
 async function notifyFeatureStatus(record, oldRecord, auth) {
   const id = uuidParam(record?.id);
   if (!id) return { skipped: 'no_request' };
   const current = await supabaseGet(
+    'feature_requests',
+    `select=id,user_id,email,title,status,resolved_by_user_id,credited_comment_id&id=eq.${encodeURIComponent(id)}`,
+  ) || await supabaseGet(
     'feature_requests',
     `select=id,user_id,email,title,status&id=eq.${encodeURIComponent(id)}`,
   );
@@ -394,17 +449,22 @@ async function notifyFeatureStatus(record, oldRecord, auth) {
   const href = permalink('feature', current.id, current.title);
   const label = statusLabel(current.status);
   const already = current.status === 'already_implemented';
-  return deliver({
-    userId: current.user_id,
-    email: to,
-    subject: `Your feature request is now “${label}”`,
-    heading: `Your request is now “${label}”`,
-    preview: already
-      ? `${current.title || 'This request'} is already available in MolDraw.`
-      : (current.title || 'A MolDraw feature request you submitted has a new status.'),
+  return notifyStatusRecipients({
+    id: current.id,
+    status: current.status,
+    title: current.title,
     href,
     cta: 'Open the request',
-    eventKey: `feature-status/${current.id}/${current.status || 'updated'}`,
+    authorUserId: current.user_id,
+    authorEmail: to,
+    creditedUserId: current.resolved_by_user_id,
+    authorEventKey: `feature-status/${current.id}/${current.status || 'updated'}`,
+    creditEventKey: `feature-credit/${current.id}/${current.status || 'updated'}/${current.resolved_by_user_id || 'none'}`,
+    authorSubject: `Your feature request is now “${label}”`,
+    authorHeading: `Your request is now “${label}”`,
+    authorPreview: already
+      ? `${current.title || 'This request'} is already available in MolDraw.`
+      : (current.title || 'A MolDraw feature request you submitted has a new status.'),
   });
 }
 
@@ -412,6 +472,9 @@ async function notifyPostRequestStatus(record, oldRecord, auth) {
   const id = uuidParam(record?.id);
   if (!id) return { skipped: 'no_post' };
   const current = await supabaseGet(
+    'community_posts',
+    `select=id,user_id,title,request_status,resolved_by_user_id,credited_comment_id&id=eq.${encodeURIComponent(id)}`,
+  ) || await supabaseGet(
     'community_posts',
     `select=id,user_id,title,request_status&id=eq.${encodeURIComponent(id)}`,
   );
@@ -431,17 +494,22 @@ async function notifyPostRequestStatus(record, oldRecord, auth) {
   const href = permalink('post', current.id, current.title);
   const label = statusLabel(nextStatus);
   const already = nextStatus === 'already_implemented';
-  return deliver({
-    userId: current.user_id,
-    email: await emailForUser(current.user_id),
-    subject: `Your feature request is now “${label}”`,
-    heading: `Your request is now “${label}”`,
-    preview: already
-      ? `${current.title || 'This request'} is already available in MolDraw.`
-      : (current.title || 'A MolDraw discussion you submitted has a new status.'),
+  return notifyStatusRecipients({
+    id: current.id,
+    status: nextStatus,
+    title: current.title,
     href,
     cta: 'Open the discussion',
-    eventKey: `post-request-status/${current.id}/${nextStatus || 'updated'}`,
+    authorUserId: current.user_id,
+    authorEmail: await emailForUser(current.user_id),
+    creditedUserId: current.resolved_by_user_id,
+    authorEventKey: `post-request-status/${current.id}/${nextStatus || 'updated'}`,
+    creditEventKey: `post-credit/${current.id}/${nextStatus || 'updated'}/${current.resolved_by_user_id || 'none'}`,
+    authorSubject: `Your feature request is now “${label}”`,
+    authorHeading: `Your request is now “${label}”`,
+    authorPreview: already
+      ? `${current.title || 'This request'} is already available in MolDraw.`
+      : (current.title || 'A MolDraw discussion you submitted has a new status.'),
   });
 }
 

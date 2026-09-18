@@ -68,8 +68,12 @@ ok(!pickCanvasTextContentAt(ctx, empty, 0, 0), 'empty label has no glyph hit');
 
 ok(canvasTextCursorAt(ctx, [label], null, 0, 0, 1) === 'grab', 'unselected box shows grab');
 ok(
-  canvasTextCursorAt(ctx, [label], 't1', box.right + grabPad * 0.5, 0, 1) === 'grab',
-  'selected frame slop shows grab',
+  canvasTextCursorAt(ctx, [label], 't1', box.right, 0, 1) === 'ew-resize',
+  'east mid-handle shows ew-resize',
+);
+ok(
+  canvasTextCursorAt(ctx, [label], 't1', box.right + grabPad * 0.5, 20, 1) === 'grab',
+  'selected frame slop away from handles shows grab',
 );
 ok(
   canvasTextCursorAt(ctx, [label], 't1', -box.width / 2 + 20, 0, 1, { editing: true }) === 'text',

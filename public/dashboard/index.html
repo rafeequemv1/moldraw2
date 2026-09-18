@@ -1052,7 +1052,14 @@
       }
 
       const request = latestFeatureRequests.find((item) => item.id === requestId);
-      if (request) request.status = status;
+      if (request) {
+        request.status = status;
+        if (status !== 'done') {
+          request.resolved_by_name = null;
+          request.resolved_by_user_id = null;
+          request.credited_comment_id = null;
+        }
+      }
       closeRequestModal();
       renderRequests(latestFeatureRequests);
     }
@@ -1073,6 +1080,7 @@
                 ${Object.keys(requestStatusLabels).map((key) => `<option value="${key}"${key === currentStatus ? ' selected' : ''}>${requestStatusLabels[key]}</option>`).join('')}
               </select>
             </label>
+            ${request.resolved_by_name ? `<p class="request-meta">Credit: ${escapeHtml(request.resolved_by_name)}</p>` : ''}
           </div>
           <button class="dashboard-modal-close" type="button" aria-label="Close feature request">×</button>
         </div>
@@ -1095,10 +1103,16 @@
 
     async function loadFeatureRequests() {
       root.innerHTML = '<p class="dashboard-subtitle">Loading feature requests...</p>';
-      const { data: requests, error: requestError } = await client
+      let { data: requests, error: requestError } = await client
         .from('feature_requests')
-        .select('id,name,email,title,description,image_urls,status,created_at')
+        .select('id,name,email,title,description,image_urls,status,created_at,resolved_by_name,credited_comment_id,resolved_by_user_id')
         .order('created_at', { ascending: false });
+      if (requestError && /resolved_by_|credited_comment_id/i.test(`${requestError.message || ''} ${requestError.details || ''}`)) {
+        ({ data: requests, error: requestError } = await client
+          .from('feature_requests')
+          .select('id,name,email,title,description,image_urls,status,created_at')
+          .order('created_at', { ascending: false }));
+      }
 
       if (requestError) {
         renderBlank(requestError.message || 'Could not load feature requests.');

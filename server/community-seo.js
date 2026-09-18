@@ -21,9 +21,11 @@ const SUPABASE_KEY =
   || process.env.SUPABASE_ANON_KEY
   || 'sb_publishable_lP5X_egPBmD__qqKPjyoyg_M4iNUj_C';
 
-const POST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,request_status,created_at';
+const POST_SELECT = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,request_status,resolved_by_user_id,credited_comment_id,resolved_by_name,created_at';
+const POST_SELECT_FALLBACK = 'id,user_id,title,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,upvote_count,comment_count,request_status,created_at';
 const COMMENT_SELECT = 'id,post_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
-const FEATURE_SELECT = 'id,user_id,name,title,description,image_urls,status,upvote_count,created_at';
+const FEATURE_SELECT = 'id,user_id,name,title,description,image_urls,status,upvote_count,resolved_by_user_id,credited_comment_id,resolved_by_name,created_at';
+const FEATURE_SELECT_FALLBACK = 'id,user_id,name,title,description,image_urls,status,upvote_count,created_at';
 const FEATURE_COMMENT_SELECT = 'id,feature_request_id,parent_comment_id,user_id,body,image_urls,author_name,author_designation,author_avatar_key,author_is_admin,author_karma_score,created_at';
 
 let templateCache = null;
@@ -131,7 +133,7 @@ function implementedCrown(userId, name) {
   const count = rows.length;
   if (count < 1) return '';
   const label = count === 1 ? '1 feature implemented' : `${count} features implemented`;
-  const tip = `${label}. Features they requested that are now done.`;
+  const tip = `${label}. Features they requested or reports they were credited for that are now done.`;
   return `<button type="button" class="implemented-crown" data-done-features data-done-user="${escapeHtml(userId || '')}" data-done-name="${escapeHtml(name || '')}" aria-label="${escapeHtml(label)}" title="${escapeHtml(tip)}">${CROWN_ICON}<span class="implemented-crown-count">${count}</span><span class="implemented-crown-tip">${escapeHtml(tip)}</span></button>`;
 }
 
@@ -152,17 +154,33 @@ async function loadDoneFeatureIndex() {
     const [features, posts] = await Promise.all([
       supabaseQuery(
         'community_feature_requests',
-        'select=id,user_id,name,title,created_at&status=eq.done&order=created_at.desc',
+        'select=id,user_id,name,title,created_at,resolved_by_user_id,resolved_by_name&status=eq.done&order=created_at.desc',
         { range: { from: 0, to: 999 } },
       ),
       supabaseQuery(
         'community_posts',
-        'select=id,user_id,title,author_name,created_at&request_status=eq.done&order=created_at.desc',
+        'select=id,user_id,title,author_name,created_at,resolved_by_user_id,resolved_by_name&request_status=eq.done&order=created_at.desc',
         { range: { from: 0, to: 999 } },
       ).catch(() => ({ data: [] })),
     ]);
-    (features.data || []).forEach((row) => pushDoneItem(byUser, byName, { ...row, kind: 'feature' }));
-    (posts.data || []).forEach((row) => pushDoneItem(byUser, byName, {
+    const addDoneRow = (row) => {
+      pushDoneItem(byUser, byName, row);
+      if (row.resolved_by_user_id && row.resolved_by_user_id !== row.user_id) {
+        pushDoneItem(byUser, byName, {
+          ...row,
+          user_id: row.resolved_by_user_id,
+          name: row.resolved_by_name || row.name,
+        });
+      } else if (!row.resolved_by_user_id && row.resolved_by_name && row.resolved_by_name !== row.name) {
+        pushDoneItem(byUser, byName, {
+          ...row,
+          user_id: '',
+          name: row.resolved_by_name,
+        });
+      }
+    };
+    (features.data || []).forEach((row) => addDoneRow({ ...row, kind: 'feature' }));
+    (posts.data || []).forEach((row) => addDoneRow({
       ...row,
       kind: 'post',
       name: row.author_name,
@@ -338,37 +356,69 @@ function encodeEq(value) {
 async function fetchPostsPage(page) {
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-  return supabaseQuery(
-    'community_posts',
-    `select=${POST_SELECT}&order=created_at.desc`,
-    { range: { from, to } },
-  );
+  try {
+    return await supabaseQuery(
+      'community_posts',
+      `select=${POST_SELECT}&order=created_at.desc`,
+      { range: { from, to } },
+    );
+  } catch {
+    return supabaseQuery(
+      'community_posts',
+      `select=${POST_SELECT_FALLBACK}&order=created_at.desc`,
+      { range: { from, to } },
+    );
+  }
 }
 
 async function fetchFeaturesPage(page) {
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-  return supabaseQuery(
-    'community_feature_requests',
-    `select=${FEATURE_SELECT}&order=created_at.desc`,
-    { range: { from, to } },
-  );
+  try {
+    return await supabaseQuery(
+      'community_feature_requests',
+      `select=${FEATURE_SELECT}&order=created_at.desc`,
+      { range: { from, to } },
+    );
+  } catch {
+    return supabaseQuery(
+      'community_feature_requests',
+      `select=${FEATURE_SELECT_FALLBACK}&order=created_at.desc`,
+      { range: { from, to } },
+    );
+  }
 }
 
 async function fetchPost(id) {
-  const { data } = await supabaseQuery(
-    'community_posts',
-    `select=${POST_SELECT}&id=eq.${encodeEq(id)}`,
-  );
-  return data[0] || null;
+  try {
+    const { data } = await supabaseQuery(
+      'community_posts',
+      `select=${POST_SELECT}&id=eq.${encodeEq(id)}`,
+    );
+    return data[0] || null;
+  } catch {
+    const { data } = await supabaseQuery(
+      'community_posts',
+      `select=${POST_SELECT_FALLBACK}&id=eq.${encodeEq(id)}`,
+    );
+    return data[0] || null;
+  }
 }
 
 async function fetchFeature(id) {
-  const { data } = await supabaseQuery(
-    'community_feature_requests',
-    `select=${FEATURE_SELECT}&id=eq.${encodeEq(id)}`,
-  );
-  return data[0] || null;
+  try {
+    const { data } = await supabaseQuery(
+      'community_feature_requests',
+      `select=${FEATURE_SELECT}&id=eq.${encodeEq(id)}`,
+    );
+    return data[0] || null;
+  } catch {
+    const { data } = await supabaseQuery(
+      'community_feature_requests',
+      `select=${FEATURE_SELECT_FALLBACK}&id=eq.${encodeEq(id)}`,
+    );
+    return data[0] || null;
+  }
 }
 
 async function fetchCommentsForPosts(postIds, limit = COMMENT_LIMIT) {
@@ -502,21 +552,22 @@ function renderMentionedText(body) {
   return escapeHtml(body).replace(/@([A-Za-z0-9_]{2,40})/g, '<span class="comment-mention">@$1</span>');
 }
 
-function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllReplies = true, highlightId = '', useDomId = false }) {
+function renderSingleComment(comment, { permalinkHref, heading = 'h3', showAllReplies = true, highlightId = '', useDomId = false, creditedCommentId = '' }) {
   const replies = showAllReplies ? (comment.replies || []) : (comment.replies || []).slice(0, 2);
   const hiddenReplies = Math.max((comment.replies || []).length - replies.length, 0);
-  const replyHtml = replies.map((reply) => renderSingleComment(reply, { permalinkHref, heading, showAllReplies, highlightId, useDomId })).join('');
+  const replyHtml = replies.map((reply) => renderSingleComment(reply, { permalinkHref, heading, showAllReplies, highlightId, useDomId, creditedCommentId })).join('');
   const images = renderImages(comment.image_urls, 'Reply attachment');
   const highlighted = highlightId && comment.id === highlightId;
+  const credited = Boolean(creditedCommentId && comment.id === creditedCommentId);
   const permalink = permalinkHref(comment);
   const domId = useDomId ? `id="comment-${escapeHtml(comment.id)}"` : '';
   return `
-        <article class="comment${comment.parent_comment_id ? ' comment-reply' : ''}${highlighted ? ' is-highlight' : ''}" ${domId} data-comment-id="${escapeHtml(comment.id)}">
+        <article class="comment${comment.parent_comment_id ? ' comment-reply' : ''}${highlighted ? ' is-highlight' : ''}${credited ? ' is-credited' : ''}" ${domId} data-comment-id="${escapeHtml(comment.id)}">
           <${heading} class="comment-heading">${escapeHtml(comment.author_name || 'Community member')}</${heading}>
           <div class="author">
             <span class="avatar ${escapeHtml(safeAvatarKey(comment.author_avatar_key))}">${escapeHtml(initials(comment.author_name))}</span>
             <div>
-              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}</strong>
+              <strong>${escapeHtml(comment.author_name || 'Community member')} ${adminBadge(comment.author_is_admin)} ${karmaBadge(comment.author_karma_score)} ${implementedCrown(comment.user_id, comment.author_name)}${credited ? renderResolutionCredit(comment.author_name, { compact: true }) : ''}</strong>
               <div class="author-meta">${escapeHtml(comment.author_designation || 'MolDraw user')} · <a class="comment-time-link" href="${escapeHtml(permalink)}"><time datetime="${escapeHtml(isoDate(comment.created_at) || '')}">${escapeHtml(timeText(comment.created_at))}</time></a></div>
             </div>
           </div>
@@ -545,11 +596,11 @@ function renderCardReplyComposer() {
         </section>`;
 }
 
-function renderCommentList(comments, { permalinkHref, pageUrl, showAll = false, highlightId = '', useDomId = false, emptyMessage = false, totalCount = 0 }) {
+function renderCommentList(comments, { permalinkHref, pageUrl, showAll = false, highlightId = '', useDomId = false, emptyMessage = false, totalCount = 0, creditedCommentId = '' }) {
   const roots = buildCommentTree(comments);
   const visible = showAll ? roots : roots.slice(0, LIST_COMMENT_PREVIEW);
   const hidden = Math.max((Number(totalCount) || comments.length) - visible.length, 0);
-  const rendered = visible.map((comment) => renderSingleComment(comment, { permalinkHref, showAllReplies: showAll, highlightId, useDomId })).join('');
+  const rendered = visible.map((comment) => renderSingleComment(comment, { permalinkHref, showAllReplies: showAll, highlightId, useDomId, creditedCommentId })).join('');
   if (!rendered) {
     if (emptyMessage) return '<p class="author-meta">No replies yet. Be the first to reply.</p>';
     if ((Number(totalCount) || 0) > 0) return `<a class="more-thread" data-open-thread href="${escapeHtml(pageUrl)}">View more comments</a>`;
@@ -581,6 +632,7 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
     useDomId: includeComments,
     emptyMessage: includeComments,
     totalCount: replies,
+    creditedCommentId: post.credited_comment_id,
   });
   return `
           <article class="community-card${selected ? ' is-selected' : ''}" id="post-${escapeHtml(post.id)}" data-post-id="${escapeHtml(post.id)}" data-created-at="${escapeHtml(isoDate(post.created_at) || '')}">
@@ -594,7 +646,7 @@ function renderPostCard(post, comments, { heading = 'h2', showAllComments = fals
               </div>
               ${postOverflowMenuHtml(url)}
             </div>
-            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${post.request_status ? renderFeatureStatus(post.request_status) : ''}</${titleTag}>
+            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(post.title)}</a>${post.request_status ? renderFeatureStatus(post.request_status) : ''}${post.resolved_by_name ? renderResolutionCredit(post.resolved_by_name) : ''}</${titleTag}>
             <p class="card-body">${renderMentionedText(post.body)}</p>
             ${renderImages(post.image_urls, 'Community attachment')}
             <div class="card-actions">
@@ -623,6 +675,15 @@ function renderFeatureStatus(status) {
   return `<span class="feature-status ${meta.className}" title="${escapeHtml(meta.label)}"><span class="feature-status-symbol" aria-hidden="true">${meta.symbol}</span><span class="feature-status-label">${escapeHtml(meta.label)}</span></span>`;
 }
 
+function renderResolutionCredit(name, { compact = false } = {}) {
+  if (!name && !compact) return '';
+  const label = compact ? 'Credit' : `Credit: ${name}`;
+  const tip = name
+    ? `Crown credit for the comment that was marked done. ${name}`
+    : 'Crown credit for the comment that was marked done.';
+  return `<span class="resolution-credit" title="${escapeHtml(tip)}">${CROWN_ICON}<span>${escapeHtml(label)}</span></span>`;
+}
+
 function renderFeatureCard(request, comments, { heading = 'h2', showAllComments = false, includeComments = false, selected = false, highlightId = '', commentTotal } = {}) {
   const url = featurePath(request);
   const titleTag = heading;
@@ -635,6 +696,7 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
     useDomId: includeComments,
     emptyMessage: includeComments,
     totalCount: replies,
+    creditedCommentId: request.credited_comment_id,
   });
   return `
           <article class="community-card${selected ? ' is-selected' : ''}" id="feature-${escapeHtml(request.id)}" data-feature-id="${escapeHtml(request.id)}" data-created-at="${escapeHtml(isoDate(request.created_at) || '')}">
@@ -648,7 +710,7 @@ function renderFeatureCard(request, comments, { heading = 'h2', showAllComments 
               </div>
               ${postOverflowMenuHtml(url)}
             </div>
-            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(request.status)}</${titleTag}>
+            <${titleTag} class="card-title"><a class="card-title-link" href="${escapeHtml(url)}">${escapeHtml(request.title)}</a>${renderFeatureStatus(request.status)}${request.resolved_by_name ? renderResolutionCredit(request.resolved_by_name) : ''}</${titleTag}>
             <p class="card-body">${escapeHtml(request.description)}</p>
             ${renderImages(request.image_urls, 'Feature request attachment')}
             <div class="card-actions">

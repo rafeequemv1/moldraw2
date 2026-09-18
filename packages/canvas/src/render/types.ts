@@ -19,7 +19,7 @@ import type {
   ReactionArrowKind,
 } from '@moldraw/domain';
 import type { Atom, Bond } from '@moldraw/domain';
-import type { Point, Viewport } from '../geometry';
+import type { CanvasTextResizeHandle, Point, Viewport } from '../geometry';
 import { DEFAULT_ATOM_INK, EXPLICIT_HYDROGEN_COLOR } from '@moldraw/domain';
 
 /**
@@ -117,7 +117,7 @@ export type DragActionState =
       currentX: number;
       currentY: number;
       origText: CanvasText;
-      corner: 'nw' | 'ne' | 'sw' | 'se';
+      corner: CanvasTextResizeHandle;
       /** Content-fit floor so the box never shrinks below its text. */
       minW?: number;
       minH?: number;

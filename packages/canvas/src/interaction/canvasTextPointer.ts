@@ -11,6 +11,7 @@ import {
   pickCanvasTextContentAt,
   pickCanvasTextResizeHandle,
   pickCanvasTextRotateHandle,
+  type CanvasTextResizeHandle,
 } from '../geometry';
 import type { InteractionContext } from './types';
 import { isSelectTool } from './selectTools';
@@ -28,12 +29,12 @@ function beginResize(
   ctx: InteractionContext,
   canvasCtx: CanvasRenderingContext2D,
   orig: import('@moldraw/domain').CanvasText,
-  corner: 'nw' | 'ne' | 'sw' | 'se',
+  corner: CanvasTextResizeHandle,
 ): void {
   beginTextTransform(ctx);
   // Snapshot the *measured* box so auto-sized labels resize from their real
-  // extent (not the minimum box), and floor at the content size so text
-  // never spills outside its frame.
+  // extent (not the minimum box). The frame can shrink below wrapped
+  // content; draw clips overflow. Font size is unchanged.
   const box = getCanvasTextBox(canvasCtx, orig);
   const content = measureCanvasTextContentSize(canvasCtx, orig);
   ctx.setDragAction({

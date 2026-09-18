@@ -63,6 +63,26 @@ export type CanvasTextBox = {
 
 /** Corner ids for transform handles. */
 export type CanvasTextResizeCorner = 'nw' | 'ne' | 'sw' | 'se';
+/** Mid-edge ids — resize one axis only (box, not font). */
+export type CanvasTextResizeEdge = 'n' | 'e' | 's' | 'w';
+/** All eight PowerPoint-style box handles. */
+export type CanvasTextResizeHandle = CanvasTextResizeCorner | CanvasTextResizeEdge;
+
+export const CANVAS_TEXT_RESIZE_CORNERS: CanvasTextResizeCorner[] = ['nw', 'ne', 'sw', 'se'];
+export const CANVAS_TEXT_RESIZE_EDGES: CanvasTextResizeEdge[] = ['n', 'e', 's', 'w'];
+export const CANVAS_TEXT_RESIZE_HANDLES: CanvasTextResizeHandle[] = [
+  'nw',
+  'n',
+  'ne',
+  'e',
+  'se',
+  's',
+  'sw',
+  'w',
+];
+
+export const isCanvasTextResizeEdge = (h: CanvasTextResizeHandle): h is CanvasTextResizeEdge =>
+  h === 'n' || h === 'e' || h === 's' || h === 'w';
 
 /**
  * Font size used for wrap / editor / slot width.
@@ -265,8 +285,10 @@ export const getCanvasTextBox = (
 ): CanvasTextBox => {
   const content = measureCanvasTextContentSize(ctx, t);
   const width = Math.max(MIN_BOX_W, t.boxWidth ?? content.width);
-  // Always tall enough for wrapped lines so glyphs never paint on top of each other.
-  const height = Math.max(MIN_BOX_H, t.boxHeight ?? 0, content.height);
+  // Honor an explicit frame so n/s / corner drags can shrink the box.
+  // Overflow is clipped in draw; wrap follows boxWidth. Unsized labels
+  // still fit their measured content.
+  const height = Math.max(MIN_BOX_H, t.boxHeight ?? content.height);
   const cx = t.x;
   const cy = t.y;
   return {
@@ -324,31 +346,44 @@ export const textLocalToWorld = (
   };
 };
 
-const localCorner = (
+const localHandle = (
   box: CanvasTextBox,
-  corner: CanvasTextResizeCorner,
+  handle: CanvasTextResizeHandle,
 ): { lx: number; ly: number } => {
   const hx = box.width / 2;
   const hy = box.height / 2;
-  switch (corner) {
+  switch (handle) {
     case 'nw':
       return { lx: -hx, ly: -hy };
+    case 'n':
+      return { lx: 0, ly: -hy };
     case 'ne':
       return { lx: hx, ly: -hy };
-    case 'sw':
-      return { lx: -hx, ly: hy };
+    case 'e':
+      return { lx: hx, ly: 0 };
     case 'se':
       return { lx: hx, ly: hy };
+    case 's':
+      return { lx: 0, ly: hy };
+    case 'sw':
+      return { lx: -hx, ly: hy };
+    case 'w':
+      return { lx: -hx, ly: 0 };
   }
+};
+
+export const getCanvasTextHandleWorld = (
+  box: CanvasTextBox,
+  handle: CanvasTextResizeHandle,
+): { x: number; y: number } => {
+  const { lx, ly } = localHandle(box, handle);
+  return textLocalToWorld(box, lx, ly);
 };
 
 export const getCanvasTextCornerWorld = (
   box: CanvasTextBox,
   corner: CanvasTextResizeCorner,
-): { x: number; y: number } => {
-  const { lx, ly } = localCorner(box, corner);
-  return textLocalToWorld(box, lx, ly);
-};
+): { x: number; y: number } => getCanvasTextHandleWorld(box, corner);
 
 export const getCanvasTextRotateHandleWorld = (
   box: CanvasTextBox,
@@ -413,25 +448,24 @@ export const pickCanvasTextContentAt = (
   return false;
 };
 
-/** Corner nearest the pointer when within handle radius; otherwise null. */
+/** Handle nearest the pointer when within handle radius; otherwise null. */
 export const pickCanvasTextResizeHandle = (
   ctx: CanvasRenderingContext2D,
   t: CanvasText,
   wx: number,
   wy: number,
   zoom: number,
-): CanvasTextResizeCorner | null => {
+): CanvasTextResizeHandle | null => {
   const box = getCanvasTextBox(ctx, t);
   const r = Math.max(6, HANDLE_HIT_R / zoom);
-  const corners: CanvasTextResizeCorner[] = ['nw', 'ne', 'sw', 'se'];
-  let best: CanvasTextResizeCorner | null = null;
+  let best: CanvasTextResizeHandle | null = null;
   let bestDist = r;
-  for (const c of corners) {
-    const p = getCanvasTextCornerWorld(box, c);
+  for (const h of CANVAS_TEXT_RESIZE_HANDLES) {
+    const p = getCanvasTextHandleWorld(box, h);
     const d = Math.hypot(wx - p.x, wy - p.y);
     if (d <= bestDist) {
       bestDist = d;
-      best = c;
+      best = h;
     }
   }
   return best;
@@ -491,16 +525,24 @@ export const pickTopCanvasTextInRect = (
   return null;
 };
 
-const oppositeCorner = (c: CanvasTextResizeCorner): CanvasTextResizeCorner => {
-  switch (c) {
+const oppositeHandle = (h: CanvasTextResizeHandle): CanvasTextResizeHandle => {
+  switch (h) {
     case 'nw':
       return 'se';
+    case 'n':
+      return 's';
     case 'ne':
       return 'sw';
-    case 'sw':
-      return 'ne';
+    case 'e':
+      return 'w';
     case 'se':
       return 'nw';
+    case 's':
+      return 'n';
+    case 'sw':
+      return 'ne';
+    case 'w':
+      return 'e';
   }
 };
 
@@ -535,15 +577,15 @@ export const canvasTextEditorLayout = (
 };
 
 /**
- * Resize from a corner; opposite corner stays fixed in world
- * (rotation-aware). `orig` should carry explicit `boxWidth` / `boxHeight`
- * (callers snapshot the measured box at drag start) so auto-sized labels do
- * not jump to the minimum box on the first pointer move. `minW` / `minH`
- * keep the box from shrinking below its text content.
+ * Resize the text *frame* from a corner or mid-edge handle. Opposite side
+ * stays fixed in world (rotation-aware). Font size is never changed —
+ * corners change width+height (text reflows/wraps); n/s change height only;
+ * e/w change width only. `orig` should carry explicit `boxWidth` /
+ * `boxHeight` (callers snapshot the measured box at drag start).
  */
 export const canvasTextResizePatch = (
   orig: CanvasText,
-  corner: CanvasTextResizeCorner,
+  handle: CanvasTextResizeHandle,
   pointerX: number,
   pointerY: number,
   minW: number = MIN_BOX_W,
@@ -565,24 +607,25 @@ export const canvasTextResizePatch = (
     rotationRad: orig.rotationRad ?? 0,
   };
 
-  const opp = oppositeCorner(corner);
-  const fixed = getCanvasTextCornerWorld(box0, opp);
+  const opp = oppositeHandle(handle);
+  const fixed = getCanvasTextHandleWorld(box0, opp);
   const { lx: plx, ly: ply } = worldToTextLocal(box0, pointerX, pointerY);
   const { lx: flx, ly: fly } = worldToTextLocal(box0, fixed.x, fixed.y);
 
-  const newW = Math.max(floorW, Math.abs(plx - flx));
-  const newH = Math.max(floorH, Math.abs(ply - fly));
+  const lockW = handle === 'n' || handle === 's';
+  const lockH = handle === 'e' || handle === 'w';
+  const newW = lockW ? width0 : Math.max(floorW, Math.abs(plx - flx));
+  const newH = lockH ? height0 : Math.max(floorH, Math.abs(ply - fly));
 
-  // New center = midpoint of fixed corner and dragged corner in local, then to world.
-  const signX = corner.includes('e') ? 1 : -1;
-  const signY = corner.includes('s') ? 1 : -1;
+  const signX = handle.includes('e') ? 1 : handle.includes('w') ? -1 : 0;
+  const signY = handle.includes('s') ? 1 : handle.includes('n') ? -1 : 0;
   const newLocalDrag = {
-    lx: flx + signX * newW,
-    ly: fly + signY * newH,
+    lx: lockW ? 0 : flx + signX * newW,
+    ly: lockH ? 0 : fly + signY * newH,
   };
   const midLocal = {
-    lx: (flx + newLocalDrag.lx) / 2,
-    ly: (fly + newLocalDrag.ly) / 2,
+    lx: lockW ? 0 : (flx + newLocalDrag.lx) / 2,
+    ly: lockH ? 0 : (fly + newLocalDrag.ly) / 2,
   };
   const center = textLocalToWorld(box0, midLocal.lx, midLocal.ly);
 
@@ -594,23 +637,31 @@ export const canvasTextResizePatch = (
   };
 };
 
-/** CSS resize cursor for a corner handle, taking the box rotation into account. */
+/** CSS resize cursor for a corner/edge handle, taking box rotation into account. */
 export const canvasTextCornerCursor = (
-  corner: CanvasTextResizeCorner,
+  handle: CanvasTextResizeHandle,
   rotationRad: number,
 ): string => {
-  // Direction of the corner from the centre, in screen space.
   const base =
-    corner === 'nw' ? -135 : corner === 'ne' ? -45 : corner === 'se' ? 45 : 135;
+    handle === 'e' || handle === 'w'
+      ? 0
+      : handle === 'n' || handle === 's'
+        ? 90
+        : handle === 'ne'
+          ? -45
+          : handle === 'se'
+            ? 45
+            : handle === 'sw'
+              ? 135
+              : -135;
   const deg = (((base + (rotationRad * 180) / Math.PI) % 360) + 360) % 360;
-  // Snap to the nearest of 4 axes (each cursor covers ±22.5°, both directions).
   const sector = Math.round(deg / 45) % 4;
   return ['ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize'][sector]!;
 };
 
 /**
  * Cursor to show for the pointer at world (wx, wy) with the text / select
- * tool: rotate knob → grab, corner → resize arrows, inside a label → grab
+ * tool: rotate knob → grab, box handle → resize arrows, inside a label → grab
  * (I-beam only while editing the glyphs), otherwise null.
  */
 export const canvasTextCursorAt = (

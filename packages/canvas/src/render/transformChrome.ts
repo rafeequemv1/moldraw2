@@ -43,3 +43,35 @@ export const drawTransformHandleDisc = (
   ctx.lineWidth = lineWidth;
   ctx.stroke();
 };
+
+/** Small, slightly rounded square — text / shape box handles. */
+export const drawTransformHandleSquare = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  half: number,
+  lineWidth: number,
+  chrome: TransformChrome,
+): void => {
+  const s = half * 2;
+  const left = x - half;
+  const top = y - half;
+  const r = Math.min(half * 0.38, 1.05);
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(left, top, s, s, r);
+  } else {
+    const rr = Math.max(0.35, r);
+    ctx.moveTo(left + rr, top);
+    ctx.arcTo(left + s, top, left + s, top + s, rr);
+    ctx.arcTo(left + s, top + s, left, top + s, rr);
+    ctx.arcTo(left, top + s, left, top, rr);
+    ctx.arcTo(left, top, left + s, top, rr);
+    ctx.closePath();
+  }
+  ctx.fillStyle = chrome.handleFill;
+  ctx.fill();
+  ctx.strokeStyle = chrome.boxStroke;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+};

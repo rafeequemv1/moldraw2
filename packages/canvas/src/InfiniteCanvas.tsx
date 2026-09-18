@@ -774,7 +774,7 @@ export const InfiniteCanvas = forwardRef<InfiniteCanvasHandle, InfiniteCanvasPro
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Text labels: grab the box to move, resize arrows on corners, grab on the
+    // Text labels: grab the box to move, resize arrows on box handles, grab on the
     // rotate knob, I-beam only while editing glyphs (or empty canvas + text tool).
     const textCursor = useMemo((): string | null => {
       if (viewportApi.isPanning) return null;
