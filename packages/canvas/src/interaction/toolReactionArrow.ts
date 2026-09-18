@@ -13,7 +13,6 @@ import {
   buildReactionArrowFromDrag,
   pickReactionArrowReagentSlot,
   reagentSlotChipHitTolWorld,
-  snapPointToAtomOrBondCenter,
   snapSegmentEndpointToAngleStep,
 } from '../geometry';
 import type { DrawingReactionArrowState } from '../render/types';
@@ -56,20 +55,6 @@ const curvedHeadScale = (ctx: InteractionContext): number => {
   const s = ctx.reactionArrowHeadScale;
   if (s == null || s === ELECTRON_FLOW_DEFAULT_HEAD_SCALE) return CURVED_ARROW_DEFAULT_HEAD_SCALE;
   return s;
-};
-
-/** Scheme curves whose tips magnet to atom centers and bond midpoints. */
-const snapsToStructureCenter = (kind: string | undefined): boolean =>
-  kind === 'curved' || kind === 's_curve';
-
-/** Exact pointer unless a center is nearby. Shift keeps the tip where it is. */
-const snapCurvedTip = (
-  ctx: InteractionContext,
-  x: number,
-  y: number,
-): { x: number; y: number } => {
-  if (ctx.e.shiftKey) return { x, y };
-  return snapPointToAtomOrBondCenter(ctx.molecule, x, y) ?? { x, y };
 };
 
 const applyStructureSnap = (
@@ -131,8 +116,7 @@ const seedElectronFlow = (
  *
  * Drag-to-create still works: press and drag past MIN_ARROW_LENGTH, release to commit.
  * Electron-flow tips snap to lone pairs / bond sides / atoms. Curved and S-curve
- * tips snap to atom centers and bond midpoints when nearby; elsewhere the tip
- * follows the pointer (hold Shift to disable snap and fine-adjust).
+ * tips follow the pointer with no snap.
  */
 export const reactionArrowToolMouseDown = (ctx: InteractionContext): boolean => {
   const { e, worldPos } = ctx;
@@ -181,13 +165,6 @@ export const reactionArrowToolMouseDown = (ctx: InteractionContext): boolean => 
         toAnchor: toSnap?.anchor ?? undefined,
         toSnapKind: toSnap?.kind,
       });
-    } else if (snapsToStructureCenter(pending.kind)) {
-      const tip = snapCurvedTip(ctx, worldPos.x, worldPos.y);
-      ctx.setDrawingReactionArrow({
-        ...pending,
-        x2: tip.x,
-        y2: tip.y,
-      });
     } else {
       ctx.setDrawingReactionArrow({
         ...pending,
@@ -201,16 +178,6 @@ export const reactionArrowToolMouseDown = (ctx: InteractionContext): boolean => 
 
   if (ctx.reactionArrowKind === 'electron_flow') {
     ctx.setDrawingReactionArrow(seedElectronFlow(ctx, worldPos.x, worldPos.y));
-  } else if (snapsToStructureCenter(ctx.reactionArrowKind)) {
-    const tip = snapCurvedTip(ctx, worldPos.x, worldPos.y);
-    ctx.setDrawingReactionArrow({
-      x1: tip.x,
-      y1: tip.y,
-      x2: tip.x,
-      y2: tip.y,
-      kind: ctx.reactionArrowKind,
-      ...(ctx.reactionArrowKind === 'curved' ? { headScale: curvedHeadScale(ctx) } : {}),
-    });
   } else {
     ctx.setDrawingReactionArrow({
       x1: worldPos.x,
@@ -264,11 +231,6 @@ export const reactionArrowToolMouseMove = (ctx: InteractionContext): boolean => 
         : null,
     );
     return true;
-  }
-  if (snapsToStructureCenter(d.kind)) {
-    const tip = snapCurvedTip(ctx, x2, y2);
-    x2 = tip.x;
-    y2 = tip.y;
   }
   ctx.setDrawingReactionArrow(prev => (prev ? { ...prev, x2, y2 } : null));
   return true;

@@ -11,7 +11,6 @@ import {
   isFreeformCurveArrowKind,
   reactionArrowAfterDelta,
   reactionArrowEndpointResizePatch,
-  snapPointToAtomOrBondCenter,
   type ReactionArrowEndpoint,
 } from './reactionArrow';
 
@@ -256,8 +255,7 @@ const ARROW_ENDPOINT_ANGLE_SNAP_DEG = 15;
 /**
  * Magnetic snap while resizing an arrow endpoint: 15° shaft angles + axis snap
  * to fragment bounds / origin. Shift (caller) disables by passing disableSnap.
- * Curved and S-curve tips snap to atom centers and bond midpoints when nearby;
- * their bend handles stay free. Electron-flow tips keep chemistry snap on release.
+ * Curved, S-curve, and other freeform handles never snap.
  */
 export const snapReactionArrowResizePointer = (
   molecule: Molecule,
@@ -271,25 +269,7 @@ export const snapReactionArrowResizePointer = (
   disableSnap: boolean,
 ): { wx: number; wy: number } => {
   const kind = getReactionArrowKind(orig);
-  // Curved-arrow tips magnet to atom centers and bond midpoints when nearby.
-  // The bend handle stays free. Shift (disableSnap) keeps the tip exact.
-  if (
-    (kind === 'curved' || kind === 's_curve') &&
-    (endpoint === 'tail' || endpoint === 'head') &&
-    !disableSnap
-  ) {
-    const ox = endpoint === 'tail' ? orig.x1 : orig.x2;
-    const oy = endpoint === 'tail' ? orig.y1 : orig.y2;
-    const px = ox + (pointerWx - startX);
-    const py = oy + (pointerWy - startY);
-    const hit = snapPointToAtomOrBondCenter(molecule, px, py);
-    if (hit) {
-      return { wx: startX + (hit.x - ox), wy: startY + (hit.y - oy) };
-    }
-    return { wx: pointerWx, wy: pointerWy };
-  }
-
-  // Curly / freeform curve guides: all three dots move freely — no angle, axis, or grid snap.
+  // Curved / S-curve / other freeform handles: no angle, axis, or structure snap.
   if (
     endpoint === 'curve' ||
     endpoint === 'c1' ||

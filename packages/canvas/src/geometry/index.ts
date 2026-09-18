@@ -225,8 +225,6 @@ export {
   reactionArrowEndpointResizePatch,
   isQuadraticCurvedArrowKind,
   isFreeformCurveArrowKind,
-  snapPointToAtomOrBondCenter,
-  CURVED_ARROW_CENTER_SNAP_PX,
   isOrthogonalPolylineArrowKind,
   quadControlFromOnCurveMid,
   defaultPathPoints,

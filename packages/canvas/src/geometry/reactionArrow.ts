@@ -27,35 +27,6 @@ export const isFreeformCurveArrowKind = (k: ReactionArrowKind): boolean =>
   k === 'cycle_arc' ||
   isOrthogonalPolylineArrowKind(k);
 
-/** World radius for snapping a curved-arrow tip to an atom or bond center. */
-export const CURVED_ARROW_CENTER_SNAP_PX = 18;
-
-/**
- * Nearest atom center or bond midpoint within `tol`, or null so the tip stays
- * where the pointer is (fine adjustment). Shift disables this at the call site.
- */
-export const snapPointToAtomOrBondCenter = (
-  mol: Molecule,
-  x: number,
-  y: number,
-  tol = CURVED_ARROW_CENTER_SNAP_PX,
-): { x: number; y: number } | null => {
-  let best: { x: number; y: number; d: number } | null = null;
-  const consider = (px: number, py: number) => {
-    const d = Math.hypot(px - x, py - y);
-    if (d > tol) return;
-    if (!best || d < best.d) best = { x: px, y: py, d };
-  };
-  for (const a of mol.atoms) consider(a.x, a.y);
-  for (const b of mol.bonds) {
-    const from = mol.atoms.find(a => a.id === b.fromAtomId);
-    const to = mol.atoms.find(a => a.id === b.toAtomId);
-    if (!from || !to) continue;
-    consider((from.x + to.x) / 2, (from.y + to.y) / 2);
-  }
-  return best ? { x: best.x, y: best.y } : null;
-};
-
 /** Orthogonal polyline kinds that store `pathPoints` (flowchart elbows / row wrap). */
 export const isOrthogonalPolylineArrowKind = (k: ReactionArrowKind): boolean =>
   k === 'path' || k === 'row_wrap';
