@@ -407,6 +407,116 @@
     Array.from(document.querySelectorAll('main .panel')).forEach(enhanceSimpleConverter);
   }
 
+  function isBlogOrToolsPath() {
+    var path = window.location.pathname;
+    return path === '/blog' || path.indexOf('/blog/') === 0 || path === '/tools' || path.indexOf('/tools/') === 0;
+  }
+
+  function findArticleLayout() {
+    return document.querySelector('main.layout, main > .layout');
+  }
+
+  function insertSignupCtaAfterHero(card) {
+    var hero = document.querySelector('main .hero, .hero');
+    if (hero && hero.parentNode) {
+      hero.parentNode.insertBefore(card, hero.nextSibling);
+      return;
+    }
+
+    var heading = document.querySelector('main h1, article h1, h1');
+    if (heading) {
+      var after = heading;
+      var next = heading.nextElementSibling;
+      var consumedParagraph = false;
+      while (
+        next &&
+        next !== card &&
+        next.matches('.meta, .lead, .summary, .eyebrow, .badge-row, .quick-answer, p')
+      ) {
+        if (next.tagName === 'P') {
+          if (consumedParagraph) break;
+          consumedParagraph = true;
+        }
+        after = next;
+        next = next.nextElementSibling;
+      }
+      if (after.parentNode) {
+        after.parentNode.insertBefore(card, after.nextSibling);
+        return;
+      }
+    }
+
+    var footer = document.querySelector('.site-footer-root, footer');
+    if (footer && footer.parentNode) {
+      footer.parentNode.insertBefore(card, footer);
+      return;
+    }
+
+    var main = document.querySelector('main');
+    if (main) main.appendChild(card);
+    else document.body.appendChild(card);
+  }
+
+  function canUseSignupRightRail() {
+    if (window.innerWidth < 1100) return false;
+    if (document.body.classList.contains('site-signup-in-layout')) return false;
+    var main = document.querySelector('main');
+    if (!main) return window.innerWidth >= 1360;
+    return window.innerWidth - main.getBoundingClientRect().right >= 240;
+  }
+
+  function placeSignupCta(card) {
+    var layout = findArticleLayout();
+    var useLayoutColumn = !!(layout && window.matchMedia('(min-width: 1100px)').matches);
+
+    if (useLayoutColumn) {
+      if (card.parentNode !== layout) layout.appendChild(card);
+      document.body.classList.add('site-signup-in-layout');
+    } else {
+      document.body.classList.remove('site-signup-in-layout');
+      if (!card.parentNode || card.parentNode === layout) insertSignupCtaAfterHero(card);
+    }
+
+    document.body.classList.toggle('site-signup-rail-active', canUseSignupRightRail());
+  }
+
+  function addContentSignupCta() {
+    if (!isBlogOrToolsPath() || document.querySelector('[data-site-signup-rail]')) return;
+
+    var existing = document.querySelector('.site-signup-cta, [data-site-signup-social]');
+    if (existing) {
+      existing.setAttribute('data-site-signup-rail', 'true');
+      return;
+    }
+
+    var card = document.createElement('aside');
+    card.className = 'site-signup-cta';
+    card.setAttribute('data-site-signup-rail', 'true');
+    card.setAttribute('aria-label', 'Sign up for MolDraw');
+    card.innerHTML = [
+      '<div class="site-signup-cta-avatars" aria-hidden="true">',
+      '  <span class="site-signup-cta-avatar site-signup-cta-avatar-brand"><img src="/logo-mark.svg" alt=""></span>',
+      '  <span class="site-signup-cta-avatar">AR</span>',
+      '  <span class="site-signup-cta-avatar">MK</span>',
+      '  <span class="site-signup-cta-avatar">JL</span>',
+      '  <span class="site-signup-cta-avatar">ST</span>',
+      '</div>',
+      '<div class="site-signup-cta-copy">',
+      '  <p class="site-signup-cta-title">1000+ researchers use MolDraw every day</p>',
+      '  <p class="site-signup-cta-sub">Join them — sign up free.</p>',
+      '</div>',
+      '<a class="site-signup-cta-btn" href="/?signup=1" data-site-signup-cta="true" data-piqo-event="signup_cta">Sign up free</a>'
+    ].join('');
+
+    document.body.classList.add('site-has-signup-cta');
+    placeSignupCta(card);
+    window.addEventListener('resize', function () {
+      placeSignupCta(card);
+    }, { passive: true });
+  }
+
+  addContentSignupCta();
+
   if (document.querySelector('.site-topbar-root')) return;
 
   var topbar = document.createElement('header');
