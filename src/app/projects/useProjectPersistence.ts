@@ -30,6 +30,7 @@ import {
   writeOpenTabsSession,
 } from './tabSession';
 import {
+  markStartupSeedConsumed,
   pickHydrationDocument,
   readWorkingDocumentSnapshot,
   resolveBootTabs,
@@ -163,6 +164,9 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
         folderId,
         thumbnailDataUrl,
       });
+      const allowEmptySnapshot =
+        !moleculeHasProjectContent(storedMol) &&
+        (savedOnce || (savedOnceByTabRef.current.get(id) ?? false));
       try {
         await saveProjectRecord(record);
       } catch (err) {
@@ -175,13 +179,17 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
       if (id === projectIdRef.current) {
         setProjectName(record.name);
         savedOnceRef.current = true;
-        writeWorkingDocumentSnapshot({
-          tabs: openTabsRef.current.map(t => (t.id === id ? { ...t, name: record.name } : t)),
-          activeTabId: id,
-          name: record.name,
-          molecule: storedMol,
-          savedAt: Date.now(),
-        });
+        writeWorkingDocumentSnapshot(
+          {
+            tabs: openTabsRef.current.map(t => (t.id === id ? { ...t, name: record.name } : t)),
+            activeTabId: id,
+            name: record.name,
+            molecule: storedMol,
+            savedAt: Date.now(),
+          },
+          // Clear canvas must replace a prior drawn snapshot; otherwise refresh restores it.
+          { allowEmpty: allowEmptySnapshot },
+        );
       }
       setOpenTabs(prev => {
         const next = prev.map(t => (t.id === id ? { ...t, name: record.name } : t));
@@ -200,15 +208,50 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
     const tabs = openTabsRef.current.length
       ? openTabsRef.current
       : [{ id: currentId, name: projectNameRef.current || 'Untitled design' }];
-    writeWorkingDocumentSnapshot({
-      tabs,
-      activeTabId: currentId,
-      name: projectNameRef.current,
-      molecule,
-      savedAt: Date.now(),
-    });
+    const allowEmpty =
+      savedOnceRef.current || (savedOnceByTabRef.current.get(currentId) ?? false);
+    writeWorkingDocumentSnapshot(
+      {
+        tabs,
+        activeTabId: currentId,
+        name: projectNameRef.current,
+        molecule,
+        savedAt: Date.now(),
+      },
+      { allowEmpty: allowEmpty && !moleculeHasProjectContent(molecule) },
+    );
     syncTabsSession(openTabsRef.current.length ? openTabsRef.current : tabs, currentId);
   }, [editorStore, syncTabsSession]);
+
+  /** After Clear: immediately wipe IndexedDB + working snapshot for the active design. */
+  const persistClearedDocument = useCallback(async () => {
+    const id = projectIdRef.current;
+    const name = projectNameRef.current;
+    const empty = cloneMolecule(editorStore.getMolecule());
+    savedOnceRef.current = true;
+    savedOnceByTabRef.current.set(id, true);
+    moleculeCacheRef.current.set(id, empty);
+    // Cleared empty docs must stay empty across refresh — never re-offer the demo molecule.
+    markStartupSeedConsumed();
+    writeWorkingDocumentSnapshot(
+      {
+        tabs: openTabsRef.current.length
+          ? openTabsRef.current
+          : [{ id, name: name || 'Untitled design' }],
+        activeTabId: id,
+        name,
+        molecule: empty,
+        savedAt: Date.now(),
+      },
+      { allowEmpty: true },
+    );
+    await persistProjectById(id, name, {
+      molecule: empty,
+      savedOnce: true,
+      announce: false,
+      refresh: true,
+    });
+  }, [editorStore, persistProjectById]);
 
   const persistAllOpenTabs = useCallback(
     async (opts?: { skipThumbnail?: boolean; refresh?: boolean }) => {
@@ -242,13 +285,20 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
         }
       }
       moleculeCacheRef.current.set(currentId, currentMol);
-      writeWorkingDocumentSnapshot({
-        tabs: openTabsRef.current,
-        activeTabId: currentId,
-        name: projectNameRef.current,
-        molecule: currentMol,
-        savedAt: Date.now(),
-      });
+      writeWorkingDocumentSnapshot(
+        {
+          tabs: openTabsRef.current,
+          activeTabId: currentId,
+          name: projectNameRef.current,
+          molecule: currentMol,
+          savedAt: Date.now(),
+        },
+        {
+          allowEmpty:
+            !moleculeHasProjectContent(currentMol) &&
+            (savedOnceRef.current || (savedOnceByTabRef.current.get(currentId) ?? false)),
+        },
+      );
       const records: SavedProject[] = [];
       for (const tab of openTabsRef.current) {
         let molecule = tab.id === currentId ? currentMol : moleculeCacheRef.current.get(tab.id);
@@ -687,18 +737,23 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
           /* already logged above */
         }
         const saved = await getProject(projectId);
+        const snapshot = readWorkingDocumentSnapshot();
         const picked = pickHydrationDocument({
           projectId,
-          snapshot: readWorkingDocumentSnapshot(),
+          snapshot,
           saved,
           sessionTabs: openTabsRef.current,
         });
+        // Any prior local document (including an intentionally empty cleared canvas)
+        // means this is not a true first visit — do not re-inject the PubChem demo.
+        if (picked) markStartupSeedConsumed();
         if (!picked) return;
         editorStore.resetMolecule(cloneMolecule(picked.molecule));
         moleculeCacheRef.current.set(picked.activeTabId, cloneMolecule(picked.molecule));
         projectIdRef.current = picked.activeTabId;
         projectNameRef.current = picked.name;
-        savedOnceRef.current = moleculeHasProjectContent(picked.molecule);
+        // Prior local doc (drawn or cleared-empty) — allow empty snapshot writes on refresh.
+        savedOnceRef.current = true;
         savedOnceByTabRef.current.set(picked.activeTabId, true);
         setProjectId(picked.activeTabId);
         setProjectName(picked.name);
@@ -790,6 +845,7 @@ export function useProjectPersistence(editorStore: MoleculeEditor) {
     folders,
     saveNotice,
     saveProject,
+    persistClearedDocument,
     newProject,
     openProject,
     switchTab,

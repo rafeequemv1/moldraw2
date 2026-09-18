@@ -233,7 +233,7 @@ function TextStyleBody({
           <input
             id="text-style-size"
             type="range"
-            className="text-style-range app-top-bar__color-opacity-range"
+            className="chrome-range app-top-bar__color-opacity-range"
             min={8}
             max={120}
             value={selectedCanvasText.fontSize}

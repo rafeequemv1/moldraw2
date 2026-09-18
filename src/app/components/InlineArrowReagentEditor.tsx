@@ -24,7 +24,12 @@ export function InlineArrowReagentEditor({
   onCommit,
   onCancel,
 }: InlineArrowReagentEditorProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const onCommitRef = useRef(onCommit);
+  const onCancelRef = useRef(onCancel);
+  onCommitRef.current = onCommit;
+  onCancelRef.current = onCancel;
   const angleDeg = ((position.angleRad ?? 0) * 180) / Math.PI;
 
   useEffect(() => {
@@ -34,8 +39,23 @@ export function InlineArrowReagentEditor({
     input.select();
   }, [slot]);
 
+  // Canvas pointerdown calls preventDefault, which blocks the input from
+  // blurring — so commit on outside press in capture phase before that.
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      const root = rootRef.current;
+      const target = e.target;
+      if (!(target instanceof Node)) return;
+      if (root?.contains(target)) return;
+      onCommitRef.current();
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, []);
+
   return (
     <div
+      ref={rootRef}
       className="arrow-reagent-inline"
       style={{
         left: position.left,
@@ -55,7 +75,14 @@ export function InlineArrowReagentEditor({
         onPointerDown={e => e.stopPropagation()}
         onMouseDown={e => e.stopPropagation()}
         onChange={e => onDraftChange(e.target.value)}
-        onBlur={onCommit}
+        onBlur={() => {
+          // Deferred so Escape cancel can set its flag before commit runs.
+          // Skip if we already unmounted (outside-press / Enter already committed).
+          window.setTimeout(() => {
+            if (!rootRef.current) return;
+            onCommitRef.current();
+          }, 0);
+        }}
         onKeyDown={e => {
           e.stopPropagation();
           if (e.key === 'Enter') {

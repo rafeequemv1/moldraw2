@@ -616,7 +616,7 @@ const REAGENT_LINE_GAP_FACTOR = 1.18;
 const REAGENT_CHAR_W_FACTOR = 0.56;
 const ARROW_SHAFT_AABB_PAD = 8;
 /** World radius so empty “+” chips sit inside the selection box (not on the edge). */
-const REAGENT_CHIP_AABB_R = 14;
+const REAGENT_CHIP_AABB_R = 11;
 
 const reagentSlotOffset = (fontSize: number): number =>
   REAGENT_SLOT_BASE_OFF + fontSize * REAGENT_FONT_OFF_FACTOR;
@@ -705,7 +705,7 @@ export const reactionArrowSelectionAabb = (
   return { minX, maxX, minY, maxY };
 };
 
-const REAGENT_SLOT_HIT_R = 18;
+const REAGENT_SLOT_HIT_R = 14;
 
 /** Hit-test reagent “+” chips for the selected arrow (world coords). */
 export const pickReactionArrowReagentSlot = (
@@ -1408,7 +1408,7 @@ export const arrowHandleHitTolWorld = (zoom = 1, screenPx = 32): number =>
   screenPx / Math.max(0.12, zoom);
 
 /** Hit radius for the on-canvas reagent “+” chips (screen pixels → world). */
-export const reagentSlotChipHitTolWorld = (zoom = 1, screenPx = 22): number =>
+export const reagentSlotChipHitTolWorld = (zoom = 1, screenPx = 17): number =>
   screenPx / Math.max(0.12, zoom);
 
 /** Top-most arrow whose geometry is within `tol` world units of (wx, wy). */

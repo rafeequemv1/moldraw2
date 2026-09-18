@@ -25,7 +25,7 @@ export interface StyleToolbarProps {
   layout?: 'ribbon' | 'menu' | 'panel';
   /** Panel layout only: theme+grid, rest (atoms/bonds), or full panel. */
   panelSection?: 'theme' | 'rest' | 'full';
-  /** When true, edits update canvas defaults (Settings) and all open designs. */
+  /** When true, edits update all open designs (and canvas defaults in Settings). */
   applyGlobally?: boolean;
   onApplyGloballyChange?: (value: boolean) => void;
 }

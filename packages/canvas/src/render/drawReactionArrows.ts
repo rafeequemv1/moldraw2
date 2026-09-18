@@ -124,8 +124,8 @@ const drawReagentSlotChips = (
   if (!reactionArrowSupportsReagentLabels(a.kind)) return;
   const slots = reactionArrowReagentSlotPositions(a);
   const vz = R.viewport.zoom;
-  const r = 13 / vz;
-  const lw = 1.75 / vz;
+  const r = 10 / vz;
+  const lw = 1.5 / vz;
   const accent = highlightAccent(R);
 
   ctx.save();
@@ -145,7 +145,7 @@ const drawReagentSlotChips = (
     ctx.stroke();
     const arm = r * 0.42;
     ctx.strokeStyle = accent;
-    ctx.lineWidth = 2.4 / vz;
+    ctx.lineWidth = 2 / vz;
     ctx.beginPath();
     ctx.moveTo(x - arm, y);
     ctx.lineTo(x + arm, y);

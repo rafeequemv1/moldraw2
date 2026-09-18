@@ -2,6 +2,7 @@ import type { Molecule } from '@moldraw/domain';
 import { moleculeHasProjectContent } from './projectStorage';
 import type { OpenTabsSession } from './tabSession';
 import {
+  STARTUP_SEED_CONSUMED_KEY,
   WORKING_DOCUMENT_SNAPSHOT_KEY,
   type DocumentTab,
   type SavedProject,
@@ -66,19 +67,48 @@ export function readWorkingDocumentSnapshot(): WorkingDocumentSnapshot | null {
   );
 }
 
+export type WriteWorkingDocumentOptions = {
+  /**
+   * Allow replacing a non-empty snapshot with an empty molecule (Clear canvas).
+   * Default false avoids wiping a drawn file during pre-hydration races.
+   */
+  allowEmpty?: boolean;
+};
+
 /**
  * Synchronous persist of the live canvas. IndexedDB writes are async and can
  * lose the race when OAuth / email confirmation navigates away.
+ *
+ * Empty molecules are only written when `allowEmpty` is set (Clear / explicit
+ * empty save). Otherwise boot upsert would leave a blank snapshot that blocks
+ * the first-visit demo molecule and still looks like a “prior document”.
  */
-export function writeWorkingDocumentSnapshot(snapshot: WorkingDocumentSnapshot): void {
+export function writeWorkingDocumentSnapshot(
+  snapshot: WorkingDocumentSnapshot,
+  opts?: WriteWorkingDocumentOptions,
+): void {
   if (typeof window === 'undefined') return;
-  if (!moleculeHasProjectContent(snapshot.molecule)) {
-    const existing = readWorkingDocumentSnapshot();
-    if (existing && moleculeHasProjectContent(existing.molecule)) return;
+  if (!moleculeHasProjectContent(snapshot.molecule) && !opts?.allowEmpty) {
+    return;
   }
   const json = JSON.stringify(snapshot);
   writeStorageItem(sessionStorage, WORKING_DOCUMENT_SNAPSHOT_KEY, json);
   writeStorageItem(localStorage, WORKING_DOCUMENT_SNAPSHOT_KEY, json);
+}
+
+/** True after the first-visit PubChem seed has run, Clear, or a prior local doc hydrated. */
+export function isStartupSeedConsumed(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    readStorageItem(localStorage, STARTUP_SEED_CONSUMED_KEY) === '1' ||
+    readStorageItem(sessionStorage, STARTUP_SEED_CONSUMED_KEY) === '1'
+  );
+}
+
+export function markStartupSeedConsumed(): void {
+  if (typeof window === 'undefined') return;
+  writeStorageItem(localStorage, STARTUP_SEED_CONSUMED_KEY, '1');
+  writeStorageItem(sessionStorage, STARTUP_SEED_CONSUMED_KEY, '1');
 }
 
 export function resolveBootTabs(

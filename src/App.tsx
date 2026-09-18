@@ -133,6 +133,10 @@ import { moleculeToMolblock } from '@moldraw/core/io/molblock';
 import { cdxmlToMolblock, cdxmlToMolecule } from '@moldraw/core/io/cdxmlToMolblock';
 import { parseEditorSeedFromLocation, editorSeedHasStructure } from './app/editorSeedQuery';
 import { STARTUP_PUBCHEM_CID } from './app/data/selectionSmi';
+import {
+  isStartupSeedConsumed,
+  markStartupSeedConsumed,
+} from './app/projects/workingDocument';
 import { pubchemMolblockFromCid } from './app/advanced/batchExport';
 import { importReactionSchemeFromSmiles } from './app/importExport/importReactionSmiles';
 import { getAppSettingsPreset, type AppSettingsPresetId } from './app/settings';
@@ -347,6 +351,7 @@ function App() {
     deleteFolder,
     moveProjectsToFolder,
     refreshMetas,
+    persistClearedDocument,
     initialHydrationDone,
   } = useProjectPersistence(editorStore);
 
@@ -1016,7 +1021,8 @@ function App() {
   );
   const [smilesBarHint, setSmilesBarHint] = useState('');
 
-  // First empty editor visit: live PubChem SDF, then the same 2D cleanup as import.
+  // True first visit only: live PubChem SDF when there is no prior local document.
+  // After Clear or any hydration of a saved/empty working doc, never re-inject.
   useEffect(() => {
     if (!initialHydrationDone || docRoute.kind !== 'editor') return;
     const query = initialQueryRef.current();
@@ -1026,6 +1032,10 @@ function App() {
       return;
     }
     if (selectionSmiLoadedRef.current) return;
+    if (isStartupSeedConsumed()) {
+      selectionSmiLoadedRef.current = true;
+      return;
+    }
     let cancelled = false;
     selectionSmiLoadedRef.current = true;
     setSmilesBarHint('Loading structure from PubChem…');
@@ -1036,10 +1046,16 @@ function App() {
       try {
         const mb = await pubchemMolblockFromCid(STARTUP_PUBCHEM_CID);
         if (cancelled) return;
-        if (!mb?.trim() || moleculeRef.current.atoms.length > 0) {
+        // Clear / another import may have won while PubChem was in flight.
+        if (isStartupSeedConsumed() || moleculeRef.current.atoms.length > 0) {
           setSmilesBarHint('');
           return;
         }
+        if (!mb?.trim()) {
+          setSmilesBarHint('');
+          return;
+        }
+        markStartupSeedConsumed();
         setSmilesBarHint('Optimizing structure…');
         engineMsgRef.current({
           type: 'SMILES_TO_MOLBLOCK_SUCCESS',
@@ -1055,8 +1071,9 @@ function App() {
     return () => {
       cancelled = true;
       window.clearTimeout(timeout);
-      // StrictMode remounts this effect; allow a real retry while the canvas is still empty.
-      if (moleculeRef.current.atoms.length === 0) {
+      // StrictMode remounts this effect; allow a real retry while the canvas is still empty
+      // and we have not yet committed to a first-visit seed (or Clear suppressed it).
+      if (moleculeRef.current.atoms.length === 0 && !isStartupSeedConsumed()) {
         selectionSmiLoadedRef.current = false;
       }
     };
@@ -1490,7 +1507,7 @@ function App() {
     inlineEditorPos,
     inlineTextareaRef,
     handleDelete,
-    handleClearAll,
+    handleClearAll: clearCanvasMolecule,
     handleEscape,
     handleSelectAll,
     handleQuickSelect,
@@ -1561,6 +1578,16 @@ function App() {
     },
     updateAppSettingsGeneral,
   });
+
+  const handleClearAll = useCallback(() => {
+    // Suppress in-flight first-visit PubChem seed so Clear stays empty.
+    selectionSmiLoadedRef.current = true;
+    markStartupSeedConsumed();
+    clearCanvasMolecule();
+    void persistClearedDocument().catch(err => {
+      console.warn('[App] persistClearedDocument failed', err);
+    });
+  }, [clearCanvasMolecule, persistClearedDocument]);
 
   // Touch long-press → radial quick menu (see TouchQuickMenu). Null when the
   // menu came from a mouse / pen right-click or targets an object type that is

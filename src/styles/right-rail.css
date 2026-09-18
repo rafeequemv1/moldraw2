@@ -358,14 +358,6 @@
   flex: 0 0 auto;
 }
 
-.format-left-panel.text-style-left-dock .app-top-bar__color-style-row {
-  margin-top: 4px;
-}
-
-.format-left-panel.text-style-left-dock .app-top-bar__color-style-row:first-child {
-  margin-top: 0;
-}
-
 .text-style-font-select {
   width: 100%;
   min-width: 108px;

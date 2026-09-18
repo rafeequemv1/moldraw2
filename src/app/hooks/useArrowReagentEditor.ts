@@ -32,45 +32,80 @@ export function useArrowReagentEditor({
   const [draft, setDraft] = useState('');
   const [topBarFocusSlot, setTopBarFocusSlot] = useState<ArrowReagentSlot | null>(null);
   const cancelCommitRef = useRef(false);
-
-  const handleRequestArrowReagentEdit = useCallback(
-    (arrowId: string, slot: ArrowReagentSlot) => {
-      const arrow = molecule.reactionArrows?.find(a => a.id === arrowId);
-      if (arrow && !reactionArrowSupportsReagentLabels(arrow.kind)) return;
-      setSelectedCanvasTextId(null);
-      setSelectedReactionArrowId(arrowId);
-      cancelCommitRef.current = false;
-      setEditing({ arrowId, slot });
-      setDraft(slot === 'above' ? (arrow?.reagentAbove ?? '') : (arrow?.reagentBelow ?? ''));
-      setTopBarFocusSlot(null);
-    },
-    [molecule.reactionArrows, setSelectedCanvasTextId, setSelectedReactionArrowId],
-  );
+  const editingRef = useRef(editing);
+  const draftRef = useRef(draft);
+  editingRef.current = editing;
+  draftRef.current = draft;
 
   const finishEditing = useCallback(() => {
+    editingRef.current = null;
+    draftRef.current = '';
     setEditing(null);
     setDraft('');
     setTopBarFocusSlot(null);
-    cancelCommitRef.current = false;
   }, []);
 
   const commitReagentEdit = useCallback(() => {
     if (cancelCommitRef.current) {
       cancelCommitRef.current = false;
-      finishEditing();
       return;
     }
-    if (!editing) return;
+    const current = editingRef.current;
+    if (!current) return;
+    const value = draftRef.current;
+    // Clear before the update so a blur/re-entry cannot double-apply or reset.
+    editingRef.current = null;
     const patch =
-      editing.slot === 'above' ? { reagentAbove: draft } : { reagentBelow: draft };
-    onUpdateReactionArrow(editing.arrowId, patch);
+      current.slot === 'above' ? { reagentAbove: value } : { reagentBelow: value };
+    onUpdateReactionArrow(current.arrowId, patch);
     finishEditing();
-  }, [draft, editing, finishEditing, onUpdateReactionArrow]);
+  }, [finishEditing, onUpdateReactionArrow]);
 
   const cancelReagentEdit = useCallback(() => {
     cancelCommitRef.current = true;
     finishEditing();
   }, [finishEditing]);
+
+  const handleRequestArrowReagentEdit = useCallback(
+    (arrowId: string, slot: ArrowReagentSlot) => {
+      const arrow = molecule.reactionArrows?.find(a => a.id === arrowId);
+      if (arrow && !reactionArrowSupportsReagentLabels(arrow.kind)) return;
+
+      const prev = editingRef.current;
+      if (prev && (prev.arrowId !== arrowId || prev.slot !== slot)) {
+        // Persist the open draft before switching slots / arrows.
+        commitReagentEdit();
+      } else if (prev && prev.arrowId === arrowId && prev.slot === slot) {
+        // Same slot already open — keep the live draft (do not reload from molecule).
+        setSelectedCanvasTextId(null);
+        setSelectedReactionArrowId(arrowId);
+        return;
+      }
+
+      setSelectedCanvasTextId(null);
+      setSelectedReactionArrowId(arrowId);
+      cancelCommitRef.current = false;
+      const next = { arrowId, slot };
+      editingRef.current = next;
+      setEditing(next);
+      const fresh =
+        slot === 'above' ? (arrow?.reagentAbove ?? '') : (arrow?.reagentBelow ?? '');
+      draftRef.current = fresh;
+      setDraft(fresh);
+      setTopBarFocusSlot(null);
+    },
+    [
+      commitReagentEdit,
+      molecule.reactionArrows,
+      setSelectedCanvasTextId,
+      setSelectedReactionArrowId,
+    ],
+  );
+
+  const setArrowReagentDraft = useCallback((next: string) => {
+    draftRef.current = next;
+    setDraft(next);
+  }, []);
 
   const [inlinePos, setInlinePos] = useState<{
     left: number;
@@ -121,7 +156,7 @@ export function useArrowReagentEditor({
   return {
     editingArrowReagent: editing,
     arrowReagentDraft: draft,
-    setArrowReagentDraft: setDraft,
+    setArrowReagentDraft,
     inlineArrowReagentPos: inlinePos,
     arrowReagentFontSize: editingFontSize,
     topBarReagentFocusSlot: topBarFocusSlot,

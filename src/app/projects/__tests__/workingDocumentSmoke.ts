@@ -4,13 +4,18 @@
  */
 import type { Molecule } from '@moldraw/domain';
 import {
+  isStartupSeedConsumed,
+  markStartupSeedConsumed,
   pickHydrationDocument,
   preferLocalWorkingDocument,
+  readWorkingDocumentSnapshot,
   resolveBootTabs,
   shouldKeepStoredMolecule,
+  writeWorkingDocumentSnapshot,
   type WorkingDocumentSnapshot,
 } from '../workingDocument';
 import type { SavedProject } from '../types';
+import { STARTUP_SEED_CONSUMED_KEY, WORKING_DOCUMENT_SNAPSHOT_KEY } from '../types';
 
 const fail = (msg: string): never => {
   throw new Error(msg);
@@ -80,5 +85,87 @@ eq(
 eq(shouldKeepStoredMolecule(emptyMol, drawnMol, false), true, 'unhydrated empty memory must not wipe stored drawing');
 eq(shouldKeepStoredMolecule(emptyMol, drawnMol, true), false, 'explicit clear after save may persist empty');
 eq(shouldKeepStoredMolecule(drawnMol, drawnMol, false), false, 'live drawing is what gets saved');
+
+// After Clear, IndexedDB may already be empty while the sync snapshot still holds
+// the old drawing — pickHydration must prefer the empty saved record once the
+// snapshot is also cleared (allowEmpty write). Until then, snapshot wins (OAuth race).
+const clearedSnapshot: WorkingDocumentSnapshot = {
+  ...snapshot,
+  molecule: emptyMol,
+  savedAt: 300,
+};
+const afterClear = pickHydrationDocument({
+  projectId: 'work-1',
+  snapshot: clearedSnapshot,
+  saved: { ...saved, molecule: emptyMol, atomCount: 0, updatedAt: 300 },
+  sessionTabs: snapshot.tabs,
+});
+eq(afterClear?.molecule.atoms.length ?? 0, 0, 'cleared snapshot + empty IDB stay empty');
+
+// Empty snapshot writes require allowEmpty (boot upsert must not look like a prior doc).
+const mem = (() => {
+  const store = new Map<string, string>();
+  return {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => {
+      store.set(k, v);
+    },
+    removeItem: (k: string) => {
+      store.delete(k);
+    },
+  };
+})();
+const g = globalThis as {
+  window?: unknown;
+  localStorage?: Storage;
+  sessionStorage?: Storage;
+};
+g.localStorage = mem as Storage;
+g.sessionStorage = mem as Storage;
+g.window = globalThis;
+
+writeWorkingDocumentSnapshot(
+  {
+    tabs: [{ id: 'boot', name: 'Untitled design' }],
+    activeTabId: 'boot',
+    name: 'Untitled design',
+    molecule: emptyMol,
+    savedAt: 1,
+  },
+  { allowEmpty: false },
+);
+eq(readWorkingDocumentSnapshot(), null, 'boot empty without allowEmpty must not create a snapshot');
+
+writeWorkingDocumentSnapshot(
+  {
+    tabs: [{ id: 'boot', name: 'Untitled design' }],
+    activeTabId: 'boot',
+    name: 'Untitled design',
+    molecule: emptyMol,
+    savedAt: 2,
+  },
+  { allowEmpty: true },
+);
+eq(
+  readWorkingDocumentSnapshot()?.molecule.atoms.length ?? -1,
+  0,
+  'Clear allowEmpty writes an empty snapshot',
+);
+eq(
+  pickHydrationDocument({
+    projectId: 'boot',
+    snapshot: readWorkingDocumentSnapshot(),
+    saved: null,
+    sessionTabs: [{ id: 'boot', name: 'Untitled design' }],
+  })?.molecule.atoms.length ?? -1,
+  0,
+  'empty cleared snapshot hydrates as empty (not null → no demo re-seed)',
+);
+
+eq(isStartupSeedConsumed(), false, 'startup seed flag starts unset');
+markStartupSeedConsumed();
+eq(isStartupSeedConsumed(), true, 'startup seed flag persists after mark');
+eq(mem.getItem(STARTUP_SEED_CONSUMED_KEY), '1', 'startup seed flag stored under known key');
+eq(mem.getItem(WORKING_DOCUMENT_SNAPSHOT_KEY) != null, true, 'cleared snapshot still present');
 
 console.log('workingDocumentSmoke OK');
