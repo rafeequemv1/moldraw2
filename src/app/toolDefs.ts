@@ -271,7 +271,7 @@ export const TOOL_DEFS: ToolDef[] = [
     id: 'free_radical',
     label: 'Radical',
     shortLabel: '•',
-    title: 'Free radical: click atom to add/remove a single unpaired electron',
+    title: 'Free radical: click atom to add a single unpaired electron; click again, the dot, or Erase to remove',
     category: 'edit',
     group: 'select_edit',
   },

@@ -89,7 +89,7 @@ export const zhToolOverrides: Record<
   stamp_celsius: { label: '°C', title: '放置 °C — 点击空白画布' },
   free_radical: {
     label: '自由基',
-    title: '自由基：点击原子添加/移除单电子',
+    title: '自由基：点击添加，再点击、点或橡皮删除',
     shortLabel: '•',
   },
   add_explicit_h: {

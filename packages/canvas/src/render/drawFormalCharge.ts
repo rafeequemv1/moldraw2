@@ -1,13 +1,15 @@
 /**
- * Formal-charge marks drawn with bond-like stroke weight so ±1 is easy to see
- * in teaching diagrams (Unicode ⁺/⁻ alone reads too thin).
+ * Formal-charge marks: thin stroked + / − and a thin circle for ⊕ / ⊖
+ * so carbocation / carbanion marks stay readable without looking heavy.
  */
 import type { Atom, Molecule } from '@moldraw/domain';
 import {
   CHARGE_MARK_R_DEFAULT_PX,
   clampChargeMarkOffset,
-  defaultChargeSeatDirection,
+  defaultChargeSeatAngle,
+  distBeyondLabelBox,
   getLonePairPlacements,
+  labelBoxFromExtents,
   type ResolvedCanvasPreferences,
 } from '@moldraw/core';
 import { hGoesLeft } from '../geometry/hydrogenLayout';
@@ -27,9 +29,9 @@ const getChargeSuperscript = (charge: number): string => {
   return absCharge.toString().split('').map(d => superscripts[parseInt(d, 10)]).join('') + sign;
 };
 
-/** Stroke width matched to single-bond thickness (clamped for readability). */
+/** Thin + / − stroke (circled marks use the same weight for the ring). */
 export const formalChargeStrokePx = (bondThicknessPx: number): number =>
-  Math.max(2.25, Math.min(4, bondThicknessPx * 1.15));
+  Math.max(1.05, Math.min(1.55, bondThicknessPx * 0.48));
 
 /** Charge sits on the free side of the atom (opposite neighbors) — e.g. nitro O⁻ on the left. */
 export const chargeGoesLeft = (atom: Atom, mol: Molecule): boolean => hGoesLeft(atom, mol);
@@ -44,73 +46,67 @@ const shortestAngleDiff = (from: number, to: number): number => {
 };
 
 /**
- * Default seat on the free side of the atom (slightly above).
- * Avoids occupied lone-pair directions so ± and LP dots do not collide.
+ * Default seat on a vacant upright side (same angle lone pairs reserve).
+ * Distance is measured from the letter edge so ± does not sit on Cl / O / N
+ * or on a bond / lone-pair ray.
  */
 export const defaultChargeMarkOffset = (
   atom: Atom,
   mol: Molecule,
   charge: number,
 ): ChargeMarkOffset => {
-  const isMinus = charge < 0;
-  const r = isMinus ? CHARGE_MARK_R_DEFAULT_PX + 3 : CHARGE_MARK_R_DEFAULT_PX;
-
-  let seat = defaultChargeSeatDirection(atom, mol);
   const lp = Math.max(0, atom.lonePairs ?? 0);
-  if (lp > 0) {
-    const placements = getLonePairPlacements(atom, mol, lp, {
-      preferSide: atom.lonePairSide ?? 'above',
-      // Charge is choosing its seat — don't let LP packing reserve this seat first.
-      reserveChargeSeat: false,
-    });
-    const seatAng = Math.atan2(seat.y, seat.x);
+  const lpAngles =
+    lp > 0
+      ? getLonePairPlacements(atom, mol, lp, {
+          preferSide: atom.lonePairSide ?? 'above',
+          reserveChargeSeat: true,
+        }).map(p => Math.atan2(p.dir.y, p.dir.x))
+      : [];
+
+  let ang = defaultChargeSeatAngle(atom, mol);
+  if (lpAngles.length) {
     let blocked = false;
-    for (const p of placements) {
-      const pang = Math.atan2(p.dir.y, p.dir.x);
-      if (Math.abs(shortestAngleDiff(seatAng, pang)) < 0.55) {
+    for (const pang of lpAngles) {
+      if (Math.abs(shortestAngleDiff(ang, pang)) < 0.7) {
         blocked = true;
         break;
       }
     }
     if (blocked) {
-      // Walk candidate angles for the freest gap vs LPs + bonds.
-      let bestAng = seatAng;
-      let bestScore = -Infinity;
-      for (let i = 0; i < 12; i++) {
-        const a = -Math.PI + (i * Math.PI) / 6;
-        let score = 0;
-        for (const p of placements) {
-          score += Math.abs(shortestAngleDiff(a, Math.atan2(p.dir.y, p.dir.x)));
-        }
-        for (const b of mol.bonds) {
-          if (b.fromAtomId !== atom.id && b.toAtomId !== atom.id) continue;
-          const oid = b.fromAtomId === atom.id ? b.toAtomId : b.fromAtomId;
-          const other = mol.atoms.find(x => x.id === oid);
-          if (!other) continue;
-          score += Math.abs(
-            shortestAngleDiff(a, Math.atan2(other.y - atom.y, other.x - atom.x)),
-          );
-        }
-        // Prefer upper hemisphere for textbook look.
-        if (Math.sin(a) < 0) score += 0.4;
-        if (score > bestScore) {
-          bestScore = score;
+      const occupied = [...lpAngles];
+      for (const b of mol.bonds) {
+        if (b.fromAtomId !== atom.id && b.toAtomId !== atom.id) continue;
+        const oid = b.fromAtomId === atom.id ? b.toAtomId : b.fromAtomId;
+        const other = mol.atoms.find(x => x.id === oid);
+        if (!other) continue;
+        occupied.push(Math.atan2(other.y - atom.y, other.x - atom.x));
+      }
+      let bestAng = ang;
+      let best = -Infinity;
+      for (let i = 0; i < 16; i++) {
+        const a = -Math.PI + (i * Math.PI) / 8;
+        let score = Infinity;
+        for (const o of occupied) score = Math.min(score, Math.abs(shortestAngleDiff(a, o)));
+        if (Math.sin(a) < 0) score += 0.15;
+        if (score > best) {
+          best = score;
           bestAng = a;
         }
       }
-      seat = { x: Math.cos(bestAng), y: Math.sin(bestAng) };
+      ang = bestAng;
     }
-  } else {
-    // Legacy free-side seat when no LPs.
-    const left = chargeGoesLeft(atom, mol);
-    const up = isMinus ? 0.72 : 0.38;
-    const dx = left ? -1 : 1;
-    const dy = -up;
-    const len = Math.hypot(dx, dy) || 1;
-    seat = { x: dx / len, y: dy / len };
   }
 
-  return clampChargeMarkOffset(seat.x * r, seat.y * r);
+  const w = Math.max(10, atom.element.length * 7.2);
+  const box = labelBoxFromExtents(-w / 2, w / 2, 13);
+  const dir = { x: Math.cos(ang), y: Math.sin(ang) };
+  const markHalf = Math.abs(charge) === 1 ? 6.4 : 7.2;
+  const r = Math.max(
+    CHARGE_MARK_R_DEFAULT_PX,
+    distBeyondLabelBox(dir, box, 0, markHalf + 3.2),
+  );
+  return clampChargeMarkOffset(dir.x * r, dir.y * r);
 };
 
 /** Offset from atom center: drag preview, stored, or default free-side seat. */
@@ -182,7 +178,7 @@ export const drawFormalChargeMark = (
   const stroke = formalChargeStrokePx(prefs.bondThicknessPx);
 
   if (charge === 1 || charge === -1) {
-    const half = circled ? 4.6 : 5.4;
+    const half = circled ? 3.55 : 4.6;
     const w = circled ? CIRCLED_CHARGE_MARK_W : FORMAL_CHARGE_MARK_W;
     const mx = align === 'left' ? cx + w / 2 : cx;
     ctx.save();
@@ -193,7 +189,7 @@ export const drawFormalChargeMark = (
     ctx.lineJoin = 'round';
     if (circled) {
       ctx.beginPath();
-      ctx.arc(mx, cy, 7.2, 0, Math.PI * 2);
+      ctx.arc(mx, cy, 6.35, 0, Math.PI * 2);
       ctx.stroke();
     }
     if (charge === -1) {

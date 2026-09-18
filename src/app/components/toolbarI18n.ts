@@ -93,6 +93,14 @@ export function useToolbarI18n() {
 
     const reactionArrowGroups = [
       {
+        id: 'scheme',
+        label: t('toolbar.reactionArrowGroups.scheme'),
+        options: SCHEME_ARROW_KINDS.map(k => ({
+          value: k,
+          label: reactionArrowKindLabel(k),
+        })),
+      },
+      {
         id: 'mechanism',
         label: t('toolbar.reactionArrowGroups.mechanism'),
         options: [
@@ -107,14 +115,6 @@ export function useToolbarI18n() {
             keywords: 'mechanism fishhook fish-hook radical 1e',
           },
         ],
-      },
-      {
-        id: 'scheme',
-        label: t('toolbar.reactionArrowGroups.scheme'),
-        options: SCHEME_ARROW_KINDS.map(k => ({
-          value: k,
-          label: reactionArrowKindLabel(k),
-        })),
       },
     ];
 

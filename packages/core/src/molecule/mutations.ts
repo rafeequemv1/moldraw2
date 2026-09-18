@@ -33,6 +33,7 @@ import { pruneRingConformations, ringSignature, uniqueRingPaths } from '@moldraw
 import { boatRingVertices } from '../geometry/boatRing';
 import { chairRingVertices } from '../geometry/chairRing';
 import { parseMolblock } from '../io/molblock';
+import { lonePairAnglesOf } from './lonePairLayout';
 import {
   displayCoordsMolecule,
   joinAtomsIntoPerspectivePose,
@@ -340,8 +341,8 @@ export const setAtomDeltaCharge = (
  * Charge/δ mark position is a vector from the **atom center**.
  * Drag orbits on a small ring: never closer than R_MIN (label gap), never farther than R_MAX.
  */
-export const CHARGE_MARK_R_MIN_PX = 14;
-export const CHARGE_MARK_R_MAX_PX = 22;
+export const CHARGE_MARK_R_MIN_PX = 13;
+export const CHARGE_MARK_R_MAX_PX = 28;
 export const CHARGE_MARK_R_DEFAULT_PX = 16;
 /** @deprecated Use CHARGE_MARK_R_MAX_PX */
 export const MAX_CHARGE_MARK_OFFSET_PX = CHARGE_MARK_R_MAX_PX;
@@ -410,7 +411,14 @@ export const updateAtomLonePairs = (
     const maxLP = getMaxLonePairsForAtom(a.element, a.charge, orderSum);
     const current = a.lonePairs ?? 0;
     const next = Math.max(0, Math.min(maxLP, current + delta));
-    return next === current ? a : { ...a, lonePairs: next };
+    if (next === current) return a;
+    if (next <= 0) {
+      const { lonePairs: _lp, lonePairAngles: _ang, ...rest } = a;
+      void _lp;
+      void _ang;
+      return rest;
+    }
+    return { ...a, lonePairs: next, lonePairAngles: lonePairAnglesOf(a, prev, next) };
   }),
 });
 

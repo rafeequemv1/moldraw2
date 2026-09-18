@@ -11,6 +11,7 @@ import type {
   ReactionArrowUpdatePatch,
 } from '@moldraw/domain';
 import {
+  CURVED_ARROW_DEFAULT_HEAD_SCALE,
   ELECTRON_FLOW_DEFAULT_HEAD_SCALE,
   REACTION_ARROW_KIND_ORDER,
   reactionArrowSupportsReagentLabels,
@@ -101,7 +102,12 @@ export function ArrowPropertiesPanel({
   const showReagents = arrow ? reactionArrowSupportsReagentLabels(kind) : false;
   const headStyle = arrow?.headStyle ?? defaultHeadStyle;
   const tailStyle = arrow?.tailStyle ?? defaultTailStyle;
-  const headScale = arrow?.headScale ?? defaultHeadScale;
+  const fallbackHeadScale =
+    kind === 'curved' &&
+    (defaultHeadScale === ELECTRON_FLOW_DEFAULT_HEAD_SCALE || defaultHeadScale == null)
+      ? CURVED_ARROW_DEFAULT_HEAD_SCALE
+      : defaultHeadScale;
+  const headScale = arrow?.headScale ?? fallbackHeadScale;
   const headSelect = resolveArrowHeadKind(headStyle);
 
   const patch = (p: ReactionArrowUpdatePatch) => {

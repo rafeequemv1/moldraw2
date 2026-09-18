@@ -1,6 +1,6 @@
 import { canApplyFormalChargeDelta, getMaxLonePairsForAtom } from '@moldraw/domain';
 import type { Atom } from '@moldraw/domain';
-import { pickAtomAt, pickLonePairAt } from './hitTest';
+import { pickAtomAt, pickLonePairAt, pickRadicalAt } from './hitTest';
 import type { InteractionContext } from './types';
 
 const PLACE_DRAG_THRESHOLD = 1.5;
@@ -46,7 +46,9 @@ function beginPlaceChargeMarkDrag(
  *   delta_plus / delta_minus → set δ± (toggle off if same); drag to place
  *   lone_pair → click atom to add one at a time until full, then clicks remove
  *               one at a time (bounce). Shift/Alt, click a pair, or Erase also remove.
- *   free_radical / add_explicit_h / add_explicit_c → click only
+ *   free_radical → click atom to add; click again (or the dot / Erase) to remove.
+ *               Seat follows lone-pair rules (vacant side, not on a bond).
+ *   add_explicit_h / add_explicit_c → click only
  */
 export const chargeToolMouseDown = (ctx: InteractionContext): boolean => {
   const { e, worldPos, activeTool, molecule } = ctx;
@@ -64,8 +66,11 @@ export const chargeToolMouseDown = (ctx: InteractionContext): boolean => {
     const maxLP = getMaxLonePairsForAtom(host.element, host.charge, bondOrderSum);
     const current = host.lonePairs ?? 0;
     const dCenter = Math.hypot(worldPos.x - host.x, worldPos.y - host.y);
-    const clickedPair = Boolean(lpHit && lpHit.dist + 2 < dCenter);
-    const explicitRemove = e.shiftKey || e.altKey || clickedPair;
+    // Clicks on the atom (or its label) fill, then peel. Only a click that is
+    // clearly on the dots — outside the atom disk — removes immediately.
+    const onCenter = Boolean(atom && atom.id === host.id && dCenter <= ctx.hit.atomHitRadius);
+    const explicitRemove =
+      e.shiftKey || e.altKey || (Boolean(lpHit) && !onCenter && lpHit!.dist + 1 < dCenter);
 
     if (maxLP <= 0 && !explicitRemove) {
       ctx.flashAtomError(host.id);
@@ -89,6 +94,20 @@ export const chargeToolMouseDown = (ctx: InteractionContext): boolean => {
       ctx.onUpdateAtomLonePairs(host.id, 1);
       lonePairCycleDir.set(host.id, current + 1 >= maxLP ? 'down' : 'up');
     }
+    return true;
+  }
+
+  if (activeTool === 'free_radical' && ctx.onSetAtomRadical) {
+    const radHit = pickRadicalAt(molecule, worldPos);
+    const atomHit = pickAtomAt(molecule, worldPos, ctx.hit.atomHitRadius);
+    const hostId = radHit?.atomId ?? atomHit?.id;
+    const host = hostId ? molecule.atoms.find(a => a.id === hostId) : undefined;
+    if (!host) return true;
+    const dCenter = Math.hypot(worldPos.x - host.x, worldPos.y - host.y);
+    const clickedDot = Boolean(radHit && radHit.dist + 2 < dCenter);
+    const on = (host.radical ?? 0) > 0;
+    if (clickedDot || on) ctx.onSetAtomRadical(host.id, 0);
+    else ctx.onSetAtomRadical(host.id, 1);
     return true;
   }
 
@@ -173,11 +192,6 @@ export const chargeToolMouseDown = (ctx: InteractionContext): boolean => {
     if (!ctx.onSetAtomsShowElementLabel([atom.id], show)) {
       ctx.flashAtomError(atom.id);
     }
-    return true;
-  }
-  if (activeTool === 'free_radical' && ctx.onSetAtomRadical) {
-    const next = (atom.radical ?? 0) > 0 ? 0 : 1;
-    ctx.onSetAtomRadical(atom.id, next);
     return true;
   }
   if (

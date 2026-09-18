@@ -8,7 +8,7 @@ import {
   pickCanvasOrbitalAt,
   pointSegDist,
 } from '../geometry';
-import { pickAtomAt, pickBondAt } from './hitTest';
+import { pickAtomAt, pickBondAt, pickLonePairAt, pickRadicalAt } from './hitTest';
 import type { InteractionContext } from './types';
 import { isPenEraser } from '../touch/penPriority';
 
@@ -17,13 +17,31 @@ const STROKE_HIT_BASE = 10;
 /**
  * Erase tool: pointer-down hits the topmost element under the cursor and
  * forwards a typed `{ type, id }` to the parent. Hit priority:
- *   atom → bond → reaction arrow → canvas text → SRU → annotation shape → image → stroke.
+ *   lone pair → atom → bond → reaction arrow → canvas text → SRU → annotation shape → image → stroke.
  * Strokes use a thickness-aware tolerance so thick lines feel hit-friendly.
  */
 export const eraseToolMouseDown = (ctx: InteractionContext): boolean => {
   const { e, worldPos, molecule, onEraseAt } = ctx;
   // Primary button, or the stylus eraser end (button 5 / buttons & 32).
   if ((e.button !== 0 && !isPenEraser(e)) || !onEraseAt) return false;
+
+  const lpHit = pickLonePairAt(molecule, worldPos);
+  if (lpHit && ctx.onUpdateAtomLonePairs) {
+    const host = molecule.atoms.find(a => a.id === lpHit.atomId);
+    if (host && (host.lonePairs ?? 0) > 0) {
+      ctx.onUpdateAtomLonePairs(host.id, -1);
+      return true;
+    }
+  }
+
+  const radHit = pickRadicalAt(molecule, worldPos);
+  if (radHit && ctx.onSetAtomRadical) {
+    const host = molecule.atoms.find(a => a.id === radHit.atomId);
+    if (host && (host.radical ?? 0) > 0) {
+      ctx.onSetAtomRadical(host.id, 0);
+      return true;
+    }
+  }
 
   const atom = pickAtomAt(molecule, worldPos, ctx.hit.atomHitRadius);
   if (atom) {

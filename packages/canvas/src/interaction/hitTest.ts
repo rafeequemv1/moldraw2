@@ -1,5 +1,12 @@
 import type { Atom, Bond, Molecule } from '@moldraw/domain';
 import {
+  getLonePairPlacements,
+  getRadicalPlacement,
+  LONE_PAIR_DOT_R_PX,
+  LONE_PAIR_DOT_SEP_PX,
+  RADICAL_DOT_R_PX,
+} from '@moldraw/core';
+import {
   condensedGroupLabelForAtom,
   getEffectiveValencyForImplicitHydrogen,
   isIsolatedWaterOxygen,
@@ -345,6 +352,57 @@ export function pickAtomOrBondForRingTool(
 export const getAtomValency = (atomId: string, mol: Molecule): number => {
   const cache = getMoleculeRevisionCache(mol);
   return cache.valencyMap.get(atomId) ?? 0;
+};
+
+/** Click / erase hit on a drawn lone-pair (midpoint of the two dots). */
+export const pickLonePairAt = (
+  molecule: Molecule,
+  worldPos: Point,
+  radius = 12,
+): { atomId: string; slot: number; dist: number } | null => {
+  const hitR = radius + LONE_PAIR_DOT_SEP_PX + LONE_PAIR_DOT_R_PX;
+  let best: { atomId: string; slot: number; dist: number } | null = null;
+  for (const atom of molecule.atoms) {
+    const n = Math.max(0, atom.lonePairs ?? 0);
+    if (n <= 0) continue;
+    const placements = getLonePairPlacements(atom, molecule, n, {
+      preferSide: atom.lonePairSide ?? 'above',
+    });
+    for (let i = 0; i < placements.length; i++) {
+      const p = placements[i]!;
+      const d = Math.hypot(
+        worldPos.x - (atom.x + p.dir.x * p.dist),
+        worldPos.y - (atom.y + p.dir.y * p.dist),
+      );
+      if (d <= hitR && (!best || d < best.dist)) {
+        best = { atomId: atom.id, slot: i, dist: d };
+      }
+    }
+  }
+  return best;
+};
+
+/** Click / erase hit on a free-radical dot. */
+export const pickRadicalAt = (
+  molecule: Molecule,
+  worldPos: Point,
+  radius = 12,
+): { atomId: string; dist: number } | null => {
+  let best: { atomId: string; dist: number } | null = null;
+  for (const atom of molecule.atoms) {
+    if ((atom.radical ?? 0) <= 0) continue;
+    const p = getRadicalPlacement(atom, molecule, {
+      preferSide: atom.lonePairSide ?? 'above',
+    });
+    const d = Math.hypot(
+      worldPos.x - (atom.x + p.dir.x * p.dist),
+      worldPos.y - (atom.y + p.dir.y * p.dist),
+    );
+    if (d <= radius + RADICAL_DOT_R_PX && (!best || d < best.dist)) {
+      best = { atomId: atom.id, dist: d };
+    }
+  }
+  return best;
 };
 
 /** Atom ids inside an axis-aligned world rect (spatial-index accelerated). */

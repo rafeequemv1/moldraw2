@@ -134,7 +134,7 @@ export const jaToolOverrides: Record<
   },
   free_radical: {
     label: 'ラジカル',
-    title: 'フリーラジカル：原子をクリックで不対電子を追加/削除',
+    title: 'フリーラジカル：クリックで追加、再クリック・点・消しゴムで削除',
     shortLabel: '•',
   },
   add_explicit_h: {

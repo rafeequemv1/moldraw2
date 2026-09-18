@@ -3,6 +3,7 @@
  */
 import type { Molecule, ReactionArrow, ReactionArrowKind } from '@moldraw/domain';
 import {
+  CURVED_ARROW_DEFAULT_HEAD_SCALE,
   resolveArrowHeadKind,
   resolveReagentFontSize,
   reactionArrowSupportsReagentLabels,
@@ -25,6 +26,35 @@ export const isFreeformCurveArrowKind = (k: ReactionArrowKind): boolean =>
   k === 's_curve' ||
   k === 'cycle_arc' ||
   isOrthogonalPolylineArrowKind(k);
+
+/** World radius for snapping a curved-arrow tip to an atom or bond center. */
+export const CURVED_ARROW_CENTER_SNAP_PX = 18;
+
+/**
+ * Nearest atom center or bond midpoint within `tol`, or null so the tip stays
+ * where the pointer is (fine adjustment). Shift disables this at the call site.
+ */
+export const snapPointToAtomOrBondCenter = (
+  mol: Molecule,
+  x: number,
+  y: number,
+  tol = CURVED_ARROW_CENTER_SNAP_PX,
+): { x: number; y: number } | null => {
+  let best: { x: number; y: number; d: number } | null = null;
+  const consider = (px: number, py: number) => {
+    const d = Math.hypot(px - x, py - y);
+    if (d > tol) return;
+    if (!best || d < best.d) best = { x: px, y: py, d };
+  };
+  for (const a of mol.atoms) consider(a.x, a.y);
+  for (const b of mol.bonds) {
+    const from = mol.atoms.find(a => a.id === b.fromAtomId);
+    const to = mol.atoms.find(a => a.id === b.toAtomId);
+    if (!from || !to) continue;
+    consider((from.x + to.x) / 2, (from.y + to.y) / 2);
+  }
+  return best ? { x: best.x, y: best.y } : null;
+};
 
 /** Orthogonal polyline kinds that store `pathPoints` (flowchart elbows / row wrap). */
 export const isOrthogonalPolylineArrowKind = (k: ReactionArrowKind): boolean =>
@@ -1049,8 +1079,9 @@ const drawCurvedOrResonance = (
 ) => {
   const { x1, y1, x2, y2 } = a;
   const { cx, cy } = resolveQuadControl(a);
-  const headLen = Math.min(18, Math.hypot(x2 - x1, y2 - y1) * 0.35) * (a.headScale ?? 1);
-  const headW = 8 * (a.headScale ?? 1);
+  const headScale = a.headScale ?? (resonance ? 1 : CURVED_ARROW_DEFAULT_HEAD_SCALE);
+  const headLen = Math.min(18, Math.hypot(x2 - x1, y2 - y1) * 0.35) * headScale;
+  const headW = 8 * headScale;
   const tEnd = quadTan(x1, y1, cx, cy, x2, y2, 1);
   const tanEnd = norm(tEnd.x, tEnd.y);
   const tStart = quadTan(x1, y1, cx, cy, x2, y2, 0);
@@ -1403,13 +1434,35 @@ export const drawReactionArrowCanvas = (
 export const arrowsForHitTest = (mol: Molecule): ReactionArrow[] =>
   (mol.reactionArrows ?? []).map(a => resolveReactionArrowGeometry(mol, a));
 
-/** Convert a screen-pixel handle radius into world units. */
-export const arrowHandleHitTolWorld = (zoom = 1, screenPx = 32): number =>
-  screenPx / Math.max(0.12, zoom);
+/**
+ * Edit-handle radius in world units.
+ * Caps on-screen size so zooming out does not leave huge circles over the shaft.
+ * At zoom ≥ 1 the dots stay a small constant screen size; below 1 they shrink
+ * with the arrow (fixed world size).
+ */
+const ARROW_HANDLE_WORLD = 4.2;
+const ARROW_HANDLE_SCREEN_MAX = 5.6;
 
-/** Hit radius for the on-canvas reagent “+” chips (screen pixels → world). */
-export const reagentSlotChipHitTolWorld = (zoom = 1, screenPx = 17): number =>
-  screenPx / Math.max(0.12, zoom);
+export const arrowHandleRadiusWorld = (zoom = 1): number => {
+  const z = Math.max(0.12, zoom);
+  return Math.min(ARROW_HANDLE_WORLD, ARROW_HANDLE_SCREEN_MAX / z);
+};
+
+/** Hit radius slightly larger than the drawn dot, still shrinking when zoomed out. */
+export const arrowHandleHitTolWorld = (zoom = 1, screenPx?: number): number => {
+  const visual = arrowHandleRadiusWorld(zoom);
+  if (screenPx != null) return screenPx / Math.max(0.12, zoom);
+  const z = Math.max(0.12, zoom);
+  return visual + 4.5 / z;
+};
+
+/** Hit radius for the on-canvas reagent “+” chips. Tracks the drawn chip, not a fixed screen disk. */
+export const reagentSlotChipHitTolWorld = (zoom = 1, screenPx?: number): number => {
+  const z = Math.max(0.12, zoom);
+  if (screenPx != null) return screenPx / z;
+  const visual = Math.min(6.5, arrowHandleRadiusWorld(z) * 1.35);
+  return visual + 3.2 / z;
+};
 
 /** Top-most arrow whose geometry is within `tol` world units of (wx, wy). */
 export const pickReactionArrowAt = (

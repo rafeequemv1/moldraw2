@@ -140,7 +140,7 @@ export const deToolOverrides: Record<
   },
   free_radical: {
     label: 'Radikal',
-    title: 'Freies Radikal: Atom anklicken, um ein ungepaartes Elektron hinzuzufügen/entfernen',
+    title: 'Freies Radikal: Klick fügt hinzu; erneut, auf den Punkt oder Radierer entfernt',
     shortLabel: '•',
   },
   add_explicit_h: {

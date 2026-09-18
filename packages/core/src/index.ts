@@ -157,6 +157,7 @@ export {
 } from './molecule/arrowAnchors';
 export {
   getLonePairPlacements,
+  getRadicalPlacement,
   labelBoxFromExtents,
   distBeyondLabelBox,
   resolveLonePairWorldPoint,

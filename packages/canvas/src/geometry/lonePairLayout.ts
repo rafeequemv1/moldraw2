@@ -4,6 +4,7 @@
  */
 export {
   getLonePairPlacements,
+  getRadicalPlacement,
   labelBoxFromExtents,
   resolveLonePairWorldPoint,
   LONE_PAIR_DIST_PX,

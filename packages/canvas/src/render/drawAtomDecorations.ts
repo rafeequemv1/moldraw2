@@ -31,10 +31,10 @@ import {
 } from '../geometry/aliasLabelMetrics';
 import {
   getLonePairPlacements,
+  getRadicalPlacement,
   labelBoxFromExtents,
   LONE_PAIR_DOT_R_PX,
   LONE_PAIR_DOT_SEP_PX,
-  RADICAL_DIST_PX,
   RADICAL_DOT_R_PX,
   type LabelBoxLocal,
 } from '../geometry/lonePairLayout';
@@ -553,10 +553,21 @@ export const drawLonePairs = (ctx: CanvasRenderingContext2D, R: RenderContext): 
         ctx.arc(cx - nx * sep, cy - ny * sep, r, 0, Math.PI * 2);
         ctx.fill();
       }
-      // Free radical: always above the atom with a larger clear gap.
       if (radical > 0) {
+        const rp = getRadicalPlacement(atom, R.renderedMolecule, {
+          headBox: layout.headBox,
+          labelTailLocal: layout.labelTailLocal,
+          labelCounterRad: R.labelCounterRad,
+          preferSide: atom.lonePairSide ?? 'above',
+        });
         ctx.beginPath();
-        ctx.arc(atom.x, atom.y - RADICAL_DIST_PX, RADICAL_DOT_R_PX, 0, Math.PI * 2);
+        ctx.arc(
+          atom.x + rp.dir.x * rp.dist,
+          atom.y + rp.dir.y * rp.dist,
+          RADICAL_DOT_R_PX,
+          0,
+          Math.PI * 2,
+        );
         ctx.fill();
       }
     });
@@ -663,7 +674,7 @@ function measureElementLabelBox(
     const h = (asc + desc || 14) + 1;
 
     let labelTailLocal: { x: number; y: number } | null = null;
-    if (numH > 0 || hasCharge) {
+    if (numH > 0) {
       labelTailLocal = leftH ? { x: -1, y: 0 } : { x: 1, y: 0 };
     }
 

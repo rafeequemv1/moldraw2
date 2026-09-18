@@ -7,6 +7,8 @@ export {
   displayGroupLabelForAtom,
   pickAtomAt,
   pickAtomCenterAt,
+  pickLonePairAt,
+  pickRadicalAt,
   pickChargeAt,
   pickChargeMarkAt,
   pickAtomIdsInRect,

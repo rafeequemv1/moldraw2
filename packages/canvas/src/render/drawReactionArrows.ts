@@ -14,6 +14,7 @@ import {
   LONE_PAIR_DOT_SEP_PX,
 } from '@moldraw/core';
 import {
+  arrowHandleRadiusWorld,
   buildReactionArrowFromDrag,
   drawReactionArrowShape,
   listReactionArrowEditHandles,
@@ -23,8 +24,6 @@ import {
   reactionArrowReagentSlotPositions,
 } from '../geometry';
 import type { RenderContext } from './types';
-
-const ENDPOINT_HANDLE_R = 11;
 
 const highlightAccent = (R: RenderContext): string =>
   R.structureTheme.transformAccent ?? '#2dd4bf';
@@ -54,9 +53,9 @@ const drawEditHandles = (
   a: ReactionArrow,
   R: RenderContext,
 ): void => {
-  const vz = R.viewport.zoom;
-  const lw = 1.5 / vz;
-  const r = ENDPOINT_HANDLE_R / vz;
+  const vz = Math.max(0.12, R.viewport.zoom);
+  const lw = 1.15 / vz;
+  const r = arrowHandleRadiusWorld(R.viewport.zoom);
   ctx.save();
   ctx.setLineDash([]);
   for (const h of listReactionArrowEditHandles(a)) {
@@ -123,9 +122,9 @@ const drawReagentSlotChips = (
 ): void => {
   if (!reactionArrowSupportsReagentLabels(a.kind)) return;
   const slots = reactionArrowReagentSlotPositions(a);
-  const vz = R.viewport.zoom;
-  const r = 10 / vz;
-  const lw = 1.5 / vz;
+  const vz = Math.max(0.12, R.viewport.zoom);
+  const r = Math.min(6.5, arrowHandleRadiusWorld(R.viewport.zoom) * 1.35);
+  const lw = 1.15 / vz;
   const accent = highlightAccent(R);
 
   ctx.save();
@@ -145,7 +144,7 @@ const drawReagentSlotChips = (
     ctx.stroke();
     const arm = r * 0.42;
     ctx.strokeStyle = accent;
-    ctx.lineWidth = 2 / vz;
+    ctx.lineWidth = 1.15 / vz;
     ctx.beginPath();
     ctx.moveTo(x - arm, y);
     ctx.lineTo(x + arm, y);
@@ -253,7 +252,7 @@ export const drawReactionArrowGhost = (
 
   // Parked first click: show the start handle so the user knows to click the end.
   if (len < 6) {
-    const r = ENDPOINT_HANDLE_R / vz;
+    const r = arrowHandleRadiusWorld(vz);
     ctx.save();
     ctx.beginPath();
     ctx.arc(d.x1, d.y1, r, 0, Math.PI * 2);

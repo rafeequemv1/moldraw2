@@ -24,6 +24,7 @@
 import type { Molecule, Point, RingConformationByIndex } from '@moldraw/domain';
 import { ringConformationsByAtomIndex } from '@moldraw/domain';
 import { moleculeToMolblock, parseMolblock } from './molblock';
+import { lockLonePairAngles } from '../molecule/lonePairLayout';
 
 /** CLEANUP worker payload: molblock + chair/boat index locks (molfile cannot carry tags). */
 export const buildCleanupWorkerPayload = (
@@ -368,6 +369,7 @@ export const spliceLocalCleanup = (
   subsetIdsInWriteOrder: string[],
   cleanedMolblock: string,
 ): Molecule => {
+  const base = lockLonePairAngles(prev);
   const cleaned = parseMolblock(cleanedMolblock);
   if (cleaned.atoms.length !== subsetIdsInWriteOrder.length) {
     return prev;
@@ -375,7 +377,7 @@ export const spliceLocalCleanup = (
 
   const subsetIdSet = new Set(subsetIdsInWriteOrder);
   const idToOriginal = new Map<string, { x: number; y: number }>();
-  for (const a of prev.atoms) {
+  for (const a of base.atoms) {
     if (subsetIdSet.has(a.id)) idToOriginal.set(a.id, { x: a.x, y: a.y });
   }
   if (idToOriginal.size !== subsetIdsInWriteOrder.length) {
@@ -397,12 +399,12 @@ export const spliceLocalCleanup = (
     updates.set(subsetIdsInWriteOrder[i], { x: p.x, y: p.y });
   });
 
-  const newAtoms = prev.atoms.map(a => {
+  const newAtoms = base.atoms.map(a => {
     const upd = updates.get(a.id);
     return upd ? { ...a, x: upd.x, y: upd.y } : a;
   });
 
-  return { ...prev, atoms: newAtoms };
+  return { ...base, atoms: newAtoms };
 };
 
 /**
@@ -475,12 +477,13 @@ export const alignCleanupCoordsPerComponent = (
   prev: Molecule,
   cleanedByAtomId: ReadonlyMap<string, Point>,
 ): Molecule => {
-  if (prev.atoms.length === 0 || cleanedByAtomId.size === 0) return prev;
+  const base = lockLonePairAngles(prev);
+  if (base.atoms.length === 0 || cleanedByAtomId.size === 0) return base;
 
-  const byId = new Map(prev.atoms.map(a => [a.id, a]));
+  const byId = new Map(base.atoms.map(a => [a.id, a]));
   const updates = new Map<string, Point>();
 
-  for (const compIds of listConnectedComponents(prev)) {
+  for (const compIds of listConnectedComponents(base)) {
     const ids: string[] = [];
     const originals: Point[] = [];
     const cleanedPts: Point[] = [];
@@ -506,10 +509,10 @@ export const alignCleanupCoordsPerComponent = (
     for (let i = 0; i < ids.length; i++) updates.set(ids[i]!, aligned[i]!);
   }
 
-  if (updates.size === 0) return prev;
+  if (updates.size === 0) return base;
   return {
-    ...prev,
-    atoms: prev.atoms.map(a => {
+    ...base,
+    atoms: base.atoms.map(a => {
       const u = updates.get(a.id);
       return u ? { ...a, x: u.x, y: u.y } : a;
     }),

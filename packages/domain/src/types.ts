@@ -32,6 +32,12 @@ export interface Atom {
   /** Explicit lone pair count (visual + validation). */
   lonePairs?: number;
   /**
+   * Screen angle (radians) of each lone pair, same order as `lonePairs`.
+   * Locked so 2D cleanup moves the atom without reseating the dots.
+   * Display-only; not written to molfile.
+   */
+  lonePairAngles?: number[];
+  /**
    * Preferred screen-upright side for lone-pair dots (teaching diagrams).
    * Default when omitted: above. Not written to molfile.
    */
@@ -499,6 +505,9 @@ export type ArrowTailStyle = (typeof ARROW_TAIL_STYLES)[number];
 
 /** Default head size for newly drawn electron-flow arrows (slightly smaller than 1). */
 export const ELECTRON_FLOW_DEFAULT_HEAD_SCALE = 0.72;
+
+/** Default head size for scheme curved arrows (larger than electron-flow tips). */
+export const CURVED_ARROW_DEFAULT_HEAD_SCALE = 1.3;
 
 export const resolveArrowHeadKind = (
   style?: ArrowHeadStyle,
